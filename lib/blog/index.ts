@@ -2,6 +2,14 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+import { BLOG_CATEGORIES, getPostCategoryIds, type BlogCategory } from './categories'
+
+// Re-export the category layer so server code can import everything from
+// `@/lib/blog`. Client components should import from `@/lib/blog/categories`
+// directly to avoid pulling this fs-backed module into the browser bundle.
+export { BLOG_CATEGORIES, getPostCategoryIds } from './categories'
+export type { BlogCategory, BlogCategoryId } from './categories'
+
 const BLOG_DIR = path.join(process.cwd(), 'content/blog')
 
 export type NewsletterCadence = 'wednesday_topic' | 'sunday_rearview'
@@ -104,6 +112,12 @@ export function getAllTags(): string[] {
   const tagSet = new Set<string>()
   posts.forEach(p => p.tags.forEach(t => tagSet.add(t)))
   return Array.from(tagSet).sort()
+}
+
+/** Categories that have at least one published post, in canonical order. */
+export function getCategoriesInUse(): BlogCategory[] {
+  const used = new Set(getAllPosts().flatMap(p => getPostCategoryIds(p.tags)))
+  return BLOG_CATEGORIES.filter(c => used.has(c.id))
 }
 
 function getPostsByTag(tag: string): BlogPost[] {
