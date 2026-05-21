@@ -10,23 +10,24 @@ import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
+import { getPostCategoryIds, type BlogCategory } from '@/lib/blog/categories'
 
 const POSTS_PER_PAGE = 10
 
 interface BlogIndexProps {
   posts: BlogPost[]
-  tags: string[]
-  initialTag: string | null
+  categories: BlogCategory[]
+  initialCategory: string | null
 }
 
-export function BlogIndex({ posts, tags, initialTag }: BlogIndexProps) {
-  const [selectedTag, setSelectedTag] = useState<string | null>(initialTag)
+export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory)
   const [page, setPage] = useState(1)
   const { theme } = useTheme()
   const themeClasses = getComponentStyles(theme as ThemeType, 'card')
 
-  const filtered = selectedTag
-    ? posts.filter(p => p.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase()))
+  const filtered = selectedCategory
+    ? posts.filter(p => getPostCategoryIds(p.tags).some(id => id === selectedCategory))
     : posts
 
   const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE)
@@ -63,32 +64,32 @@ export function BlogIndex({ posts, tags, initialTag }: BlogIndexProps) {
           />
         </div>
 
-        {/* Tag filter */}
-        {tags.length > 0 && (
+        {/* Category filter */}
+        {categories.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-center">
             <button
-              onClick={() => { setSelectedTag(null); setPage(1) }}
+              onClick={() => { setSelectedCategory(null); setPage(1) }}
               className={cn(
                 'px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border transition-colors',
-                !selectedTag
+                !selectedCategory
                   ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
                   : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--primary))]'
               )}
             >
               ALL
             </button>
-            {tags.map(tag => (
+            {categories.map(category => (
               <button
-                key={tag}
-                onClick={() => { setSelectedTag(tag); setPage(1) }}
+                key={category.id}
+                onClick={() => { setSelectedCategory(category.id); setPage(1) }}
                 className={cn(
                   'px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border transition-colors',
-                  selectedTag === tag
+                  selectedCategory === category.id
                     ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
                     : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--primary))]'
                 )}
               >
-                {tag}
+                {category.label}
               </button>
             ))}
           </div>
