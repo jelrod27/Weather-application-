@@ -9,6 +9,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 | [PRD-open-meteo-migration.md](./PRD-open-meteo-migration.md) | Migrating primary weather source from OpenWeatherMap to Open-Meteo |
 | [PRD-stargazer.md](./PRD-stargazer.md) | Astrophotography forecast page (Stargazer) |
 | [PRD-newsletter-redesign.md](./PRD-newsletter-redesign.md) | Weekly newsletter generator redesign |
+| [PRD-radar-modernization.md](./PRD-radar-modernization.md) | Radar storm-watch reliability: MRMS, RainViewer, timestamp refresh |
 
 ## Referenced elsewhere but not in this tree
 

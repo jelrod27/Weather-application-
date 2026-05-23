@@ -111,7 +111,7 @@ test.describe('Radar Map', () => {
     
     // Look for status badge with radar info
     const statusBadge = page.locator('[class*="badge"], [class*="status"]').filter({ 
-      hasText: /(RADAR|NEXRAD|LIVE|US LOCATIONS)/i 
+      hasText: /(RADAR|NEXRAD|MRMS|RAINVIEWER|LIVE|unavailable)/i 
     });
     
     // Status badge may or may not exist depending on location
