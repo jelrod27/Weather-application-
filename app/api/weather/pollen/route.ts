@@ -31,10 +31,12 @@ export async function GET(request: NextRequest) {
     const googlePollenApiKey = process.env.GOOGLE_POLLEN_API_KEY
     
     if (!openWeatherApiKey) {
-      return NextResponse.json(
-        { error: 'OpenWeather API key not configured' },
-        { status: 500 }
-      )
+      return NextResponse.json({
+        tree: { 'Tree': 'No Data' },
+        grass: { 'Grass': 'No Data' },
+        weed: { 'Weed': 'No Data' },
+        source: 'unavailable',
+      }, { headers: rateLimit.headers })
     }
 
     // Extract query parameters

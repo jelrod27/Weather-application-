@@ -106,7 +106,16 @@ const mapNominatimResult = (r: NominatimResult): GeocodingResponse | null => {
   if (Number.isNaN(lat) || Number.isNaN(lon)) return null
 
   const addr = r.address || {}
-  const name = addr.city || addr.town || addr.village || addr.suburb || addr.hamlet || ''
+  const name =
+    addr.city ||
+    addr.town ||
+    addr.village ||
+    addr.suburb ||
+    addr.hamlet ||
+    addr.municipality ||
+    addr.county?.replace(/\s+County$/i, '') ||
+    r.display_name?.split(',')[0]?.trim() ||
+    ''
   if (!name) return null
 
   const country = (addr.country_code || '').toUpperCase() || 'XX'
