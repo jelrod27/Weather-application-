@@ -14,7 +14,7 @@
  * Report issues: https://github.com/deephouse23/Weather-application-/issues
  */
 
-import { useState, useEffect, useRef } from "react"
+import { useCallback, useState, useEffect, useRef } from "react"
 import PageWrapper from "@/components/page-wrapper"
 import { TrendingUp, TrendingDown, MapPin, RefreshCw, Thermometer } from "lucide-react"
 import { ExtremesData, LocationTemperature } from "@/lib/extremes/extremes-data"
@@ -26,19 +26,25 @@ import { Skeleton } from "@/components/ui/skeleton"
 // Client-side cache management
 const CACHE_KEY = '16bit-weather-extremes-cache';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+type Coordinates = { lat: number; lon: number }
 
-function getCachedExtremesClient(): ExtremesData | null {
+function getExtremesCacheKey(coords: Coordinates | null): string {
+  if (!coords) return `${CACHE_KEY}:global`
+  return `${CACHE_KEY}:${coords.lat.toFixed(3)},${coords.lon.toFixed(3)}`
+}
+
+function getCachedExtremesClient(cacheKey: string): ExtremesData | null {
   if (typeof window === 'undefined') return null;
 
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(cacheKey);
     if (!cached) return null;
 
     const data = JSON.parse(cached);
     const age = Date.now() - data.lastUpdated;
 
     if (age > CACHE_DURATION) {
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(cacheKey);
       return null;
     }
 
@@ -49,11 +55,11 @@ function getCachedExtremesClient(): ExtremesData | null {
   }
 }
 
-function setCachedExtremesClient(data: ExtremesData): void {
+function setCachedExtremesClient(cacheKey: string, data: ExtremesData): void {
   if (typeof window === 'undefined') return;
 
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(cacheKey, JSON.stringify(data));
   } catch (error) {
     console.error('Error setting cache:', error);
   }
@@ -63,7 +69,7 @@ export default function ExtremesPage() {
   const [data, setData] = useState<ExtremesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null)
+  const [userCoords, setUserCoords] = useState<Coordinates | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<LocationTemperature | null>(null)
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -74,15 +80,16 @@ export default function ExtremesPage() {
   }
 
   // Fetch extremes data (abort in-flight request when a newer one starts — geolocation vs initial load)
-  const fetchData = async (skipCache = false) => {
+  const fetchData = useCallback(async (skipCache = false, coords: Coordinates | null = null) => {
     fetchAbortRef.current?.abort()
     const controller = new AbortController()
     fetchAbortRef.current = controller
+    const cacheKey = getExtremesCacheKey(coords)
 
     try {
       // Check client-side cache first
       if (!skipCache) {
-        const cached = getCachedExtremesClient();
+        const cached = getCachedExtremesClient(cacheKey);
         if (cached) {
           setData(cached);
           setLoading(false);
@@ -94,8 +101,8 @@ export default function ExtremesPage() {
       setError(null)
 
       let url = '/api/extremes'
-      if (userCoords) {
-        url += `?lat=${userCoords.lat}&lon=${userCoords.lon}`
+      if (coords) {
+        url += `?lat=${coords.lat}&lon=${coords.lon}`
       }
 
       const response = await fetch(url, { signal: controller.signal })
@@ -108,7 +115,7 @@ export default function ExtremesPage() {
       if (controller.signal.aborted) return
 
       setData(responseData)
-      setCachedExtremesClient(responseData) // Cache on client side
+      setCachedExtremesClient(cacheKey, responseData) // Cache on client side
     } catch (err) {
       if ((err as Error).name === 'AbortError') return
       console.error('Error fetching extremes:', err)
@@ -118,7 +125,7 @@ export default function ExtremesPage() {
         setLoading(false)
       }
     }
-  }
+  }, [])
 
   // Get user location
   const getUserLocation = () => {
@@ -140,24 +147,24 @@ export default function ExtremesPage() {
   // Initial fetch + request browser location (second fetch runs when userCoords is set)
   useEffect(() => {
     getUserLocation()
-    void fetchData()
+    void fetchData(false, null)
     return () => {
       fetchAbortRef.current?.abort()
     }
-  }, [])
+  }, [fetchData])
 
   // Re-fetch when user coords change
   useEffect(() => {
     if (userCoords) {
-      fetchData(true) // Skip cache when user location changes
+      fetchData(true, userCoords) // Skip cache when user location changes
     }
-  }, [userCoords])
+  }, [fetchData, userCoords])
 
   // Auto-refresh every 30 minutes
   useEffect(() => {
     if (autoRefresh) {
       refreshIntervalRef.current = setInterval(() => {
-        fetchData(true) // Skip cache for refresh
+        fetchData(true, userCoords) // Skip cache for refresh
       }, 30 * 60 * 1000) // 30 minutes
     }
 
@@ -166,7 +173,7 @@ export default function ExtremesPage() {
         clearInterval(refreshIntervalRef.current)
       }
     }
-  }, [autoRefresh, userCoords])
+  }, [autoRefresh, fetchData, userCoords])
 
   // Thermometer visualization component with theme colors
   const ThermometerViz = ({ temp, max = 140, min = -100 }: { temp: number; max?: number; min?: number }) => {
