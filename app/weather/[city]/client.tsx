@@ -12,7 +12,7 @@
 
 
 import type { JSX } from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchWeatherData } from '@/lib/weather'
 import { useAuth } from '@/lib/auth'
@@ -59,10 +59,13 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
   const [error, setError] = useState<string>("")
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [precipitation, setPrecipitation] = useState<{rain24h: number; snow24h: number} | null>(null)
+  const weatherRequestRef = useRef(0)
+  const weatherLatitude = weather?.coordinates?.lat
+  const weatherLongitude = weather?.coordinates?.lon
 
   // Fetch 24h precipitation data when weather loads
   useEffect(() => {
-    if (!weather?.coordinates) return
+    if (weatherLatitude == null || weatherLongitude == null) return
 
     // Clear stale data immediately on city transition
     setPrecipitation(null)
@@ -70,7 +73,7 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
     // AbortController to prevent race conditions when switching cities quickly
     const controller = new AbortController()
 
-    fetch(`/api/weather/precipitation-history?lat=${weather.coordinates.lat}&lon=${weather.coordinates.lon}`, {
+    fetch(`/api/weather/precipitation-history?lat=${weatherLatitude}&lon=${weatherLongitude}`, {
       signal: controller.signal
     })
       .then(res => res.ok ? res.json() : null)
@@ -87,7 +90,7 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
       })
 
     return () => controller.abort()
-  }, [weather?.coordinates?.lat, weather?.coordinates?.lon])
+  }, [weatherLatitude, weatherLongitude])
 
   // Helper: normalize "San Ramon, CA" -> "san-ramon-ca"
   const toSlug = (input: string) =>
@@ -99,25 +102,34 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
       .replace(/[^a-z0-9-]/g, '')
 
   // Load weather data for the specific city
-  const loadCityWeather = async () => {
+  const loadCityWeather = useCallback(async () => {
+    const requestId = weatherRequestRef.current + 1
+    weatherRequestRef.current = requestId
+
     try {
       setLoading(true)
       setError("")
 
       const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
       const weatherData = await fetchWeatherData(city.searchTerm, unitSystem)
+
+      if (requestId !== weatherRequestRef.current) return
+
       setWeather(weatherData)
 
       // Update location context with city data
       setLocationInput(city.searchTerm)
       setCurrentLocation(weatherData.location || city.searchTerm)
     } catch (err) {
+      if (requestId !== weatherRequestRef.current) return
       console.error('Error loading city weather:', err)
       setError(err instanceof Error ? err.message : 'Failed to load weather data')
     } finally {
-      setLoading(false)
+      if (requestId === weatherRequestRef.current) {
+        setLoading(false)
+      }
     }
-  }
+  }, [city.searchTerm, preferences?.temperature_unit, setCurrentLocation, setLocationInput])
 
   // CLEAR local state whenever the route/citySlug changes (prevents ghost data)
   useEffect(() => {
@@ -129,22 +141,20 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
     // Then set the current city as the location
     setLocationInput(city.searchTerm)
     setCurrentLocation(city.searchTerm)
-  }, [citySlug])
+  }, [city.searchTerm, citySlug, clearLocationState, setCurrentLocation, setLocationInput])
 
   // Existing effect: load weather for this page's city (runs after reset above)
   useEffect(() => {
     setShouldClearOnRouteChange(false)
 
-    if (city) {
-      // Load city-specific weather data first (city pages should show city data, not user location)
-      loadCityWeather()
-    }
+    // Load city-specific weather data first (city pages should show city data, not user location)
+    loadCityWeather()
 
     // Cleanup: enable route change clearing when leaving city pages
     return () => {
       setShouldClearOnRouteChange(true)
     }
-  }, [city?.searchTerm, setShouldClearOnRouteChange])
+  }, [loadCityWeather, setShouldClearOnRouteChange])
 
   // REPLACE handleSearch to navigate instead of only setting local weather
   const handleSearch = async (locationInput: string) => {
