@@ -230,7 +230,7 @@ export default function MapPage() {
         <ShareButtons
           config={{
             title: 'Live Weather Radar',
-            text: 'Live NOAA MRMS weather radar at 16bitweather.co',
+            text: 'Animated NEXRAD and RainViewer radar at 16bitweather.co',
             url: 'https://www.16bitweather.co/radar',
           }}
         />

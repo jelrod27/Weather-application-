@@ -47,7 +47,7 @@ function Accordion({ title, icon: Icon, children, defaultOpen = false }: {
 }
 
 const modules = [
-  { href: "/radar", label: "Radar", desc: "Real-time NOAA MRMS radar with animated playback", icon: Map },
+  { href: "/radar", label: "Radar", desc: "Animated US NEXRAD composite and global RainViewer radar", icon: Map },
   { href: "/warnings", label: "Warnings Command Center", desc: "Live NWS alerts with WIS score, SPC outlook, alert polygons, and storm reports", icon: AlertTriangle },
   { href: "/severe", label: "Severe Weather", desc: "Active tornado, thunderstorm, and flood warnings", icon: CloudLightning },
   { href: "/travel", label: "Travel Hub", desc: "Will your trip suck? Airport delay risk, road conditions, and a personal trip score for fly or drive", icon: Route },
@@ -155,7 +155,7 @@ export default function AboutPage() {
                   { icon: Database, label: "DATA LAYER", value: "Supabase PostgreSQL + Row-Level Security" },
                   { icon: CloudLightning, label: "WEATHER DATA", value: "OpenWeatherMap + NOAA + NWS + USGS + NASA" },
                   { icon: Sparkles, label: "AI ENGINE", value: "Vercel AI SDK + Claude (Anthropic)" },
-                  { icon: Globe, label: "RADAR", value: "NOAA MRMS + Iowa NEXRAD via OpenLayers" },
+                  { icon: Globe, label: "RADAR", value: "Iowa NEXRAD (US) + RainViewer (intl) via OpenLayers" },
                   { icon: Gauge, label: "MONITORING", value: "Sentry + Lighthouse CI (score >= 85)" },
                   { icon: Gamepad2, label: "AESTHETIC", value: "Tailwind CSS v4 + 5 retro themes" },
                   { icon: Shield, label: "DEPLOYMENT", value: "Vercel Edge + GitHub Actions CI/CD" },

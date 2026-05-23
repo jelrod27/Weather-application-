@@ -8,9 +8,11 @@ import { ThemeType } from '@/lib/theme-config'
 import {
   BASE_ANIMATION_INTERVAL_MS,
   CARTO_DARK_MATTER_URL,
+  INTL_RADAR_SOURCE_ID,
   IOWA_NEXRAD_LAYER,
   IOWA_NEXRAD_WMS_URL,
   PRELOAD_FRAMES_AHEAD,
+  US_RADAR_SOURCE_ID,
   RADAR_LEGEND,
   RADAR_REFRESH_MS,
   RAINVIEWER_MAPS_API,
@@ -564,6 +566,8 @@ const WeatherMapOpenLayers = ({
   return (
     <div
       data-radar-container
+      data-radar-us-source={isUSLocation ? US_RADAR_SOURCE_ID : undefined}
+      data-radar-intl-source={!isUSLocation && rainViewerData ? INTL_RADAR_SOURCE_ID : undefined}
       className={`flex gap-2 w-full rounded-lg ${themeStyles.container}`}
       style={{ height: '100%', minHeight: '350px' }}
     >

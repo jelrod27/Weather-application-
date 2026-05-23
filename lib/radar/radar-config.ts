@@ -11,9 +11,13 @@ export const BASE_ANIMATION_INTERVAL_MS = 500
 export const PRELOAD_FRAMES_AHEAD = 3
 
 /** US primary: Iowa IEM NEXRAD WMS-T (direct browser fetch; CSP-allowed). */
+export const US_RADAR_SOURCE_ID = 'iowa-wms-t'
 export const IOWA_NEXRAD_WMS_URL =
   'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q-t.cgi'
 export const IOWA_NEXRAD_LAYER = 'nexrad-n0q-wmst'
+
+/** International: RainViewer via app proxy. */
+export const INTL_RADAR_SOURCE_ID = 'rainviewer'
 
 /** Deferred: nowCOAST MRMS WMS returns CloudFront 403; proxy also hits tile rate limits. */
 export const MRMS_WMS_PROXY_PATH = '/api/weather/noaa-wms'

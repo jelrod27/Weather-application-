@@ -1,3 +1,4 @@
+import { RADAR_STEP_MINUTES, US_RADAR_SOURCE_ID, INTL_RADAR_SOURCE_ID } from '@/lib/radar/radar-config'
 import {
   buildRadarTimestamps,
   minutesSinceFrame,
@@ -5,6 +6,14 @@ import {
   stormWatchStartIndex,
 } from '@/lib/radar/radar-timestamps'
 import { parseRainViewerMapsPayload, rainViewerTileUrl } from '@/lib/radar/rainviewer-types'
+
+describe('radar config', () => {
+  it('should expose stable US and international source ids', () => {
+    expect(US_RADAR_SOURCE_ID).toBe('iowa-wms-t')
+    expect(INTL_RADAR_SOURCE_ID).toBe('rainviewer')
+    expect(RADAR_STEP_MINUTES).toBe(5)
+  })
+})
 
 describe('radar timestamps', () => {
   it('should quantize to 5-minute boundaries', () => {

@@ -111,13 +111,54 @@ test.describe('Radar Map', () => {
     
     // Look for status badge with radar info
     const statusBadge = page.locator('[class*="badge"], [class*="status"]').filter({ 
-      hasText: /(RADAR|NEXRAD|MRMS|RAINVIEWER|LIVE|unavailable)/i 
+      hasText: /(RADAR|NEXRAD|RAINVIEWER|LIVE|unavailable)/i 
     });
     
     // Status badge may or may not exist depending on location
     if (await statusBadge.count() > 0) {
       await expect(statusBadge.first()).toBeVisible({ timeout: 5000 });
     }
+  });
+
+  test('US radar uses Iowa NEXRAD WMS directly (not MRMS proxy)', async ({ page }) => {
+    const iowaTileUrls: string[] = [];
+    const mrmsProxyUrls: string[] = [];
+
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('mesonet.agron.iastate.edu')) {
+        iowaTileUrls.push(url);
+      }
+      if (url.includes('/api/weather/noaa-wms')) {
+        mrmsProxyUrls.push(url);
+      }
+    });
+
+    await navigateToMapPage(page);
+    await waitForRadarToLoad(page);
+    await page.waitForTimeout(4000);
+
+    const radarContainer = page.locator('[data-radar-container]').first();
+    await expect(radarContainer).toHaveAttribute('data-radar-us-source', 'iowa-wms-t');
+    await expect(page.getByText(/NEXRAD/i).first()).toBeVisible({ timeout: 10000 });
+
+    expect(iowaTileUrls.length).toBeGreaterThan(0);
+    expect(mrmsProxyUrls.length).toBe(0);
+  });
+
+  test('radar canvas is not affected by synthwave theme filters', async ({ page }) => {
+    await setTheme(page, 'synthwave84');
+    await page.waitForTimeout(300);
+
+    await navigateToMapPage(page);
+    await waitForRadarToLoad(page);
+    await page.waitForTimeout(3000);
+
+    const tileSurface = page.locator('[data-radar-container] canvas, [data-radar-container] .ol-layer img').first();
+    await expect(tileSurface).toBeVisible({ timeout: 15000 });
+
+    const surfaceFilter = await tileSurface.evaluate((el) => window.getComputedStyle(el).filter);
+    expect(surfaceFilter).toBe('none');
   });
 });
 

@@ -174,6 +174,67 @@ export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promi
       timestamp: nowIso,
     }),
   }));
+
+  const openMeteoDays = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date();
+    day.setDate(day.getDate() + i);
+    return day.toISOString().split('T')[0];
+  });
+
+  await page.route(/.*\/api\/open-meteo\/forecast(?:\?.*)?$/, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      latitude: o.lat,
+      longitude: o.lon,
+      generationtime_ms: 0.5,
+      utc_offset_seconds: -18000,
+      timezone: 'America/New_York',
+      timezone_abbreviation: 'EST',
+      elevation: 10,
+      current: {
+        time: `${openMeteoDays[0]}T14:00`,
+        interval: 900,
+        temperature_2m: o.tempF,
+        relative_humidity_2m: o.humidity,
+        apparent_temperature: o.tempF - 3,
+        is_day: 1,
+        precipitation: 0,
+        weather_code: 2,
+        cloud_cover: 50,
+        surface_pressure: o.pressure,
+        wind_speed_10m: 12.3,
+        wind_direction_10m: 225,
+        wind_gusts_10m: 18.7,
+        uv_index: 4.2,
+      },
+      daily: {
+        time: openMeteoDays,
+        weather_code: openMeteoDays.map(() => 2),
+        temperature_2m_max: openMeteoDays.map(() => o.tempF + 3),
+        temperature_2m_min: openMeteoDays.map(() => o.tempF - 3),
+        precipitation_probability_max: openMeteoDays.map(() => 10),
+        wind_speed_10m_max: openMeteoDays.map(() => 15),
+        uv_index_max: openMeteoDays.map(() => 5),
+        sunrise: openMeteoDays.map((day) => `${day}T06:30`),
+        sunset: openMeteoDays.map((day) => `${day}T19:45`),
+      },
+      hourly: {
+        time: [`${openMeteoDays[0]}T14:00`],
+        temperature_2m: [o.tempF],
+        weather_code: [2],
+        precipitation_probability: [10],
+      },
+    }),
+  }));
+
+  await page.route(/.*\/api\/open-meteo\/air-quality(?:\?.*)?$/, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      current: { us_aqi: 30 },
+    }),
+  }));
 }
 
 export async function seedFreshWeatherCache(page: Page, opts: StubOptions = {}): Promise<void> {
@@ -651,55 +712,23 @@ export async function getCurrentTheme(page: Page): Promise<string> {
 //   RADAR MAP HELPERS
 //   ═══════════════════════════════════════════════════════════
 
-export async function navigateToMapPage(page: Page): Promise<void> {
-  await page.goto('/map', { waitUntil: 'domcontentloaded' });
+export async function navigateToMapPage(page: Page, location = 'New York, US'): Promise<void> {
+  const params = new URLSearchParams({ location });
+  await page.goto(`/radar?${params.toString()}`, { waitUntil: 'domcontentloaded' });
   // Wait for page to be fully loaded
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
     // If networkidle times out, continue anyway
   });
-  // Wait for map container to exist in DOM
-  await page.waitForSelector('[data-radar-container], [class*="map"], [class*="Map"], [class*="radar"], [class*="Radar"]', {
-    timeout: 15000,
-    state: 'attached'
-  }).catch(() => {
-    // If selector not found, that's okay - we'll check in waitForRadarToLoad
+  await page.waitForSelector('[data-radar-container]', {
+    timeout: 20000,
+    state: 'attached',
   });
 }
 
 export async function waitForRadarToLoad(page: Page): Promise<void> {
-  // Wait for radar container or map element to be attached to DOM
-  // Try multiple selectors to be more flexible
-  const selectors = [
-    '[data-radar-container]',
-    '[class*="map"]',
-    '[class*="Map"]',
-    '[class*="radar"]',
-    '[class*="Radar"]',
-  ];
+  await page.waitForSelector('[data-radar-container]', { timeout: 20000, state: 'attached' });
 
-  let found = false;
-  for (const selector of selectors) {
-    try {
-      await page.waitForSelector(selector, { timeout: 5000, state: 'attached' });
-      found = true;
-      break;
-    } catch (e) {
-      // Try next selector
-      continue;
-    }
-  }
-
-  if (!found) {
-    // If no specific selector found, wait for any div with height (map containers usually have height)
-    await page.waitForFunction(() => {
-      const containers = document.querySelectorAll('[data-radar-container], [class*="map"], [class*="Map"]');
-      return containers.length > 0;
-    }, { timeout: 10000 }).catch(() => {
-      // If still not found, that's okay - test will fail with a clear error
-    });
-  }
-
-  // Give the map a moment to render
+  // Give the map a moment to render tiles
   await page.waitForTimeout(1000);
 }
 
