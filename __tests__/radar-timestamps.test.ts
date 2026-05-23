@@ -39,6 +39,17 @@ describe('radar timestamps', () => {
     expect(stormWatchStartIndex(49, 24)).toBe(24)
     expect(stormWatchStartIndex(10, 24)).toBe(0)
   })
+
+  it('should fall back to defaults for invalid step and past options', () => {
+    const now = new Date('2026-05-22T15:00:00.000Z').getTime()
+    const frames = buildRadarTimestamps({
+      nowMs: now,
+      stepMinutes: 0,
+      pastSteps: -5,
+    })
+    expect(frames).toHaveLength(49)
+    expect(frames.every((frame) => Number.isFinite(frame))).toBe(true)
+  })
 })
 
 describe('rainviewer parsing', () => {

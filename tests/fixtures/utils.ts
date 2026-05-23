@@ -727,9 +727,10 @@ export async function navigateToMapPage(page: Page, location = 'New York, US'): 
 
 export async function waitForRadarToLoad(page: Page): Promise<void> {
   await page.waitForSelector('[data-radar-container]', { timeout: 20000, state: 'attached' });
-
-  // Give the map a moment to render tiles
-  await page.waitForTimeout(1000);
+  await page.waitForSelector('[data-radar-container] canvas, [data-radar-container] .ol-layer img', {
+    state: 'visible',
+    timeout: 20000,
+  });
 }
 
 export async function checkRadarVisibility(page: Page): Promise<boolean> {

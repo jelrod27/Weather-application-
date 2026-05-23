@@ -100,7 +100,7 @@ const WeatherMapOpenLayers = ({
   }, [isMounted])
 
   const isUSLocation = useMemo(() => {
-    if (!latitude || !longitude) return false
+    if (latitude == null || longitude == null) return false
     return isInMRMSCoverage(latitude, longitude)
   }, [latitude, longitude])
 
@@ -178,8 +178,8 @@ const WeatherMapOpenLayers = ({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return
 
-    const centerLon = longitude || -98.5795
-    const centerLat = latitude || 39.8283
+    const centerLon = longitude ?? -98.5795
+    const centerLat = latitude ?? 39.8283
 
     const baseLayer = new TileLayer({
       source: new XYZ({
@@ -221,13 +221,13 @@ const WeatherMapOpenLayers = ({
   }, [])
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !latitude || !longitude) return
+    if (!mapInstanceRef.current || latitude == null || longitude == null) return
     mapInstanceRef.current.getView().setCenter(fromLonLat([longitude, latitude]))
     mapInstanceRef.current.getView().setZoom(10)
   }, [latitude, longitude])
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !latitude || !longitude) return
+    if (!mapInstanceRef.current || latitude == null || longitude == null) return
 
     const map = mapInstanceRef.current
     const existingMarker = map.getLayers().getArray().find((layer) => layer.get('name') === 'marker')
@@ -425,10 +425,6 @@ const WeatherMapOpenLayers = ({
     })
     xyz.refresh()
   }, [frameIndex, activeTimestamps, isUSLocation, rainViewerData])
-
-  useEffect(() => {
-    preloadCacheRef.current.clear()
-  }, [latitude, longitude])
 
   const preloadFrame = useCallback(
     (index: number) => {

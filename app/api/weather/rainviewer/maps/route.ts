@@ -52,11 +52,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      ...tileProxyOriginHeaders(request),
-      'Access-Control-Max-Age': '86400',
-    },
-  })
+  try {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        ...tileProxyOriginHeaders(request),
+        'Access-Control-Max-Age': '86400',
+      },
+    })
+  } catch (error) {
+    console.error('[RainViewer maps proxy]', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500, headers: tileProxyOriginHeaders(request) }
+    )
+  }
 }

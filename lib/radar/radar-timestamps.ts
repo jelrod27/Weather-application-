@@ -6,12 +6,25 @@ export interface BuildRadarTimestampsOptions {
   pastSteps?: number
 }
 
+function normalizeStepMinutes(stepMinutes: number): number {
+  if (Number.isFinite(stepMinutes) && stepMinutes > 0) return stepMinutes
+  return RADAR_STEP_MINUTES
+}
+
+function normalizePastSteps(pastSteps: number): number {
+  if (!Number.isFinite(pastSteps)) return RADAR_PAST_STEPS
+  const floored = Math.floor(pastSteps)
+  if (floored < 0) return RADAR_PAST_STEPS
+  return floored
+}
+
 /** Quantize a timestamp down to the nearest radar frame boundary. */
 export function quantizeRadarTime(
   ms: number,
   stepMinutes: number = RADAR_STEP_MINUTES
 ): number {
-  const stepMs = stepMinutes * 60 * 1000
+  const safeStepMinutes = normalizeStepMinutes(stepMinutes)
+  const stepMs = safeStepMinutes * 60 * 1000
   return Math.floor(ms / stepMs) * stepMs
 }
 
@@ -19,8 +32,8 @@ export function quantizeRadarTime(
 export function buildRadarTimestamps(
   options: BuildRadarTimestampsOptions = {}
 ): number[] {
-  const stepMinutes = options.stepMinutes ?? RADAR_STEP_MINUTES
-  const pastSteps = options.pastSteps ?? RADAR_PAST_STEPS
+  const stepMinutes = normalizeStepMinutes(options.stepMinutes ?? RADAR_STEP_MINUTES)
+  const pastSteps = normalizePastSteps(options.pastSteps ?? RADAR_PAST_STEPS)
   const base = quantizeRadarTime(options.nowMs ?? Date.now(), stepMinutes)
   const stepMs = stepMinutes * 60 * 1000
   const times: number[] = []

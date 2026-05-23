@@ -67,6 +67,8 @@ interface NominatimResult {
     village?: string
     suburb?: string
     hamlet?: string
+    municipality?: string
+    county?: string
     state?: string
     country?: string
     country_code?: string
