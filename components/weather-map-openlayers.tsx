@@ -1,5 +1,5 @@
 'use client'
-// Build: v7 - Phase 1 radar modernization (MRMS proxy, RainViewer intl, live refresh)
+// Build: v7.1 - Phase 1 radar (Iowa NEXRAD US primary, RainViewer intl, live refresh)
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Layers, ChevronDown, Loader2, Info } from 'lucide-react'
@@ -10,16 +10,12 @@ import {
   CARTO_DARK_MATTER_URL,
   IOWA_NEXRAD_LAYER,
   IOWA_NEXRAD_WMS_URL,
-  MRMS_TILE_ERROR_FALLBACK_THRESHOLD,
-  MRMS_WMS_LAYER,
-  MRMS_WMS_PROXY_PATH,
   PRELOAD_FRAMES_AHEAD,
   RADAR_LEGEND,
   RADAR_REFRESH_MS,
   RAINVIEWER_MAPS_API,
   STORM_WATCH_FRAMES,
   TILE_TRANSITION_MS,
-  type UsRadarProvider,
 } from '@/lib/radar/radar-config'
 import {
   buildRadarTimestamps,
@@ -75,7 +71,6 @@ const WeatherMapOpenLayers = ({
 
   const [isMounted, setIsMounted] = useState(false)
   const [clockTick, setClockTick] = useState(0)
-  const [usProvider, setUsProvider] = useState<UsRadarProvider>('mrms')
   const [tileError, setTileError] = useState<string | null>(null)
   const [rainViewerData, setRainViewerData] = useState<RainViewerMapsResponse | null>(null)
   const [rainViewerLoading, setRainViewerLoading] = useState(false)
@@ -174,7 +169,6 @@ const WeatherMapOpenLayers = ({
   }, [activeTimestamps])
 
   useEffect(() => {
-    setUsProvider('mrms')
     setTileError(null)
     preloadCacheRef.current.clear()
   }, [latitude, longitude])
@@ -308,33 +302,30 @@ const WeatherMapOpenLayers = ({
             initialLoadComplete = true
             setRadarVisible(true)
           }
+          if (tileErrorCount > 0) {
+            tileErrorCount = 0
+            setTileError(null)
+          }
         }
       })
       source.on('tileloaderror', () => {
         loadingTileCount = Math.max(0, loadingTileCount - 1)
         if (loadingTileCount === 0) setIsLoading(false)
         tileErrorCount++
-        if (isUSLocation && usProvider === 'mrms' && tileErrorCount >= MRMS_TILE_ERROR_FALLBACK_THRESHOLD) {
-          setUsProvider('iowa-fallback')
-          setTileError('MRMS unavailable — showing NEXRAD fallback')
-        } else if (tileErrorCount >= 3) {
-          setTileError('Radar tiles temporarily unavailable — retrying…')
+        if (tileErrorCount >= 8) {
+          setTileError('Some radar tiles failed to load — try refreshing or zooming in.')
         }
       })
     }
 
     if (isUSLocation) {
-      const wmsUrl = usProvider === 'mrms' ? MRMS_WMS_PROXY_PATH : IOWA_NEXRAD_WMS_URL
-      const isMrms = usProvider === 'mrms'
-
       const radarSource = new TileWMS({
-        url: wmsUrl,
+        url: IOWA_NEXRAD_WMS_URL,
         params: {
-          LAYERS: isMrms ? MRMS_WMS_LAYER : IOWA_NEXRAD_LAYER,
+          LAYERS: IOWA_NEXRAD_LAYER,
           FORMAT: 'image/png',
           TRANSPARENT: 'true',
-          VERSION: isMrms ? '1.3.0' : '1.1.1',
-          ...(isMrms ? { CRS: 'EPSG:3857' } : {}),
+          VERSION: '1.1.1',
         },
         serverType: 'mapserver',
         transition: TILE_TRANSITION_MS,
@@ -397,7 +388,6 @@ const WeatherMapOpenLayers = ({
     isUSLocation,
     precipitationOn,
     hasRadarAnimation,
-    usProvider,
     rainViewerData,
     activeTimestamps.length,
     opacity,
@@ -436,7 +426,7 @@ const WeatherMapOpenLayers = ({
 
   useEffect(() => {
     preloadCacheRef.current.clear()
-  }, [latitude, longitude, usProvider])
+  }, [latitude, longitude])
 
   const preloadFrame = useCallback(
     (index: number) => {
@@ -459,17 +449,11 @@ const WeatherMapOpenLayers = ({
         }
       }
 
-      const isMrms = usProvider === 'mrms'
-      const baseUrl = isMrms ? MRMS_WMS_PROXY_PATH : IOWA_NEXRAD_WMS_URL
-      const layer = isMrms ? MRMS_WMS_LAYER : IOWA_NEXRAD_LAYER
-      const version = isMrms ? '1.3.0' : '1.1.1'
-      const crs = isMrms ? '&CRS=EPSG:3857' : '&SRS=EPSG:3857'
-
       const img = new Image()
       img.crossOrigin = 'anonymous'
-      img.src = `${baseUrl}?SERVICE=WMS&VERSION=${version}&REQUEST=GetMap&LAYERS=${layer}&TIME=${encodeURIComponent(timeISO)}&FORMAT=image/png&TRANSPARENT=true&WIDTH=256&HEIGHT=256${crs}&BBOX=${bbox}`
+      img.src = `${IOWA_NEXRAD_WMS_URL}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${IOWA_NEXRAD_LAYER}&TIME=${encodeURIComponent(timeISO)}&FORMAT=image/png&TRANSPARENT=true&WIDTH=256&HEIGHT=256&SRS=EPSG:3857&BBOX=${bbox}`
     },
-    [activeTimestamps, isUSLocation, usProvider]
+    [activeTimestamps, isUSLocation]
   )
 
   useEffect(() => {
@@ -542,9 +526,7 @@ const WeatherMapOpenLayers = ({
   }, [currentTime, clockTick, isLiveFrame, dataAgeMinutes])
 
   const providerLabel = isUSLocation
-    ? usProvider === 'mrms'
-      ? 'NOAA MRMS'
-      : 'NEXRAD FALLBACK'
+    ? 'NEXRAD'
     : rainViewerData
       ? 'RAINVIEWER'
       : 'RADAR'
@@ -672,7 +654,7 @@ const WeatherMapOpenLayers = ({
                 </div>
               )}
               <div className="px-3 py-2 border-t border-gray-600 text-[10px] text-gray-400 font-mono leading-snug">
-                US: NOAA MRMS via nowCOAST
+                US: Iowa State NEXRAD composite
                 <br />
                 Intl:{' '}
                 <a href="https://www.rainviewer.com/" className="text-cyan-400 underline" target="_blank" rel="noopener noreferrer">

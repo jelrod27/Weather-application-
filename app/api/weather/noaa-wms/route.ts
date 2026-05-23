@@ -4,7 +4,10 @@ import { tileProxyOriginHeaders } from '@/lib/services/tile-proxy-cors'
 
 export const runtime = 'nodejs'
 
-// Proxy NOAA MRMS WMS tiles to bypass CORS restrictions
+// Proxy NOAA MRMS WMS tiles to bypass CORS restrictions.
+// NOTE (2026-05): upstream nowCOAST endpoint returns CloudFront 403 for server
+// and browser fetches. US radar uses Iowa IEM direct until mapservices MRMS WMS
+// is validated. Tile proxy also shares the 30 req/5min burst rate limit.
 // GET /api/weather/noaa-wms?REQUEST=GetMap&SERVICE=WMS&...
 export async function GET(request: NextRequest) {
   try {

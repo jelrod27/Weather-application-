@@ -9,21 +9,21 @@ export const STORM_WATCH_FRAMES = (STORM_WATCH_HOURS * 60) / RADAR_STEP_MINUTES
 export const TILE_TRANSITION_MS = 500
 export const BASE_ANIMATION_INTERVAL_MS = 500
 export const PRELOAD_FRAMES_AHEAD = 3
-export const MRMS_TILE_ERROR_FALLBACK_THRESHOLD = 5
 
-export const MRMS_WMS_PROXY_PATH = '/api/weather/noaa-wms'
-export const MRMS_WMS_LAYER = '1'
-
+/** US primary: Iowa IEM NEXRAD WMS-T (direct browser fetch; CSP-allowed). */
 export const IOWA_NEXRAD_WMS_URL =
   'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q-t.cgi'
 export const IOWA_NEXRAD_LAYER = 'nexrad-n0q-wmst'
+
+/** Deferred: nowCOAST MRMS WMS returns CloudFront 403; proxy also hits tile rate limits. */
+export const MRMS_WMS_PROXY_PATH = '/api/weather/noaa-wms'
+export const MRMS_WMS_LAYER = '1'
 
 export const RAINVIEWER_MAPS_API = '/api/weather/rainviewer/maps'
 
 export const CARTO_DARK_MATTER_URL =
   'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
 
-export type UsRadarProvider = 'mrms' | 'iowa-fallback'
 export type RadarRegion = 'us' | 'international' | 'unavailable'
 
 export const RADAR_LEGEND = [

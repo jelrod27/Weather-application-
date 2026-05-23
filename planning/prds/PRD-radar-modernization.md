@@ -135,12 +135,20 @@ flowchart TB
 - When user is on live frame, **auto-advance** to new latest after refresh
 - Display **"Updated Xm ago"** based on latest frame time vs `Date.now()`
 
-### 7.2 US provider switch
+### 7.2 US provider (revised after preview testing)
 
-- Point WMS `TileWMS` at `/api/weather/noaa-wms`
-- Params: `LAYERS=1`, `VERSION=1.3.0`, `CRS=EPSG:3857`, `TIME` animation
-- After **5 consecutive tile errors**, fall back to Iowa `n0q-t.cgi` for session
-- Badge: `MRMS` or `NEXRAD (fallback)`
+**Original plan:** MRMS via `/api/weather/noaa-wms` with Iowa fallback.
+
+**Preview regression (2026-05-23):** MRMS path degraded UX vs pre-Phase-1 Iowa direct.
+
+| Finding | Detail |
+|---------|--------|
+| nowCOAST MRMS WMS | Returns **HTTP 403** (CloudFront) — upstream unavailable |
+| Tile proxy rate limit | **30 requests / 5 min burst** — one zoomed-out view exhausts limit → 429 → tile errors |
+| Fallback behavior | Swapping providers mid-session **recreated the radar layer** → flash, blue/cyan artifact, broken zoom |
+| Iowa IEM direct | **HTTP 200**, CORS allowed in CSP, no app rate limit — pre-Phase-1 behavior |
+
+**Shipped fix:** US radar uses **Iowa IEM `n0q-t.cgi` direct** (same as pre-Phase-1). MRMS proxy kept in repo for future mapservices.noaa.gov migration. No automatic provider swap.
 
 ### 7.3 International RainViewer
 
