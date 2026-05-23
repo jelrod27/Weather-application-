@@ -17,6 +17,12 @@ Thumbs.db
 npm-debug.log*
 /logs/
 
+# Local agent workspace state
+.hermes/
+
+# Generated security scan outputs
+security-reports/
+
 # Build
 dist/
 .next/

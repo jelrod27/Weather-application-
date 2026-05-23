@@ -1,150 +1,71 @@
 # Agent Guidelines for 16-Bit Weather
 
-This document provides guidelines for AI agents working on the 16-Bit Weather codebase.
+This is the model-facing entrypoint for Hermes, ChatGPT, Codex, Claude, and other AI coding agents working in this repository.
 
-## Project Overview
+Before making code changes, read and follow `./CODING.md`. Treat `CODING.md` as the durable engineering handbook for architecture, commands, style, tests, security, and PR workflow.
 
-Retro-styled weather education platform built with Next.js 16 (App Router) and React 19. Features real-time weather data, pixel-influenced UI, educational content, interactive games, global weather tracking, tool-backed AI assistance, and Supabase-backed user AI memory.
+## Project Snapshot
 
-**Product specs (PRDs):** `planning/prds/` — start at [`planning/prds/README.md`](planning/prds/README.md).
+16-Bit Weather is a retro-styled weather education platform built with Next.js 16 App Router and React 19. It includes real-time weather data, educational content, interactive games, global weather tracking, tool-backed AI assistance, and Supabase-backed user AI memory.
 
-## Build/Test/Lint Commands
+Product specs live in `planning/prds/`. Start with `planning/prds/README.md` for product-level changes.
+
+## Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript strict mode
+- Tailwind CSS v4
+- Supabase
+- Open-Meteo weather data
+- Jest unit tests
+- Playwright E2E tests
+- Lighthouse CI performance validation
+- Vercel-oriented deployment
+
+## Dev Environment Tips
+
+- Use `npm` commands in this repo; do not switch package managers.
+- Use `rg` for code search when shell access is available.
+- Read relevant files before editing and prefer existing utilities in `lib/`.
+- For product-level changes, check `planning/prds/README.md` first.
+- Keep `CODING.md` as the source of truth for detailed engineering rules.
+
+## Testing Instructions
 
 ```bash
-# Development
-npm run dev              # Start dev server (localhost:3000)
-npm run build            # Production build
-npm run start            # Start production server
-
-# Testing
-npm test                 # Run all Jest unit tests
-npm test -- weather-utils.test.ts      # Run single test file
-npm test -- --testNamePattern="should convert 0°C to 32°F"  # Run single test
-npm run test:watch       # Jest in watch mode
-npm run test:ci          # Jest for CI (sequential)
-npx playwright test      # Run all E2E tests
-npx playwright test tests/e2e/weather-app.spec.ts  # Run single E2E file
-npx playwright test --project=chromium  # Single browser
-
-# Linting
-npm run lint             # ESLint
-
-# PR Validation (runs automatically on push via git hook)
-npm run validate:pr      # Build + Playwright tests + Lighthouse CI
-npm run lighthouse       # Run Lighthouse CI manually
+npm run dev
+npm run build
+npm run lint
+npm test
+npx playwright test
+npm run validate:pr
 ```
 
-## Pre-Push Git Hook
+Use targeted commands first, then broaden validation when changing shared behavior.
 
-A pre-push hook is configured to run automatically before every `git push`:
+## PR Instructions
 
-1. **Playwright E2E tests** - Must pass (Chromium browser)
-2. **Lighthouse CI** - Performance score must be >= 85
+- Use `gh` for GitHub workflow tasks when requested.
+- Before opening a PR, summarize what changed, why it changed, tests run, and known risks.
+- Do not push, open PRs, bypass hooks, delete files, or reset git state unless explicitly asked.
+- The pre-push hook runs Playwright, production build, and Lighthouse CI.
 
-The hook will:
-- Start dev server if not running
-- Run all E2E tests
-- Build production version
-- Run Lighthouse CI with assertions
-- Block push if any check fails
+## Agent Operating Rules
 
-**To bypass (not recommended):**
-```bash
-git push --no-verify
-```
+- Preserve unrelated user changes. Do not revert files you did not intentionally edit.
+- Keep changes scoped to the requested task.
+- Prefer existing patterns, utilities, and folder structure.
+- Read relevant files before editing.
+- Update or add tests when behavior changes.
+- Never commit secrets, `.env.local`, API keys, or tokens.
+- When using GitHub workflows, use `gh` and report the important result.
 
-**Configuration files:**
-- `.git/hooks/pre-push` - The hook script
-- `lighthouserc.js` - Lighthouse CI configuration
+## Required Closeout
 
-## Code Style Guidelines
+When finished, report:
 
-### TypeScript & Types
-- Use TypeScript strict mode (configured in tsconfig.json)
-- Define explicit return types for exported functions
-- Use interfaces for object shapes, types for unions/complex types
-- Prefer `type` imports: `import type { MyType } from './types'`
-
-### Naming Conventions
-- **Components**: PascalCase (e.g., `WeatherCard.tsx`)
-- **Functions/Variables**: camelCase (e.g., `fetchWeatherData`)
-- **Constants**: UPPER_SNAKE_CASE for true constants
-- **Types/Interfaces**: PascalCase with descriptive names
-- **Files**: kebab-case for utilities (e.g., `weather-utils.ts`)
-
-### Imports Order
-1. React imports
-2. Next.js imports
-3. Third-party libraries
-4. Absolute imports (`@/lib/`, `@/components/`)
-5. Relative imports (siblings)
-6. Type-only imports last
-
-### Component Patterns
-- Server Components by default (Next.js App Router)
-- Add `'use client'` only when needed (hooks, browser APIs, event handlers)
-- Use React.forwardRef for components that accept refs
-- Props interfaces named `{ComponentName}Props`
-
-### Error Handling
-- Use try/catch for async operations
-- Use the `error-utils.ts` utilities for consistent error handling
-- Never expose API keys to client (keep server-side in `app/api/`)
-- Log errors with context: `console.error('[context]', error)`
-
-### Styling (Tailwind)
-- Use Tailwind CSS v4 with CSS custom properties for theming
-- Use the `cn()` utility from `@/lib/utils` for conditional classes
-- Use theme variables: `var(--bg)`, `var(--text)`, `var(--primary)`
-- Mobile-first responsive design
-
-### Form Handling
-- Use React Hook Form for form state management
-- Use Zod for form validation
-- Use Sonner (`toast()`) for user notifications
-
-### Testing Patterns
-- Unit tests in `__tests__/` directory with `.test.ts` suffix
-- E2E tests in `tests/e2e/` with `.spec.ts` suffix
-- Use descriptive test names: `it('should convert 0°C to 32°F')`
-- Group related tests with `describe()` blocks
-
-### API Routes
-- Place in `app/api/[route]/route.ts`
-- Keep API keys server-side (never use `NEXT_PUBLIC_` prefix for sensitive keys)
-- Use NextRequest/NextResponse from `next/server`
-- Return JSON with consistent error format: `{ error: string }`
-
-### Security
-- Never commit `.env.local` or API keys
-- Use Row-Level Security (RLS) for Supabase queries
-- Validate user input with Zod schemas
-- Use parameterized queries for database operations
-
-## Architecture Quick Reference
-
-- **app/**: Next.js App Router routes
-- **components/**: React components (ui/ for shadcn primitives)
-- **lib/**: Business logic, utilities, API clients
-- **hooks/**: Custom React hooks (useAIChat, useWeatherController)
-- **__tests__/**: Unit tests
-- **tests/e2e/**: Playwright E2E tests
-
-## Environment Setup
-
-Required in `.env.local`:
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-OPENWEATHER_API_KEY=
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-```
-
-## When Making Changes
-
-1. Run `npm run lint` before committing
-2. Run relevant tests: `npm test -- filename.test.ts`
-3. For UI changes, test with `npm run dev`
-4. Update tests when changing functionality
-5. Follow existing file structure and naming patterns
-6. Use existing utilities from `lib/utils.ts` and `lib/error-utils.ts`
+- files changed
+- tests or checks run
+- any tests not run and why
+- risks or follow-ups that matter
