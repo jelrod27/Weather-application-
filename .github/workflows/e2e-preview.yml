@@ -51,30 +51,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify Kernel SDK installed
-        run: |
-          if ! npm ls @onkernel/sdk > /dev/null 2>&1; then
-            echo "❌ @onkernel/sdk not found in dependencies"
-            exit 1
-          fi
-          echo "✅ @onkernel/sdk installed"
-
-      - name: Verify KERNEL_API_KEY is set
-        run: |
-          if [ -z "${{ secrets.KERNEL_API_KEY }}" ]; then
-            echo "❌ KERNEL_API_KEY secret is not set"
-            echo "   Please add it to repository Settings > Secrets > Actions"
-            exit 1
-          fi
-          echo "✅ KERNEL_API_KEY is configured"
-
-      # Note: No 'npx playwright install' - Kernel provides cloud browsers
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests against Vercel preview
-        run: npm run test:e2e:ci
+        run: npx playwright test --project=chromium --reporter=github,html
         env:
           CI: true
-          KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
           PLAYWRIGHT_TEST_BASE_URL: ${{ env.PREVIEW_URL }}
           PLAYWRIGHT_TEST_MODE: 'true'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}

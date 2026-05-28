@@ -10,15 +10,17 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 /**
  * Hybrid Playwright configuration:
  *
- * LOCAL (pre-commit): No KERNEL_API_KEY
+ * LOCAL (pre-commit): No PLAYWRIGHT_TEST_BASE_URL
  * - Uses local Chromium/Firefox browsers
- * - Tests against localhost:3000
+ * - Tests against localhost:3000 (auto-starts dev server)
  * - Requires: npx playwright install
  *
- * CI (Vercel preview): KERNEL_API_KEY + PLAYWRIGHT_TEST_BASE_URL set
- * - Uses Kernel cloud browsers via CDP
- * - Tests against Vercel preview URL
- * - No local browser install needed
+ * CI (Vercel preview): PLAYWRIGHT_TEST_BASE_URL set to preview URL
+ * - Uses local Chromium on the GitHub runner
+ * - Tests against the deployed Vercel preview URL
+ *
+ * Optional Kernel mode: KERNEL_API_KEY set (legacy / opt-in)
+ * - Uses OnKernel cloud browsers via CDP instead of local install
  */
 
 const useKernelBrowsers = !!process.env.KERNEL_API_KEY;
