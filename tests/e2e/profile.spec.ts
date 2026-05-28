@@ -1,12 +1,11 @@
 import { test, expect } from './fixtures';
-import { setupStableApp, setupMockAuth, stubSupabaseProfile, stubProfileUpdate, navigateToProfile, fillProfileForm, saveProfile } from '../fixtures/utils';
+import { setupStableApp, setupMockAuth, stubSupabaseProfile, stubProfileUpdate, navigateToProfile, fillProfileForm, saveProfile, isRemotePreviewTarget } from '../fixtures/utils';
 
-// Skip profile tests in Preview/CI mode - auth mocking doesn't work with Kernel cloud browsers
-// The server-side middleware redirects to login before client-side mocking can take effect
-const useKernelBrowsers = !!process.env.KERNEL_API_KEY;
+// Skip profile tests against deployed previews — server-side auth runs before client mocks apply
+const skipAuthTests = isRemotePreviewTarget();
 
 test.describe('Profile Settings', () => {
-  test.skip(useKernelBrowsers, 'Auth mocking not supported in Kernel cloud browsers');
+  test.skip(skipAuthTests, 'Auth mocking not supported against deployed preview URLs');
 
   test.beforeEach(async ({ page }) => {
     await setupStableApp(page);
