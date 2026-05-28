@@ -1,8 +1,7 @@
 import { test, expect } from './fixtures';
-import { setupStableApp, setupMockAuth, stubSupabaseProfile, setTheme, getCurrentTheme, navigateToProfile, navigateToMapPage, waitForRadarToLoad, checkRadarVisibility } from '../fixtures/utils';
+import { setupStableApp, setupMockAuth, stubSupabaseProfile, setTheme, getCurrentTheme, navigateToProfile, navigateToMapPage, waitForRadarToLoad, checkRadarVisibility, isRemotePreviewTarget } from '../fixtures/utils';
 
-// Check if running in Kernel cloud browsers (Preview/CI mode)
-const useKernelBrowsers = !!process.env.KERNEL_API_KEY;
+const skipAuthTests = isRemotePreviewTarget();
 
 test.describe('Theme System', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,7 +10,7 @@ test.describe('Theme System', () => {
 
   // Skip this test in Preview/CI - auth mocking doesn't work with Kernel cloud browsers
   test('can change theme via profile page', async ({ page }) => {
-    test.skip(useKernelBrowsers, 'Auth mocking not supported in Kernel cloud browsers');
+    test.skip(skipAuthTests, 'Auth mocking not supported against deployed preview URLs');
 
     await setupMockAuth(page);
     await stubSupabaseProfile(page, {
@@ -142,7 +141,7 @@ test.describe('Theme System', () => {
     // the kind of flakiness we're stamping out here. Seed mock auth so
     // ThemeProvider sees an authenticated user and leaves the premium
     // theme alone.
-    test.skip(useKernelBrowsers, 'Auth mocking not supported in Kernel cloud browsers');
+    test.skip(skipAuthTests, 'Auth mocking not supported against deployed preview URLs');
 
     await setupMockAuth(page);
     await stubSupabaseProfile(page, {

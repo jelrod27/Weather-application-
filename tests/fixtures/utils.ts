@@ -1,5 +1,18 @@
 import { Page, expect } from '@playwright/test';
 
+/** True when E2E targets a deployed preview/prod URL (not localhost). */
+export function isRemotePreviewTarget(): boolean {
+  const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL;
+  if (!baseUrl) return false;
+
+  try {
+    const { hostname } = new URL(baseUrl);
+    return hostname !== '127.0.0.1' && hostname !== 'localhost';
+  } catch {
+    return false;
+  }
+}
+
 type StubOptions = {
   cityName?: string;
   country?: string;
