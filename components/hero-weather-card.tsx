@@ -81,7 +81,7 @@ export function HeroWeatherCard({
 
             <p
               data-testid="temperature-value"
-              className="text-6xl sm:text-8xl font-bold tabular-nums tracking-tight font-mono leading-none text-foreground"
+              className="text-6xl sm:text-8xl font-bold tabular-nums tracking-tight font-mono leading-none text-foreground glow-hero"
               style={{ fontSize: "clamp(56px, 11vw, 104px)" }}
             >
               {displayTemp ?? 'N/A'}
