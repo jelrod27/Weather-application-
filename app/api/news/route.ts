@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sanitizeLogValue } from "@/lib/sanitize-log";
+import { tileProxyOriginHeaders } from "@/lib/services/tile-proxy-cors";
 
 // Cache configuration - Increased to reduce API calls
 const CACHE_DURATION = 15 * 60; // 15 minutes
@@ -106,15 +107,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse query parameters
+    // Parse query parameters.
+    // SECURITY: every value below is concatenated into the upstream NewsAPI URL.
+    // searchParams.get() returns a URL-decoded string, so any value that is not
+    // strictly validated/encoded here would allow HTTP parameter injection
+    // (e.g. country=us%26apiKey%3D... splicing extra query params into the
+    // upstream request). Allowlist enums, clamp numerics, encode free text.
     const { searchParams } = new URL(request.url);
-    const endpoint = searchParams.get('endpoint') || 'top-headlines';
-    const category = searchParams.get('category') || '';
+
+    const ALLOWED_ENDPOINTS = ['top-headlines', 'everything'] as const;
+    const ALLOWED_CATEGORIES = ['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'] as const;
+    const ISO2_RE = /^[a-z]{2}$/i;
+
+    const endpointParam = searchParams.get('endpoint') || 'top-headlines';
+    const endpoint = (ALLOWED_ENDPOINTS as readonly string[]).includes(endpointParam)
+      ? endpointParam
+      : 'top-headlines';
+
+    const categoryParam = searchParams.get('category') || '';
+    const category = (ALLOWED_CATEGORIES as readonly string[]).includes(categoryParam)
+      ? categoryParam
+      : '';
+
     const q = searchParams.get('q') || '';
-    const country = searchParams.get('country') || 'us';
+
+    const countryParam = searchParams.get('country') || 'us';
+    const country = ISO2_RE.test(countryParam) ? countryParam.toLowerCase() : 'us';
+
     const domains = searchParams.get('domains') || '';
-    const language = searchParams.get('language') || 'en';
-    const pageSize = searchParams.get('pageSize') || '10';
+
+    const languageParam = searchParams.get('language') || 'en';
+    const language = ISO2_RE.test(languageParam) ? languageParam.toLowerCase() : 'en';
+
+    const pageSizeParam = parseInt(searchParams.get('pageSize') || '10', 10);
+    const pageSize = String(Math.max(1, Math.min(Number.isFinite(pageSizeParam) ? pageSizeParam : 10, 100)));
 
     // Check if API key is configured
     if (!NEWS_API_KEY || NEWS_API_KEY === 'your_actual_news_api_key_here') {
@@ -274,14 +300,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// CORS preflight
-export async function OPTIONS(_request: NextRequest) {
+// CORS preflight — restricted to the app origin + *.vercel.app preview deploys
+// (was previously '*', letting any site use this as a free news proxy).
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      ...tileProxyOriginHeaders(request),
       'Access-Control-Max-Age': '86400',
     },
   });

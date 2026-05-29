@@ -143,6 +143,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request)
+    if (!rateLimit.allowed) return rateLimit.response
+
     // Get auth header from request
     const authHeader = request.headers.get('authorization')
 

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aggregateNews, getFeaturedStory, AggregatedNewsOptions } from '@/lib/services/newsAggregator';
 import type { NewsCategory, NewsPriority, NewsSource } from '@/lib/types/news';
+import { tileProxyOriginHeaders } from '@/lib/services/tile-proxy-cors';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60; // 5 minutes in seconds
@@ -128,14 +129,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// CORS preflight
-export async function OPTIONS(_request: NextRequest) {
+// CORS preflight — restricted to the app origin + *.vercel.app preview deploys
+// (was previously '*', letting any site use this as a free news proxy).
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      ...tileProxyOriginHeaders(request),
       'Access-Control-Max-Age': '86400',
     },
   });
