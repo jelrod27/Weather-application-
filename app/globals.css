@@ -614,6 +614,35 @@ input:focus-visible,
 }
 
 /* ═══════════════════════════════════════════════════════════
+   DAYBREAK — light-theme signatures
+   Unlayered on purpose: these must beat the layered
+   .weather-card-gradient / .glow-hero defaults regardless of
+   specificity, and only apply under the daybreak theme.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Horizon gradient on the hero card: a cool sky up top warming down to a
+   sunrise peach at the bottom edge. This is Daybreak's "thing you remember"
+   — the light-mode answer to the glow the dark themes get for free. Tints
+   are kept pale so the temperature and condition text stay legible. */
+[data-theme="daybreak"] .hero-weather-card {
+  background: linear-gradient(
+    160deg,
+    hsl(205 75% 93%) 0%,
+    hsl(42 72% 95%) 46%,
+    hsl(28 88% 88%) 100%
+  );
+}
+
+/* Sun-embossed hero number instead of a muddy blue halo: a crisp white top
+   highlight plus a warm amber cast below, as if the digits were lit by
+   low morning sun. Reads as depth on a light surface where neon glow can't. */
+[data-theme="daybreak"] .glow-hero {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 10px rgba(190, 95, 25, 0.30);
+}
+
+/* ═══════════════════════════════════════════════════════════
    RADAR/MAP EXCLUSIONS
    These elements should not inherit theme text/border colors
    ═══════════════════════════════════════════════════════════ */

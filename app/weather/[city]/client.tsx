@@ -208,7 +208,7 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
       weatherTemperature={weather?.temperature}
       weatherUnit={weather?.unit}
     >
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-weather-bg">
+      <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="xl" padding="md">
 
           {/* Weather Search Component */}

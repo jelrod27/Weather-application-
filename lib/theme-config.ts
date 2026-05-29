@@ -26,7 +26,7 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
     name: 'daybreak',
     displayName: 'Daybreak',
     isPremium: false,
-    description: 'Clear-sky light theme with a warm sunrise accent'
+    description: 'Warm dawn light theme with a sunrise horizon'
   },
   // Premium themes - only for registered users
   synthwave84: {
