@@ -107,13 +107,6 @@ export function getPostBySlug(slug: string): BlogPost | null {
   return posts.find(p => p.slug === slug) || null
 }
 
-export function getAllTags(): string[] {
-  const posts = getAllPosts()
-  const tagSet = new Set<string>()
-  posts.forEach(p => p.tags.forEach(t => tagSet.add(t)))
-  return Array.from(tagSet).sort()
-}
-
 /** Categories that have at least one published post, in canonical order. */
 export function getCategoriesInUse(): BlogCategory[] {
   const used = new Set(getAllPosts().flatMap(p => getPostCategoryIds(p.tags)))

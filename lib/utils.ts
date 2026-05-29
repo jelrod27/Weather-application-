@@ -47,44 +47,6 @@ export const APP_CONSTANTS = {
   }
 } as const
 
-// Safe localStorage access with error handling
-export const safeLocalStorage = {
-  get: (key: string): string | null => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return localStorage.getItem(key)
-      }
-    } catch (error) {
-      console.warn(`Failed to get localStorage key "${key}":`, error)
-    }
-    return null
-  },
-
-  set: (key: string, value: string): boolean => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(key, value)
-        return true
-      }
-    } catch (error) {
-      console.warn(`Failed to set localStorage key "${key}":`, error)
-    }
-    return false
-  },
-
-  remove: (key: string): boolean => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.removeItem(key)
-        return true
-      }
-    } catch (error) {
-      console.warn(`Failed to remove localStorage key "${key}":`, error)
-    }
-    return false
-  }
-}
-
 // Validation utilities
 const validation = {
   isValidEmail: (email: string): boolean => {
