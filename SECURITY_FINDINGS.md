@@ -3,7 +3,11 @@
 Date: 2026-05-29
 Scope: Full codebase at `/Users/justinelrod/Projects/Weather-application`
 Stack: Next.js 16 (App Router), React 19, Supabase (Postgres + Auth), OpenLayers, Vercel
-Method: 8-phase grounded sweep. Detection and triage only - no fixes applied.
+Method: 8-phase grounded sweep.
+Document state: remediated branch snapshot. The original pass was detection and
+triage only; fixes were subsequently applied on branch
+`security/sweep-fixes-2026-05` (see "Remediation status" near the end for the
+authoritative per-finding state, with commit/verification details).
 
 ## Executive summary
 
@@ -68,7 +72,7 @@ be the highest-value target in this app.
 - Confidence: confirmed
 - Location: `middleware.ts:14-38` (script-src at 16-17)
 - Evidence:
-  ```
+  ```text
   script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com https://va.vercel-scripts.com
   ```
 - Impact: `'unsafe-inline'` permits arbitrary inline `<script>` execution, which
@@ -373,13 +377,17 @@ Code fixes applied in this branch (tsc + eslint + affected unit tests pass):
 | SEC-009 | FIXED | `lib/stargazer/seven-timer.ts` switched to `https://` (HTTPS support verified). |
 | BUG-001 | FIXED | `lib/weather/weather-forecast.ts` - `item.weather[0]` accesses now optional-chained with fallbacks. |
 
-DB migrations written but NOT yet applied to the live project (apply via your normal Supabase migration flow, or ask and I will apply via MCP):
+DB migrations: written AND applied to the live project via the Supabase MCP on
+2026-05-29 (verified post-apply: `weather_cache` has 0 policies,
+`handle_new_user` EXECUTE is false for anon and authenticated, core user tables
+retain 8 owner-scoped policies). Files are committed in the branch and the
+remote migration history reflects the apply.
 
 | ID | Status | File |
 |----|--------|------|
-| SEC-006 | MIGRATION WRITTEN | `supabase/migrations/20260529_security_sweep_hardening.sql` (drops the `USING(true)` weather_cache policy) |
-| SEC-007 | MIGRATION WRITTEN | same file (revokes EXECUTE on `handle_new_user()` from anon/authenticated) |
-| SEC-011 | MIGRATION WRITTEN | `supabase/migrations/20260529_baseline_user_tables_rls.sql` (version-controls current RLS posture; faithful no-op capture) |
+| SEC-006 | APPLIED VIA MCP (verified 2026-05-29) | `supabase/migrations/20260529_security_sweep_hardening.sql` (drops the `USING(true)` weather_cache policy) |
+| SEC-007 | APPLIED VIA MCP (verified 2026-05-29) | same file (revokes EXECUTE on `handle_new_user()` from anon/authenticated) |
+| SEC-011 | APPLIED VIA MCP (verified 2026-05-29) | `supabase/migrations/20260529_baseline_user_tables_rls.sql` (version-controls current RLS posture; faithful no-op capture) |
 
 Requires action outside this repo (cannot be fixed in code):
 
