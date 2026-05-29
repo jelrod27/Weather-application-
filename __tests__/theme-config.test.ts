@@ -14,12 +14,12 @@ import {
 
 describe('Theme Configuration', () => {
   describe('THEME_DEFINITIONS', () => {
-    it('should have exactly 5 themes', () => {
-      expect(Object.keys(THEME_DEFINITIONS)).toHaveLength(5);
+    it('should have exactly 6 themes', () => {
+      expect(Object.keys(THEME_DEFINITIONS)).toHaveLength(6);
     });
 
     it('should contain all expected themes', () => {
-      const expectedThemes = ['nord', 'synthwave84', 'dracula', 'cyberpunk', 'matrix'];
+      const expectedThemes = ['nord', 'daybreak', 'synthwave84', 'dracula', 'cyberpunk', 'matrix'];
       expectedThemes.forEach(theme => {
         expect(THEME_DEFINITIONS).toHaveProperty(theme);
       });
@@ -37,7 +37,7 @@ describe('Theme Configuration', () => {
   describe('THEME_LIST', () => {
     it('should be an array of theme names', () => {
       expect(Array.isArray(THEME_LIST)).toBe(true);
-      expect(THEME_LIST).toHaveLength(5);
+      expect(THEME_LIST).toHaveLength(6);
     });
 
     it('should contain valid theme types', () => {
@@ -54,8 +54,9 @@ describe('Theme Configuration', () => {
       });
     });
 
-    it('should include nord', () => {
+    it('should include nord and daybreak', () => {
       expect(FREE_THEMES).toContain('nord');
+      expect(FREE_THEMES).toContain('daybreak');
     });
   });
 

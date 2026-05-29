@@ -109,8 +109,16 @@ body {
     text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
   }
 
+  /* Heading glow — kept tight + alpha'd so text stays legible. The triple-
+     layer marquee glow is reserved for one hero element (see .glow-hero). */
   .glow {
-    text-shadow: 0 0 8px hsl(var(--primary)), 0 0 16px hsl(var(--primary)), 0 0 24px hsl(var(--primary));
+    text-shadow: 0 0 4px hsl(var(--primary) / 0.7), 0 0 12px hsl(var(--primary) / 0.35);
+  }
+
+  /* Hero glow — the loudest text glow in the app. Use sparingly: the single
+     marquee number per view (e.g. the current temperature), nothing else. */
+  .glow-hero {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.55), 0 0 26px hsl(var(--primary) / 0.30);
   }
 
   .pixel-shadow {
@@ -339,33 +347,14 @@ body {
      Philosophy: The glow does the work, borders are near-invisible
      ═══════════════════════════════════════════════════════════ */
 
-  /* OUTER CONTAINER - subtle glow + hairline border (10% opacity) */
-  .container-outer {
-    background: rgba(var(--theme-bg-rgb), 0.8);
-    border: 1px solid var(--border-invisible);
-    box-shadow: var(--glow-container);
-    border-radius: var(--radius);
-  }
-
-  /* INNER CARD - background tint ONLY, NO border */
-  .card-inner {
-    background: var(--card-bg-tint);
-    border: none;
-    border-radius: var(--radius);
-    transition: background 0.2s ease;
-  }
-
-  .card-inner:hover {
-    background: var(--card-bg-hover);
-  }
-
-  /* METRIC/DATA elements - transparent, no border */
-  .metric-element {
-    background: transparent;
-    border: none;
-  }
-
-  /* Legacy support - primary container (outer) */
+  /* Two canonical surface tiers — everything is one of these:
+       .surface  → an outer panel  (hairline border + ambient glow)
+       .inset    → a nested element (background tint only, no border)
+     The older names (.container-outer / .container-primary and
+     .card-inner / .container-nested) are kept as aliases on the same rule
+     so existing markup keeps working — prefer .surface / .inset in new code. */
+  .surface,
+  .container-outer,
   .container-primary {
     background: rgba(var(--theme-bg-rgb), 0.8);
     border: 1px solid var(--border-invisible);
@@ -373,7 +362,8 @@ body {
     border-radius: var(--radius);
   }
 
-  /* Legacy support - nested elements (inner cards) */
+  .inset,
+  .card-inner,
   .container-nested {
     background: var(--card-bg-tint);
     border: none;
@@ -381,8 +371,16 @@ body {
     transition: background 0.2s ease;
   }
 
+  .inset:hover,
+  .card-inner:hover,
   .container-nested:hover {
     background: var(--card-bg-hover);
+  }
+
+  /* METRIC/DATA elements - transparent, no border */
+  .metric-element {
+    background: transparent;
+    border: none;
   }
 
   /* Interactive glow on hover/focus */
@@ -488,16 +486,18 @@ body {
     background-color: hsl(var(--destructive));
   }
 
-  /* Weather metric card glow (moderately louder Nord) */
+  /* Weather metric card glow — demoted to a quiet ambient halo at rest so
+     it doesn't compete with the hero temperature; the brighter glow is the
+     hover affordance, signalling interactivity rather than shouting at idle. */
   .weather-metric-glow {
-    box-shadow: 0 0 12px rgba(var(--theme-accent-rgb), 0.20),
-                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.08);
+    box-shadow: 0 0 12px rgba(var(--theme-accent-rgb), 0.10),
+                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.05);
     transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
   }
 
   .weather-metric-glow:hover {
-    box-shadow: 0 0 18px rgba(var(--theme-accent-rgb), 0.30),
-                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.12);
+    box-shadow: 0 0 16px rgba(var(--theme-accent-rgb), 0.16),
+                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.08);
   }
 
   /* Subtle gradient for card backgrounds */

@@ -5,7 +5,7 @@
  * Colors are defined in globals.css as CSS custom properties
  */
 
-export type ThemeType = 'nord' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
+export type ThemeType = 'nord' | 'daybreak' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
 
 export interface ThemeDefinition {
   name: ThemeType;
@@ -21,6 +21,12 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
     displayName: 'Nord',
     isPremium: false,
     description: 'Arctic, north-bluish color palette'
+  },
+  daybreak: {
+    name: 'daybreak',
+    displayName: 'Daybreak',
+    isPremium: false,
+    description: 'Clear-sky light theme with a warm sunrise accent'
   },
   // Premium themes - only for registered users
   synthwave84: {

@@ -66,7 +66,67 @@
     --font-body: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
   }
 
-  /* 
+  /*
+   * THEME: DAYBREAK (Light) — free
+   * The one daytime/light theme: clear-sky blues + a warm sunrise accent.
+   * Glow is retuned for a light surface — neon halos read as mud on white,
+   * so "glow" tokens become soft ambient/elevation shadows instead, and
+   * hairline borders use ink (slate) alpha rather than the accent.
+   */
+  [data-theme="daybreak"] {
+    --background: 210 40% 97%;
+    --foreground: 215 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 205 90% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 205 55% 90%;
+    --secondary-foreground: 215 28% 17%;
+    --muted: 210 24% 93%;
+    --muted-foreground: 215 16% 38%;
+    --accent: 32 95% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 84%;
+    --input: 214 20% 84%;
+    --ring: 205 90% 42%;
+    --radius: 0.5rem;
+
+    --bg: hsl(210 40% 97%);
+    --bg-elev: hsl(0 0% 100%);
+    --text: hsl(215 28% 17%);
+    --text-muted: hsl(215 16% 38%);
+    --weather-primary: hsl(205 90% 42%);
+    --weather-accent: hsl(32 95% 50%);
+
+    /* Accent rgb = the sky-blue primary; bg rgb = the off-white page. */
+    --theme-accent-rgb: 11, 122, 196;
+    --theme-bg-rgb: 244, 248, 251;
+
+    /* Borders: ink-on-light hairlines for structure; accent only on interaction. */
+    --border-invisible: rgba(15, 23, 42, 0.08);
+    --border-subtle: rgba(15, 23, 42, 0.12);
+    --border-hover: rgba(var(--theme-accent-rgb), 0.35);
+    --border-focus: rgba(var(--theme-accent-rgb), 0.45);
+
+    /* "Glow" => elevation. Soft drop shadows give lift on a light surface. */
+    --glow-container: 0 1px 3px rgba(15, 23, 42, 0.08), 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+    --glow-hover: 0 0 0 1px rgba(var(--theme-accent-rgb), 0.25);
+    --glow-focus: 0 0 0 2px rgba(var(--theme-accent-rgb), 0.40);
+    --glow-subtle: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --glow-medium: 0 4px 12px -6px rgba(15, 23, 42, 0.15);
+    --glow-strong: 0 8px 24px -10px rgba(15, 23, 42, 0.22);
+    --card-bg-tint: rgba(15, 23, 42, 0.03);
+    --card-bg-hover: rgba(15, 23, 42, 0.05);
+
+    --theme-font: var(--font-inconsolata), 'Inconsolata', monospace;
+    --font-body: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /*
    * THEME: SYNTHWAVE '84
    */
   [data-theme="synthwave84"] {
