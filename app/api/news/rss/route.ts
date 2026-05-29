@@ -57,11 +57,13 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    // Keep the detailed error server-side only; do not leak upstream internals
+    // (feed URLs, parser errors) to the client.
     console.error('RSS aggregation error:', error);
     return NextResponse.json(
       {
         status: 'error',
-        message: error instanceof Error ? error.message : 'Failed to fetch news',
+        message: 'Failed to fetch news',
         items: [],
       },
       { status: 500 }

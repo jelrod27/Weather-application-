@@ -1,10 +1,11 @@
 import type { SevenTimerResponse, SevenTimerDataPoint } from '@/lib/stargazer/types';
 
-const SEVEN_TIMER_BASE = 'http://www.7timer.info/bin/astro.php';
+// 7Timer supports HTTPS (verified) — use it so the upstream response cannot be
+// tampered with in transit by a network MITM. Still called server-side only.
+const SEVEN_TIMER_BASE = 'https://www.7timer.info/bin/astro.php';
 
 /**
- * Fetch 7Timer ASTRO data for a location.
- * 7Timer is HTTP-only, so this must be called server-side.
+ * Fetch 7Timer ASTRO data for a location. Called server-side only.
  */
 export async function fetchSevenTimerData(
   lat: number,
