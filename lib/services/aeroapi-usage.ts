@@ -94,13 +94,3 @@ export async function tryIncrementAeroApiUsage(): Promise<
 
   return { allowed: true, count: data };
 }
-
-/** Reset the in-process "warned about cap" boolean. Test-only. */
-export function _resetAeroApiUsageWarningForTests(): void {
-  capWarnedThisProcess = false;
-}
-
-/** Reset the cached supabase client. Test-only. */
-export function _resetAeroApiUsageClientForTests(): void {
-  cachedClient = null;
-}
