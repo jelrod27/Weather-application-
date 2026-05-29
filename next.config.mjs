@@ -213,12 +213,18 @@ export default withBundleAnalyzer(withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+  webpack: {
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    // (replaces the deprecated top-level `disableLogger`)
+    treeshake: {
+      removeDebugLogging: true,
+    },
 
-  // Enables automatic instrumentation of Vercel Cron Monitors.
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/instrumentation/automatic-instrumentation/
-  automaticVercelMonitors: true,
+    // Enables automatic instrumentation of Vercel Cron Monitors
+    // (replaces the deprecated top-level `automaticVercelMonitors`).
+    // See the following for more information:
+    // https://docs.sentry.io/product/crons/
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/instrumentation/automatic-instrumentation/
+    automaticVercelMonitors: true,
+  },
 }));
