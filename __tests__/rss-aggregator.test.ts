@@ -176,6 +176,17 @@ describe('parseJsonFeed (USGS elevated volcanoes)', () => {
     expect(parseJsonFeed('not json', volcanoSource())).toEqual([]);
     expect(parseJsonFeed('{"not":"an array"}', volcanoSource())).toEqual([]);
   });
+
+  it('skips null / non-object array elements without dropping valid ones', () => {
+    const json = JSON.stringify([
+      null,
+      'not-an-object',
+      { volcano_name: 'Kilauea', alert_level: 'WARNING', color_code: 'RED', notice_url: 'https://volcanoes.usgs.gov/n/1' },
+    ]);
+    const items = parseJsonFeed(json, volcanoSource());
+    expect(items).toHaveLength(1);
+    expect(items[0].location).toBe('Kilauea');
+  });
 });
 
 describe('deduplicateItems', () => {

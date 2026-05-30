@@ -443,7 +443,11 @@ function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
 
   const items: RSSItem[] = [];
   for (let i = 0; i < Math.min(data.length, MAX_ITEMS_PER_FEED); i++) {
-    const notice = data[i] as UsgsVolcanoNotice;
+    // Skip malformed array elements individually (like the RSS/Atom parsers do)
+    // so one bad entry can't throw and drop the entire volcano feed.
+    const raw = data[i];
+    if (!raw || typeof raw !== 'object') continue;
+    const notice = raw as UsgsVolcanoNotice;
     const name = notice.volcano_name?.trim();
     const safeLink = safeExternalUrl(notice.notice_url);
     if (!name || !safeLink) continue;
@@ -617,9 +621,16 @@ export async function aggregateFeeds(options: {
     }
   });
 
-  // Filter by age
+  // Filter by age. Exempt the USGS elevated-volcanoes source: that endpoint
+  // returns only *currently* elevated volcanoes, but each item's timestamp is
+  // its last notice's send time (sent_utc), which can lag well behind the age
+  // window for a persistent WATCH/WARNING. Aging those out would hide active
+  // hazards. We keep the real sent_utc (so card "time ago" and the Happening
+  // Now rail stay honest) and just skip the cutoff for this source.
   const cutoff = Date.now() - maxAge * 60 * 60 * 1000;
-  allItems = allItems.filter(item => item.timestamp.getTime() >= cutoff);
+  allItems = allItems.filter(
+    (item) => item.sourceId === 'usgs-volcanoes' || item.timestamp.getTime() >= cutoff
+  );
 
   // Deduplicate
   allItems = deduplicateItems(allItems);

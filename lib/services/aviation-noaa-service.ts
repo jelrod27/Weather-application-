@@ -192,6 +192,12 @@ export async function fetchMetarsBulk(icaos: string[]): Promise<Map<string, Meta
 
   if (!response.ok) {
     console.error('[aviation-noaa-service]', `NOAA METAR returned ${response.status}`);
+    // A degraded-but-responding NOAA (429 rate limit, 5xx outage) returns an
+    // empty Map just like a thrown error — surface it the same way.
+    captureError(new Error(`NOAA METAR returned ${response.status}`), 'aviation-noaa:fetchMetarsBulk', {
+      status: response.status,
+      stationCount: valid.length,
+    });
     return results;
   }
 

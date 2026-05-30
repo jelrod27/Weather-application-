@@ -262,8 +262,11 @@ export function alertsToGeoJsonFeatureCollection(
 
 export async function fetchAlertCounts(): Promise<AlertCounts> {
   try {
-    const alerts = await fetchActiveAlerts()
-    return countsFromAlerts(alerts)
+    // Call fetchActiveAlertsDetail directly (not fetchActiveAlerts, which
+    // swallows errors and returns []) so a real outage propagates here and is
+    // captured with this function's own context instead of being silently zeroed.
+    const details = await fetchActiveAlertsDetail()
+    return countsFromAlerts(details.map(toSummary))
   } catch (error) {
     captureError(error, 'nws-alerts:fetchAlertCounts')
     return {
