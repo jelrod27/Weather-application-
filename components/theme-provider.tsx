@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
-import { ThemeType, THEME_LIST, FREE_THEMES, getThemeDefinition } from '@/lib/theme-config'
+import { ThemeType, THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
 import { supabase } from '@/lib/supabase/client'
 import { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
@@ -31,7 +31,7 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('nord')
+  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -74,7 +74,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         // user instead of relying on a client bundle env var.
         const current = themeRef.current
         if (!FREE_THEMES.includes(current as ThemeType)) {
-          setThemeState('nord')
+          setThemeState(DEFAULT_THEME)
         }
       }
     })
@@ -152,8 +152,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (typeof window !== 'undefined') {
       let savedTheme = safeStorage.getItem('weather-edu-theme') as string | null
       if (savedTheme === 'miami' || savedTheme === 'dark') {
-        savedTheme = 'nord'
-        safeStorage.setItem('weather-edu-theme', 'nord')
+        savedTheme = DEFAULT_THEME
+        safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
       }
       if (savedTheme && THEME_LIST.includes(savedTheme as Theme)) {
         setThemeState(savedTheme as Theme)

@@ -19,6 +19,7 @@ import { IBM_Plex_Sans, Inconsolata, VT323 } from "next/font/google"
 // PERFORMANCE: Analytics lazy loaded via client component wrapper
 import AnalyticsWrapper from "@/components/analytics-wrapper"
 import AppThemeProvider from "@/app/providers/ThemeProvider"
+import { DEFAULT_THEME } from "@/lib/theme-config"
 import { LocationProvider } from "@/components/location-context"
 import { AuthProvider } from "@/lib/auth"
 import { Toaster } from "@/components/ui/toaster"
@@ -149,7 +150,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-theme="nord" suppressHydrationWarning>
+    <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning>
       <head>
         {/* PERFORMANCE: Preconnect to critical origins for faster resource loading */}
         <link rel="preconnect" href="https://api.openweathermap.org" />

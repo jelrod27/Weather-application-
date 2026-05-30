@@ -55,6 +55,10 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
   }
 };
 
+// Default theme applied to guests (unauthenticated users) and as the
+// fallback when a premium theme is dropped on logout. Must be a free theme.
+export const DEFAULT_THEME: ThemeType = 'daybreak';
+
 // Get list of all theme names
 export const THEME_LIST = Object.keys(THEME_DEFINITIONS) as ThemeType[];
 
