@@ -4,11 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Active Feature Work
 
-Product specs (PRDs) live under **`planning/prds/`** — see [`planning/prds/README.md`](planning/prds/README.md) for the index and any legacy paths not in the tree.
-
-- `planning/prds/PRD-open-meteo-migration.md` — migrating primary weather source from OpenWeatherMap to Open-Meteo
-- `planning/prds/PRD-stargazer.md` — astrophotography forecast page
-- `planning/prds/PRD-newsletter-redesign.md` — weekly newsletter generator redesign
+Product specs (PRDs) live under **`planning/prds/`** — see [`planning/prds/README.md`](planning/prds/README.md) for the index and any legacy paths not in the tree. PRDs are removed once their work ships (the open-meteo migration, Stargazer, and newsletter redesign are complete); recover shipped specs from git history if needed.
 
 ## Project Overview
 
