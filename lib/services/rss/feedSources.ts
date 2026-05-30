@@ -62,10 +62,17 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'usgs-volcanoes',
     name: 'USGS Volcano Alerts',
+    // Decommissioned 2026: this URL now 302s to an HTML landing page, not XML.
+    // USGS retired its volcano RSS/CAP feeds; the only live replacement is the
+    // getElevatedVolcanoes JSON API (format not yet supported by the aggregator).
+    // Disabled so the volcano category isn't polluted by an HTML parse; the
+    // Smithsonian Global Volcanism feed below still covers this category.
+    // TODO(news-overhaul Phase 3+): add JSON-format support and wire up
+    // https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes
     url: 'https://volcanoes.usgs.gov/vhp/updates.xml',
     category: 'volcanoes',
     priority: 'high',
-    enabled: true,
+    enabled: false,
     format: 'rss',
     refreshInterval: 30,
   },
@@ -94,7 +101,9 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'spaceweather',
     name: 'SpaceWeather.com',
-    url: 'https://spaceweather.com/rss/news.xml',
+    // spaceweather.com/rss/news.xml returns 404; the maintained replacement is
+    // the Space Weather Archive WordPress feed (verified 200, RSS 2.0).
+    url: 'https://spaceweatherarchive.com/feed/',
     category: 'space',
     priority: 'medium',
     enabled: true,
@@ -116,7 +125,8 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'noaa-climate',
     name: 'NOAA Climate.gov',
-    url: 'https://www.climate.gov/feeds/all/feed.xml',
+    // Old /feeds/all/feed.xml path returns 404; current feed lives at /rss.xml.
+    url: 'https://www.climate.gov/rss.xml',
     category: 'climate',
     priority: 'medium',
     enabled: true,
@@ -126,7 +136,8 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'carbonbrief',
     name: 'Carbon Brief',
-    url: 'https://www.carbonbrief.org/feed',
+    // Use the canonical trailing-slash URL to skip the 301 redirect.
+    url: 'https://www.carbonbrief.org/feed/',
     category: 'climate',
     priority: 'low',
     enabled: true,
@@ -138,7 +149,11 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'nws-alerts',
     name: 'NWS National Alerts',
-    url: 'https://alerts.weather.gov/cap/us.php?x=0',
+    // alerts.weather.gov/cap/us.php was decommissioned (returns 000), which
+    // silently emptied the `severe` category. Replaced by the api.weather.gov
+    // active-alerts Atom feed, constrained to Severe/Extreme + Immediate/Expected
+    // so the category stays meaningful and isn't flooded by minor advisories.
+    url: 'https://api.weather.gov/alerts/active.atom?severity=Severe,Extreme&urgency=Immediate,Expected',
     category: 'severe',
     priority: 'high',
     enabled: true,

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { aggregateFeeds, getFeaturedItem, getCategoryConfig } from '@/lib/services/rss/rssAggregator';
+import { aggregateFeeds, getFeaturedItem, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 
 export const runtime = 'nodejs';
@@ -53,7 +53,9 @@ export async function GET(request: NextRequest) {
       categories: getCategoryConfig(),
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=43200',
+        // Tiered by requested categories (PRD §9): the "all"/mixed request
+        // resolves to the Fast tier so severe alerts stay near real-time.
+        'Cache-Control': cacheControlForCategories(categories),
       },
     });
   } catch (error) {
