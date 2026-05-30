@@ -117,8 +117,12 @@ test.describe('Theme System', () => {
   });
 
   test('UI elements render correctly in nord theme', async ({ page }) => {
-    await setTheme(page, 'nord');
+    // Navigate first, THEN set the theme. setTheme writes the data-theme
+    // attribute directly; doing it before goto() is pointless because the
+    // navigation re-renders the SSR default (DEFAULT_THEME) and getCurrentTheme
+    // reads data-theme, so it would observe the default instead of nord.
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await setTheme(page, 'nord');
 
     // Wait for theme to be applied after navigation
     await page.waitForTimeout(300);
