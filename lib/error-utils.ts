@@ -221,6 +221,41 @@ export function captureError(
 }
 
 /**
+ * True when an error is a fetch aborted by our own AbortController timeout
+ * rather than a genuine failure. The abort reason surfaces as an AbortError
+ * (a DOMException in some runtimes, an Error in others), so match on `name`
+ * instead of `instanceof Error`. These are transient upstream-latency events,
+ * not defects, and callers that already degrade gracefully should treat them
+ * as noise rather than opening a Sentry issue.
+ */
+export function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: unknown }).name === 'AbortError'
+  )
+}
+
+/**
+ * Record a transient upstream timeout as a Sentry breadcrumb (warning level)
+ * instead of capturing it as an exception. Use for expected third-party
+ * slowness that the caller already handles gracefully — it keeps the context
+ * for any later error without manufacturing an issue per timeout.
+ */
+export function captureUpstreamTimeout(
+  context: string,
+  extra?: Record<string, unknown>
+): void {
+  Sentry.addBreadcrumb({
+    category: 'upstream-timeout',
+    level: 'warning',
+    message: context,
+    data: extra,
+  })
+}
+
+/**
  * Capture a database error with structured context
  */
 export function captureDbError(
