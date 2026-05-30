@@ -8,7 +8,9 @@
  */
 
 /**
- * Base news item (extends existing NewsItem from NewsTicker)
+ * Base news item shape. Retained for the live `NewsPriority`/category types
+ * consumed by components/news (e.g. PriorityIndicator); the legacy NewsTicker
+ * pipeline that originally defined NewsItem was removed in the news overhaul.
  */
 export interface ExtendedNewsItem {
   id: string;
