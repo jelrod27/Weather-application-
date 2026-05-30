@@ -5,6 +5,8 @@
  * for the warnings command center, and computes WIS + NWS-style event counts.
  */
 
+import { captureError } from '@/lib/error-utils'
+
 const NWS_USER_AGENT =
   '16BitWeather/1.0 (https://16bitweather.co; ops@16bitweather.co)'
 
@@ -210,7 +212,10 @@ export async function fetchActiveAlerts(): Promise<NWSAlert[]> {
   try {
     const details = await fetchActiveAlertsDetail()
     return details.map(toSummary)
-  } catch {
+  } catch (error) {
+    // Surface NWS API outages instead of silently reporting "no alerts" — a
+    // dead upstream here means users see an all-clear that may be wrong.
+    captureError(error, 'nws-alerts:fetchActiveAlerts')
     return []
   }
 }
@@ -259,7 +264,8 @@ export async function fetchAlertCounts(): Promise<AlertCounts> {
   try {
     const alerts = await fetchActiveAlerts()
     return countsFromAlerts(alerts)
-  } catch {
+  } catch (error) {
+    captureError(error, 'nws-alerts:fetchAlertCounts')
     return {
       total: 0,
       severity: { extreme: 0, severe: 0, moderate: 0, minor: 0 },
@@ -276,7 +282,8 @@ export async function getWISScore(): Promise<WISScore> {
     const wis = calculateWIS(counts)
     const { nwsWarnings, nwsWatches, nwsAdvisories } = countNwsProductTiers(details)
     return { ...wis, nwsWarnings, nwsWatches, nwsAdvisories }
-  } catch {
+  } catch (error) {
+    captureError(error, 'nws-alerts:getWISScore')
     return {
       score: 0,
       level: 'green',
