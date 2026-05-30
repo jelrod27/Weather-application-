@@ -14,7 +14,7 @@ import {
 } from '@/lib/services/rss/rssAggregator';
 import type { FeedSource } from '@/lib/services/rss/feedSources';
 
-const { parseRSSFeed, parseAtomFeed, deduplicateItems } = __testing;
+const { parseRSSFeed, parseAtomFeed, parseJsonFeed, deduplicateItems } = __testing;
 
 function source(overrides: Partial<FeedSource> = {}): FeedSource {
   return {
@@ -137,6 +137,44 @@ describe('parseAtomFeed', () => {
 
     const [it] = parseAtomFeed(xml, source({ category: 'severe', format: 'atom' }));
     expect(it.url).toBe('https://www.example.com/human');
+  });
+});
+
+describe('parseJsonFeed (USGS elevated volcanoes)', () => {
+  const volcanoSource = () => source({ id: 'usgs-volcanoes', name: 'USGS Volcano Alerts', category: 'volcanoes', priority: 'high', format: 'json' });
+
+  it('maps an elevated-volcano notice to an RSSItem with color + alert level', () => {
+    const json = JSON.stringify([
+      {
+        volcano_name: 'Great Sitkin',
+        color_code: 'ORANGE',
+        alert_level: 'WATCH',
+        sent_utc: '2026-05-29 20:19:13',
+        notice_url: 'https://volcanoes.usgs.gov/hans-public/notice/abc',
+        obs_fullname: 'Alaska Volcano Observatory',
+      },
+    ]);
+    const [it] = parseJsonFeed(json, volcanoSource());
+    expect(it.title).toBe('Great Sitkin Volcano — WATCH (ORANGE)');
+    expect(it.category).toBe('volcanoes');
+    expect(it.priority).toBe('high');
+    expect(it.location).toBe('Great Sitkin');
+    expect(it.url).toBe('https://volcanoes.usgs.gov/hans-public/notice/abc');
+    expect(it.description).toContain('Alaska Volcano Observatory');
+    expect(it.timestamp.getUTCFullYear()).toBe(2026);
+  });
+
+  it('drops notices with an unsafe or missing notice_url', () => {
+    const json = JSON.stringify([
+      { volcano_name: 'Bad', alert_level: 'WATCH', notice_url: 'javascript:alert(1)' },
+      { volcano_name: 'NoUrl', alert_level: 'WATCH' },
+    ]);
+    expect(parseJsonFeed(json, volcanoSource())).toHaveLength(0);
+  });
+
+  it('returns [] on malformed JSON or a non-array payload', () => {
+    expect(parseJsonFeed('not json', volcanoSource())).toEqual([]);
+    expect(parseJsonFeed('{"not":"an array"}', volcanoSource())).toEqual([]);
   });
 });
 

@@ -167,7 +167,9 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
       signal: controller.signal,
       headers: {
         'User-Agent': '16-Bit Weather RSS Aggregator/1.0',
-        'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+        'Accept': source.format === 'json'
+          ? 'application/json, text/json'
+          : 'application/rss+xml, application/atom+xml, application/xml, text/xml',
       },
       next: { revalidate: source.refreshInterval * 60 },
     });
@@ -183,6 +185,8 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
     // Parse based on format
     if (source.format === 'atom') {
       return parseAtomFeed(text, source);
+    } else if (source.format === 'json') {
+      return parseJsonFeed(text, source);
     } else {
       return parseRSSFeed(text, source);
     }
@@ -419,6 +423,74 @@ function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
   return items;
 }
 
+/** A single notice from the USGS getElevatedVolcanoes JSON API. */
+interface UsgsVolcanoNotice {
+  volcano_name?: string;
+  color_code?: string;
+  alert_level?: string;
+  sent_utc?: string;
+  notice_url?: string;
+  obs_fullname?: string;
+}
+
+/**
+ * Parse the USGS getElevatedVolcanoes JSON feed. The endpoint returns only
+ * currently-elevated volcanoes (those above the normal/green alert level), each
+ * with an aviation color code and a WATCH/WARNING/ADVISORY level.
+ */
+function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
+  if (!Array.isArray(data)) return [];
+
+  const items: RSSItem[] = [];
+  for (let i = 0; i < Math.min(data.length, MAX_ITEMS_PER_FEED); i++) {
+    const notice = data[i] as UsgsVolcanoNotice;
+    const name = notice.volcano_name?.trim();
+    const safeLink = safeExternalUrl(notice.notice_url);
+    if (!name || !safeLink) continue;
+
+    const level = (notice.alert_level || 'ADVISORY').trim();
+    const color = (notice.color_code || '').trim();
+    const observatory = notice.obs_fullname?.trim() || 'USGS';
+    // sent_utc is "YYYY-MM-DD HH:MM:SS" in UTC; normalize to a parseable ISO string.
+    const sent = notice.sent_utc ? new Date(notice.sent_utc.replace(' ', 'T') + 'Z') : new Date();
+
+    items.push({
+      id: `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`,
+      title: cleanHtml(color ? `${name} Volcano — ${level} (${color})` : `${name} Volcano — ${level}`),
+      description: cleanHtml(
+        `${observatory} has an active ${level} alert${color ? ` (aviation color ${color})` : ''} for ${name}.`
+      ).slice(0, 300),
+      url: safeLink,
+      source: source.name,
+      sourceId: source.id,
+      category: source.category,
+      priority: source.priority,
+      timestamp: isNaN(sent.getTime()) ? new Date() : sent,
+      location: name,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Parse a JSON-format feed. Dispatched by source id (currently only the USGS
+ * elevated-volcanoes API); add new shapes here as JSON sources are introduced.
+ */
+function parseJsonFeed(text: string, source: FeedSource): RSSItem[] {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  if (source.id === 'usgs-volcanoes') {
+    return parseUsgsVolcanoesJson(data, source);
+  }
+  return [];
+}
+
 /**
  * Determine priority based on content (e.g., earthquake magnitude)
  */
@@ -633,6 +705,7 @@ export function getCategoryConfig() {
 export const __testing = {
   parseRSSFeed,
   parseAtomFeed,
+  parseJsonFeed,
   deduplicateItems,
   clearCache,
 };
