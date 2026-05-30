@@ -62,18 +62,15 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'usgs-volcanoes',
     name: 'USGS Volcano Alerts',
-    // Decommissioned 2026: this URL now 302s to an HTML landing page, not XML.
-    // USGS retired its volcano RSS/CAP feeds; the only live replacement is the
-    // getElevatedVolcanoes JSON API (format not yet supported by the aggregator).
-    // Disabled so the volcano category isn't polluted by an HTML parse; the
-    // Smithsonian Global Volcanism feed below still covers this category.
-    // TODO(news-overhaul Phase 3+): add JSON-format support and wire up
-    // https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes
-    url: 'https://volcanoes.usgs.gov/vhp/updates.xml',
+    // USGS retired its volcano RSS/CAP feeds (the old vhp/updates.xml now 302s to
+    // an HTML page). The live replacement is the getElevatedVolcanoes JSON API,
+    // which returns currently-elevated volcanoes with color code + alert level.
+    // Parsed by parseUsgsVolcanoesJson in rssAggregator (format: 'json').
+    url: 'https://volcanoes.usgs.gov/hans-public/api/volcano/getElevatedVolcanoes',
     category: 'volcanoes',
     priority: 'high',
-    enabled: false,
-    format: 'rss',
+    enabled: true,
+    format: 'json',
     refreshInterval: 30,
   },
   {
@@ -125,11 +122,15 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'noaa-climate',
     name: 'NOAA Climate.gov',
-    // Old /feeds/all/feed.xml path returns 404; current feed lives at /rss.xml.
+    // Disabled 2026: climate.gov/rss.xml is abandoned — its newest item is from
+    // April 2021, so every item falls outside the aggregator's age window and the
+    // feed only added latency. No fresh climate.gov/NOAA RSS replacement is
+    // available (other paths 404/403); Carbon Brief below covers the climate
+    // category with current content. Re-enable if NOAA ships a live feed.
     url: 'https://www.climate.gov/rss.xml',
     category: 'climate',
     priority: 'medium',
-    enabled: true,
+    enabled: false,
     format: 'rss',
     refreshInterval: 60,
   },

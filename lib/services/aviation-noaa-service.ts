@@ -11,6 +11,7 @@
  * still serve other callers (FlightConditionsTerminal, AI context, etc.).
  */
 import type { MetarObservation } from '@/app/api/aviation/metar/route';
+import { captureError } from '@/lib/error-utils';
 
 const NOAA_METAR_BASE = 'https://aviationweather.gov/api/data/metar';
 const NOAA_AIRSIGMET = 'https://aviationweather.gov/api/data/airsigmet';
@@ -185,11 +186,18 @@ export async function fetchMetarsBulk(icaos: string[]): Promise<Map<string, Meta
     response = await fetchWithTimeout(url);
   } catch (error) {
     console.error('[aviation-noaa-service]', 'metar bulk fetch failed', error);
+    captureError(error, 'aviation-noaa:fetchMetarsBulk', { stationCount: valid.length });
     return results;
   }
 
   if (!response.ok) {
     console.error('[aviation-noaa-service]', `NOAA METAR returned ${response.status}`);
+    // A degraded-but-responding NOAA (429 rate limit, 5xx outage) returns an
+    // empty Map just like a thrown error — surface it the same way.
+    captureError(new Error(`NOAA METAR returned ${response.status}`), 'aviation-noaa:fetchMetarsBulk', {
+      status: response.status,
+      stationCount: valid.length,
+    });
     return results;
   }
 
@@ -258,7 +266,16 @@ export async function fetchAviationAlertsFromNOAA(): Promise<NoaaAlert[]> {
     type: 'SIGMET' | 'AIRMET',
     fallbackHi: number,
   ) {
-    if (settled.status !== 'fulfilled' || !settled.value.ok) return;
+    if (settled.status !== 'fulfilled' || !settled.value.ok) {
+      // A dead/erroring AWC endpoint here means an all-clear aviation panel.
+      // Surface it instead of dropping the result silently.
+      const reason = settled.status === 'rejected'
+        ? (settled.reason instanceof Error ? settled.reason.message : String(settled.reason))
+        : `HTTP ${settled.value.status}`;
+      console.error('[aviation-noaa-service]', `${type} fetch failed`, reason);
+      captureError(new Error(`NOAA ${type} fetch failed: ${reason}`), 'aviation-noaa:fetchAviationAlerts', { type });
+      return;
+    }
     try {
       const data = (await settled.value.json()) as AWCAlert[];
       if (!Array.isArray(data)) return;
@@ -277,6 +294,8 @@ export async function fetchAviationAlertsFromNOAA(): Promise<NoaaAlert[]> {
       }
     } catch (error) {
       console.error('[aviation-noaa-service]', `${type} parse failed`, error);
+      // A parse failure usually means NOAA changed the AWC response shape.
+      captureError(error, 'aviation-noaa:parseAviationAlerts', { type });
     }
   }
 

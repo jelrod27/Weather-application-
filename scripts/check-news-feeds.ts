@@ -9,7 +9,7 @@
  *   npx tsx scripts/check-news-feeds.ts
  */
 
-import { FEED_SOURCES } from '../lib/services/rss/feedSources'
+import { FEED_SOURCES, type FeedSource } from '../lib/services/rss/feedSources'
 
 const USER_AGENT = '16-Bit Weather RSS Aggregator/1.0'
 const TIMEOUT_MS = 15000
@@ -22,7 +22,21 @@ interface Result {
   note: string
 }
 
-async function checkFeed(id: string, url: string): Promise<Result> {
+/** Validate the body matches the declared feed format (XML for rss/atom, JSON otherwise). */
+function bodyMatchesFormat(format: FeedSource['format'], body: string): boolean {
+  if (format === 'json') {
+    try {
+      JSON.parse(body)
+      return true
+    } catch {
+      return false
+    }
+  }
+  return /<rss|<feed|<\?xml/i.test(body.slice(0, 500))
+}
+
+async function checkFeed(source: FeedSource): Promise<Result> {
+  const { id, url, format } = source
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
@@ -31,17 +45,19 @@ async function checkFeed(id: string, url: string): Promise<Result> {
       signal: controller.signal,
       headers: {
         'User-Agent': USER_AGENT,
-        Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+        Accept: format === 'json'
+          ? 'application/json, text/json'
+          : 'application/rss+xml, application/atom+xml, application/xml, text/xml',
       },
     })
     const body = await res.text()
-    const looksXml = /<rss|<feed|<\?xml/i.test(body.slice(0, 500))
+    const bodyOk = bodyMatchesFormat(format, body)
     return {
       id,
       url,
       status: res.status,
-      ok: res.ok && looksXml,
-      note: res.ok && !looksXml ? 'WARNING: 2xx but body is not XML' : '',
+      ok: res.ok && bodyOk,
+      note: res.ok && !bodyOk ? `WARNING: 2xx but body is not valid ${format}` : '',
     }
   } catch (err) {
     return {
@@ -60,7 +76,7 @@ async function main() {
   const enabled = FEED_SOURCES.filter((f) => f.enabled)
   console.log(`Checking ${enabled.length} enabled feed(s)...\n`)
 
-  const results = await Promise.all(enabled.map((f) => checkFeed(f.id, f.url)))
+  const results = await Promise.all(enabled.map((f) => checkFeed(f)))
 
   let failures = 0
   for (const r of results) {
