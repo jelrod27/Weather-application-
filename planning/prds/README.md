@@ -9,6 +9,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 | [PRD-open-meteo-migration.md](./PRD-open-meteo-migration.md) | Migrating primary weather source from OpenWeatherMap to Open-Meteo |
 | [PRD-stargazer.md](./PRD-stargazer.md) | Astrophotography forecast page (Stargazer) |
 | [PRD-newsletter-redesign.md](./PRD-newsletter-redesign.md) | Weekly newsletter generator redesign |
+| [PRD-news-overhaul.md](./PRD-news-overhaul.md) | News section overhaul — fix dead feeds, remove orphaned subsystem, tiered caching + feed-health monitoring |
 
 ## Referenced elsewhere but not in this tree
 
