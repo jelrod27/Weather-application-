@@ -58,13 +58,7 @@ describe('Fix 9: Test auth bypass gated to non-prod', () => {
   });
 });
 
-describe('Fix 10: Rate limit IP source', () => {
-  const src = readFileSync(join(__dirname, '..', 'app', 'api', 'news', 'route.ts'), 'utf-8');
-  it('should prefer x-real-ip over x-forwarded-for for rate limiting', () => {
-    // x-real-ip is set by the platform (Vercel) and harder to spoof
-    expect(src).toMatch(/x-real-ip/);
-  });
-  it('should document the IP source choice', () => {
-    expect(src).toMatch(/deployment platform/i);
-  });
-});
+// "Fix 10: Rate limit IP source" was removed with the news-overhaul: it audited
+// the NewsAPI proxy at app/api/news/route.ts, which was deleted as dead code
+// (orphaned subsystem). The live keyless /api/news/rss has no rate limiter to
+// protect, so there is nothing to assert here.
