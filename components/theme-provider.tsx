@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
-import { ThemeType, THEME_LIST, FREE_THEMES, DEFAULT_THEME, getThemeDefinition } from '@/lib/theme-config'
+import { ThemeType, THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
 import { supabase } from '@/lib/supabase/client'
 import { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
