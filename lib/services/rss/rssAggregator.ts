@@ -246,30 +246,64 @@ function atomLinkHref(node: XmlNode): string | undefined {
   return nodeText(chosen['@_href']) ?? nodeText(chosen.href);
 }
 
+// Hosts that serve players/embeds, not images. A feed's media:content can
+// point at a YouTube embed (medium="video"); shoved into <img> the browser
+// blocks it (ERR_BLOCKED_BY_ORB) and the card flashes a broken image.
+const NON_IMAGE_HOSTS = ['youtube.com/embed', 'youtu.be', 'player.vimeo.com'];
+// Extensions that are definitely not still images.
+const NON_IMAGE_EXT = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|m4a|wav|pdf|html?)(?:[?#]|$)/i;
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[?#]|$)/i;
+
+/**
+ * True only for URLs plausibly renderable in an <img>. Rejects known
+ * player/embed hosts and non-image extensions; accepts a known image
+ * extension or an extensionless URL (many image CDNs serve those). The point
+ * is to keep video embeds and media files out of the image slot.
+ */
+function isLikelyImageUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (NON_IMAGE_HOSTS.some((h) => lower.includes(h))) return false;
+  if (NON_IMAGE_EXT.test(lower)) return false;
+  if (IMAGE_EXT.test(lower)) return true;
+  // No recognizable file extension at all -> allow (CDN-style image URL).
+  return !/\.[a-z0-9]{2,5}(?:[?#]|$)/i.test(lower);
+}
+
+/** media:* declares its kind via `medium` ("image"|"video"|...) or a MIME `type`. */
+function isImageMediaNode(media: XmlNode): boolean {
+  const medium = nodeText(media['@_medium']);
+  if (medium) return medium === 'image';
+  const type = nodeText(media['@_type']);
+  if (type) return type.startsWith('image/');
+  return true; // no hints -> fall back to URL-shape check by the caller
+}
+
 /** Best-effort image extraction: media:*, enclosure, then inline <img> in body. */
 function extractImage(node: XmlNode, body: string | undefined): string | undefined {
   const mediaThumb = node['media:thumbnail'] ?? node.thumbnail;
   if (mediaThumb && typeof mediaThumb === 'object' && !Array.isArray(mediaThumb)) {
     const url = nodeText(mediaThumb['@_url']) ?? nodeText(mediaThumb.url);
-    if (url) return url;
+    if (url && isLikelyImageUrl(url)) return url;
   }
 
-  const mediaContent = asArray(node['media:content'])[0];
-  if (mediaContent) {
-    const url = nodeText(mediaContent['@_url']) ?? nodeText(mediaContent.url);
-    if (url) return url;
+  // Pick the first media:content that is actually an image, not the first one
+  // outright — video entries (e.g. YouTube) often precede a real thumbnail.
+  for (const media of asArray(node['media:content'])) {
+    if (!isImageMediaNode(media)) continue;
+    const url = nodeText(media['@_url']) ?? nodeText(media.url);
+    if (url && isLikelyImageUrl(url)) return url;
   }
 
   const enclosure = asArray(node.enclosure)[0];
   if (enclosure) {
     const type = nodeText(enclosure['@_type']) ?? '';
     const url = nodeText(enclosure['@_url']) ?? nodeText(enclosure.url);
-    if (url && (type === '' || type.startsWith('image/'))) return url;
+    if (url && (type === '' || type.startsWith('image/')) && isLikelyImageUrl(url)) return url;
   }
 
   if (body) {
     const imgMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgMatch) return imgMatch[1];
+    if (imgMatch && isLikelyImageUrl(imgMatch[1])) return imgMatch[1];
   }
 
   return undefined;
@@ -721,4 +755,6 @@ export const __testing = {
   parseJsonFeed,
   deduplicateItems,
   clearCache,
+  extractImage,
+  isLikelyImageUrl,
 };
