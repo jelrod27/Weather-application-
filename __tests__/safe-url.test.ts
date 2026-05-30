@@ -1,4 +1,4 @@
-import { safeExternalUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
 
 describe('safeExternalUrl', () => {
   test('drops javascript: URI', () => {
@@ -41,5 +41,33 @@ describe('safeExternalUrl', () => {
     expect(safeExternalUrl('://no-scheme')).toBe('://no-scheme');
     // `https://` (no host) makes the URL constructor throw → returns null.
     expect(safeExternalUrl('https://')).toBeNull();
+  });
+});
+
+describe('upgradeImageUrl', () => {
+  test('upgrades http:// to https:// so CSP img-src does not block it', () => {
+    expect(upgradeImageUrl('http://cdn.example.com/a.jpg')).toBe('https://cdn.example.com/a.jpg');
+  });
+
+  test('leaves https:// unchanged', () => {
+    expect(upgradeImageUrl('https://cdn.example.com/a.jpg')).toBe('https://cdn.example.com/a.jpg');
+  });
+
+  test('leaves protocol-relative, relative, and data URLs unchanged', () => {
+    expect(upgradeImageUrl('//cdn.example.com/a.jpg')).toBe('//cdn.example.com/a.jpg');
+    expect(upgradeImageUrl('/local/a.jpg')).toBe('/local/a.jpg');
+    expect(upgradeImageUrl('data:image/png;base64,iVBOR')).toBe('data:image/png;base64,iVBOR');
+  });
+
+  test('only rewrites the leading scheme, not http in the path or query', () => {
+    expect(upgradeImageUrl('http://host/redirect?to=http://other.com/x.jpg')).toBe(
+      'https://host/redirect?to=http://other.com/x.jpg'
+    );
+  });
+
+  test('round-trips through safeExternalUrl to a renderable https URL', () => {
+    expect(safeExternalUrl(upgradeImageUrl('http://cdn.example.com/a.jpg'))).toBe(
+      'https://cdn.example.com/a.jpg'
+    );
   });
 });

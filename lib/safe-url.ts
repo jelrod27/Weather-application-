@@ -19,3 +19,18 @@ export function safeExternalUrl(url: unknown): string | null {
     return null;
   }
 }
+
+/**
+ * Upgrade an `http://` image URL to `https://`.
+ *
+ * Our pages are served over HTTPS and the CSP `img-src` directive only allows
+ * `https:` (see middleware.ts), so an `http://` image — common in RSS feed
+ * items even when the feed itself is HTTPS — is blocked as mixed content and
+ * never renders. Most image CDNs serve the same asset over HTTPS, so a scheme
+ * upgrade recovers the bulk of them; anything that genuinely lacks HTTPS still
+ * fails to load and the caller falls back. Non-`http://` inputs (https,
+ * protocol-relative, relative, data:) are returned unchanged.
+ */
+export function upgradeImageUrl(url: string): string {
+  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url;
+}
