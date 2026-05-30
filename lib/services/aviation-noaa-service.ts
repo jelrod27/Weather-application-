@@ -11,7 +11,7 @@
  * still serve other callers (FlightConditionsTerminal, AI context, etc.).
  */
 import type { MetarObservation } from '@/app/api/aviation/metar/route';
-import { captureError } from '@/lib/error-utils';
+import { captureError, captureUpstreamTimeout, isAbortError } from '@/lib/error-utils';
 
 const NOAA_METAR_BASE = 'https://aviationweather.gov/api/data/metar';
 const NOAA_AIRSIGMET = 'https://aviationweather.gov/api/data/airsigmet';
@@ -267,6 +267,16 @@ export async function fetchAviationAlertsFromNOAA(): Promise<NoaaAlert[]> {
     fallbackHi: number,
   ) {
     if (settled.status !== 'fulfilled' || !settled.value.ok) {
+      // Our own fetchWithTimeout aborting a slow NOAA endpoint is expected
+      // transient upstream noise, not a defect — the panel still degrades to
+      // all-clear. Record a breadcrumb for context but don't open a Sentry
+      // issue per timeout. Genuine failures (non-ok HTTP, network errors)
+      // still surface as captured exceptions below.
+      if (settled.status === 'rejected' && isAbortError(settled.reason)) {
+        console.warn('[aviation-noaa-service]', `${type} fetch timed out after ${DEFAULT_TIMEOUT_MS}ms`);
+        captureUpstreamTimeout(`NOAA ${type} fetch timed out`, { type, timeoutMs: DEFAULT_TIMEOUT_MS });
+        return;
+      }
       // A dead/erroring AWC endpoint here means an all-clear aviation panel.
       // Surface it instead of dropping the result silently.
       const reason = settled.status === 'rejected'
