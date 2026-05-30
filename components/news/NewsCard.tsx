@@ -149,18 +149,29 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
     );
   }
 
-  // Default variant
+  // Default variant. The whole card is the link (matching NewsHero and the
+  // compact variant); the READ button stops propagation so it doesn't open a
+  // second tab. `showImage` collapses to the text layout when there is no
+  // image or it failed to load, so an errored image never leaves a blank banner
+  // and a missing priority indicator.
+  const showImage = Boolean(item.imageUrl) && !imageError;
+
   return (
     <Card
       className={cn(
-        'border-2 transition-all hover:shadow-lg overflow-hidden group flex flex-col h-full',
+        'border-2 transition-all hover:shadow-lg overflow-hidden group flex flex-col h-full cursor-pointer card-interactive',
         priorityBorderClass,
         themeClasses.background,
         className
       )}
+      onClick={openSafeUrl}
+      onKeyDown={handleKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`${item.title} from ${item.source}, ${timeAgo}. Opens in new tab`}
     >
       {/* Image */}
-      {item.imageUrl && !imageError && (
+      {showImage && (
         <div className="relative w-full h-48 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -179,7 +190,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
       <CardHeader className="flex-1">
         <div className="flex gap-2 mb-2 flex-wrap">
           <CategoryBadge category={item.category} />
-          {!item.imageUrl && <PriorityIndicator priority={item.priority} showLabel size="sm" />}
+          {!showImage && <PriorityIndicator priority={item.priority} showLabel size="sm" />}
           {/* Magnitude badge for earthquakes */}
           {item.magnitude && (
             <span className={cn(
@@ -231,7 +242,10 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
           variant="outline"
           size="sm"
           className={cn('font-mono font-bold text-xs border-2 flex-shrink-0', themeClasses.accentText)}
-          onClick={openSafeUrl}
+          onClick={(e) => {
+            e.stopPropagation();
+            openSafeUrl();
+          }}
           aria-label={`Read full article: ${item.title}`}
         >
           READ <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />

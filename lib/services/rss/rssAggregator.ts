@@ -11,7 +11,7 @@ import * as Sentry from '@sentry/nextjs';
 import { XMLParser } from 'fast-xml-parser';
 import { FEED_SOURCES, FeedSource, FeedCategory, CATEGORY_CONFIG } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
-import { safeExternalUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
 
 export interface RSSItem {
   id: string;
@@ -292,7 +292,9 @@ function buildItem(
     depth?: number;
   }
 ): RSSItem {
-  const safeImage = fields.rawImage ? safeExternalUrl(fields.rawImage) : null;
+  // Upgrade http -> https before the scheme guard: CSP img-src only allows
+  // https, so an http feed image would otherwise be dropped or blocked.
+  const safeImage = fields.rawImage ? safeExternalUrl(upgradeImageUrl(fields.rawImage)) : null;
   return {
     id: `${source.id}-${simpleHash(fields.safeLink + index.toString())}-${index}`,
     title: cleanHtml(fields.title),
