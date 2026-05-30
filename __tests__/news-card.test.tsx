@@ -78,14 +78,24 @@ describe('NewsCard default variant', () => {
     expect(openSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the text layout when the image fails to load', () => {
+  it('falls back to the placeholder when the image fails to load', () => {
     render(<NewsCard item={makeItem()} />);
 
     const img = screen.getByAltText(/severe thunderstorm warning/i);
     fireEvent.error(img);
 
-    // After an image error the banner is gone and the inline priority
-    // indicator (only shown without an image) appears.
+    // After an image error the <img> is removed and the card shows the
+    // category placeholder banner instead, but stays a working link.
     expect(screen.queryByAltText(/severe thunderstorm warning/i)).toBeNull();
+    expect(screen.getByRole('link')).toBeTruthy();
+  });
+
+  it('renders a placeholder (no <img>) for an imageless item but stays clickable', () => {
+    render(<NewsCard item={makeItem({ imageUrl: undefined, category: 'earthquakes' })} />);
+
+    expect(screen.queryByRole('img')).toBeNull();
+    const link = screen.getByRole('link');
+    fireEvent.click(link);
+    expect(openSpy).toHaveBeenCalledTimes(1);
   });
 });
