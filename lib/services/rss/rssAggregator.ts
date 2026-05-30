@@ -7,6 +7,7 @@
  * Server-side RSS feed fetching, parsing, and aggregation
  */
 
+import * as Sentry from '@sentry/nextjs';
 import { FEED_SOURCES, FeedSource, FeedCategory, CATEGORY_CONFIG } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
 import { safeExternalUrl } from '@/lib/safe-url';
@@ -58,6 +59,37 @@ function simpleHash(str: string): string {
 }
 
 /**
+ * Report an unhealthy feed to Sentry so a dead source is visible within one
+ * refresh cycle instead of silently emptying its category (see PRD §12 / G3 —
+ * this is what the decommissioned NWS alerts feed lacked).
+ *
+ * Real fetch/HTTP/timeout failures emit a warning-level message (creates an
+ * issue). A feed that fetched OK but parsed to zero items emits a breadcrumb
+ * only — high-priority feeds like nws-alerts can legitimately be empty during
+ * calm weather, so we avoid raising a noisy issue for that case.
+ */
+function reportFeedHealth(
+  source: FeedSource,
+  reason: string,
+  kind: 'fetch-error' | 'empty-parse'
+): void {
+  Sentry.addBreadcrumb({
+    category: 'news.feed',
+    level: 'warning',
+    message: `feed unhealthy (${kind}): ${source.id}`,
+    data: { sourceId: source.id, category: source.category, reason },
+  });
+
+  if (kind === 'fetch-error' && source.priority === 'high') {
+    Sentry.captureMessage('[news] high-priority feed down', {
+      level: 'warning',
+      tags: { context: 'news', sourceId: source.id },
+      extra: { source: source.id, category: source.category, reason },
+    });
+  }
+}
+
+/**
  * Fetch and parse a single RSS/Atom feed
  */
 async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
@@ -89,7 +121,10 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
       return parseRSSFeed(text, source);
     }
   } catch (error) {
-    console.error(`Failed to fetch ${source.name}:`, error);
+    const reason = error instanceof Error ? error.message : String(error);
+    // [news] context prefix per CLAUDE.md logging convention.
+    console.error(`[news] feed fetch failed: ${source.id}`, reason);
+    reportFeedHealth(source, reason, 'fetch-error');
     return [];
   }
 }
@@ -330,9 +365,17 @@ export async function aggregateFeeds(options: {
     if (result.status === 'fulfilled') {
       allItems.push(...result.value);
       bySource[feed.name] = result.value.length;
+      // Fetched OK but produced no items: low-noise breadcrumb only. fetchFeed
+      // swallows real fetch errors (returns []), so this also covers the case
+      // where an HTTP 200 returned content the parser couldn't map.
+      if (result.value.length === 0) {
+        reportFeedHealth(feed, 'parsed 0 items', 'empty-parse');
+      }
     } else {
-      errors.push(`${feed.name}: ${result.reason}`);
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      errors.push(`${feed.name}: ${reason}`);
       bySource[feed.name] = 0;
+      reportFeedHealth(feed, reason, 'fetch-error');
     }
   });
 
