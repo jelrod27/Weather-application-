@@ -70,7 +70,9 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
           <div
             className={cn(
               'w-full lg:w-1/2 h-64 lg:h-80 flex items-center justify-center border-b border-subtle lg:border-b-0 lg:border-r',
-              themeClasses.background
+              // bg-muted (a real theme surface), not themeClasses.background which
+              // matches the card and left this placeholder panel invisible.
+              'bg-muted'
             )}
           >
             <div className="text-center p-8">
@@ -141,7 +143,7 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
             </div>
             <Button
               variant="outline"
-              className={cn('font-mono font-bold border-2', themeClasses.accentText)}
+              className={cn('font-mono font-bold border-2', 'text-primary')}
               onClick={(e) => {
                 e.stopPropagation();
                 openSafeUrl();

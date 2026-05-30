@@ -176,7 +176,9 @@ export default function NewsPage() {
           <h1
             className={cn(
               'text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 font-mono',
-              themeClasses.accentText
+              // text-primary (not accentText/text-primary-foreground): the latter
+              // is near-white and disappears on the light Daybreak background.
+              'text-primary'
             )}
           >
             EARTH & SPACE NEWS

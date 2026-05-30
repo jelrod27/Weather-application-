@@ -84,7 +84,7 @@ const categoryConfig: Record<
   weather: {
     label: 'WEATHER',
     icon: Cloud,
-    colorClass: 'bg-terminal-accent-info text-white border-terminal-border',
+    colorClass: 'bg-sky-600 text-white border-sky-800',
   },
   severe: {
     label: 'SEVERE',
@@ -99,7 +99,7 @@ const categoryConfig: Record<
   climate: {
     label: 'CLIMATE',
     icon: Thermometer,
-    colorClass: 'bg-terminal-accent text-white border-terminal-border',
+    colorClass: 'bg-teal-600 text-white border-teal-800',
   },
   tropical: {
     label: 'TROPICAL',
@@ -118,8 +118,16 @@ const categoryConfig: Record<
   },
 };
 
+/** Icon + color for a category; falls back to the generic config. Exported so
+ *  imageless news cards can reuse the same icon/color for a placeholder banner. */
+export function getCategoryConfig(category: CategoryType) {
+  return categoryConfig[category] || categoryConfig.general;
+}
+
+export type { CategoryType };
+
 export default function CategoryBadge({ category, className }: CategoryBadgeProps) {
-  const config = categoryConfig[category] || categoryConfig.general;
+  const config = getCategoryConfig(category);
   const Icon = config.icon;
 
   return (
