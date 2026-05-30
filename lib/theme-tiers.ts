@@ -44,13 +44,13 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     id: 'daybreak',
     name: 'daybreak',
     displayName: 'Daybreak',
-    description: 'Clear-sky light theme with a warm sunrise accent',
+    description: 'Warm dawn light theme — cream paper, sky blue, sunrise amber',
     tier: 'free',
     category: 'basic',
     colors: {
-      primary: 'hsl(205 90% 42%)',
-      background: 'hsl(210 40% 97%)',
-      accent: 'hsl(32 95% 50%)'
+      primary: 'hsl(205 85% 40%)',
+      background: 'hsl(40 33% 96%)',
+      accent: 'hsl(28 92% 52%)'
     }
   },
 
