@@ -109,8 +109,16 @@ body {
     text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
   }
 
+  /* Heading glow — kept tight + alpha'd so text stays legible. The triple-
+     layer marquee glow is reserved for one hero element (see .glow-hero). */
   .glow {
-    text-shadow: 0 0 8px hsl(var(--primary)), 0 0 16px hsl(var(--primary)), 0 0 24px hsl(var(--primary));
+    text-shadow: 0 0 4px hsl(var(--primary) / 0.7), 0 0 12px hsl(var(--primary) / 0.35);
+  }
+
+  /* Hero glow — the loudest text glow in the app. Use sparingly: the single
+     marquee number per view (e.g. the current temperature), nothing else. */
+  .glow-hero {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.55), 0 0 26px hsl(var(--primary) / 0.30);
   }
 
   .pixel-shadow {
@@ -339,33 +347,14 @@ body {
      Philosophy: The glow does the work, borders are near-invisible
      ═══════════════════════════════════════════════════════════ */
 
-  /* OUTER CONTAINER - subtle glow + hairline border (10% opacity) */
-  .container-outer {
-    background: rgba(var(--theme-bg-rgb), 0.8);
-    border: 1px solid var(--border-invisible);
-    box-shadow: var(--glow-container);
-    border-radius: var(--radius);
-  }
-
-  /* INNER CARD - background tint ONLY, NO border */
-  .card-inner {
-    background: var(--card-bg-tint);
-    border: none;
-    border-radius: var(--radius);
-    transition: background 0.2s ease;
-  }
-
-  .card-inner:hover {
-    background: var(--card-bg-hover);
-  }
-
-  /* METRIC/DATA elements - transparent, no border */
-  .metric-element {
-    background: transparent;
-    border: none;
-  }
-
-  /* Legacy support - primary container (outer) */
+  /* Two canonical surface tiers — everything is one of these:
+       .surface  → an outer panel  (hairline border + ambient glow)
+       .inset    → a nested element (background tint only, no border)
+     The older names (.container-outer / .container-primary and
+     .card-inner / .container-nested) are kept as aliases on the same rule
+     so existing markup keeps working — prefer .surface / .inset in new code. */
+  .surface,
+  .container-outer,
   .container-primary {
     background: rgba(var(--theme-bg-rgb), 0.8);
     border: 1px solid var(--border-invisible);
@@ -373,7 +362,8 @@ body {
     border-radius: var(--radius);
   }
 
-  /* Legacy support - nested elements (inner cards) */
+  .inset,
+  .card-inner,
   .container-nested {
     background: var(--card-bg-tint);
     border: none;
@@ -381,8 +371,16 @@ body {
     transition: background 0.2s ease;
   }
 
+  .inset:hover,
+  .card-inner:hover,
   .container-nested:hover {
     background: var(--card-bg-hover);
+  }
+
+  /* METRIC/DATA elements - transparent, no border */
+  .metric-element {
+    background: transparent;
+    border: none;
   }
 
   /* Interactive glow on hover/focus */
@@ -488,16 +486,18 @@ body {
     background-color: hsl(var(--destructive));
   }
 
-  /* Weather metric card glow (moderately louder Nord) */
+  /* Weather metric card glow — demoted to a quiet ambient halo at rest so
+     it doesn't compete with the hero temperature; the brighter glow is the
+     hover affordance, signalling interactivity rather than shouting at idle. */
   .weather-metric-glow {
-    box-shadow: 0 0 12px rgba(var(--theme-accent-rgb), 0.20),
-                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.08);
+    box-shadow: 0 0 12px rgba(var(--theme-accent-rgb), 0.10),
+                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.05);
     transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
   }
 
   .weather-metric-glow:hover {
-    box-shadow: 0 0 18px rgba(var(--theme-accent-rgb), 0.30),
-                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.12);
+    box-shadow: 0 0 16px rgba(var(--theme-accent-rgb), 0.16),
+                inset 0 1px 0 rgba(var(--theme-accent-rgb), 0.08);
   }
 
   /* Subtle gradient for card backgrounds */
@@ -611,6 +611,35 @@ input:focus-visible,
   word-wrap: break-word;
   word-break: break-word;
   hyphens: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DAYBREAK — light-theme signatures
+   Unlayered on purpose: these must beat the layered
+   .weather-card-gradient / .glow-hero defaults regardless of
+   specificity, and only apply under the daybreak theme.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Horizon gradient on the hero card: a cool sky up top warming down to a
+   sunrise peach at the bottom edge. This is Daybreak's "thing you remember"
+   — the light-mode answer to the glow the dark themes get for free. Tints
+   are kept pale so the temperature and condition text stay legible. */
+[data-theme="daybreak"] .hero-weather-card {
+  background: linear-gradient(
+    160deg,
+    hsl(205 75% 93%) 0%,
+    hsl(42 72% 95%) 46%,
+    hsl(28 88% 88%) 100%
+  );
+}
+
+/* Sun-embossed hero number instead of a muddy blue halo: a crisp white top
+   highlight plus a warm amber cast below, as if the digits were lit by
+   low morning sun. Reads as depth on a light surface where neon glow can't. */
+[data-theme="daybreak"] .glow-hero {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 10px rgba(190, 95, 25, 0.30);
 }
 
 /* ═══════════════════════════════════════════════════════════

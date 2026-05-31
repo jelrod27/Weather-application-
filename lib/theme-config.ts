@@ -5,7 +5,7 @@
  * Colors are defined in globals.css as CSS custom properties
  */
 
-export type ThemeType = 'nord' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
+export type ThemeType = 'nord' | 'daybreak' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
 
 export interface ThemeDefinition {
   name: ThemeType;
@@ -21,6 +21,12 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
     displayName: 'Nord',
     isPremium: false,
     description: 'Arctic, north-bluish color palette'
+  },
+  daybreak: {
+    name: 'daybreak',
+    displayName: 'Daybreak',
+    isPremium: false,
+    description: 'Warm dawn light theme with a sunrise horizon'
   },
   // Premium themes - only for registered users
   synthwave84: {
@@ -48,6 +54,10 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
     description: 'Classic phosphor terminal with Matrix look'
   }
 };
+
+// Default theme applied to guests (unauthenticated users) and as the
+// fallback when a premium theme is dropped on logout. Must be a free theme.
+export const DEFAULT_THEME: ThemeType = 'daybreak';
 
 // Get list of all theme names
 export const THEME_LIST = Object.keys(THEME_DEFINITIONS) as ThemeType[];

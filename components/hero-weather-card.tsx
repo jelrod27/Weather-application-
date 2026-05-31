@@ -9,7 +9,7 @@ import { getHeroAccent } from "@/lib/weather/hero-utils"
 import { ArrowDown, ArrowUp, CloudRain, Droplets, Thermometer, Wind } from "lucide-react"
 
 const HERO_CARD_BASE =
-  "weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
+  "hero-weather-card weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
 
 interface HeroWeatherCardProps {
   location: string
@@ -81,7 +81,7 @@ export function HeroWeatherCard({
 
             <p
               data-testid="temperature-value"
-              className="text-6xl sm:text-8xl font-bold tabular-nums tracking-tight font-mono leading-none text-foreground"
+              className="text-6xl sm:text-8xl font-bold tabular-nums tracking-tight font-mono leading-none text-foreground glow-hero"
               style={{ fontSize: "clamp(56px, 11vw, 104px)" }}
             >
               {displayTemp ?? 'N/A'}

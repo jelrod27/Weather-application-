@@ -21,7 +21,14 @@ export function cn(...inputs: ClassValue[]) {
 
 /** Serialize an object for safe embedding inside <script type="application/ld+json">. */
 export function safeJsonLd(obj: unknown): string {
-  return JSON.stringify(obj).replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+  // Escape `<`/`>` to neutralize `</script>`/`<!--` breakouts, and the U+2028/
+  // U+2029 line separators which are valid JSON but break JS string literals if
+  // this output is ever consumed by an executable inline <script>.
+  return JSON.stringify(obj)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
 }
 
 // Application Constants
@@ -46,44 +53,6 @@ export const APP_CONSTANTS = {
     EXPIRY_MINUTES: 10,
   }
 } as const
-
-// Safe localStorage access with error handling
-export const safeLocalStorage = {
-  get: (key: string): string | null => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return localStorage.getItem(key)
-      }
-    } catch (error) {
-      console.warn(`Failed to get localStorage key "${key}":`, error)
-    }
-    return null
-  },
-
-  set: (key: string, value: string): boolean => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(key, value)
-        return true
-      }
-    } catch (error) {
-      console.warn(`Failed to set localStorage key "${key}":`, error)
-    }
-    return false
-  },
-
-  remove: (key: string): boolean => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.removeItem(key)
-        return true
-      }
-    } catch (error) {
-      console.warn(`Failed to remove localStorage key "${key}":`, error)
-    }
-    return false
-  }
-}
 
 // Validation utilities
 const validation = {

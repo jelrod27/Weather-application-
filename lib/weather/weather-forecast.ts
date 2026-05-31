@@ -97,8 +97,8 @@ export const processDailyForecast = (
       dailyData[date] = {
         high: item.main.temp,
         low: item.main.temp,
-        condition: item.weather[0].main,
-        description: item.weather[0].description,
+        condition: item.weather?.[0]?.main ?? 'Unknown',
+        description: item.weather?.[0]?.description ?? '',
         humidity: [],
         pressure: [],
         windSpeed: [],
@@ -126,7 +126,7 @@ export const processDailyForecast = (
     if (item.pop !== undefined) {
       precipChance = Math.round(item.pop * 100);
     } else {
-      precipChance = item.weather[0].main.toLowerCase().includes('rain')
+      precipChance = (item.weather?.[0]?.main ?? '').toLowerCase().includes('rain')
         ? Math.min((item.main.humidity / 100) * 100, 85)
         : 0;
     }
@@ -137,7 +137,7 @@ export const processDailyForecast = (
       dailyData[date].hourlyForecast.push({
         time: time,
         temp: useFahrenheit ? Math.round(item.main.temp) : fahrenheitToCelsius(item.main.temp),
-        condition: mapWeatherCondition(item.weather[0].main),
+        condition: mapWeatherCondition(item.weather?.[0]?.main ?? 'Unknown'),
         precipChance: Math.round(precipChance)
       });
     }

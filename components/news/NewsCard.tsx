@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
-import CategoryBadge from './CategoryBadge';
+import CategoryBadge, { getCategoryConfig, type CategoryType } from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { safeExternalUrl } from '@/lib/safe-url';
@@ -57,13 +57,16 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
       : item.description
     : '';
 
-  // Priority-based border styles
+  // Priority-based border styles. Low priority falls back to a visible theme
+  // border (border-border) rather than themeClasses.borderColor, which is
+  // border-transparent for the 'weather' variant and left low-priority cards
+  // edgeless and blended into the page on every theme.
   const priorityBorderClass =
     item.priority === 'high'
       ? 'border-red-500 hover:border-red-400'
       : item.priority === 'medium'
       ? 'border-yellow-500 hover:border-yellow-400'
-      : themeClasses.borderColor;
+      : 'border-border';
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -80,7 +83,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
         className={cn(
           'border-2 transition-all hover:shadow-lg cursor-pointer group card-interactive',
           priorityBorderClass,
-          themeClasses.background,
+          'bg-card',
           className
         )}
         onClick={openSafeUrl}
@@ -106,7 +109,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
               <div
                 className={cn(
                   'w-16 h-16 flex-shrink-0 border-2 rounded flex items-center justify-center',
-                  themeClasses.borderColor
+                  'border-border'
                 )}
               >
                 <CategoryBadge category={item.category} />
@@ -149,18 +152,31 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
     );
   }
 
-  // Default variant
+  // Default variant. The whole card is the link (matching NewsHero and the
+  // compact variant); the READ button stops propagation so it doesn't open a
+  // second tab. `showImage` collapses to the text layout when there is no
+  // image or it failed to load, so an errored image never leaves a blank banner
+  // and a missing priority indicator.
+  const showImage = Boolean(item.imageUrl) && !imageError;
+  const categoryConfig = getCategoryConfig(item.category as CategoryType);
+  const CategoryIcon = categoryConfig.icon;
+
   return (
     <Card
       className={cn(
-        'border-2 transition-all hover:shadow-lg overflow-hidden group flex flex-col h-full',
+        'border-2 transition-all hover:shadow-lg overflow-hidden group flex flex-col h-full cursor-pointer card-interactive',
         priorityBorderClass,
-        themeClasses.background,
+        'bg-card',
         className
       )}
+      onClick={openSafeUrl}
+      onKeyDown={handleKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`${item.title} from ${item.source}, ${timeAgo}. Opens in new tab`}
     >
       {/* Image */}
-      {item.imageUrl && !imageError && (
+      {showImage ? (
         <div className="relative w-full h-48 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -173,13 +189,28 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
             <PriorityIndicator priority={item.priority} size="md" />
           </div>
         </div>
+      ) : (
+        // Most feed items (USGS/NWS/NHC data feeds) have no image. Rather than
+        // a blank card, show a category-colored banner with the category icon so
+        // imageless cards read as deliberate and stay scannable by category.
+        <div
+          className={cn(
+            'relative w-full h-24 flex items-center justify-center border-b-2',
+            categoryConfig.colorClass
+          )}
+          aria-hidden="true"
+        >
+          <CategoryIcon className="w-10 h-10 opacity-90" />
+          <div className="absolute top-2 right-2 flex gap-2">
+            <PriorityIndicator priority={item.priority} size="md" />
+          </div>
+        </div>
       )}
 
       {/* Header */}
       <CardHeader className="flex-1">
         <div className="flex gap-2 mb-2 flex-wrap">
           <CategoryBadge category={item.category} />
-          {!item.imageUrl && <PriorityIndicator priority={item.priority} showLabel size="sm" />}
           {/* Magnitude badge for earthquakes */}
           {item.magnitude && (
             <span className={cn(
@@ -230,8 +261,11 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
         <Button
           variant="outline"
           size="sm"
-          className={cn('font-mono font-bold text-xs border-2 flex-shrink-0', themeClasses.accentText)}
-          onClick={openSafeUrl}
+          className={cn('font-mono font-bold text-xs border-2 flex-shrink-0', 'text-primary')}
+          onClick={(e) => {
+            e.stopPropagation();
+            openSafeUrl();
+          }}
           aria-label={`Read full article: ${item.title}`}
         >
           READ <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />

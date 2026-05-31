@@ -18,21 +18,15 @@ export interface ThemeConfig {
   }
 }
 
+/**
+ * Swatch colors MUST mirror the canonical token values in `app/theme.css`
+ * (the single source of truth for what actually gets applied). They are
+ * written as `hsl(H S% L%)` strings copied verbatim from the matching
+ * `[data-theme=...]` block so the preview a user clicks is exactly the
+ * theme they get. If you change a palette in theme.css, change it here too.
+ */
 export const THEME_CONFIGS: ThemeConfig[] = [
   // FREE TIER - Available to everyone
-  {
-    id: 'nord',
-    name: 'nord',
-    displayName: 'Dark Mode',
-    description: 'Easy on the eyes dark theme',
-    tier: 'free',
-    category: 'basic',
-    colors: {
-      primary: '#00d4ff',
-      background: '#16213e',
-      accent: '#4ecdc4'
-    }
-  },
   {
     id: 'nord',
     name: 'nord',
@@ -41,9 +35,22 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     tier: 'free',
     category: 'basic',
     colors: {
-      primary: '#88C0D0',
-      background: '#2E3440',
-      accent: '#81A1C1'
+      primary: 'hsl(193 43% 67%)',
+      background: 'hsl(220 16% 22%)',
+      accent: 'hsl(210 34% 63%)'
+    }
+  },
+  {
+    id: 'daybreak',
+    name: 'daybreak',
+    displayName: 'Daybreak',
+    description: 'Warm dawn light theme — cream paper, sky blue, sunrise amber',
+    tier: 'free',
+    category: 'basic',
+    colors: {
+      primary: 'hsl(205 85% 40%)',
+      background: 'hsl(40 33% 96%)',
+      accent: 'hsl(28 92% 52%)'
     }
   },
 
@@ -56,9 +63,9 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     tier: 'premium',
     category: 'retro',
     colors: {
-      primary: '#ff7edb',
-      background: '#241b30',
-      accent: '#00ffff'
+      primary: 'hsl(319 100% 75%)',
+      background: 'hsl(268 40% 15%)',
+      accent: 'hsl(180 100% 50%)'
     }
   },
   {
@@ -69,9 +76,9 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     tier: 'premium',
     category: 'special',
     colors: {
-      primary: '#ff79c6',
-      background: '#282a36',
-      accent: '#50fa7b'
+      primary: 'hsl(326 100% 74%)',
+      background: 'hsl(231 15% 18%)',
+      accent: 'hsl(265 89% 78%)'
     }
   },
   {
@@ -82,9 +89,9 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     tier: 'premium',
     category: 'special',
     colors: {
-      primary: '#fcee0a',
-      background: '#0d0d0d',
-      accent: '#ff003c'
+      primary: 'hsl(56 100% 52%)',
+      background: 'hsl(0 0% 5%)',
+      accent: 'hsl(180 100% 50%)'
     }
   },
   {
@@ -95,9 +102,9 @@ export const THEME_CONFIGS: ThemeConfig[] = [
     tier: 'premium',
     category: 'retro',
     colors: {
-      primary: '#00ff41',
-      background: '#000000',
-      accent: '#008f11'
+      primary: 'hsl(120 100% 50%)',
+      background: 'hsl(120 100% 3%)',
+      accent: 'hsl(120 60% 35%)'
     }
   }
 ]

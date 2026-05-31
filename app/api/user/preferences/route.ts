@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import {
   updatePreferencesSchema,
   createPreferencesSchema,
@@ -21,8 +22,11 @@ import {
 } from '@/lib/validations/preferences'
 
 // GET /api/user/preferences - Fetch user preferences
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request)
+    if (!rateLimit.allowed) return rateLimit.response
+
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -65,6 +69,9 @@ export async function GET() {
 // PUT /api/user/preferences - Update user preferences
 export async function PUT(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request)
+    if (!rateLimit.allowed) return rateLimit.response
+
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -121,6 +128,9 @@ export async function PUT(request: NextRequest) {
 // POST /api/user/preferences - Create initial user preferences
 export async function POST(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request)
+    if (!rateLimit.allowed) return rateLimit.response
+
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 

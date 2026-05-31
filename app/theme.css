@@ -66,7 +66,69 @@
     --font-body: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
   }
 
-  /* 
+  /*
+   * THEME: DAYBREAK (Light) — free
+   * A warm dawn, not an arctic white screen: cream paper base, clear-day
+   * sky-blue for UI, sunrise-amber accent. Two signatures stand in for the
+   * glow the dark themes lean on — a horizon gradient on the hero card and
+   * a sun-embossed hero number (both in the [data-theme="daybreak"] blocks
+   * in globals.css). Shadows are warm (toasted-brown ink), never cool grey,
+   * so the whole surface keeps its morning-light feeling.
+   */
+  [data-theme="daybreak"] {
+    --background: 40 33% 96%;
+    --foreground: 24 18% 18%;
+    --card: 42 50% 98%;
+    --card-foreground: 24 18% 18%;
+    --popover: 42 50% 98%;
+    --popover-foreground: 24 18% 18%;
+    --primary: 205 85% 40%;
+    --primary-foreground: 40 40% 98%;
+    --secondary: 32 88% 92%;
+    --secondary-foreground: 24 18% 18%;
+    --muted: 40 25% 91%;
+    --muted-foreground: 28 12% 40%;
+    --accent: 28 92% 52%;
+    --accent-foreground: 24 35% 14%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 40% 98%;
+    --border: 36 22% 82%;
+    --input: 36 22% 82%;
+    --ring: 205 85% 40%;
+    --radius: 0.5rem;
+
+    --bg: hsl(40 33% 96%);
+    --bg-elev: hsl(42 50% 98%);
+    --text: hsl(24 18% 18%);
+    --text-muted: hsl(28 12% 40%);
+    --weather-primary: hsl(205 85% 40%);
+    --weather-accent: hsl(28 92% 52%);
+
+    /* Accent rgb = sunrise amber (warm hover/focus); bg rgb = cream paper. */
+    --theme-accent-rgb: 240, 140, 40;
+    --theme-bg-rgb: 248, 246, 241;
+
+    /* Borders: warm-ink hairlines for structure; amber accent on interaction. */
+    --border-invisible: rgba(60, 45, 30, 0.08);
+    --border-subtle: rgba(60, 45, 30, 0.12);
+    --border-hover: rgba(var(--theme-accent-rgb), 0.40);
+    --border-focus: rgba(var(--theme-accent-rgb), 0.55);
+
+    /* "Glow" => warm elevation. Soft toasted shadows give lift on cream. */
+    --glow-container: 0 1px 3px rgba(60, 45, 30, 0.09), 0 8px 24px -12px rgba(60, 45, 30, 0.20);
+    --glow-hover: 0 0 0 1px rgba(var(--theme-accent-rgb), 0.35);
+    --glow-focus: 0 0 0 2px rgba(var(--theme-accent-rgb), 0.50);
+    --glow-subtle: 0 1px 2px rgba(60, 45, 30, 0.07);
+    --glow-medium: 0 4px 12px -6px rgba(60, 45, 30, 0.16);
+    --glow-strong: 0 8px 24px -10px rgba(60, 45, 30, 0.24);
+    --card-bg-tint: rgba(60, 45, 30, 0.03);
+    --card-bg-hover: rgba(60, 45, 30, 0.05);
+
+    --theme-font: var(--font-inconsolata), 'Inconsolata', monospace;
+    --font-body: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /*
    * THEME: SYNTHWAVE '84
    */
   [data-theme="synthwave84"] {

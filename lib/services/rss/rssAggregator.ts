@@ -7,9 +7,11 @@
  * Server-side RSS feed fetching, parsing, and aggregation
  */
 
+import * as Sentry from '@sentry/nextjs';
+import { XMLParser } from 'fast-xml-parser';
 import { FEED_SOURCES, FeedSource, FeedCategory, CATEGORY_CONFIG } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
-import { safeExternalUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
 
 export interface RSSItem {
   id: string;
@@ -39,9 +41,74 @@ export interface AggregatedResult {
   lastUpdated: Date;
 }
 
-// In-memory cache
+// In-memory cache.
+// Best-effort warm-instance optimization only: the in-memory map does not
+// reliably persist across serverless invocations, so the per-feed
+// `next.revalidate` and the CDN `Cache-Control` (see cacheControlForCategories)
+// are the real cache. Kept short (5 min) to match the Fast tier so severe
+// alerts stay fresh on a warm instance.
 const cache = new Map<string, { data: AggregatedResult; timestamp: number }>();
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours (2x daily refresh)
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Per-feed item cap to bound memory/parse cost (PRD §8.1).
+const MAX_ITEMS_PER_FEED = 30;
+
+/**
+ * Per-category freshness tiers (PRD §9). Severe/hurricanes must stay near
+ * real-time; science/climate move slowly. The route picks the *minimum* tier
+ * present in the requested categories so a mixed/"all" request keeps the
+ * fastest content fresh.
+ */
+type CacheTier = 'fast' | 'medium' | 'slow';
+
+const CATEGORY_TIERS: Record<FeedCategory, CacheTier> = {
+  severe: 'fast',
+  hurricanes: 'fast',
+  earthquakes: 'medium',
+  volcanoes: 'medium',
+  space: 'medium',
+  climate: 'slow',
+  science: 'slow',
+};
+
+const TIER_CACHE_CONTROL: Record<CacheTier, string> = {
+  fast: 'public, s-maxage=300, stale-while-revalidate=900',
+  medium: 'public, s-maxage=1800, stale-while-revalidate=3600',
+  slow: 'public, s-maxage=21600, stale-while-revalidate=43200',
+};
+
+/**
+ * Build the route Cache-Control header for a set of requested categories.
+ * Returns the fastest (smallest s-maxage) tier present; defaults to Fast when
+ * no categories are specified (the "all" request) so severe alerts don't get
+ * pinned behind a 6h CDN cache.
+ */
+export function cacheControlForCategories(categories?: FeedCategory[]): string {
+  const requested = categories && categories.length > 0
+    ? categories
+    : (Object.keys(CATEGORY_TIERS) as FeedCategory[]);
+  const tiers = requested.map((c) => CATEGORY_TIERS[c]).filter(Boolean);
+  if (tiers.includes('fast')) return TIER_CACHE_CONTROL.fast;
+  if (tiers.includes('medium')) return TIER_CACHE_CONTROL.medium;
+  return TIER_CACHE_CONTROL.slow;
+}
+
+// Shared XML parser. Keeps attributes (prefixed `@_`) and CDATA, and leaves
+// namespaced keys intact (e.g. `content:encoded`, `dc:creator`, `media:content`).
+const xmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+  textNodeName: '#text',
+  parseAttributeValue: false,
+  trimValues: true,
+});
+
+// Minimal structural types for the parsed feed tree (avoids `any`).
+type XmlValue = string | number | boolean | null | undefined | XmlNode | XmlNode[];
+interface XmlNode {
+  [key: string]: XmlValue;
+  '#text'?: string;
+}
 
 /**
  * Simple hash function for generating unique IDs
@@ -58,6 +125,37 @@ function simpleHash(str: string): string {
 }
 
 /**
+ * Report an unhealthy feed to Sentry so a dead source is visible within one
+ * refresh cycle instead of silently emptying its category (see PRD §12 / G3 —
+ * this is what the decommissioned NWS alerts feed lacked).
+ *
+ * Real fetch/HTTP/timeout failures emit a warning-level message (creates an
+ * issue). A feed that fetched OK but parsed to zero items emits a breadcrumb
+ * only — high-priority feeds like nws-alerts can legitimately be empty during
+ * calm weather, so we avoid raising a noisy issue for that case.
+ */
+function reportFeedHealth(
+  source: FeedSource,
+  reason: string,
+  kind: 'fetch-error' | 'empty-parse'
+): void {
+  Sentry.addBreadcrumb({
+    category: 'news.feed',
+    level: 'warning',
+    message: `feed unhealthy (${kind}): ${source.id}`,
+    data: { sourceId: source.id, category: source.category, reason },
+  });
+
+  if (kind === 'fetch-error' && source.priority === 'high') {
+    Sentry.captureMessage('[news] high-priority feed down', {
+      level: 'warning',
+      tags: { context: 'news', sourceId: source.id },
+      extra: { source: source.id, category: source.category, reason },
+    });
+  }
+}
+
+/**
  * Fetch and parse a single RSS/Atom feed
  */
 async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
@@ -69,7 +167,9 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
       signal: controller.signal,
       headers: {
         'User-Agent': '16-Bit Weather RSS Aggregator/1.0',
-        'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+        'Accept': source.format === 'json'
+          ? 'application/json, text/json'
+          : 'application/rss+xml, application/atom+xml, application/xml, text/xml',
       },
       next: { revalidate: source.refreshInterval * 60 },
     });
@@ -85,65 +185,206 @@ async function fetchFeed(source: FeedSource): Promise<RSSItem[]> {
     // Parse based on format
     if (source.format === 'atom') {
       return parseAtomFeed(text, source);
+    } else if (source.format === 'json') {
+      return parseJsonFeed(text, source);
     } else {
       return parseRSSFeed(text, source);
     }
   } catch (error) {
-    console.error(`Failed to fetch ${source.name}:`, error);
+    const reason = error instanceof Error ? error.message : String(error);
+    // [news] context prefix per CLAUDE.md logging convention.
+    console.error(`[news] feed fetch failed: ${source.id}`, reason);
+    reportFeedHealth(source, reason, 'fetch-error');
     return [];
   }
 }
 
 /**
- * Parse RSS 2.0 feed
+ * Normalize a parsed value (string, number, or `{ '#text': ... }` node) to a
+ * trimmed string. fast-xml-parser represents an element with attributes as an
+ * object carrying its text under `#text`.
+ */
+function nodeText(value: XmlValue): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const text = value['#text'];
+    if (typeof text === 'string') return text.trim() || undefined;
+    if (typeof text === 'number') return String(text);
+  }
+  return undefined;
+}
+
+/** First defined text value among several candidate keys on a node. */
+function firstText(node: XmlNode, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const text = nodeText(node[key]);
+    if (text) return text;
+  }
+  return undefined;
+}
+
+/** Coerce a value that may be a single node or an array of nodes into an array. */
+function asArray(value: XmlValue): XmlNode[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value as XmlNode[];
+  if (typeof value === 'object') return [value as XmlNode];
+  return [];
+}
+
+/** Resolve the best href for an Atom entry/feed `<link>` (prefers rel="alternate"). */
+function atomLinkHref(node: XmlNode): string | undefined {
+  const links = asArray(node.link);
+  if (links.length === 0) return nodeText(node.link);
+  const alternate = links.find((l) => {
+    const rel = l['@_rel'];
+    return rel === 'alternate' || rel === undefined;
+  });
+  const chosen = alternate ?? links[0];
+  if (typeof chosen === 'string') return chosen;
+  return nodeText(chosen['@_href']) ?? nodeText(chosen.href);
+}
+
+// Hosts that serve players/embeds, not images. A feed's media:content can
+// point at a YouTube embed (medium="video"); shoved into <img> the browser
+// blocks it (ERR_BLOCKED_BY_ORB) and the card flashes a broken image.
+const NON_IMAGE_HOSTS = ['youtube.com/embed', 'youtu.be', 'player.vimeo.com'];
+// Extensions that are definitely not still images.
+const NON_IMAGE_EXT = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|m4a|wav|pdf|html?)(?:[?#]|$)/i;
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[?#]|$)/i;
+
+/**
+ * True only for URLs plausibly renderable in an <img>. Rejects known
+ * player/embed hosts and non-image extensions; accepts a known image
+ * extension or an extensionless URL (many image CDNs serve those). The point
+ * is to keep video embeds and media files out of the image slot.
+ */
+function isLikelyImageUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (NON_IMAGE_HOSTS.some((h) => lower.includes(h))) return false;
+  if (NON_IMAGE_EXT.test(lower)) return false;
+  if (IMAGE_EXT.test(lower)) return true;
+  // No recognizable file extension at all -> allow (CDN-style image URL).
+  return !/\.[a-z0-9]{2,5}(?:[?#]|$)/i.test(lower);
+}
+
+/** media:* declares its kind via `medium` ("image"|"video"|...) or a MIME `type`. */
+function isImageMediaNode(media: XmlNode): boolean {
+  const medium = nodeText(media['@_medium']);
+  if (medium) return medium === 'image';
+  const type = nodeText(media['@_type']);
+  if (type) return type.startsWith('image/');
+  return true; // no hints -> fall back to URL-shape check by the caller
+}
+
+/** Best-effort image extraction: media:*, enclosure, then inline <img> in body. */
+function extractImage(node: XmlNode, body: string | undefined): string | undefined {
+  const mediaThumb = node['media:thumbnail'] ?? node.thumbnail;
+  if (mediaThumb && typeof mediaThumb === 'object' && !Array.isArray(mediaThumb)) {
+    const url = nodeText(mediaThumb['@_url']) ?? nodeText(mediaThumb.url);
+    if (url && isLikelyImageUrl(url)) return url;
+  }
+
+  // Pick the first media:content that is actually an image, not the first one
+  // outright — video entries (e.g. YouTube) often precede a real thumbnail.
+  for (const media of asArray(node['media:content'])) {
+    if (!isImageMediaNode(media)) continue;
+    const url = nodeText(media['@_url']) ?? nodeText(media.url);
+    if (url && isLikelyImageUrl(url)) return url;
+  }
+
+  const enclosure = asArray(node.enclosure)[0];
+  if (enclosure) {
+    const type = nodeText(enclosure['@_type']) ?? '';
+    const url = nodeText(enclosure['@_url']) ?? nodeText(enclosure.url);
+    if (url && (type === '' || type.startsWith('image/')) && isLikelyImageUrl(url)) return url;
+  }
+
+  if (body) {
+    const imgMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch && isLikelyImageUrl(imgMatch[1])) return imgMatch[1];
+  }
+
+  return undefined;
+}
+
+/** Build an RSSItem from already-extracted, safety-checked fields. */
+function buildItem(
+  source: FeedSource,
+  index: number,
+  fields: {
+    title: string;
+    safeLink: string;
+    body?: string;
+    pubDate?: string;
+    author?: string;
+    rawImage?: string;
+    priority?: 'high' | 'medium' | 'low';
+    location?: string;
+    magnitude?: number;
+    depth?: number;
+  }
+): RSSItem {
+  // Upgrade http -> https before the scheme guard: CSP img-src only allows
+  // https, so an http feed image would otherwise be dropped or blocked.
+  const safeImage = fields.rawImage ? safeExternalUrl(upgradeImageUrl(fields.rawImage)) : null;
+  return {
+    id: `${source.id}-${simpleHash(fields.safeLink + index.toString())}-${index}`,
+    title: cleanHtml(fields.title),
+    description: cleanHtml(fields.body || '').slice(0, 300),
+    url: fields.safeLink,
+    source: source.name,
+    sourceId: source.id,
+    category: source.category,
+    priority: fields.priority ?? source.priority,
+    timestamp: fields.pubDate ? new Date(fields.pubDate) : new Date(),
+    imageUrl: safeImage || undefined,
+    author: fields.author ? cleanHtml(fields.author) : undefined,
+    location: fields.location,
+    magnitude: fields.magnitude,
+    depth: fields.depth,
+  };
+}
+
+/**
+ * Parse an RSS 2.0 / RDF feed with fast-xml-parser.
  */
 function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
+  let parsed: XmlNode;
+  try {
+    parsed = xmlParser.parse(xml) as XmlNode;
+  } catch {
+    return [];
+  }
+
+  const rss = parsed.rss as XmlNode | undefined;
+  const channel = (rss?.channel as XmlNode | undefined) ?? (parsed['rdf:RDF'] as XmlNode | undefined);
+  // RSS 2.0 nests <item> under <channel>; RSS 1.0 (RDF) lists them at top level.
+  const rawItems = asArray(channel?.item ?? (parsed['rdf:RDF'] as XmlNode | undefined)?.item);
+
   const items: RSSItem[] = [];
-
-  // Extract items using regex (more reliable than DOMParser in Node)
-  const itemMatches = xml.match(/<item[^>]*>[\s\S]*?<\/item>/gi) || [];
-
-  for (let i = 0; i < Math.min(itemMatches.length, 20); i++) {
-    const itemXml = itemMatches[i];
+  for (let i = 0; i < Math.min(rawItems.length, MAX_ITEMS_PER_FEED); i++) {
+    const item = rawItems[i];
     try {
-      const title = extractTag(itemXml, 'title');
-      const link = extractTag(itemXml, 'link') || extractTag(itemXml, 'guid');
-      const description = extractTag(itemXml, 'description') || extractTag(itemXml, 'content:encoded');
-      const pubDate = extractTag(itemXml, 'pubDate') || extractTag(itemXml, 'dc:date');
-      const author = extractTag(itemXml, 'author') || extractTag(itemXml, 'dc:creator');
+      const title = firstText(item, ['title']);
+      const link = firstText(item, ['link', 'guid']);
+      const body = firstText(item, ['description', 'content:encoded', 'content']);
 
-      // Extract image from enclosure or media:content
-      let imageUrl = extractAttribute(itemXml, 'enclosure', 'url');
-      if (!imageUrl) {
-        imageUrl = extractAttribute(itemXml, 'media:content', 'url');
-      }
-      if (!imageUrl) {
-        // Try to extract from description
-        const imgMatch = description?.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (imgMatch) imageUrl = imgMatch[1];
-      }
-
-      // Drop items whose link or image URL isn't an http(s) URL.
-      // Stops `javascript:` and other URI schemes from reaching renderers.
+      // Drop items whose link isn't an http(s) URL (stops `javascript:` etc.).
       const safeLink = safeExternalUrl(link);
-      const safeImage = imageUrl ? safeExternalUrl(imageUrl) : null;
-      if (title && safeLink) {
-        // Create unique ID using hash of full URL + index
-        const uniqueId = `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`;
-        items.push({
-          id: uniqueId,
-          title: cleanHtml(title),
-          description: cleanHtml(description || '').slice(0, 300),
-          url: safeLink,
-          source: source.name,
-          sourceId: source.id,
-          category: source.category,
-          priority: source.priority,
-          timestamp: pubDate ? new Date(pubDate) : new Date(),
-          imageUrl: safeImage || undefined,
-          author: author ? cleanHtml(author) : undefined,
-        });
-      }
+      if (!title || !safeLink) continue;
+
+      items.push(
+        buildItem(source, i, {
+          title,
+          safeLink,
+          body,
+          pubDate: firstText(item, ['pubDate', 'pubdate', 'dc:date', 'date']),
+          author: firstText(item, ['author', 'dc:creator']),
+          rawImage: extractImage(item, body),
+        })
+      );
     } catch {
       // Skip malformed items
     }
@@ -153,68 +394,141 @@ function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
 }
 
 /**
- * Parse Atom feed (used by USGS earthquakes)
+ * Parse an Atom feed with fast-xml-parser (USGS earthquakes, NWS alerts).
  */
 function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
+  let parsed: XmlNode;
+  try {
+    parsed = xmlParser.parse(xml) as XmlNode;
+  } catch {
+    return [];
+  }
+
+  const feed = parsed.feed as XmlNode | undefined;
+  const entries = asArray(feed?.entry);
+
   const items: RSSItem[] = [];
-
-  // Extract entries
-  const entryMatches = xml.match(/<entry[^>]*>[\s\S]*?<\/entry>/gi) || [];
-
-  for (let i = 0; i < Math.min(entryMatches.length, 20); i++) {
-    const entryXml = entryMatches[i];
+  for (let i = 0; i < Math.min(entries.length, MAX_ITEMS_PER_FEED); i++) {
+    const entry = entries[i];
     try {
-      const title = extractTag(entryXml, 'title');
-      const link = extractAttribute(entryXml, 'link', 'href') || extractTag(entryXml, 'id');
-      const summary = extractTag(entryXml, 'summary') || extractTag(entryXml, 'content');
-      const updated = extractTag(entryXml, 'updated') || extractTag(entryXml, 'published');
-      const author = extractTag(entryXml, 'name'); // Inside <author>
+      const title = firstText(entry, ['title']);
+      const link = atomLinkHref(entry) ?? firstText(entry, ['id']);
+      const summary = firstText(entry, ['summary', 'content']);
 
-      // For USGS earthquake feeds, extract magnitude from title
+      // Author lives in a nested <author><name>…</name></author>.
+      const authorNode = entry.author;
+      const author = authorNode && typeof authorNode === 'object' && !Array.isArray(authorNode)
+        ? firstText(authorNode as XmlNode, ['name'])
+        : nodeText(authorNode);
+
+      // Earthquake enrichment from USGS titles ("M 5.2 - 10 km NE of City").
       let magnitude: number | undefined;
       let depth: number | undefined;
       let location: string | undefined;
-
       if (source.category === 'earthquakes' && title) {
-        // Title format: "M 5.2 - 10 km NE of City, Country"
         const magMatch = title.match(/^M\s*([\d.]+)/);
         if (magMatch) magnitude = parseFloat(magMatch[1]);
-
         const locMatch = title.match(/- (.+)$/);
         if (locMatch) location = locMatch[1];
-
-        // Try to get depth from summary/description
         const depthMatch = summary?.match(/Depth[:\s]*([\d.]+)\s*km/i);
         if (depthMatch) depth = parseFloat(depthMatch[1]);
       }
 
-      // Same scheme guard as the RSS branch above.
       const safeLink = safeExternalUrl(link);
-      if (title && safeLink) {
-        // Create unique ID using hash of full URL + index
-        const uniqueId = `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`;
-        items.push({
-          id: uniqueId,
-          title: cleanHtml(title),
-          description: cleanHtml(summary || '').slice(0, 300),
-          url: safeLink,
-          source: source.name,
-          sourceId: source.id,
-          category: source.category,
+      if (!title || !safeLink) continue;
+
+      items.push(
+        buildItem(source, i, {
+          title,
+          safeLink,
+          body: summary,
+          pubDate: firstText(entry, ['updated', 'published']),
+          author,
+          rawImage: extractImage(entry, summary),
           priority: determinePriority(source, magnitude),
-          timestamp: updated ? new Date(updated) : new Date(),
-          author: author ? cleanHtml(author) : undefined,
           location,
           magnitude,
           depth,
-        });
-      }
+        })
+      );
     } catch {
       // Skip malformed entries
     }
   }
 
   return items;
+}
+
+/** A single notice from the USGS getElevatedVolcanoes JSON API. */
+interface UsgsVolcanoNotice {
+  volcano_name?: string;
+  color_code?: string;
+  alert_level?: string;
+  sent_utc?: string;
+  notice_url?: string;
+  obs_fullname?: string;
+}
+
+/**
+ * Parse the USGS getElevatedVolcanoes JSON feed. The endpoint returns only
+ * currently-elevated volcanoes (those above the normal/green alert level), each
+ * with an aviation color code and a WATCH/WARNING/ADVISORY level.
+ */
+function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
+  if (!Array.isArray(data)) return [];
+
+  const items: RSSItem[] = [];
+  for (let i = 0; i < Math.min(data.length, MAX_ITEMS_PER_FEED); i++) {
+    // Skip malformed array elements individually (like the RSS/Atom parsers do)
+    // so one bad entry can't throw and drop the entire volcano feed.
+    const raw = data[i];
+    if (!raw || typeof raw !== 'object') continue;
+    const notice = raw as UsgsVolcanoNotice;
+    const name = notice.volcano_name?.trim();
+    const safeLink = safeExternalUrl(notice.notice_url);
+    if (!name || !safeLink) continue;
+
+    const level = (notice.alert_level || 'ADVISORY').trim();
+    const color = (notice.color_code || '').trim();
+    const observatory = notice.obs_fullname?.trim() || 'USGS';
+    // sent_utc is "YYYY-MM-DD HH:MM:SS" in UTC; normalize to a parseable ISO string.
+    const sent = notice.sent_utc ? new Date(notice.sent_utc.replace(' ', 'T') + 'Z') : new Date();
+
+    items.push({
+      id: `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`,
+      title: cleanHtml(color ? `${name} Volcano — ${level} (${color})` : `${name} Volcano — ${level}`),
+      description: cleanHtml(
+        `${observatory} has an active ${level} alert${color ? ` (aviation color ${color})` : ''} for ${name}.`
+      ).slice(0, 300),
+      url: safeLink,
+      source: source.name,
+      sourceId: source.id,
+      category: source.category,
+      priority: source.priority,
+      timestamp: isNaN(sent.getTime()) ? new Date() : sent,
+      location: name,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Parse a JSON-format feed. Dispatched by source id (currently only the USGS
+ * elevated-volcanoes API); add new shapes here as JSON sources are introduced.
+ */
+function parseJsonFeed(text: string, source: FeedSource): RSSItem[] {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  if (source.id === 'usgs-volcanoes') {
+    return parseUsgsVolcanoesJson(data, source);
+  }
+  return [];
 }
 
 /**
@@ -230,69 +544,68 @@ function determinePriority(source: FeedSource, magnitude?: number): 'high' | 'me
 }
 
 /**
- * Extract text content from XML tag
- */
-function extractTag(xml: string, tagName: string): string | null {
-  // Handle CDATA sections
-  const cdataRegex = new RegExp(`<${tagName}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tagName}>`, 'i');
-  const cdataMatch = xml.match(cdataRegex);
-  if (cdataMatch) return cdataMatch[1].trim();
-
-  // Handle regular content
-  const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1].trim() : null;
-}
-
-/**
- * Extract attribute from XML tag
- */
-function extractAttribute(xml: string, tagName: string, attrName: string): string | null {
-  const regex = new RegExp(`<${tagName}[^>]*${attrName}=["']([^"']+)["']`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1] : null;
-}
-
-/**
  * Clean HTML tags and decode entities
  */
 function cleanHtml(html: string): string {
   return decodeHtmlEntities(html);
 }
 
+/** Normalize a title to alphanumeric tokens for dedup comparison. */
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
- * Deduplicate items based on similar titles
+ * Fuzzy title match via word-overlap (ported from the removed newsAggregator).
+ * Two titles count as duplicates when >=70% of their significant words (length
+ * > 3) overlap — catches the same story syndicated across sources with slightly
+ * different wording, which the old exact-50-char-prefix check missed.
+ */
+function isSimilarTitle(a: string, b: string): boolean {
+  if (a === b) return true;
+  const words1 = new Set(a.split(' ').filter((w) => w.length > 3));
+  const words2 = new Set(b.split(' ').filter((w) => w.length > 3));
+  if (words1.size === 0 || words2.size === 0) return false;
+
+  let overlap = 0;
+  words1.forEach((word) => {
+    if (words2.has(word)) overlap++;
+  });
+  return overlap / Math.max(words1.size, words2.size) >= 0.7;
+}
+
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
+
+/** True if `candidate` should replace `current` (higher priority, then newer). */
+function prefers(candidate: RSSItem, current: RSSItem): boolean {
+  const pDiff = PRIORITY_ORDER[candidate.priority] - PRIORITY_ORDER[current.priority];
+  if (pDiff !== 0) return pDiff < 0;
+  return candidate.timestamp > current.timestamp;
+}
+
+/**
+ * Cross-source deduplication using fuzzy title matching. n is small (<= a few
+ * hundred pre-slice), so the O(n^2) scan is fine and avoids losing near-dupes
+ * to an exact-key map.
  */
 function deduplicateItems(items: RSSItem[]): RSSItem[] {
-  const seen = new Map<string, RSSItem>();
+  const kept: { key: string; item: RSSItem }[] = [];
 
   for (const item of items) {
-    // Create a normalized key from title
-    const key = item.title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 50);
-
-    // Keep the higher priority or newer item
-    const existing = seen.get(key);
-    if (!existing) {
-      seen.set(key, item);
-    } else {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      if (priorityOrder[item.priority] < priorityOrder[existing.priority]) {
-        seen.set(key, item);
-      } else if (
-        priorityOrder[item.priority] === priorityOrder[existing.priority] &&
-        item.timestamp > existing.timestamp
-      ) {
-        seen.set(key, item);
-      }
+    const key = normalizeTitle(item.title);
+    const dupIndex = kept.findIndex((k) => isSimilarTitle(k.key, key));
+    if (dupIndex === -1) {
+      kept.push({ key, item });
+    } else if (prefers(item, kept[dupIndex].item)) {
+      kept[dupIndex] = { key, item };
     }
   }
 
-  return Array.from(seen.values());
+  return kept.map((k) => k.item);
 }
 
 /**
@@ -330,23 +643,37 @@ export async function aggregateFeeds(options: {
     if (result.status === 'fulfilled') {
       allItems.push(...result.value);
       bySource[feed.name] = result.value.length;
+      // Fetched OK but produced no items: low-noise breadcrumb only. fetchFeed
+      // swallows real fetch errors (returns []), so this also covers the case
+      // where an HTTP 200 returned content the parser couldn't map.
+      if (result.value.length === 0) {
+        reportFeedHealth(feed, 'parsed 0 items', 'empty-parse');
+      }
     } else {
-      errors.push(`${feed.name}: ${result.reason}`);
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      errors.push(`${feed.name}: ${reason}`);
       bySource[feed.name] = 0;
+      reportFeedHealth(feed, reason, 'fetch-error');
     }
   });
 
-  // Filter by age
+  // Filter by age. Exempt the USGS elevated-volcanoes source: that endpoint
+  // returns only *currently* elevated volcanoes, but each item's timestamp is
+  // its last notice's send time (sent_utc), which can lag well behind the age
+  // window for a persistent WATCH/WARNING. Aging those out would hide active
+  // hazards. We keep the real sent_utc (so card "time ago" and the Happening
+  // Now rail stay honest) and just skip the cutoff for this source.
   const cutoff = Date.now() - maxAge * 60 * 60 * 1000;
-  allItems = allItems.filter(item => item.timestamp.getTime() >= cutoff);
+  allItems = allItems.filter(
+    (item) => item.sourceId === 'usgs-volcanoes' || item.timestamp.getTime() >= cutoff
+  );
 
   // Deduplicate
   allItems = deduplicateItems(allItems);
 
   // Sort by priority then timestamp
   allItems.sort((a, b) => {
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+    const pDiff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
     if (pDiff !== 0) return pDiff;
     return b.timestamp.getTime() - a.timestamp.getTime();
   });
@@ -417,3 +744,17 @@ function clearCache(): void {
 export function getCategoryConfig() {
   return CATEGORY_CONFIG;
 }
+
+/**
+ * Internal helpers exposed for unit testing only (PRD §14). Not part of the
+ * module's runtime API — do not import from application code.
+ */
+export const __testing = {
+  parseRSSFeed,
+  parseAtomFeed,
+  parseJsonFeed,
+  deduplicateItems,
+  clearCache,
+  extractImage,
+  isLikelyImageUrl,
+};
