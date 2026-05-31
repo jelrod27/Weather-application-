@@ -23,13 +23,6 @@ export interface MoonPhaseInfo {
   nextMoonset: string;
 }
 
-export interface WindData {
-  speed: number;
-  direction?: string;
-  gust?: number;
-}
-
-
 // ============================================================================
 // API URL Helper
 // ============================================================================

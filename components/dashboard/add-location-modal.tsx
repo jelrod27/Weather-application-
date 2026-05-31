@@ -35,7 +35,7 @@ export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: A
 
     try {
       // Use internal geocoding API with timeout
-      const geocodeUrl = `/api/geocode?q=${encodeURIComponent(searchTerm.trim())}&limit=1`
+      const geocodeUrl = `/api/weather/geocoding?q=${encodeURIComponent(searchTerm.trim())}&limit=1`
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)

@@ -301,6 +301,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // US ZIP fast path: a bare 5-digit (optionally +4) query is a US ZIP, not a
+    // city name. Open-Meteo's name search does not resolve US ZIPs, so route it
+    // through handleZipLookup (Zippopotam) and return an array to match the
+    // direct-search contract. Mirrors the legacy /api/geocode route absorbed here.
+    // On miss/error, fall through to direct search.
+    const directQuery = q!.trim()
+    if (/^\d{5}(?:-\d{4})?$/.test(directQuery)) {
+      try {
+        const zipResult = await handleZipLookup(directQuery)
+        if (zipResult) {
+          return NextResponse.json([zipResult], { headers: rateLimit.headers })
+        }
+      } catch (err) {
+        console.error('Direct ZIP fast-path error:', sanitizeLogValue(err instanceof Error ? err.message : err))
+        // Fall through to direct search.
+      }
+    }
+
     try {
       const results = await handleDirectSearch(q!, limit)
       if (results.length === 0) {
