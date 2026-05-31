@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 
 export interface MagnetometerEntry {
   time: string;
@@ -16,34 +17,14 @@ export interface MagnetometerEntry {
 
 export async function GET() {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    const response = await fetch(
-      'https://services.swpc.noaa.gov/json/goes/primary/magnetometers-1-day.json',
-      {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': '16BitWeather/1.0',
-        },
-        signal: controller.signal,
-      }
-    );
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      throw new Error(`NOAA API returned ${response.status}`);
-    }
-
-    const data: Array<{
+    const data = await fetchSwpcJson<Array<{
       time_tag: string;
       satellite: string;
       He: number;
       Hp: number;
       Hn: number;
       total: number;
-    }> = await response.json();
+    }>>('https://services.swpc.noaa.gov/json/goes/primary/magnetometers-1-day.json');
 
     const series: MagnetometerEntry[] = [];
 

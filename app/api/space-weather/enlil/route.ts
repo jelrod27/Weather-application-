@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 const ENLIL_BASE_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/';
 const ENLIL_LATEST_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/latest.jpg';
@@ -17,17 +18,7 @@ const FRAME_PATTERN = /enlil_com2_\d+_\d{8}T\d{6}\.jpg/g;
 
 export async function GET() {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    const response = await fetch(ENLIL_BASE_URL, {
-      headers: {
-        'User-Agent': '16BitWeather/1.0',
-      },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
+    const response = await fetchSwpc(ENLIL_BASE_URL);
 
     if (!response.ok) {
       throw new Error(`NOAA ENLIL directory returned ${response.status}`);
