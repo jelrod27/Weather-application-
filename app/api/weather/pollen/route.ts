@@ -150,7 +150,12 @@ export async function GET(request: NextRequest) {
               grass: grassBreakdown,
               weed: weedBreakdown,
               source: 'google'
-            }, { headers: rateLimit.headers })
+            }, {
+              headers: {
+                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+                ...rateLimit.headers,
+              },
+            })
           }
         }
       } catch {
@@ -190,10 +195,15 @@ export async function GET(request: NextRequest) {
       grass: { 'Grass': getPollenCategory(Math.min(Math.round(airQualityIndex * 8), 100)) },
       weed: { 'Weed': getPollenCategory(Math.min(Math.round(airQualityIndex * 6), 100)) },
       source: 'openweather_fallback'
-    }, { headers: rateLimit.headers })
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+        ...rateLimit.headers,
+      },
+    })
 
   } catch (error) {
-    console.error('Pollen API error:', error)
+    console.error('[pollen]', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

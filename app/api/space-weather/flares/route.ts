@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 interface NasaFlare {
   flrID: string;
@@ -73,9 +74,12 @@ export async function GET() {
         { status: 503 }
       );
     }
+    // NASA DONKI requires the key as a query param (no header auth). Keep the
+    // URL out of any log/Sentry payload so the key never leaks — the catch
+    // below logs the error object, not the request URL.
     const url = `https://api.nasa.gov/DONKI/FLR?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&api_key=${apiKey}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       next: { revalidate: 900 }, // Cache for 15 minutes
     });
 
@@ -83,7 +87,8 @@ export async function GET() {
       throw new Error(`NASA API returned ${response.status}`);
     }
 
-    const data: NasaFlare[] = await response.json();
+    const raw = await response.json();
+    const data: NasaFlare[] = Array.isArray(raw) ? raw : [];
 
     // Transform the data
     const flareEvents: FlareEvent[] = data
@@ -135,7 +140,7 @@ export async function GET() {
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error fetching flare data:', error);
+    console.error('[flares]', error);
 
     // Return fallback data
     return NextResponse.json({

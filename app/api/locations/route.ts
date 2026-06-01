@@ -1,34 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { captureError, captureDbError } from '@/lib/error-utils'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
+
+// Bound every free-text field so a client can't bloat the DB with oversized
+// payloads, and range-check coordinates (replaces the old manual parseFloat
+// guards). Unknown keys (e.g. a client-sent user_id) are stripped by Zod.
+const savedLocationSchema = z.object({
+  location_name: z.string().trim().min(1).max(120),
+  city: z.string().trim().min(1).max(120),
+  state: z.string().trim().max(120).nullish(),
+  country: z.string().trim().min(1).max(80),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  is_favorite: z.boolean().optional().default(false),
+  custom_name: z.string().trim().max(120).nullish(),
+  notes: z.string().trim().max(2000).nullish(),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const rateLimit = await rateLimitRequest(request)
     if (!rateLimit.allowed) return rateLimit.response
 
-    const body = await request.json()
+    let rawBody: unknown
+    try {
+      rawBody = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
-    // Validate required fields
-    const { location_name, city, country, latitude, longitude, is_favorite, custom_name, notes } = body
-
-    if (!location_name || !city || !country || latitude === undefined || longitude === undefined) {
+    const parsed = savedLocationSchema.safeParse(rawBody)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid location data', details: parsed.error.flatten().fieldErrors },
         { status: 400 }
       )
     }
-
-    // Validate coordinate ranges
-    const lat = parseFloat(latitude)
-    const lon = parseFloat(longitude)
-    if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lon) || lon < -180 || lon > 180) {
-      return NextResponse.json(
-        { error: 'Invalid coordinates - latitude must be between -90 and 90, longitude between -180 and 180' },
-        { status: 400 }
-      )
-    }
+    const v = parsed.data
 
     // Get auth header from request
     const authHeader = request.headers.get('authorization')
@@ -72,15 +82,15 @@ export async function POST(request: NextRequest) {
     // Use the auth-scoped client so RLS enforces ownership end-to-end
     const locationData = {
       user_id: verifiedUserId,
-      location_name: location_name,
-      city: city || null,
-      state: body.state || null,
-      country,
-      latitude: lat,
-      longitude: lon,
-      is_favorite: !!is_favorite,
-      custom_name: custom_name || null,
-      notes: notes || null,
+      location_name: v.location_name,
+      city: v.city,
+      state: v.state ?? null,
+      country: v.country,
+      latitude: v.latitude,
+      longitude: v.longitude,
+      is_favorite: v.is_favorite,
+      custom_name: v.custom_name ?? null,
+      notes: v.notes ?? null,
     }
 
     // Check if location already exists for this user

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const requiredParams = ['REQUEST', 'SERVICE', 'VERSION', 'LAYERS', 'WIDTH', 'HEIGHT', 'CRS', 'BBOX']
     for (const param of requiredParams) {
       if (!searchParams.get(param)) {
-        return new NextResponse(`Missing required parameter: ${param}`, { status: 400 })
+        return NextResponse.json({ error: `Missing required parameter: ${param}` }, { status: 400 })
       }
     }
 

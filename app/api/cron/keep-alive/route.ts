@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) {
-    return new Response('CRON_SECRET not configured', { status: 500 })
+    return Response.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
   }
 
   // Constant-time bearer-token compare. The previous `!==` short-circuited
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const a = Buffer.from(authHeader)
   const b = Buffer.from(expected)
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    return new Response('Unauthorized', { status: 401 })
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL

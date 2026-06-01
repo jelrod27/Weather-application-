@@ -36,7 +36,7 @@ export async function GET(
     const apiKey = process.env.OPENWEATHER_API_KEY
     if (!apiKey) {
       console.error('[Radar Proxy] OPENWEATHER_API_KEY is not configured')
-      return new NextResponse('API key not configured', { status: 500 })
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
     // Early return for unsupported precipitation layer
@@ -55,7 +55,7 @@ export async function GET(
 
     mapped = LAYER_MAP[layer]
     if (!mapped) {
-      return new NextResponse('Unsupported layer', { status: 400 })
+      return NextResponse.json({ error: 'Unsupported layer' }, { status: 400 })
     }
 
     // tile may be [time, z, x, y] or [z, x, y]
@@ -66,7 +66,7 @@ export async function GET(
     } else if (tile.length === 3) {
       ;[z, x, y] = tile as [string, string, string]
     } else {
-      return new NextResponse('Invalid tile path', { status: 400 })
+      return NextResponse.json({ error: 'Invalid tile path' }, { status: 400 })
     }
 
     const base = 'https://tile.openweathermap.org/map'
@@ -84,11 +84,11 @@ export async function GET(
     if (!response.ok) {
       if (response.status === 401) {
         console.error('Radar proxy 401 Unauthorized', { layer: mapped, path })
-        return new NextResponse('Invalid API key', { status: 401 })
+        return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
       }
       if (response.status === 429) {
         console.warn('Radar proxy 429 Rate limited', { layer: mapped, path })
-        return new NextResponse('Rate limit exceeded', { status: 429 })
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }
       // transparent 1x1 png
       const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')

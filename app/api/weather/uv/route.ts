@@ -83,7 +83,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           uvi: currentUV,
           source: 'onecall_3.0'
-        }, { headers: rateLimit.headers })
+        }, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+            ...rateLimit.headers,
+          },
+        })
       }
     } catch {
       // One Call API 3.0 not available, trying fallback
@@ -107,7 +112,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           uvi: Math.round(currentUV),
           source: 'uvi_daily_estimated'
-        }, { headers: rateLimit.headers })
+        }, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+            ...rateLimit.headers,
+          },
+        })
       }
     } catch {
       // UV fallback API also failed
@@ -120,7 +130,7 @@ export async function GET(request: NextRequest) {
     }, { headers: rateLimit.headers })
 
   } catch (error) {
-    console.error('UV API error:', error)
+    console.error('[uv]', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

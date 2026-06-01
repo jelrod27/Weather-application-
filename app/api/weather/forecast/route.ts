@@ -75,21 +75,28 @@ export async function GET(request: NextRequest) {
     
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('OpenWeatherMap forecast API error:', response.status, errorData)
-      
+      console.error('[forecast]', `upstream ${response.status}`, errorData)
+
+      // Collapse upstream failures to a generic 502 so we never surface the
+      // raw OpenWeather status (e.g. a 401 from a bad key) to the client.
       return NextResponse.json(
-        { error: `Forecast service unavailable: ${response.status}` },
-        { status: response.status }
+        { error: 'Forecast service temporarily unavailable' },
+        { status: 502 }
       )
     }
 
     const forecastData = await response.json()
-    
-    // Return the forecast data with rate limit headers
-    return NextResponse.json(forecastData, { headers: rateLimit.headers })
+
+    // Return the forecast data with cache + rate limit headers
+    return NextResponse.json(forecastData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+        ...rateLimit.headers,
+      },
+    })
 
   } catch (error) {
-    console.error('Forecast API error:', error)
+    console.error('[forecast]', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
