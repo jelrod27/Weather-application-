@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 interface NOAAScalesResponse {
   '0': {
@@ -65,9 +66,9 @@ const G_DESCRIPTIONS: Record<number, string> = {
 
 export async function GET() {
   try {
-    const response = await fetch('https://services.swpc.noaa.gov/products/noaa-scales.json', {
-      headers: { 'Accept': 'application/json' },
-      next: { revalidate: 300 } // Cache for 5 minutes
+    const response = await fetchSwpc('https://services.swpc.noaa.gov/products/noaa-scales.json', {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     if (!response.ok) {

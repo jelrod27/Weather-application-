@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 
 const BASE_URL_V3 = 'https://api.openweathermap.org/data/3.0'
 const BASE_URL = 'https://api.openweathermap.org/data/2.5'
@@ -70,8 +71,10 @@ export async function GET(request: NextRequest) {
     // Try One Call API 3.0 first for real-time UV data
     try {
       const oneCallUrl = `${BASE_URL_V3}/onecall?lat=${latitude}&lon=${longitude}&exclude=minutely,daily,alerts&appid=${apiKey}`
-      
-      const response = await fetch(oneCallUrl)
+
+      // Single attempt with a bounded timeout; on any failure we fall back to
+      // the basic UV endpoint below rather than retrying the primary.
+      const response = await fetchWithTimeout(oneCallUrl, { maxRetries: 0 })
       
       if (response.ok) {
         const data = await response.json()
@@ -89,8 +92,8 @@ export async function GET(request: NextRequest) {
     // Fallback to basic UV endpoint (daily maximum)
     try {
       const uvUrl = `${BASE_URL}/uvi?lat=${latitude}&lon=${longitude}&appid=${apiKey}`
-      
-      const response = await fetch(uvUrl)
+
+      const response = await fetchWithTimeout(uvUrl, { maxRetries: 0 })
       
       if (response.ok) {
         const data = await response.json()

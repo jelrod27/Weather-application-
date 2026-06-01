@@ -1,4 +1,5 @@
 import type { Launch } from '@/lib/stargazer/types';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 const LAUNCH_LIBRARY_BASE = 'https://ll.thespacedevs.com/2.2.0';
 
@@ -36,7 +37,7 @@ export async function fetchUpcomingLaunches(
 ): Promise<Launch[]> {
   try {
     const url = `${LAUNCH_LIBRARY_BASE}/launch/upcoming/?limit=${limit}&mode=normal`;
-    const res = await fetch(url, { next: { revalidate: 1800 } });
+    const res = await fetchWithTimeout(url, { next: { revalidate: 1800 } });
 
     if (!res.ok) {
       console.error('[Launches] HTTP error:', res.status);

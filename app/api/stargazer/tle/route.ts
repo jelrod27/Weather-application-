@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 export const revalidate = 86400;
 
@@ -7,7 +8,7 @@ const CELESTRAK_ISS_URL =
 
 export async function GET() {
   try {
-    const res = await fetch(CELESTRAK_ISS_URL, {
+    const res = await fetchWithTimeout(CELESTRAK_ISS_URL, {
       next: { revalidate: 86400 },
     });
 

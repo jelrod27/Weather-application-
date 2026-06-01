@@ -1,5 +1,6 @@
 import * as satellite from 'satellite.js';
 import type { ISSPass } from '@/lib/stargazer/types';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 const CELESTRAK_ISS_URL =
   'https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE';
@@ -12,7 +13,7 @@ export async function fetchISSTLE(): Promise<{
   line2: string;
 } | null> {
   try {
-    const res = await fetch(CELESTRAK_ISS_URL, { next: { revalidate: 7200 } });
+    const res = await fetchWithTimeout(CELESTRAK_ISS_URL, { next: { revalidate: 7200 } });
 
     if (!res.ok) {
       console.error('[ISS TLE] HTTP error:', res.status);

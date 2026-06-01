@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 import {
   calculateDarkWindow,
@@ -119,11 +120,11 @@ export async function GET(request: NextRequest) {
     const reverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&extratags=1`;
 
     const [openMeteoRes, sevenTimerData, issTle, launches, reverseGeoRes] = await Promise.all([
-      fetch(openMeteoUrl, { next: { revalidate: 900 } }),
+      fetchWithTimeout(openMeteoUrl, { next: { revalidate: 900 } }),
       fetchSevenTimerData(lat, lon),
       fetchISSTLE(),
       fetchUpcomingLaunches(10),
-      fetch(reverseGeoUrl, { next: { revalidate: 86400 }, headers: { 'User-Agent': '16BitWeather/1.0 (https://16bitweather.co)' } }).catch(() => null),
+      fetchWithTimeout(reverseGeoUrl, { next: { revalidate: 86400 }, headers: { 'User-Agent': '16BitWeather/1.0 (https://16bitweather.co)' } }).catch(() => null),
     ]);
 
     // ---- Parse Open-Meteo ----
