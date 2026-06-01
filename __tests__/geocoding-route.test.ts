@@ -165,6 +165,63 @@ describe('GET /api/weather/geocoding', () => {
     });
   });
 
+  // Regression coverage for the ZIP fast-path added when /api/geocode was
+  // consolidated into this route. A bare 5-digit q= is a US ZIP, which
+  // Open-Meteo's name search cannot resolve, so it must route through
+  // Zippopotam and return an ARRAY (matching the direct-search contract the
+  // Add-Location modal depends on — distinct from ?zip= which returns one object).
+  describe('direct search ZIP fast-path (?q=<zip>)', () => {
+    it('resolves a bare US ZIP via Zippopotam and returns an array', async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          'post code': '94105',
+          country: 'United States',
+          'country abbreviation': 'US',
+          places: [
+            {
+              'place name': 'San Francisco',
+              longitude: '-122.3892',
+              latitude: '37.7864',
+              state: 'California',
+              'state abbreviation': 'CA',
+            },
+          ],
+        })
+      );
+
+      const req = new NextRequest('http://localhost/api/weather/geocoding?q=94105&limit=1');
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveLength(1);
+      expect(body[0]).toMatchObject({ name: 'San Francisco', country: 'US', state: 'CA' });
+      // Hit Zippopotam, not the Open-Meteo name endpoint.
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(String(mockFetch.mock.calls[0][0])).toContain('zippopotam.us/us/94105');
+    });
+
+    it('falls back to Open-Meteo direct search when the ZIP is not in Zippopotam', async () => {
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse({}, false, 404)) // Zippopotam miss
+        .mockResolvedValueOnce(
+          jsonResponse({
+            results: [
+              { id: 1, name: '94105', latitude: 37.79, longitude: -122.39, country_code: 'US', admin1: 'California' },
+            ],
+          })
+        );
+
+      const req = new NextRequest('http://localhost/api/weather/geocoding?q=94105&limit=1');
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body)).toBe(true);
+      // Tried Zippopotam first, then fell through to the name search.
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('ZIP lookup (?zip=)', () => {
     it('resolves a US ZIP via Zippopotam and returns a single object', async () => {
       mockFetch.mockResolvedValueOnce(
