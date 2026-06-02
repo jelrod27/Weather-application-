@@ -1,4 +1,5 @@
 import type { SevenTimerResponse, SevenTimerDataPoint } from '@/lib/stargazer/types';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // 7Timer supports HTTPS (verified) — use it so the upstream response cannot be
 // tampered with in transit by a network MITM. Still called server-side only.
@@ -13,7 +14,7 @@ export async function fetchSevenTimerData(
 ): Promise<SevenTimerResponse | null> {
   try {
     const url = `${SEVEN_TIMER_BASE}?lon=${lon}&lat=${lat}&ac=0&unit=metric&output=json&tzshift=0`;
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetchWithTimeout(url, { next: { revalidate: 3600 } });
 
     if (!res.ok) {
       console.error('[7Timer] HTTP error:', res.status);

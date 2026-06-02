@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { X, MapPin, Search, Plus, Star } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
@@ -35,7 +37,7 @@ export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: A
 
     try {
       // Use internal geocoding API with timeout
-      const geocodeUrl = `/api/geocode?q=${encodeURIComponent(searchTerm.trim())}&limit=1`
+      const geocodeUrl = `/api/weather/geocoding?q=${encodeURIComponent(searchTerm.trim())}&limit=1`
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)

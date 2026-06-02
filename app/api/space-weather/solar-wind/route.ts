@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 export interface SolarWindData {
   timestamp: string;
@@ -49,14 +50,14 @@ export async function GET() {
   try {
     // Fetch plasma (speed, density, temp) and mag (Bz, Bt) data
     const [plasmaResponse, magResponse] = await Promise.allSettled([
-      fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json', {
-        headers: { 'Accept': 'application/json' },
-        next: { revalidate: 60 } // Cache for 1 minute
+      fetchSwpc('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json', {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 60 }, // Cache for 1 minute
       }),
-      fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json', {
-        headers: { 'Accept': 'application/json' },
-        next: { revalidate: 60 }
-      })
+      fetchSwpc('https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json', {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: 60 },
+      }),
     ]);
 
     let currentSpeed = 0;

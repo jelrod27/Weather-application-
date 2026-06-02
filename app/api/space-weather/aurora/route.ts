@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 export interface AuroraForecastData {
   timestamp: string;
@@ -59,9 +60,9 @@ function getActivityLevel(kp: number): AuroraForecastData['activity'] {
 export async function GET() {
   try {
     // Fetch current Kp index for viewline estimation
-    const kpResponse = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
-      headers: { 'Accept': 'application/json' },
-      next: { revalidate: 300 } // Cache for 5 minutes
+    const kpResponse = await fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     let currentKp = 3; // Default moderate activity

@@ -8,6 +8,7 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 export interface PlasmaEntry {
   time: string;
@@ -35,27 +36,13 @@ export async function GET(request: NextRequest) {
     const range = searchParams.get('range') || '6h';
     const rangeMs = RANGE_MS[range] ?? RANGE_MS['6h'];
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
+    // Each request gets its own bounded timeout via fetchSwpc, so a slow mag
+    // feed no longer aborts the plasma feed (and vice versa), and the body
+    // reads below stay bounded by their request's timeout.
     const [plasmaResponse, magResponse] = await Promise.allSettled([
-      fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json', {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': '16BitWeather/1.0',
-        },
-        signal: controller.signal,
-      }),
-      fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json', {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': '16BitWeather/1.0',
-        },
-        signal: controller.signal,
-      }),
+      fetchSwpc('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'),
+      fetchSwpc('https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'),
     ]);
-
-    clearTimeout(timeout);
 
     // Build a map of mag data keyed by time_tag
     const magMap = new Map<string, { bx: number; by: number; bz: number; bt: number }>();

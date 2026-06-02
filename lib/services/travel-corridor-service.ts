@@ -97,3 +97,95 @@ export function getHazardDescription(conditions: WeatherConditions): string {
   if (conditions.windGusts > 50) return 'High winds';
   return 'Clear';
 }
+
+const OPEN_METEO_FORECAST = 'https://api.open-meteo.com/v1/forecast';
+const WAYPOINT_FETCH_TIMEOUT_MS = 15_000;
+
+/**
+ * Batched Open-Meteo fetch for an array of `[lat, lon]` waypoints. Returns one
+ * WeatherConditions per waypoint. `forecastDay === 0` reads current conditions;
+ * otherwise it samples the midday hour of that forecast day. Shared by
+ * /api/travel/corridors and /api/travel/trip-score so the request shape and
+ * forecast-day handling stay identical across the travel feature.
+ *
+ * The fetch is bounded by an internal 15s timeout and also aborts if the
+ * caller's `requestSignal` aborts (client disconnect).
+ */
+export async function fetchWeatherForWaypoints(
+  waypoints: number[][],
+  forecastDay: number,
+  options: { userAgent?: string; requestSignal?: AbortSignal } = {},
+): Promise<WeatherConditions[]> {
+  if (waypoints.length === 0) return [];
+
+  const lats = waypoints.map((w) => w[0]).join(',');
+  const lons = waypoints.map((w) => w[1]).join(',');
+
+  const url = new URL(OPEN_METEO_FORECAST);
+  url.searchParams.set('latitude', lats);
+  url.searchParams.set('longitude', lons);
+
+  if (forecastDay === 0) {
+    url.searchParams.set('current', 'precipitation,snowfall,wind_gusts_10m,visibility');
+  } else {
+    url.searchParams.set('hourly', 'precipitation,snowfall,wind_gusts_10m,visibility');
+    url.searchParams.set('forecast_days', String(forecastDay + 1));
+  }
+  url.searchParams.set('timezone', 'auto');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WAYPOINT_FETCH_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  // addEventListener only catches future aborts — if the caller's signal is
+  // already aborted, abort now instead of waiting out the 15s timeout.
+  if (options.requestSignal?.aborted) {
+    controller.abort();
+  } else {
+    options.requestSignal?.addEventListener('abort', onAbort, { once: true });
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      signal: controller.signal,
+      headers: { 'User-Agent': options.userAgent ?? '16-Bit-Weather/travel' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Open-Meteo request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const locations = Array.isArray(data) ? data : [data];
+
+    return locations.map((loc: Record<string, unknown>) => {
+      const current = loc.current as Record<string, number> | undefined;
+      if (forecastDay === 0 && current) {
+        return {
+          precipitation: current.precipitation ?? 0,
+          snowfall: current.snowfall ?? 0,
+          windGusts: current.wind_gusts_10m ?? 0,
+          visibility: current.visibility ?? 10000,
+          freezingLevel: 3000,
+        };
+      }
+
+      const hourly = loc.hourly as Record<string, number[]> | undefined;
+      if (hourly) {
+        const targetHour = forecastDay * 24 + 12;
+        const idx = Math.min(targetHour, (hourly.precipitation?.length ?? 1) - 1);
+        return {
+          precipitation: hourly.precipitation?.[idx] ?? 0,
+          snowfall: hourly.snowfall?.[idx] ?? 0,
+          windGusts: hourly.wind_gusts_10m?.[idx] ?? 0,
+          visibility: hourly.visibility?.[idx] ?? 10000,
+          freezingLevel: 3000,
+        };
+      }
+
+      return { ...DEFAULT_WEATHER_CONDITIONS };
+    });
+  } finally {
+    clearTimeout(timer);
+    options.requestSignal?.removeEventListener('abort', onAbort);
+  }
+}

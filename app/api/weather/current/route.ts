@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('OpenWeatherMap API error:', response.status, errorData)
+      console.error('[current]', `upstream ${response.status}`, errorData)
 
       // Track failed API call
       trackWeatherApiCall('unknown', responseTime, false, 'current')
@@ -91,16 +91,19 @@ export async function GET(request: NextRequest) {
     // Track successful API call
     trackWeatherApiCall(weatherData.name || 'unknown', responseTime, true, 'current')
 
-    // Return the weather data with rate limit headers
+    // Return the weather data with cache + rate limit headers
     return NextResponse.json(weatherData, {
-      headers: rateLimit.headers,
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=60',
+        ...rateLimit.headers,
+      },
     })
 
   } catch (error) {
     const responseTime = Date.now() - startTime
     trackWeatherApiCall('unknown', responseTime, false, 'current')
 
-    console.error('Current weather API error:', error)
+    console.error('[current]', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

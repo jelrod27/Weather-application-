@@ -101,19 +101,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
-// [OWM ROLLBACK] Previous OpenWeatherMap implementation:
-// const apiKey = process.env.OPENWEATHER_API_KEY
-// const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
-// const response = await fetch(weatherUrl, { next: { revalidate: 600 } })
-// const data = await response.json()
-// dashboardWeather = {
-//   temperature: Math.round(data.main.temp),
-//   description: data.weather[0].description,
-//   humidity: data.main.humidity,
-//   windSpeed: Math.round(data.wind.speed),
-//   icon: data.weather[0].icon,
-//   feelsLike: Math.round(data.main.feels_like),
-//   pressure: data.main.pressure,
-//   visibility: data.visibility ? Math.round(data.visibility / 1000) : 10
-// }

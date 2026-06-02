@@ -16,6 +16,7 @@ import { sanitizeLogValue } from "@/lib/sanitize-log"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { toStateAbbr } from '@/lib/us-states'
 import type { GeocodingResponse } from '@/lib/weather'
 
@@ -135,7 +136,7 @@ async function handleDirectSearch(q: string, limit: number): Promise<GeocodingRe
   const filterHint = parts[1]?.toUpperCase() || null
 
   const url = `${OPEN_METEO_GEO}?name=${encodeURIComponent(cityName)}&count=10&language=en&format=json`
-  const res = await fetch(url, { next: { revalidate: 3600 } })
+  const res = await fetchWithTimeout(url, { next: { revalidate: 3600 } })
 
   if (!res.ok) {
     throw new Error(`Open-Meteo geocoding error: ${res.status}`)
@@ -178,7 +179,7 @@ async function handleZipLookup(zipParam: string): Promise<GeocodingResponse | nu
     const stem = zipCode.split('-')[0]
     if (!/^\d{5}$/.test(stem)) return null
 
-    const res = await fetch(`${ZIPPOPOTAM}/us/${stem}`, {
+    const res = await fetchWithTimeout(`${ZIPPOPOTAM}/us/${stem}`, {
       next: { revalidate: 86400 }, // ZIP → city is effectively immutable.
     })
     if (!res.ok) return null
@@ -191,7 +192,7 @@ async function handleZipLookup(zipParam: string): Promise<GeocodingResponse | nu
 
   // International postal code via Nominatim.
   const url = `${NOMINATIM}/search?postalcode=${encodeURIComponent(zipCode)}&country=${encodeURIComponent(country)}&format=json&addressdetails=1&limit=1`
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { 'User-Agent': USER_AGENT },
     next: { revalidate: 86400 },
   })
@@ -212,7 +213,7 @@ async function handleReverseLookup(lat: number, lon: number): Promise<GeocodingR
   // tops out at the town/county level and omits the postcode, which would
   // break the "City, ST ZIP" header format on the dashboard.
   const url = `${NOMINATIM}/reverse?lat=${lat}&lon=${lon}&zoom=18&format=json&addressdetails=1`
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { 'User-Agent': USER_AGENT },
     next: { revalidate: 3600 },
   })
@@ -299,6 +300,24 @@ export async function GET(request: NextRequest) {
         { error: 'Coordinates must be supplied via lat/lon parameters, not q' },
         { status: 400 }
       )
+    }
+
+    // US ZIP fast path: a bare 5-digit (optionally +4) query is a US ZIP, not a
+    // city name. Open-Meteo's name search does not resolve US ZIPs, so route it
+    // through handleZipLookup (Zippopotam) and return an array to match the
+    // direct-search contract. Mirrors the legacy /api/geocode route absorbed here.
+    // On miss/error, fall through to direct search.
+    const directQuery = q!.trim()
+    if (/^\d{5}(?:-\d{4})?$/.test(directQuery)) {
+      try {
+        const zipResult = await handleZipLookup(directQuery)
+        if (zipResult) {
+          return NextResponse.json([zipResult], { headers: rateLimit.headers })
+        }
+      } catch (err) {
+        console.error('Direct ZIP fast-path error:', sanitizeLogValue(err instanceof Error ? err.message : err))
+        // Fall through to direct search.
+      }
     }
 
     try {

@@ -32,14 +32,9 @@ export {
 // ============================================================================
 
 export {
-  processDailyForecast,
   processDailyForecastFromOpenMeteo,
-  processHourlyForecast,
-  fetchUVIndex,
   fetchPollenData,
   fetchAirQualityData,
-  ensureFiveDays,
-  type OpenWeatherMapForecastResponse,
   type DailyForecast,
   type AirQualityPollutants
 } from './weather-forecast';
@@ -87,6 +82,5 @@ export {
   normalizeInput,
 
   // Types
-  type MoonPhaseInfo,
-  type WindData
+  type MoonPhaseInfo
 } from './weather-utils';

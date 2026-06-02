@@ -26,6 +26,7 @@ import {
 } from '@/lib/services/misery-score-service';
 import {
   DEFAULT_WEATHER_CONDITIONS,
+  fetchWeatherForWaypoints,
   getHazardDescription,
   type WeatherConditions,
 } from '@/lib/services/travel-corridor-service';
@@ -47,7 +48,6 @@ import {
 } from '@/lib/services/aviation-noaa-service';
 import interstateData from '@/public/data/us-interstates.json';
 
-const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
 const REQUEST_TIMEOUT_MS = 15_000;
 /** SIGMETs within this radius of the flight midpoint count as en-route hazards. */
 const ENROUTE_HAZARD_RADIUS_KM = 500;
@@ -166,84 +166,6 @@ async function resolveEndpoint(
   } catch (error) {
     console.error('[trip-score]', 'geocoding failed', error);
     return null;
-  }
-}
-
-/**
- * Batched Open-Meteo fetch for an array of waypoints (each [lat, lon]).
- * Mirrors the pattern in /api/travel/corridors so the response shape and
- * forecast-day handling stay consistent with the rest of the travel feature.
- */
-async function fetchWeatherForWaypoints(
-  waypoints: number[][],
-  forecastDay: number,
-  requestSignal?: AbortSignal,
-): Promise<WeatherConditions[]> {
-  if (waypoints.length === 0) return [];
-
-  const lats = waypoints.map((w) => w[0]).join(',');
-  const lons = waypoints.map((w) => w[1]).join(',');
-
-  const url = new URL(OPEN_METEO_BASE);
-  url.searchParams.set('latitude', lats);
-  url.searchParams.set('longitude', lons);
-
-  if (forecastDay === 0) {
-    url.searchParams.set('current', 'precipitation,snowfall,wind_gusts_10m,visibility');
-  } else {
-    url.searchParams.set('hourly', 'precipitation,snowfall,wind_gusts_10m,visibility');
-    url.searchParams.set('forecast_days', String(forecastDay + 1));
-  }
-  url.searchParams.set('timezone', 'auto');
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  const onAbort = () => controller.abort();
-  requestSignal?.addEventListener('abort', onAbort);
-
-  try {
-    const response = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers: { 'User-Agent': '16-Bit-Weather/trip-score' },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Open-Meteo request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const locations = Array.isArray(data) ? data : [data];
-
-    return locations.map((loc: Record<string, unknown>) => {
-      const current = loc.current as Record<string, number> | undefined;
-      if (forecastDay === 0 && current) {
-        return {
-          precipitation: current.precipitation ?? 0,
-          snowfall: current.snowfall ?? 0,
-          windGusts: current.wind_gusts_10m ?? 0,
-          visibility: current.visibility ?? 10000,
-          freezingLevel: 3000,
-        };
-      }
-
-      const hourly = loc.hourly as Record<string, number[]> | undefined;
-      if (hourly) {
-        const targetHour = forecastDay * 24 + 12;
-        const idx = Math.min(targetHour, (hourly.precipitation?.length ?? 1) - 1);
-        return {
-          precipitation: hourly.precipitation?.[idx] ?? 0,
-          snowfall: hourly.snowfall?.[idx] ?? 0,
-          windGusts: hourly.wind_gusts_10m?.[idx] ?? 0,
-          visibility: hourly.visibility?.[idx] ?? 10000,
-          freezingLevel: 3000,
-        };
-      }
-
-      return { ...DEFAULT_WEATHER_CONDITIONS };
-    });
-  } finally {
-    clearTimeout(timer);
-    requestSignal?.removeEventListener('abort', onAbort);
   }
 }
 
@@ -409,7 +331,10 @@ async function handleDriveMode(
 
   let weatherData: WeatherConditions[];
   try {
-    weatherData = await fetchWeatherForWaypoints(waypoints, forecastDay, requestSignal);
+    weatherData = await fetchWeatherForWaypoints(waypoints, forecastDay, {
+      requestSignal,
+      userAgent: '16-Bit-Weather/trip-score',
+    });
   } catch (error) {
     console.error('[trip-score]', 'open-meteo fetch failed', error);
     return NextResponse.json(

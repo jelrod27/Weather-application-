@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 export interface XRayFluxData {
   timestamp: string;
@@ -52,9 +53,9 @@ function getFlareClass(flux: number): { class: string; fullClass: string } {
 
 export async function GET() {
   try {
-    const response = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
-      headers: { 'Accept': 'application/json' },
-      next: { revalidate: 60 } // Cache for 1 minute
+    const response = await fetchSwpc('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 60 }, // Cache for 1 minute
     });
 
     if (!response.ok) {
