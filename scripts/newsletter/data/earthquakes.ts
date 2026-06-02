@@ -48,7 +48,7 @@ export async function fetchPastWeekQuakes(): Promise<QuakeWeekSummary> {
 
 interface GeoJsonFeature {
   properties: {
-    mag: number;
+    mag: number | null;
     place: string;
     time: number;
     url: string;
@@ -62,14 +62,18 @@ interface GeoJsonFeature {
 function parseQuakes(raw: unknown): QuakeRecord[] {
   const features = (raw as { features?: GeoJsonFeature[] })?.features;
   if (!Array.isArray(features)) return [];
-  return features.map((f) => ({
-    mag: f.properties.mag,
-    place: f.properties.place,
-    time: new Date(f.properties.time).toISOString(),
-    url: f.properties.url,
-    tsunami: f.properties.tsunami === 1,
-    depth_km: f.geometry?.coordinates?.[2] ?? null,
-  }));
+  // USGS returns mag: null for preliminary reports where magnitude isn't yet determined.
+  // Skip those — without a magnitude they can't be ranked or formatted.
+  return features
+    .filter((f) => typeof f.properties.mag === 'number' && Number.isFinite(f.properties.mag))
+    .map((f) => ({
+      mag: f.properties.mag as number,
+      place: f.properties.place,
+      time: new Date(f.properties.time).toISOString(),
+      url: f.properties.url,
+      tsunami: f.properties.tsunami === 1,
+      depth_km: f.geometry?.coordinates?.[2] ?? null,
+    }));
 }
 
 async function fetchGeoJson(url: string): Promise<unknown> {
