@@ -36,7 +36,7 @@ export async function GET(
     const apiKey = process.env.OPENWEATHER_API_KEY
     if (!apiKey) {
       console.error('[Radar Proxy] OPENWEATHER_API_KEY is not configured')
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500, headers: tileProxyOriginHeaders(request) })
     }
 
     // Early return for unsupported precipitation layer
@@ -48,14 +48,14 @@ export async function GET(
         }),
         {
           status: 410, // 410 Gone - resource permanently removed
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', ...tileProxyOriginHeaders(request) }
         }
       )
     }
 
     mapped = LAYER_MAP[layer]
     if (!mapped) {
-      return NextResponse.json({ error: 'Unsupported layer' }, { status: 400 })
+      return NextResponse.json({ error: 'Unsupported layer' }, { status: 400, headers: tileProxyOriginHeaders(request) })
     }
 
     // tile may be [time, z, x, y] or [z, x, y]
@@ -66,7 +66,7 @@ export async function GET(
     } else if (tile.length === 3) {
       ;[z, x, y] = tile as [string, string, string]
     } else {
-      return NextResponse.json({ error: 'Invalid tile path' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid tile path' }, { status: 400, headers: tileProxyOriginHeaders(request) })
     }
 
     const base = 'https://tile.openweathermap.org/map'
@@ -84,11 +84,11 @@ export async function GET(
     if (!response.ok) {
       if (response.status === 401) {
         console.error('Radar proxy 401 Unauthorized', { layer: mapped, path })
-        return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
+        return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: tileProxyOriginHeaders(request) })
       }
       if (response.status === 429) {
         console.warn('Radar proxy 429 Rate limited', { layer: mapped, path })
-        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429, headers: tileProxyOriginHeaders(request) })
       }
       // transparent 1x1 png
       const transparentPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')

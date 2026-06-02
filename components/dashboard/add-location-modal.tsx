@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { X, MapPin, Search, Plus, Star } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
