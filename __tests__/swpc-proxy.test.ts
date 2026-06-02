@@ -22,9 +22,9 @@ describe('swpc-proxy', () => {
     const data = await fetchSwpcJson<{ hello: string }>('https://services.swpc.noaa.gov/x.json');
     expect(data).toEqual({ hello: 'world' });
 
-    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
-    expect(headers['User-Agent']).toBe('16BitWeather/1.0');
-    expect(headers.Accept).toBe('application/json');
+    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Headers;
+    expect(headers.get('User-Agent')).toBe('16BitWeather/1.0');
+    expect(headers.get('Accept')).toBe('application/json');
   });
 
   it('fetchSwpcJson throws on a non-OK status', async () => {
@@ -45,7 +45,7 @@ describe('swpc-proxy', () => {
     const mockFetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] });
     global.fetch = mockFetch as unknown as typeof fetch;
     await fetchSwpcJson('https://services.swpc.noaa.gov/x.json', { headers: { 'User-Agent': 'custom' } });
-    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
-    expect(headers['User-Agent']).toBe('custom');
+    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Headers;
+    expect(headers.get('User-Agent')).toBe('custom');
   });
 });

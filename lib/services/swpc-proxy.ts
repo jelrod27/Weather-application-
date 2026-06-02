@@ -21,10 +21,12 @@ export async function fetchSwpc(
   url: string,
   options: FetchWithTimeoutOptions = {},
 ): Promise<Response> {
-  return fetchWithTimeout(url, {
-    ...options,
-    headers: { 'User-Agent': SWPC_USER_AGENT, ...options.headers },
-  });
+  // Normalize to a Headers instance so any HeadersInit shape the caller passes
+  // (plain object, Headers, or string[][]) is preserved when we add defaults.
+  const headers = new Headers(options.headers);
+  if (!headers.has('User-Agent')) headers.set('User-Agent', SWPC_USER_AGENT);
+
+  return fetchWithTimeout(url, { ...options, headers });
 }
 
 /**
@@ -36,10 +38,10 @@ export async function fetchSwpcJson<T = unknown>(
   url: string,
   options: FetchWithTimeoutOptions = {},
 ): Promise<T> {
-  const response = await fetchSwpc(url, {
-    ...options,
-    headers: { Accept: 'application/json', ...options.headers },
-  });
+  const headers = new Headers(options.headers);
+  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+
+  const response = await fetchSwpc(url, { ...options, headers });
   if (!response.ok) {
     throw new Error(`NOAA SWPC request failed: ${response.status}`);
   }

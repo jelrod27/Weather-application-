@@ -136,7 +136,13 @@ export async function fetchWeatherForWaypoints(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WAYPOINT_FETCH_TIMEOUT_MS);
   const onAbort = () => controller.abort();
-  options.requestSignal?.addEventListener('abort', onAbort);
+  // addEventListener only catches future aborts — if the caller's signal is
+  // already aborted, abort now instead of waiting out the 15s timeout.
+  if (options.requestSignal?.aborted) {
+    controller.abort();
+  } else {
+    options.requestSignal?.addEventListener('abort', onAbort, { once: true });
+  }
 
   try {
     const response = await fetch(url.toString(), {

@@ -62,6 +62,7 @@ describe('GET /api/aviation/alerts', () => {
     mockFetchAlerts.mockRejectedValueOnce(new Error('NOAA exploded'));
 
     const res = await GET();
+    expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.alerts).toEqual([]);
     expect(body.count).toBe(0);

@@ -72,6 +72,11 @@ describe('POST /api/locations validation', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects blank coordinates instead of coercing them to (0, 0)', async () => {
+    const res = await POST(makeReq({ ...validBody, latitude: '', longitude: '   ' }));
+    expect(res.status).toBe(400);
+  });
+
   it('rejects a malformed JSON body with a clear 400', async () => {
     const res = await POST(makeReq(undefined, true));
     expect(res.status).toBe(400);

@@ -4,6 +4,19 @@ import { createClient } from '@supabase/supabase-js'
 import { captureError, captureDbError } from '@/lib/error-utils'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 
+// Reject blank/whitespace coordinates instead of coercing them to 0. Plain
+// z.coerce.number() runs Number(...), which turns '', '   ', null, and false
+// into 0 — those would pass the range checks and silently persist as (0, 0).
+// Treat blank strings as missing so they fail validation.
+const coordinate = (min: number, max: number) =>
+  z.preprocess((value) => {
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      return trimmed === '' ? undefined : Number(trimmed)
+    }
+    return value
+  }, z.number().min(min).max(max))
+
 // Bound every free-text field so a client can't bloat the DB with oversized
 // payloads, and range-check coordinates (replaces the old manual parseFloat
 // guards). Unknown keys (e.g. a client-sent user_id) are stripped by Zod.
@@ -12,8 +25,8 @@ const savedLocationSchema = z.object({
   city: z.string().trim().min(1).max(120),
   state: z.string().trim().max(120).nullish(),
   country: z.string().trim().min(1).max(80),
-  latitude: z.coerce.number().min(-90).max(90),
-  longitude: z.coerce.number().min(-180).max(180),
+  latitude: coordinate(-90, 90),
+  longitude: coordinate(-180, 180),
   is_favorite: z.boolean().optional().default(false),
   custom_name: z.string().trim().max(120).nullish(),
   notes: z.string().trim().max(2000).nullish(),

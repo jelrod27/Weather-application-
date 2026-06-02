@@ -37,13 +37,18 @@ export async function GET() {
     console.error('[aviation-alerts]', error);
 
     // The service degrades to an empty list on upstream failure, so reaching
-    // here is unexpected; still return the same envelope the client expects.
-    return NextResponse.json({
-      alerts: [],
-      timestamp: new Date().toISOString(),
-      source: SOURCE,
-      count: 0,
-      error: 'Unable to fetch live data. Please try again later.',
-    });
+    // here means a genuine internal error — return 500 (not 200) so callers can
+    // tell a real failure apart from a healthy all-clear, while still shaping
+    // the body the client expects.
+    return NextResponse.json(
+      {
+        alerts: [],
+        timestamp: new Date().toISOString(),
+        source: SOURCE,
+        count: 0,
+        error: 'Unable to fetch live data. Please try again later.',
+      },
+      { status: 500 }
+    );
   }
 }

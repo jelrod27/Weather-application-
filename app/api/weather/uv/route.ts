@@ -74,7 +74,10 @@ export async function GET(request: NextRequest) {
 
       // Single attempt with a bounded timeout; on any failure we fall back to
       // the basic UV endpoint below rather than retrying the primary.
-      const response = await fetchWithTimeout(oneCallUrl, { maxRetries: 0 })
+      const response = await fetchWithTimeout(oneCallUrl, {
+        maxRetries: 0,
+        signal: request.signal,
+      })
       
       if (response.ok) {
         const data = await response.json()
@@ -98,7 +101,10 @@ export async function GET(request: NextRequest) {
     try {
       const uvUrl = `${BASE_URL}/uvi?lat=${latitude}&lon=${longitude}&appid=${apiKey}`
 
-      const response = await fetchWithTimeout(uvUrl, { maxRetries: 0 })
+      const response = await fetchWithTimeout(uvUrl, {
+        maxRetries: 0,
+        signal: request.signal,
+      })
       
       if (response.ok) {
         const data = await response.json()
