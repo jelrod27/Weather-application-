@@ -57,9 +57,6 @@ Above the stratosphere, the mesosphere cools again with altitude, bottoming out 
 
 For practical meteorology, the two layers that matter most are the troposphere and the stratosphere, and the tropopause between them is where the jet stream lives.
 
-![Vertical structure of Earth's atmosphere.](https://commons.wikimedia.org/wiki/Special:FilePath/Atmosphere_layers-en.svg?width=1280)
-*Kelvinsong / Wikimedia*
-
 ## Jet Streams and the Tropopause
 
 The polar jet stream sits at the tropopause, typically between 9 and 12 km altitude, where the temperature contrast between mid-latitude and polar air is sharpest. Wind speeds in the core regularly exceed 150 km/h and occasionally surpass 300 km/h. The jet steers extratropical cyclones; its position in any given week determines whether a storm tracks into the Pacific Northwest or recurves harmlessly into Canada.
@@ -72,8 +69,6 @@ What controls the jet's shape is the temperature gradient between the tropics an
 Gravity waves — internal atmospheric waves generated when flow encounters topography or convection — propagate upward from the troposphere into the stratosphere, depositing momentum there. That momentum transfer influences the polar vortex, the stratospheric cyclone that forms over the Arctic each autumn. When the vortex is strong and cold, the polar jet below tends to stay organized. When the vortex is disrupted — as in an SSW — the signal propagates downward over four to six weeks, increasing the probability of negative Arctic Oscillation conditions at the surface: cold air outbreaks, displaced storm tracks, anomalous precipitation patterns across the Northern Hemisphere mid-latitudes.
 
 The 2019 event was not unusual in kind, only in magnitude. SSWs occur roughly six times per decade. Forecasters who track stratospheric conditions can extend useful probabilistic guidance about surface weather patterns to ranges well beyond the standard 10-day window.
-
-![Atmospheric layer diagram showing temperature profile from surface to thermosphere](placeholder)
 
 ## Heads Up
 
