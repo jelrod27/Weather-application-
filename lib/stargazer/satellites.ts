@@ -136,6 +136,7 @@ export function calculateISSPasses(
     const positionAndVelocity = satellite.propagate(satrec, now);
 
     if (
+      !positionAndVelocity ||
       typeof positionAndVelocity.position === 'boolean' ||
       !positionAndVelocity.position
     ) {
