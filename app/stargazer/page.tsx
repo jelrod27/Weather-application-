@@ -348,7 +348,11 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
               )}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground block">
-              {environment?.kpIndex != null && environment.kpIndex >= 5 ? 'aurora possible' : 'geomagnetically quiet'}
+              {environment?.kpIndex == null
+                ? 'data unavailable'
+                : environment.kpIndex >= 5
+                  ? 'aurora possible'
+                  : 'geomagnetically quiet'}
             </span>
           </div>
           <div>

@@ -69,19 +69,23 @@ export function extractCurrentKp(rows: unknown): number | null {
   return null;
 }
 
-/** Max Kp from a SWPC forecast payload, preferring rows flagged predicted. */
+/**
+ * Max Kp from a SWPC forecast payload, preferring rows flagged predicted and
+ * bounded to the next ~24h (8 rows of 3-hour intervals). Returns null only when
+ * no row yields a numeric Kp; a genuine all-quiet (0) forecast returns 0.
+ */
 export function extractForecastMaxKp(rows: unknown): number | null {
   if (!Array.isArray(rows)) return null;
   const predicted = rows.filter(
     (r) => r && typeof r === 'object' && (r as Record<string, unknown>).observed === 'predicted',
   );
-  const pool = predicted.length > 0 ? predicted : rows;
-  let max = 0;
+  const pool = (predicted.length > 0 ? predicted : rows).slice(0, 8);
+  let max: number | null = null;
   for (const row of pool) {
     const v = parseKpRow(row);
-    if (v != null) max = Math.max(max, v);
+    if (v != null) max = max == null ? v : Math.max(max, v);
   }
-  return max > 0 ? max : null;
+  return max;
 }
 
 /**

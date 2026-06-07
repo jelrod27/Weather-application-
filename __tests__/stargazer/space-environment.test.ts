@@ -94,6 +94,23 @@ describe('extractForecastMaxKp', () => {
     expect(extractForecastMaxKp(rows)).toBe(5.0);
   });
 
+  it('keeps a genuine all-quiet (0) forecast as 0, not null', () => {
+    const rows = [
+      { kp: 0, observed: 'predicted' },
+      { kp: 0, observed: 'predicted' },
+    ];
+    expect(extractForecastMaxKp(rows)).toBe(0);
+  });
+
+  it('bounds the horizon to the next ~24h (first 8 predicted rows)', () => {
+    const rows = [
+      ...Array.from({ length: 8 }, () => ({ kp: 1, observed: 'predicted' })),
+      // A storm beyond the 24h window must not inflate the reported max.
+      { kp: 7, observed: 'predicted' },
+    ];
+    expect(extractForecastMaxKp(rows)).toBe(1);
+  });
+
   it('returns null when nothing parses', () => {
     expect(extractForecastMaxKp([])).toBeNull();
     expect(extractForecastMaxKp(null)).toBeNull();
