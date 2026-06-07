@@ -1,4 +1,4 @@
-import { embedImagesInDraft } from '../../scripts/newsletter/content-match';
+import { embedImagesInDraft, stripBareImageMarkdown } from '../../scripts/newsletter/content-match';
 import type { ImageEntry } from '../../scripts/newsletter/images';
 
 const liveImage: ImageEntry = {
@@ -78,5 +78,50 @@ describe('embedImagesInDraft', () => {
   it('returns the original draft when no placements are supplied', () => {
     const draft = '## Rearview\n\nProse.\n\n## Roadmap\n\nMore.';
     expect(embedImagesInDraft(draft, [])).toBe(draft);
+  });
+
+  it('strips model-emitted bare image markdown before embedding real images', () => {
+    // The generator is told not to emit image markdown, but the model
+    // sometimes hallucinates ![alt] placeholders with no URL. These must
+    // not survive into the published post.
+    const draft =
+      '## Rearview\n\nA tornado outbreak hit the Midwest.\n\n---\n\n' +
+      '![A composite radar mosaic with tornado-warned cells in red polygons.]\n\n' +
+      '---\n\n## Roadmap\n\nA ridge builds over the Rockies.';
+    const out = embedImagesInDraft(draft, [
+      { image: liveImage, insertAfter: 'tornado outbreak' },
+    ]);
+    // No bare image (![alt] not followed by a URL) remains.
+    expect(out).not.toMatch(/!\[[^\]]*\](?!\()/);
+    expect(out).not.toContain('composite radar mosaic');
+    // The real, URL-backed image was still embedded.
+    expect(out).toContain(`![${liveImage.caption}](${liveImage.url})`);
+    // Orphaned separators that bracketed the placeholder are gone.
+    expect(out).not.toMatch(/\n---\n\s*\n---/);
+  });
+});
+
+describe('stripBareImageMarkdown', () => {
+  it('removes bare image tags but keeps URL-backed images', () => {
+    const input =
+      'Intro.\n\n![A hallucinated figure description.]\n\n' +
+      '![Real caption.](https://example.com/real.png)\n*Credit*';
+    const out = stripBareImageMarkdown(input);
+    expect(out).not.toContain('hallucinated figure');
+    expect(out).toContain('![Real caption.](https://example.com/real.png)');
+  });
+
+  it('collapses separator pairs left bracketing a removed placeholder', () => {
+    const input = 'Para one.\n\n---\n\n![Bare placeholder.]\n\n---\n\n## Next';
+    const out = stripBareImageMarkdown(input);
+    expect(out).not.toContain('![');
+    expect(out).not.toContain('---');
+    expect(out).toContain('Para one.');
+    expect(out).toContain('## Next');
+  });
+
+  it('leaves clean drafts unchanged', () => {
+    const input = '## Rearview\n\nProse.\n\n## Roadmap\n\nMore.';
+    expect(stripBareImageMarkdown(input)).toBe(input);
   });
 });
