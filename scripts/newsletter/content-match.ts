@@ -113,7 +113,11 @@ ${catalog}`;
  * ## Roadmap) as a best-effort fallback rather than dropped silently.
  */
 export function embedImagesInDraft(draft: string, placements: ImagePlacement[]): string {
-  let out = draft;
+  // The generator prompt forbids image markdown (images are spliced in here
+  // with real URLs), but the model occasionally emits bare ![alt] tags with
+  // no URL — hallucinated figure descriptions that render as literal broken
+  // text on the published page. Strip them before inserting the real images.
+  let out = stripBareImageMarkdown(draft);
   for (const placement of placements) {
     const block = renderImageMarkdown(placement.image);
     const anchorIdx = locateAnchor(out, placement.insertAfter);
@@ -133,6 +137,23 @@ export function embedImagesInDraft(draft: string, placements: ImagePlacement[]):
 
 function renderImageMarkdown(img: ImageEntry): string {
   return `![${img.caption}](${img.url})\n*${img.credit}*`;
+}
+
+/**
+ * Removes image markdown the model emitted without a URL: `![alt]` not
+ * immediately followed by `(`. Real images use `![caption](url)` and are
+ * added by embedImagesInDraft, so a bare `![...]` is always a hallucinated
+ * placeholder. Also collapses the horizontal-rule separators the model
+ * tends to wrap such placeholders in, plus any blank-line runs left behind.
+ */
+export function stripBareImageMarkdown(draft: string): string {
+  let out = draft.replace(/!\[[^\]]*\](?!\()/g, '');
+  // Drop horizontal-rule separators that, after the placeholder removal, now
+  // bracket only whitespace — i.e. two or more "---" lines in a row.
+  out = out.replace(/(?:^[ \t]*---[ \t]*$\s*){2,}/gm, '');
+  // Normalize 3+ consecutive newlines created by removals down to one blank line.
+  out = out.replace(/\n{3,}/g, '\n\n');
+  return out;
 }
 
 function locateAnchor(draft: string, anchor: string): number {

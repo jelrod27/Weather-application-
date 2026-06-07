@@ -53,12 +53,6 @@ The seismic week had two entries worth noting: a M6.2 struck 22 km WSW of Scarce
 
 On the solar side, an M9.7 flare peaked on June 3 at 11:27 UTC. It stopped just short of X-class, but produced no significant geomagnetic response — the Kp index maxed at 0 for the week.
 
----
-
-![A composite radar mosaic showing the June 7 convective line across the Lower Mississippi Valley and Midwest, with tornado-warned cells highlighted in red polygons.]
-
----
-
 ## Roadmap
 
 ![Hurricane Isabel eye photographed from the International Space Station.](https://commons.wikimedia.org/wiki/Special:FilePath/Hurricane_Isabel_from_ISS.jpg?width=1280)
@@ -74,20 +68,7 @@ The more interesting dynamics are on the ridge's eastern flank, where shortwave 
 
 **Northeast.** New York City sits in the quietest sector of the week. An average high of 82°F and only 0.32" projected precipitation through the period — with peak probability just 30% on June 10 — puts the region in a post-frontal, high-pressure-dominated regime for most of the week. The June 10 signal is likely the trailing edge of whatever system clears the Midwest on June 9.
 
----
-
-![A 500 hPa height anomaly map for the June 8–14 period showing the ridge over the Rockies and the trough axis over the eastern Great Lakes, with anomaly contours in standard deviation units.]
-
----
-
 **International.** London's average high of 65°F for the week is close to climatological normal for early June, which itself is a notable data point — the persistent blocking that pushed temperatures above seasonal norms across parts of northwestern Europe in recent weeks appears to have relaxed. No dramatic heat signal is present in this week's outlook.
-
----
-
-![Visible satellite imagery from June 7 showing the convective cluster over the central Mississippi Valley, with the anvil structures of several supercells visible over Arkansas and Missouri.]
-
----
-
 
 ![Pacific equatorial conditions during ENSO neutral phase.](https://commons.wikimedia.org/wiki/Special:FilePath/Enso_normal.png?width=1280)
 *NOAA*
