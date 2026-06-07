@@ -23,12 +23,16 @@ import {
 } from '@/lib/stargazer/seven-timer';
 import { fetchISSTLE, calculateISSPasses } from '@/lib/stargazer/satellites';
 import { fetchUpcomingLaunches } from '@/lib/stargazer/launches';
+import { getDewRisk } from '@/lib/stargazer/ground';
+import { fetchKpIndex } from '@/lib/stargazer/space-environment';
+import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo';
 
 import deepSkyCatalog from '@/data/deep-sky-catalog.json';
 import meteorShowerData from '@/data/meteor-showers.json';
 
 import type {
   StargazerData,
+  StargazerEnvironment,
   StargazerSubScores,
   HourlyCondition,
   DeepSkyHighlight,
@@ -56,6 +60,7 @@ interface OpenMeteoHourly {
   dewpoint_2m: number[];
   temperature_2m: number[];
   wind_speed_10m: number[];
+  wind_direction_10m: number[];
   visibility: number[];
   surface_pressure: number[];
 }
@@ -77,14 +82,6 @@ function cToF(c: number): number {
 /** Convert km/h to mph */
 function kmhToMph(kmh: number): number {
   return kmh * 0.621371;
-}
-
-/** Compute dew risk from temperature and dewpoint (both in Celsius) */
-function getDewRisk(tempC: number, dewpointC: number): 'low' | 'moderate' | 'high' {
-  const delta = tempC - dewpointC;
-  if (delta < 2) return 'high';
-  if (delta < 5) return 'moderate';
-  return 'low';
 }
 
 // ============================================================================
@@ -115,16 +112,18 @@ export async function GET(request: NextRequest) {
 
   try {
     // ---- Parallel fetches ----
-    const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,visibility,surface_pressure&forecast_days=2&timezone=auto`;
+    const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,wind_direction_10m,visibility,surface_pressure&forecast_days=2&timezone=auto`;
 
     const reverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&extratags=1`;
 
-    const [openMeteoRes, sevenTimerData, issTle, launches, reverseGeoRes] = await Promise.all([
+    const [openMeteoRes, sevenTimerData, issTle, launches, reverseGeoRes, airQuality, kp] = await Promise.all([
       fetchWithTimeout(openMeteoUrl, { next: { revalidate: 900 } }),
       fetchSevenTimerData(lat, lon),
       fetchISSTLE(),
       fetchUpcomingLaunches(10),
       fetchWithTimeout(reverseGeoUrl, { next: { revalidate: 86400 }, headers: { 'User-Agent': '16BitWeather/1.0 (https://16bitweather.co)' } }).catch(() => null),
+      fetchOpenMeteoAirQuality(lat, lon).catch(() => null),
+      fetchKpIndex(),
     ]);
 
     // ---- Parse Open-Meteo ----
@@ -232,10 +231,13 @@ export async function GET(request: NextRequest) {
         seeing,
         transparency,
         windSpeed: hourly.wind_speed_10m[i],
+        windDirection: hourly.wind_direction_10m[i],
         humidity: hourly.relative_humidity_2m[i],
         temperature: tempC,
         dewpoint: dewpointC,
         dewRisk: getDewRisk(tempC, dewpointC),
+        visibility: hourly.visibility[i],
+        surfacePressure: hourly.surface_pressure[i],
       });
     }
 
@@ -444,6 +446,15 @@ export async function GET(request: NextRequest) {
     }
     const bortleEstimate = estimateBortleClass(population);
 
+    // ---- Sky environment (space weather + aerosols) ----
+    const environment: StargazerEnvironment = {
+      kpIndex: kp.current,
+      kpForecastMax: kp.forecastMax,
+      dust: airQuality?.current?.dust ?? null,
+      pm2_5: airQuality?.current?.pm2_5 ?? null,
+      usAqi: airQuality?.current?.us_aqi ?? null,
+    };
+
     // ---- Build response ----
     const data: StargazerData = {
       score,
@@ -452,6 +463,7 @@ export async function GET(request: NextRequest) {
       limitingFactor,
       darkWindow,
       hourlyConditions,
+      environment,
       moon: moonInfo,
       planets,
       deepSkyHighlights,

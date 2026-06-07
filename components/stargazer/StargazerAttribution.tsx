@@ -9,7 +9,9 @@ export default function StargazerAttribution() {
   const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
 
   const attributions = [
+    'Weather data by Open-Meteo.com (CC BY 4.0)',
     'Astronomical seeing and transparency data from 7Timer.info',
+    'Space weather (Kp index) from NOAA SWPC',
     'Celestial calculations powered by Astronomy Engine',
     'Launch data from The Space Devs',
     'Satellite tracking data from CelesTrak',

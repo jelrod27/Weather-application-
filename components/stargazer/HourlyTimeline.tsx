@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { getCompassDirection } from '@/lib/weather/weather-utils';
 import type { HourlyCondition, DarkWindow } from '@/lib/stargazer/types';
 
 interface HourlyTimelineProps {
@@ -18,9 +19,12 @@ type MetricKey =
   | 'seeing'
   | 'transparency'
   | 'windSpeed'
+  | 'windDirection'
   | 'humidity'
   | 'temperature'
-  | 'dewRisk';
+  | 'dewpoint'
+  | 'dewRisk'
+  | 'visibility';
 
 const metricLabels: Record<MetricKey, string> = {
   cloudCover: 'Cloud Cover',
@@ -30,9 +34,12 @@ const metricLabels: Record<MetricKey, string> = {
   seeing: 'Seeing',
   transparency: 'Transparency',
   windSpeed: 'Wind',
+  windDirection: 'Wind Dir',
   humidity: 'Humidity',
   temperature: 'Temp',
+  dewpoint: 'Dew Point',
   dewRisk: 'Dew Risk',
+  visibility: 'Vis (km)',
 };
 
 function getCellColor(metric: MetricKey, value: number | string): string {
@@ -67,8 +74,22 @@ function getCellColor(metric: MetricKey, value: number | string): string {
     return 'bg-red-600';
   }
 
-  if (metric === 'temperature') {
+  if (metric === 'temperature' || metric === 'dewpoint') {
     return 'bg-blue-600';
+  }
+
+  if (metric === 'windDirection') {
+    // Direction is informational, not good/bad -- keep it neutral.
+    return 'bg-slate-600';
+  }
+
+  if (metric === 'visibility') {
+    // Open-Meteo visibility is in meters; higher is better for imaging.
+    const v = value as number;
+    if (v >= 20000) return 'bg-green-600';
+    if (v >= 10000) return 'bg-yellow-600';
+    if (v >= 5000) return 'bg-orange-600';
+    return 'bg-red-600';
   }
 
   // Cloud cover metrics (lower is better)
@@ -81,8 +102,10 @@ function getCellColor(metric: MetricKey, value: number | string): string {
 
 function formatCellValue(metric: MetricKey, value: number | string): string {
   if (metric === 'dewRisk') return String(value).charAt(0).toUpperCase();
-  if (metric === 'temperature') return `${Math.round(value as number)}°`;
+  if (metric === 'temperature' || metric === 'dewpoint') return `${Math.round(value as number)}°`;
   if (metric === 'windSpeed') return `${Math.round(value as number)}`;
+  if (metric === 'windDirection') return getCompassDirection(value as number);
+  if (metric === 'visibility') return `${Math.round((value as number) / 1000)}`;
   if (metric === 'humidity' || metric.startsWith('cloudCover'))
     return `${Math.round(value as number)}%`;
   return String(Math.round(value as number));
@@ -104,9 +127,12 @@ const metrics: MetricKey[] = [
   'seeing',
   'transparency',
   'windSpeed',
+  'windDirection',
   'humidity',
   'temperature',
+  'dewpoint',
   'dewRisk',
+  'visibility',
 ];
 
 function getScoreRowColor(score: number): string {

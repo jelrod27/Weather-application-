@@ -17,6 +17,8 @@ import { ShareButtons } from '@/components/share-buttons';
 import type { StargazerData } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
 import { formatTonightDate } from '@/lib/stargazer/bortle';
+import { dewpointSpread } from '@/lib/stargazer/ground';
+import { getCompassDirection } from '@/lib/weather/weather-utils';
 import StargazerNav, { type StargazerTabId } from '@/components/stargazer/StargazerNav';
 import FullHourlyTimeline from '@/components/stargazer/HourlyTimeline';
 import MoonIntel from '@/components/stargazer/MoonIntel';
@@ -214,7 +216,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
 // ============================================================================
 
 function ConditionsPanel({ data }: { data: StargazerData }) {
-  const { hourlyConditions, bestWindow, darkWindow, moon } = data;
+  const { hourlyConditions, bestWindow, darkWindow, moon, environment } = data;
 
   // Rehydrate dates from JSON serialization
   const conditions = hourlyConditions?.map((h) => ({
@@ -284,16 +286,42 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
                   <span className="text-xl font-bold font-mono">{Math.round(groundConditions.humidity)}%</span>
                 </div>
                 <div>
-                  <span className="text-xs font-mono uppercase text-muted-foreground block">Wind Speed</span>
-                  <span className="text-xl font-bold font-mono">{Math.round(groundConditions.windSpeed)} km/h</span>
+                  <span className="text-xs font-mono uppercase text-muted-foreground block">Wind</span>
+                  <span className="text-xl font-bold font-mono">
+                    {Math.round(groundConditions.windSpeed)} km/h
+                    {groundConditions.windDirection != null && (
+                      <span className="text-sm text-muted-foreground ml-1">{getCompassDirection(groundConditions.windDirection)}</span>
+                    )}
+                  </span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Cloud Cover</span>
                   <span className="text-xl font-bold font-mono">{Math.round(groundConditions.cloudCover)}%</span>
                 </div>
                 <div>
+                  <span className="text-xs font-mono uppercase text-muted-foreground block">Dew Point</span>
+                  <span className="text-xl font-bold font-mono">
+                    {Math.round(groundConditions.dewpoint)}&deg;C
+                    <span className="text-sm text-muted-foreground ml-1">
+                      ({dewpointSpread(groundConditions.temperature, groundConditions.dewpoint).toFixed(1)}&deg; spread)
+                    </span>
+                  </span>
+                </div>
+                <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Dew Risk</span>
                   <span className="text-xl font-bold font-mono capitalize">{String(groundConditions.dewRisk)}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-mono uppercase text-muted-foreground block">Visibility</span>
+                  <span className="text-xl font-bold font-mono">
+                    {groundConditions.visibility != null ? `${(groundConditions.visibility / 1000).toFixed(1)} km` : '--'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs font-mono uppercase text-muted-foreground block">Pressure</span>
+                  <span className="text-xl font-bold font-mono">
+                    {groundConditions.surfacePressure != null ? `${Math.round(groundConditions.surfacePressure)} hPa` : '--'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Seeing</span>
@@ -301,6 +329,43 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sky environment: space weather + aerosols */}
+      <div className="container-primary p-4 font-mono">
+        <h2 className="border-b border-subtle py-3 mb-3 text-xs font-mono uppercase text-muted-foreground">
+          Sky Environment
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div>
+            <span className="text-xs font-mono uppercase text-muted-foreground block">Kp Index</span>
+            <span className="text-xl font-bold font-mono">
+              {environment?.kpIndex != null ? environment.kpIndex.toFixed(1) : '--'}
+              {environment?.kpForecastMax != null && (
+                <span className="text-sm text-muted-foreground ml-1">(max {environment.kpForecastMax.toFixed(1)})</span>
+              )}
+            </span>
+            <span className="text-[10px] font-mono text-muted-foreground block">
+              {environment?.kpIndex != null && environment.kpIndex >= 5 ? 'aurora possible' : 'geomagnetically quiet'}
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-mono uppercase text-muted-foreground block">Aerosol / Dust</span>
+            <span className="text-xl font-bold font-mono">
+              {environment?.dust != null ? `${Math.round(environment.dust)}` : '--'}
+              <span className="text-sm text-muted-foreground ml-1">&micro;g/m&sup3;</span>
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-mono uppercase text-muted-foreground block">Air Quality</span>
+            <span className="text-xl font-bold font-mono">
+              {environment?.usAqi != null ? Math.round(environment.usAqi) : '--'}
+              {environment?.pm2_5 != null && (
+                <span className="text-sm text-muted-foreground ml-1">PM2.5 {Math.round(environment.pm2_5)}</span>
+              )}
+            </span>
           </div>
         </div>
       </div>

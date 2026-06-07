@@ -48,10 +48,16 @@ export interface HourlyCondition {
   seeing: number;
   transparency: number;
   windSpeed: number;
+  /** Ground wind direction in degrees (0-360, meteorological) */
+  windDirection: number;
   humidity: number;
   temperature: number;
   dewpoint: number;
   dewRisk: 'low' | 'moderate' | 'high';
+  /** Horizontal visibility in meters (Open-Meteo) */
+  visibility: number;
+  /** Surface pressure in hPa */
+  surfacePressure: number;
   /** Per-hour composite score (0-100), computed during dark window */
   hourlyScore?: number;
   /** Per-hour sub-scores breakdown */
@@ -260,6 +266,23 @@ export interface LimitingFactor {
 }
 
 // ============================================================================
+// Sky Environment (space weather + aerosols)
+// ============================================================================
+
+export interface StargazerEnvironment {
+  /** Current planetary Kp index (0-9), null if unavailable */
+  kpIndex: number | null;
+  /** Max expected Kp over the next ~24h, null if unavailable */
+  kpForecastMax: number | null;
+  /** Dust concentration in ug/m3, null if unavailable */
+  dust: number | null;
+  /** Fine particulate (PM2.5) in ug/m3, null if unavailable */
+  pm2_5: number | null;
+  /** US Air Quality Index, null if unavailable */
+  usAqi: number | null;
+}
+
+// ============================================================================
 // Consolidated API Response
 // ============================================================================
 
@@ -270,6 +293,7 @@ export interface StargazerData {
   limitingFactor: LimitingFactor | null;
   darkWindow: DarkWindow;
   hourlyConditions: HourlyCondition[];
+  environment: StargazerEnvironment;
   moon: MoonInfo;
   planets: PlanetVisibility[];
   deepSkyHighlights: DeepSkyHighlight[];

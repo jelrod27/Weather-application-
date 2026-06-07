@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { parseKpEntry, parseKpRow } from '@/lib/stargazer/space-environment';
 
 export interface KpIndexData {
   timestamp: string;
@@ -40,7 +41,9 @@ export async function GET() {
       } as RequestInit)
     ]);
 
-    // Parse Kp index data (array format: [time_tag, Kp, a_running, station_count])
+    // Parse Kp index data. NOAA ships this in two shapes over time: array-of-objects
+    // ({ time_tag, Kp, ... }) and the legacy array-of-arrays with a header row. The
+    // shared parsers handle both and skip any non-numeric header/junk rows.
     let currentKp = 0;
     let currentTimeTag = '';
     const recentKp: Array<{ timeTag: string; kp: number }> = [];
@@ -48,19 +51,13 @@ export async function GET() {
     if (kpResponse.status === 'fulfilled' && kpResponse.value.ok) {
       const kpData = await kpResponse.value.json();
 
-      // First row is header, rest is data
-      if (Array.isArray(kpData) && kpData.length > 1) {
-        // Get last 8 entries (24 hours of 3-hour intervals)
-        const dataRows = kpData.slice(1);
-        const last8 = dataRows.slice(-8);
-
-        for (const row of last8) {
-          if (Array.isArray(row) && row.length >= 2) {
-            const timeTag = row[0] as string;
-            const kp = parseFloat(row[1] as string) || 0;
-            recentKp.push({ timeTag, kp });
-          }
-        }
+      if (Array.isArray(kpData) && kpData.length > 0) {
+        // Last 8 numeric entries (24 hours of 3-hour intervals)
+        const entries = kpData
+          .map(parseKpEntry)
+          .filter((e): e is { timeTag: string; kp: number } => e != null);
+        const last8 = entries.slice(-8);
+        recentKp.push(...last8);
 
         // Current is the last entry
         if (recentKp.length > 0) {
@@ -76,16 +73,21 @@ export async function GET() {
     if (forecastResponse.status === 'fulfilled' && forecastResponse.value.ok) {
       try {
         const forecastData = await forecastResponse.value.json();
-        // Forecast is array with time ranges and expected Kp
-        if (Array.isArray(forecastData) && forecastData.length > 1) {
-          const upcoming = forecastData.slice(1, 9); // Next 24 hours
+        // Forecast mixes recent observed rows with predicted ones. Prefer the
+        // predicted rows (the actual forecast); fall back to the tail otherwise.
+        if (Array.isArray(forecastData) && forecastData.length > 0) {
+          const predicted = forecastData.filter(
+            (r) => r && typeof r === 'object' && (r as Record<string, unknown>).observed === 'predicted',
+          );
+          const source = predicted.length > 0 ? predicted : forecastData;
+          const upcoming = source.slice(0, 8); // Next ~24 hours
           let maxKp = 0;
           let sumKp = 0;
           let count = 0;
 
           for (const row of upcoming) {
-            if (Array.isArray(row) && row.length >= 2) {
-              const kp = parseFloat(row[1] as string) || 0;
+            const kp = parseKpRow(row);
+            if (kp != null) {
               maxKp = Math.max(maxKp, kp);
               sumKp += kp;
               count++;
