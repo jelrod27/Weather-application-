@@ -214,4 +214,15 @@ describe('buildWeatherDataFromOpenMeteo', () => {
     expect(result.hourlyForecast![0].time).toBe('2 PM');
     expect(result.hourlyForecast!.length).toBe(48);
   });
+
+  // Regression: hourly visibility was fetched but never mapped, so the
+  // Visibility card always showed "N/A" with a default "Clear" badge.
+  it('should map current-hour visibility (meters) into day-0 details (miles)', async () => {
+    const result = await buildWeatherDataFromOpenMeteo(
+      40.71, -74.01, 'New York', 'imperial', 'US'
+    );
+
+    // Fixture visibility is 10000 m for every hour -> 6.2 mi.
+    expect(result.forecast[0].details.visibility).toBe(6.2);
+  });
 });

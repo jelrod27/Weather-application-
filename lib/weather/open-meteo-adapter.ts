@@ -211,6 +211,16 @@ export async function buildWeatherDataFromOpenMeteo(
         icon: undefined,
       });
     }
+
+    // Surface the current-hour visibility on day 0. Open-Meteo reports
+    // visibility in meters; the Visibility card renders miles. Without this
+    // the card always showed "N/A" with a default-driven "Clear" badge,
+    // even in dense fog — the data was fetched and discarded.
+    const visibilityMeters = hourly.visibility?.[startIdx];
+    if (visibilityMeters != null && forecastDays.length > 0) {
+      forecastDays[0].details.visibility =
+        Math.round((visibilityMeters / 1609.34) * 10) / 10;
+    }
   }
 
   return {
