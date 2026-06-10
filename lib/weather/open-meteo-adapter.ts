@@ -67,9 +67,16 @@ export async function buildWeatherDataFromOpenMeteo(
     wind_speed_unit: windSpeedUnit,
     precipitation_unit: precipitationUnit,
   });
+  // Bounded: this chain also runs server-side (generateMetadata on city
+  // pages self-fetches through these URLs), where a hung request would
+  // block the render indefinitely.
   const [forecastRes, airQualityRes, pollenData] = await Promise.all([
-    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`)),
-    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`)).catch(() => null),
+    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`), {
+      signal: AbortSignal.timeout(10000),
+    }),
+    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`), {
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => null),
     fetchPollenData(lat, lon),
   ]);
 

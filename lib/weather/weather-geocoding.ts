@@ -260,7 +260,8 @@ export const geocodeLocation = async (
       : locationQuery.zipCode;
 
     const response = await fetch(
-      `${baseUrl}?zip=${encodeURIComponent(zipQuery!)}`
+      `${baseUrl}?zip=${encodeURIComponent(zipQuery!)}`,
+      { signal: AbortSignal.timeout(10000) }
     );
 
     if (!response.ok) {
@@ -295,7 +296,8 @@ export const geocodeLocation = async (
     }
 
     const response = await fetch(
-      `${baseUrl}?q=${encodeURIComponent(query)}&limit=1`
+      `${baseUrl}?q=${encodeURIComponent(query)}&limit=1`,
+      { signal: AbortSignal.timeout(10000) }
     );
 
     if (!response.ok) {
@@ -340,7 +342,8 @@ export const reverseGeocodeLocation = async (
 ): Promise<GeocodedLocation> => {
   const baseUrl = getApiUrl('/api/weather/geocoding');
   const response = await fetch(
-    `${baseUrl}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&limit=1`
+    `${baseUrl}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&limit=1`,
+    { signal: AbortSignal.timeout(10000) }
   );
 
   if (!response.ok) {
