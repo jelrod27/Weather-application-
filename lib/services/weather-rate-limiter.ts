@@ -193,25 +193,44 @@ export async function rateLimitRequest(request: NextRequest): Promise<
   | { allowed: true; result: RateLimitResult; headers: Record<string, string> }
   | { allowed: false; response: NextResponse }
 > {
-  const identifier = await getClientIdentifier(request);
-  const result = checkRateLimit(identifier);
+  try {
+    const identifier = await getClientIdentifier(request);
+    const result = checkRateLimit(identifier);
 
-  if (!result.allowed) {
-    return { allowed: false, response: createRateLimitResponse(result) };
+    if (!result.allowed) {
+      return { allowed: false, response: createRateLimitResponse(result) };
+    }
+
+    return {
+      allowed: true,
+      result,
+      headers: {
+        'X-RateLimit-Limit': String(HOURLY_LIMIT),
+        'X-RateLimit-Remaining': String(result.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
+        'X-RateLimit-Burst-Limit': String(BURST_LIMIT),
+        'X-RateLimit-Burst-Remaining': String(result.burstRemaining),
+        'X-RateLimit-Burst-Reset': String(Math.ceil(result.burstResetTime / 1000)),
+      },
+    };
+  } catch (error) {
+    // Fail open: a limiter malfunction must never take a weather route down.
+    // Some routes call this gate before entering their try/catch, so an
+    // exception here would escape JSON error handling entirely.
+    console.error('[weather-rate-limiter] Limiter failure, failing open:', error);
+    const now = Date.now();
+    return {
+      allowed: true,
+      result: {
+        allowed: true,
+        remaining: HOURLY_LIMIT,
+        resetTime: now + HOURLY_WINDOW_MS,
+        burstRemaining: BURST_LIMIT,
+        burstResetTime: now + BURST_WINDOW_MS,
+      },
+      headers: {},
+    };
   }
-
-  return {
-    allowed: true,
-    result,
-    headers: {
-      'X-RateLimit-Limit': String(HOURLY_LIMIT),
-      'X-RateLimit-Remaining': String(result.remaining),
-      'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
-      'X-RateLimit-Burst-Limit': String(BURST_LIMIT),
-      'X-RateLimit-Burst-Remaining': String(result.burstRemaining),
-      'X-RateLimit-Burst-Reset': String(Math.ceil(result.burstResetTime / 1000)),
-    },
-  };
 }
 
 /**

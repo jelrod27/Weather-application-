@@ -42,18 +42,25 @@ function resolveAllowedOrigin(requestOrigin: string | null): string | null {
     const parsed = new URL(requestOrigin);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
     // THIS project's preview deploys only. vercel.app is a multi-tenant
-    // apex — anyone can deploy there for free, so matching all of
-    // *.vercel.app reflected CORS for arbitrary third-party tenants.
-    // Vercel preview hostnames always start with the project name:
-    //   weather-application-<hash>-<scope>.vercel.app
-    //   weather-application-git-<branch>-<scope>.vercel.app
-    if (/^weather-application(-[a-z0-9-]+)?\.vercel\.app$/.test(parsed.hostname)) {
+    // apex, and a prefix-only match was still spoofable: any tenant can
+    // name their project "weather-application" and get
+    // weather-application-<hash>-<their-scope>.vercel.app. Anchor on the
+    // team scope suffix instead — Vercel team slugs are globally unique,
+    // and a hostile project name cannot produce a hostname ENDING in our
+    // scope (their own scope slug is always appended after it).
+    //   weather-application-<hash>-justin-elrods-projects.vercel.app
+    //   weather-application-git-<branch>-justin-elrods-projects.vercel.app
+    const host = parsed.hostname.toLowerCase();
+    if (/^weather-application-[a-z0-9-]+-justin-elrods-projects\.vercel\.app$/.test(host)) {
       return requestOrigin;
     }
-    // Belt and suspenders for a future project rename: the deployment's own
-    // URLs are exposed at runtime.
-    const selfUrls = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL].filter(Boolean);
-    if (selfUrls.includes(parsed.hostname)) {
+    // Belt and suspenders for a future project/team rename: the deployment's
+    // own hostnames are exposed at runtime (bare hosts, but normalize
+    // defensively).
+    const selfHosts = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+      .filter((v): v is string => Boolean(v))
+      .map((v) => v.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''));
+    if (selfHosts.includes(host)) {
       return requestOrigin;
     }
   } catch {

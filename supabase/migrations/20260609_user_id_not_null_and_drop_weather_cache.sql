@@ -17,6 +17,9 @@
 --    security sweep. Drop it.
 
 DELETE FROM public.saved_locations WHERE user_id IS NULL;
+-- The live DB had no NULL-owner preference rows, but mirror the cleanup so
+-- this file cannot abort on other environments that do.
+DELETE FROM public.user_preferences WHERE user_id IS NULL;
 
 ALTER TABLE public.saved_locations ALTER COLUMN user_id SET NOT NULL;
 ALTER TABLE public.user_preferences ALTER COLUMN user_id SET NOT NULL;
