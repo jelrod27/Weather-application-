@@ -33,8 +33,14 @@ export function useWeatherController() {
     const [hasSearched, setHasSearched] = useState(false)
     const [remainingSearches, setRemainingSearches] = useState(10)
     const [isClient, setIsClient] = useState(false)
-    const [searchCache, setSearchCache] = useState<Map<string, { data: WeatherData; timestamp: number }>>(new Map())
     const [autoLocationAttempted, setAutoLocationAttempted] = useState(false)
+    // Monotonic id for weather loads: a stale slow response (search or
+    // location-detect) must not overwrite state written by a newer one.
+    const latestLoadId = useRef(0)
+    // Synchronous guard for the auto-location effect: the state flag above is
+    // only set after awaits complete, so a dependency change mid-flight
+    // (profile/preferences arriving) could start a second concurrent run.
+    const autoLocationStartedRef = useRef(false)
     const [isAutoDetecting, setIsAutoDetecting] = useState(false)
 
     const { profile, preferences, loading: authLoading } = useAuth()
@@ -167,19 +173,21 @@ export function useWeatherController() {
         }
     }, [])
 
-    const addToSearchCache = useCallback((searchTerm: string, weatherData: WeatherData) => {
+    // Cache keys include the unit system: the cached WeatherData is
+    // unit-baked, so a C/F toggle (or a Supabase preference arriving after
+    // first fetch) must miss rather than serve wrong-unit payloads.
+    const addToSearchCache = useCallback((searchTerm: string, weatherData: WeatherData, unitSystem: string) => {
         const cache = getSearchCache()
-        cache.set(searchTerm.toLowerCase().trim(), {
+        cache.set(`${searchTerm.toLowerCase().trim()}|${unitSystem}`, {
             data: weatherData,
             timestamp: Date.now()
         })
         saveSearchCache(cache)
-        setSearchCache(cache)
     }, [getSearchCache, saveSearchCache])
 
-    const getFromSearchCache = useCallback((searchTerm: string): WeatherData | null => {
+    const getFromSearchCache = useCallback((searchTerm: string, unitSystem: string): WeatherData | null => {
         const cache = getSearchCache()
-        const cached = cache.get(searchTerm.toLowerCase().trim())
+        const cached = cache.get(`${searchTerm.toLowerCase().trim()}|${unitSystem}`)
         if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_DURATION) {
             return cached.data
         }
@@ -188,9 +196,12 @@ export function useWeatherController() {
 
     // Weather handling
     const handleLocationDetected = useCallback(async (location: LocationData) => {
+        const loadId = ++latestLoadId.current
         try {
             userCacheService.saveLastLocation(location)
-            const locationKey = userCacheService.getLocationKey(location)
+            const unitSystemForKey: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+            // Unit-scoped key: cached payloads are unit-baked (see search cache).
+            const locationKey = `${userCacheService.getLocationKey(location)}_${unitSystemForKey}`
             const cachedWeather = userCacheService.getCachedWeatherData(locationKey)
 
             if (cachedWeather?.forecast && cachedWeather.forecast.length > 0) {
@@ -224,6 +235,7 @@ export function useWeatherController() {
                 const fallbackUnitSystem: 'metric' | 'imperial' =
                     preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
                 const fallbackWeather = await fetchWeatherData(fallbackQuery, fallbackUnitSystem)
+                if (loadId !== latestLoadId.current) return
 
                 if (fallbackWeather) {
                     setWeather(fallbackWeather)
@@ -240,6 +252,7 @@ export function useWeatherController() {
             const coords = `${location.latitude},${location.longitude}`
             const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
             const weatherData = await fetchWeatherByLocation(coords, unitSystem, location.displayName)
+            if (loadId !== latestLoadId.current) return
 
             if (weatherData) {
                 setWeather(weatherData)
@@ -254,10 +267,13 @@ export function useWeatherController() {
             // Use warn instead of error for auto-detected locations — 404 "Location not found"
             // is expected when IP geolocation returns imprecise coordinates. This prevents
             // noisy red console errors on pages that don't use weather data.
+            if (loadId !== latestLoadId.current) return
             console.warn('[auto-location] Failed to load weather for detected location:', error)
             setError('Failed to load weather data for your location')
         } finally {
-            setLoading(false)
+            if (loadId === latestLoadId.current) {
+                setLoading(false)
+            }
         }
     }, [preferences?.temperature_unit, setLocationInput, setCurrentLocation, saveLocationToCache, saveWeatherToCache])
 
@@ -289,8 +305,17 @@ export function useWeatherController() {
         setLoading(true)
         setError("")
 
+        // Sequence this load: if another search or location-detect starts
+        // while we are awaiting, our results are stale and must not be
+        // written (previously a slow "Springfield" response could overwrite
+        // a newer "Boston" result, or a stale failure could clobber a newer
+        // success with setWeather(null)).
+        const loadId = ++latestLoadId.current
+
         try {
-            const cachedWeather = getFromSearchCache(input)
+            const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+
+            const cachedWeather = getFromSearchCache(input, unitSystem)
             if (cachedWeather?.forecast && cachedWeather.forecast.length > 0) {
                 setWeather(cachedWeather)
                 setHasSearched(true)
@@ -298,8 +323,8 @@ export function useWeatherController() {
                 return
             }
 
-            const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
             const weatherData = await fetchWeatherData(input, unitSystem)
+            if (loadId !== latestLoadId.current) return
 
             if (!weatherData) throw new Error('City not found')
             if (!weatherData.forecast?.length) throw new Error('Incomplete weather data')
@@ -310,16 +335,19 @@ export function useWeatherController() {
             saveLocationToCache(input)
             saveWeatherToCache(weatherData)
             recordRequest()
-            addToSearchCache(input, weatherData)
+            addToSearchCache(input, weatherData, unitSystem)
 
         } catch (error: any) {
+            if (loadId !== latestLoadId.current) return
             console.error('Search error:', error)
             const msg = error.message || 'Failed to load weather data'
             setError(msg)
             setWeather(null)
             toastService.error(msg)
         } finally {
-            setLoading(false)
+            if (loadId === latestLoadId.current) {
+                setLoading(false)
+            }
         }
     }, [checkRateLimit, getFromSearchCache, preferences?.temperature_unit, setCurrentLocation, saveLocationToCache, saveWeatherToCache, recordRequest, addToSearchCache])
 
@@ -360,6 +388,14 @@ export function useWeatherController() {
         if (authLoading) return
 
         const tryAutoLocation = async () => {
+            // Synchronous re-entry guard: deps (profile/preferences identity)
+            // can change while the first run is mid-await, re-running this
+            // effect before autoLocationAttempted state is set. Without the
+            // ref, run #2 would race IP detection against the profile's
+            // default location (non-deterministic displayed city, double
+            // rate-limit recording).
+            if (autoLocationStartedRef.current) return
+            autoLocationStartedRef.current = true
             try {
                 const localPrefs = userCacheService.getPreferences()
                 const localAutoLocate =
