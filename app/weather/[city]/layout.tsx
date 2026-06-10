@@ -1,10 +1,94 @@
 import type { Metadata } from 'next'
-import { fetchWeatherData } from '@/lib/weather'
+import { unstable_cache } from 'next/cache'
+import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
+import { getWMOCondition } from '@/lib/wmo-codes'
+import { toStateAbbr } from '@/lib/us-states'
 import { captureError } from '@/lib/error-utils'
 type Props = {
   params: Promise<{ city: string }>
   children: React.ReactNode
 }
+
+const OPEN_METEO_GEO = 'https://geocoding-api.open-meteo.com/v1/search'
+
+/** Minimal weather shape needed to enrich metadata. */
+interface MetadataWeather {
+  temperature: number
+  unit: string
+  condition: string
+  forecast: { day: string; highTemp: number; condition: string }[]
+}
+
+function wmoToCondition(code: number): string {
+  switch (getWMOCondition(code)) {
+    case 'sunny': return 'Clear'
+    case 'cloudy': return 'Clouds'
+    case 'rainy': return 'Rain'
+    case 'snowy': return 'Snow'
+    default: return 'Clear'
+  }
+}
+
+/**
+ * Fetch the weather used to enrich the meta description and JSON-LD.
+ *
+ * Calls Open-Meteo's geocoding and forecast APIs directly instead of
+ * self-fetching through this deployment's own /api routes: the previous
+ * implementation made 4+ unbounded HTTP round-trips back into the same
+ * deployment on every SSR of a city page, blocking TTFB — only to fetch
+ * data the client refetches on hydration anyway. Cached for 15 minutes
+ * per city slug.
+ */
+const getMetadataWeather = unstable_cache(
+  async (citySlug: string): Promise<MetadataWeather | null> => {
+    const parts = citySlug.split('-')
+    const trailing = parts.length >= 2 ? parts[parts.length - 1] : null
+    const stateAbbr = trailing ? toStateAbbr(trailing) : null
+    const cityName = (stateAbbr ? parts.slice(0, -1) : parts).join(' ')
+    if (!cityName) return null
+
+    const geoRes = await fetchWithTimeout(
+      `${OPEN_METEO_GEO}?name=${encodeURIComponent(cityName)}&count=10&language=en&format=json`,
+      { timeoutMs: 8000, next: { revalidate: 86400 } }
+    )
+    if (!geoRes.ok) return null
+    const geo = (await geoRes.json()) as {
+      results?: { latitude: number; longitude: number; admin1?: string; country_code?: string }[]
+    }
+    let results = geo.results ?? []
+    if (results.length === 0) return null
+    if (stateAbbr) {
+      const filtered = results.filter(
+        (r) => r.country_code?.toUpperCase() === 'US' && toStateAbbr(r.admin1) === stateAbbr
+      )
+      if (filtered.length > 0) results = filtered
+    }
+    const place = results[0]
+
+    const forecast = await fetchOpenMeteoForecast(place.latitude, place.longitude, {
+      forecastDays: 5,
+    })
+    const current = forecast.current
+    if (current?.temperature_2m == null) return null
+
+    const dailyTime = forecast.daily?.time ?? []
+    const days = dailyTime.slice(0, 5).map((t, i) => ({
+      day: new Date(`${t}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long' }),
+      highTemp: Math.round(forecast.daily?.temperature_2m_max?.[i] ?? 0),
+      condition: wmoToCondition(forecast.daily?.weather_code?.[i] ?? 0),
+    }))
+
+    return {
+      temperature: Math.round(current.temperature_2m),
+      unit: '°F',
+      condition: wmoToCondition(current.weather_code ?? 0),
+      forecast: days,
+    }
+  },
+  ['city-metadata-weather'],
+  { revalidate: 900 }
+)
 
 // City name formatting function
 function formatCityName(citySlug: string): string {
@@ -36,13 +120,15 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const canonical = `https://www.16bitweather.co/weather/${city}`
   
   // Try to fetch weather data for enhanced metadata
-  let weatherData = null
+  let weatherData: MetadataWeather | null = null
   try {
-    weatherData = await fetchWeatherData(searchTerm)
+    weatherData = await getMetadataWeather(city)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    const isExpectedAuthFailure = /401|unauthorized|authentication error/i.test(message)
-    if (isExpectedAuthFailure) {
+    // Timeouts and upstream hiccups are routine for non-critical metadata
+    // enhancement; only unexpected failures go to Sentry.
+    const isExpectedTransientFailure = /timeout|timed out|abort|401|unauthorized|authentication error/i.test(message)
+    if (isExpectedTransientFailure) {
       console.warn('[metadata-fetch] Weather data unavailable for enhanced metadata:', searchTerm)
     } else {
       captureError(error, 'metadata-fetch', { city: searchTerm })
