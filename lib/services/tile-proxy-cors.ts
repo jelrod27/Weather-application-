@@ -41,9 +41,19 @@ function resolveAllowedOrigin(requestOrigin: string | null): string | null {
   try {
     const parsed = new URL(requestOrigin);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
-    // *.vercel.app preview deploys: Vercel uses subdomains under vercel.app
-    // for branch/preview URLs (e.g., my-app-git-branch-team.vercel.app).
-    if (parsed.hostname === 'vercel.app' || parsed.hostname.endsWith('.vercel.app')) {
+    // THIS project's preview deploys only. vercel.app is a multi-tenant
+    // apex — anyone can deploy there for free, so matching all of
+    // *.vercel.app reflected CORS for arbitrary third-party tenants.
+    // Vercel preview hostnames always start with the project name:
+    //   weather-application-<hash>-<scope>.vercel.app
+    //   weather-application-git-<branch>-<scope>.vercel.app
+    if (/^weather-application(-[a-z0-9-]+)?\.vercel\.app$/.test(parsed.hostname)) {
+      return requestOrigin;
+    }
+    // Belt and suspenders for a future project rename: the deployment's own
+    // URLs are exposed at runtime.
+    const selfUrls = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL].filter(Boolean);
+    if (selfUrls.includes(parsed.hostname)) {
       return requestOrigin;
     }
   } catch {
