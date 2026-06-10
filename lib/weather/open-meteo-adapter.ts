@@ -217,8 +217,9 @@ export async function buildWeatherDataFromOpenMeteo(
     // the card always showed "N/A" with a default-driven "Clear" badge,
     // even in dense fog — the data was fetched and discarded.
     const visibilityMeters = hourly.visibility?.[startIdx];
-    if (visibilityMeters != null && forecastDays.length > 0) {
-      forecastDays[0].details.visibility =
+    const day0Details = forecastDays[0]?.details;
+    if (visibilityMeters != null && day0Details) {
+      day0Details.visibility =
         Math.round((visibilityMeters / 1609.34) * 10) / 10;
     }
   }
