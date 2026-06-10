@@ -101,7 +101,10 @@ export const parseLocationInput = (input: string): LocationQuery => {
   const usZipPattern = /^\d{5}(-\d{4})?$/;
   const ukPostcodePattern = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i;
   const canadaPostalPattern = /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i;
-  const generalPostalPattern = /^[A-Z0-9]{3,10}$/i;
+  // Must contain at least one digit — letters-only input ("London", "Paris")
+  // is a city name, not a postal code. Every supported postal format not
+  // already matched above (US/UK/CA) contains a digit.
+  const generalPostalPattern = /^(?=[A-Z0-9]*\d)[A-Z0-9]{3,10}$/i;
 
   // Check for US ZIP code
   if (usZipPattern.test(cleanInput)) {
