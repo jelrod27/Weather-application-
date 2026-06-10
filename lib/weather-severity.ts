@@ -31,8 +31,14 @@ export function getHumiditySeverity(humidity: number): SeverityResult {
 }
 
 export function getPressureCategory(pressure: number | string): SeverityResult {
-  const p = typeof pressure === 'string' ? parseFloat(pressure) : pressure
+  let p = typeof pressure === 'string' ? parseFloat(pressure) : pressure
   if (isNaN(p)) return { label: 'Unknown', textColor: NORD_YELLOW, bgColor: NORD_YELLOW }
+  // US/CA pressure strings are inHg ("29.92 in"); the thresholds below are
+  // hPa. Sea-level pressure in inHg is ~25-32, in hPa ~870-1085, so any
+  // value under 100 is unambiguously inHg — convert before categorizing.
+  // Without this, every imperial-format reading parsed to ~30 and showed
+  // the "Low" badge regardless of actual pressure.
+  if (p < 100) p = p / 0.02953
   if (p < 1009) return { label: 'Low', textColor: NORD_YELLOW, bgColor: NORD_YELLOW }
   if (p <= 1022) return { label: 'Normal', textColor: NORD_GREEN, bgColor: NORD_GREEN }
   return { label: 'High', textColor: NORD_ORANGE, bgColor: NORD_ORANGE }
