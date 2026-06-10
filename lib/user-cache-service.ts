@@ -69,7 +69,6 @@ export class UserCacheService {
   private readonly PREFERENCES_KEY = 'user_preferences';
   private readonly WEATHER_CACHE_KEY = 'weather_cache';
   private readonly DEFAULT_WEATHER_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-  private readonly FORECAST_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for forecast data
   private readonly DEFAULT_LOCATION_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private readonly MAX_CACHE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
@@ -215,12 +214,12 @@ export class UserCacheService {
       // WeatherData includes optional coordinates; strip them before caching.
       const { coordinates, ...sanitizedWeather } = (weatherData as any) ?? {};
 
-      // Use longer cache for forecast data (has forecast array) vs current conditions
-      const hasForecastData = weatherData.forecast && weatherData.forecast.length > 0;
-      const defaultDuration = hasForecastData 
-        ? this.FORECAST_CACHE_DURATION 
-        : this.DEFAULT_WEATHER_CACHE_DURATION;
-      const duration = customDuration || defaultDuration;
+      // The cached blob always contains current conditions alongside the
+      // forecast and is read as a whole, so the documented 10-minute policy
+      // applies to all of it. (A previous forecast-presence branch silently
+      // extended current conditions to 30 minutes, since full WeatherData
+      // always includes a forecast array.)
+      const duration = customDuration || this.DEFAULT_WEATHER_CACHE_DURATION;
       const cacheEntry: CachedWeatherData = {
         data: sanitizedWeather as WeatherData,
         timestamp: Date.now(),

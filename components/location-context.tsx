@@ -17,7 +17,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { userCacheService } from '@/lib/user-cache-service'
 import { safeStorage } from '@/lib/safe-storage'
 
 interface LocationContextType {
@@ -49,22 +48,21 @@ export function LocationProvider({ children }: LocationProviderProps) {
     setLocationInput("")
     setCurrentLocation("")
 
-    // Clear localStorage cache as well
+    // Clear only the transient "last displayed" keys. The per-location
+    // weather caches and the search cache are TTL-bounded and keyed by
+    // location; wiping them on a routine home<->city navigation forced a
+    // full refetch of data that was still fresh.
     if (typeof window !== 'undefined') {
       try {
         const keysToRemove = [
           'bitweather_city',
           'bitweather_weather_data',
-          'bitweather_cache_timestamp',
-          'weather-search-cache'
+          'bitweather_cache_timestamp'
         ]
 
         keysToRemove.forEach(key => {
           safeStorage.removeItem(key)
         })
-
-        // Clear user cache service data
-        userCacheService.clearWeatherCache()
       } catch (error) {
         console.warn('[LocationProvider] Failed to clear location cache:', error)
       }

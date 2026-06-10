@@ -500,31 +500,32 @@ export function useWeatherController() {
                     if (cacheAge < 10 * 60 * 1000) {
                         const weather = JSON.parse(cachedWeatherData)
 
-                        // Check if we have coordinates (required for radar)
-                        // Cached data might have them stripped for privacy
-                        const hasCoordinates = weather.coordinates?.lat && weather.coordinates?.lon
-
-                        if (!hasCoordinates && weather?.forecast) {
-                            const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
-                            try {
-                                const freshData = await fetchWeatherData(cachedLocationData, unitSystem)
-                                if (freshData) {
-                                    setWeather(freshData)
-                                    setLocationInput(cachedLocationData)
-                                    setHasSearched(true)
-                                    // We don't overwrite the cache here to preserve the "stripped" privacy version in local storage
-                                    // but we update the in-memory state with the full data including coordinates
-                                    return
-                                }
-                            } catch (e) {
-                                console.warn('Failed to refresh data with coordinates', e)
-                            }
-                        }
-
                         if (weather?.forecast && weather.forecast.length > 0) {
+                            // Serve the cached copy immediately for fast first
+                            // paint. Coordinates are stripped before caching
+                            // (privacy) but radar needs them, so refresh in
+                            // the background instead of blocking on a full
+                            // refetch (which previously ran on every reload,
+                            // defeating the cache entirely).
                             setWeather(weather)
                             setLocationInput(cachedLocationData)
                             setHasSearched(true)
+
+                            const hasCoordinates = weather.coordinates?.lat && weather.coordinates?.lon
+                            if (!hasCoordinates) {
+                                const loadId = ++latestLoadId.current
+                                const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+                                fetchWeatherData(cachedLocationData, unitSystem)
+                                    .then((freshData) => {
+                                        // Keep the stripped copy in storage; only
+                                        // the in-memory state gets coordinates.
+                                        if (loadId !== latestLoadId.current) return
+                                        if (freshData) setWeather(freshData)
+                                    })
+                                    .catch((e) => {
+                                        console.warn('[cache-restore] Failed to refresh coordinates:', e)
+                                    })
+                            }
                             return
                         }
                     }
