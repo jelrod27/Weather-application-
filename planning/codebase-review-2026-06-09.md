@@ -211,3 +211,42 @@ audit/full-review-2026-06; see commit messages referencing finding IDs.
 
 Verification: lint clean (9 pre-existing warnings in untouched files),
 tsc clean, 497/497 unit tests pass, production build passes.
+
+## Tier 3 applied (2026-06-09, same branch, user-approved)
+
+Live database (via Supabase MCP, each recorded in live history and
+mirrored as a repo migration file):
+- storm_reports + hardening + status grant applied; anon-role smoke test
+  of the route query passes. Also tightened the table's inherited default
+  grants (new finding: TRUNCATE et al were left granted).
+- Grant tightening on profiles/saved_locations/user_preferences/
+  aeroapi_usage (re-granted exactly what RLS policies support).
+- Dropped orphaned game functions; dropped dead weather_cache table.
+- user_id NOT NULL on saved_locations/user_preferences after deleting 10
+  orphaned NULL-owner rows (single broken 2025-09-06 test batch).
+- Repo: 4 dangerous/superseded legacy migrations renamed .sql.skip;
+  supabase/migrations/README.md documents the history divergence and the
+  db-push hazard.
+
+Architecture:
+- A1: generateMetadata now calls Open-Meteo geocoding/forecast directly,
+  cached 15 min per slug (no more self-HTTP on city page SSR).
+- A3: client cache serves cached data (background coordinate refresh,
+  10-min TTL for the whole blob, navigation no longer wipes caches).
+- B1: five fetch-timeout clones consolidated onto lib/fetch-with-timeout.
+- B2/B3: formatTimeAgo (7 copies) and stargazer formatters (6 of 8
+  copies; 2 intentionally divergent stay local) consolidated.
+- L16: education page data blobs extracted to data/ modules.
+- L9: tile-proxy CORS scoped to this project's preview hostnames.
+- gfs-image: CDN caching (s-maxage) as the edge-appropriate abuse control.
+- L14 (half): consistent-type-imports enforced via ESLint + autofix.
+
+## Remaining (not automatable from here)
+
+1. Supabase dashboard: enable leaked-password protection (Auth settings).
+2. Supabase dashboard: schedule the Postgres minor upgrade (security
+   patches pending on supabase-postgres-17.4.1.075).
+3. Distributed rate limiting (Upstash/Vercel KV) - needs infra
+   provisioning and secrets; in-memory limiter remains per-instance.
+4. Console [context]-prefix sweep (147 sites) - declined as low-value
+   churn; would need a custom ESLint rule to enforce.
