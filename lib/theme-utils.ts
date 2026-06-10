@@ -3,8 +3,7 @@
  * Centralized Theme Utility System
  */
 
-import type { ThemeType} from './theme-config';
-import { getThemeDefinition, THEME_DEFINITIONS } from './theme-config';
+import type { ThemeType } from './theme-config';
 
 export type { ThemeType };
 
