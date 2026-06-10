@@ -12,6 +12,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AlertTriangle, Info, Zap, Radio, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,21 +63,6 @@ function getSeverityColors(severity: SpaceWeatherAlert['severity']): string {
     default:
       return 'text-terminal-accent-info bg-terminal-accent-info/10 border-terminal-accent-info';
   }
-}
-
-// Format time ago - takes current time as parameter to avoid hydration mismatch
-function formatTimeAgo(dateStr: string, now: Date | null): string {
-  if (!now) return '--';
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${diffDays}d ago`;
 }
 
 export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: SpaceWeatherAlertTickerProps) {
@@ -212,7 +198,7 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
               </div>
             </div>
             <span className={cn('text-xs font-mono', themeClasses.text, 'opacity-70')}>
-              {formatTimeAgo(currentAlert.issuedAt, currentTime)}
+              {currentTime ? formatTimeAgo(currentAlert.issuedAt, { now: currentTime.getTime() }) : '--'}
             </span>
           </div>
 

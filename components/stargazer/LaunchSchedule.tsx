@@ -6,16 +6,10 @@ import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { Launch } from '@/lib/stargazer/types';
 import { safeExternalUrl } from '@/lib/safe-url';
+import { formatDate } from '@/lib/stargazer/format';
 
 interface LaunchScheduleProps {
   launches: Launch[];
-}
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {

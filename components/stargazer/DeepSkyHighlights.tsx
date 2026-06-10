@@ -5,17 +5,10 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { DeepSkyHighlight } from '@/lib/stargazer/types';
+import { formatTime } from '@/lib/stargazer/format';
 
 interface DeepSkyHighlightsProps {
   highlights: DeepSkyHighlight[];
-}
-
-function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 function formatType(type: string): string {

@@ -29,6 +29,8 @@ const eventTypeLabels: Record<string, string> = {
   solstice: 'Solstice',
 };
 
+// Intentionally local: unlike the shared formatDate in @/lib/stargazer/format,
+// sky events span months ahead so the year is included.
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString([], {
     month: 'short',

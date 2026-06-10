@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDown, ArrowUp, Clock, Plane, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import { MiseryBadge, MiseryDriverList } from '@/components/ui/misery-badge';
 import type { MiseryScore } from '@/lib/services/misery-score-service';
 import type { MajorAirport } from '@/lib/data/major-us-airports';
@@ -47,17 +48,6 @@ const FLIGHT_CATEGORY_COLOR: Record<string, string> = {
   LIFR: 'var(--severity-extreme)',
   UNKNOWN: 'var(--text)',
 };
-
-function formatTimeAgo(fetchedAt: string | null, now: number): string {
-  if (!fetchedAt) return '--';
-  const ms = now - new Date(fetchedAt).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
-  const minutes = Math.floor(ms / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m ago`;
-}
 
 function compareRows(a: AirportMiseryRow, b: AirportMiseryRow, key: SortKey, dir: SortDir): number {
   let cmp = 0;
@@ -197,7 +187,7 @@ export default function AirportMiseryBoard({ className }: AirportMiseryBoardProp
     }
   };
 
-  const lastUpdated = formatTimeAgo(fetchedAt, now);
+  const lastUpdated = fetchedAt ? formatTimeAgo(fetchedAt, { now }) : '--';
 
   return (
     <section
