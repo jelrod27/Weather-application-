@@ -21,6 +21,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { HOT_LOCATIONS, COLD_LOCATIONS, LOCATION_FACTS, HISTORICAL_AVERAGES, type LocationTemperature } from '@/lib/extremes/extremes-data';
 import { parseOptionalLatLonQuery } from '@/lib/extremes/parse-query-coords';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 
 /**
  * Fetch temperature data for a specific location using server-side API
@@ -65,6 +66,13 @@ async function fetchLocationTemperature(
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit: a cold-cache request fans out ~31 upstream OpenWeather
+    // calls, so unthrottled traffic multiplies upstream quota burn.
+    const rateLimit = await rateLimitRequest(request);
+    if (!rateLimit.allowed) {
+      return rateLimit.response;
+    }
+
     // Get API key from server-side environment (without NEXT_PUBLIC_ prefix)
     const apiKey = process.env.OPENWEATHER_API_KEY;
     

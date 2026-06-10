@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 
 // PIREP data structure
 export interface PIREPData {
@@ -91,6 +92,11 @@ const CONUS_BOUNDS = {
 };
 
 export async function GET(request: NextRequest) {
+  const rateLimit = await rateLimitRequest(request);
+  if (!rateLimit.allowed) {
+    return rateLimit.response;
+  }
+
   const { searchParams } = new URL(request.url);
 
   // Parse and validate query parameters
