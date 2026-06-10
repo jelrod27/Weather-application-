@@ -66,15 +66,7 @@ interface IPInfoResponse {
   country?: string;
 }
 
-interface IPGeolocationResponse {
-  latitude: string | number;
-  longitude: string | number;
-  city?: string;
-  state_prov?: string;
-  country_name?: string;
-}
-
-type IPLocationResponse = IPApiCoResponse | IPInfoResponse | IPGeolocationResponse;
+type IPLocationResponse = IPApiCoResponse | IPInfoResponse;
 
 export class LocationService {
   private static instance: LocationService;
@@ -202,15 +194,19 @@ export class LocationService {
   async getLocationByIP(): Promise<LocationData> {
     try {
       // Try multiple IP geolocation services
+      // (api.ipgeolocation.io was removed: it requires a real API key, so the
+      // "apiKey=free" entry always returned 401 and only added latency.)
       const services = [
         'https://ipapi.co/json/',
-        'https://ipinfo.io/json',
-        'https://api.ipgeolocation.io/ipgeo?apiKey=free'
+        'https://ipinfo.io/json'
       ];
 
       for (const serviceUrl of services) {
         try {
-          const response = await fetch(serviceUrl);
+          // Bound each attempt: this chain gates first-visit auto-location,
+          // and a hung provider (ipapi.co rate-limits aggressively) would
+          // otherwise stall the initial weather render indefinitely.
+          const response = await fetch(serviceUrl, { signal: AbortSignal.timeout(3000) });
 
           if (!response.ok) {
             console.warn(`IP service failed: ${serviceUrl} - ${response.status}`);
@@ -338,19 +334,18 @@ export class LocationService {
         country = ipapiData.country_name || ipapiData.country || 'Unknown Country';
       } else if (hostname === 'ipinfo.io') {
         const ipinfoData = data as IPInfoResponse;
-        const [lat, lon] = (ipinfoData.loc || '0,0').split(',').map(parseFloat);
+        // ipinfo can answer 200 without "loc" (bogon IPs, anonymous tier).
+        // Defaulting to "0,0" would pass the NaN guard below and return
+        // Null Island as a valid location; treat missing loc as a failure.
+        if (!ipinfoData.loc) {
+          return null;
+        }
+        const [lat, lon] = ipinfoData.loc.split(',').map(parseFloat);
         latitude = lat;
         longitude = lon;
         city = ipinfoData.city || 'Unknown City';
         region = ipinfoData.region || '';
         country = ipinfoData.country || 'Unknown Country';
-      } else if (hostname === 'ipgeolocation.io' || hostname.endsWith('.ipgeolocation.io')) {
-        const ipgeoData = data as IPGeolocationResponse;
-        latitude = parseFloat(ipgeoData.latitude.toString());
-        longitude = parseFloat(ipgeoData.longitude.toString());
-        city = ipgeoData.city || 'Unknown City';
-        region = ipgeoData.state_prov || '';
-        country = ipgeoData.country_name || 'Unknown Country';
       } else {
         return null;
       }
