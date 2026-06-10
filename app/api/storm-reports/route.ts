@@ -80,12 +80,14 @@ export async function POST(request: NextRequest) {
       status: 'pending' as const,
     }
 
-    const { data, error } = await supabase
+    // No .select() read-back: new rows are status 'pending', and the only
+    // SELECT RLS policy is USING (status = 'approved'), so a RETURNING
+    // representation would be denied (the insert succeeds, then the whole
+    // request errors). The form does not use the new row's id.
+    const { error } = await supabase
       .from('storm_reports')
       // Typed client schema may lag migrations in dev; runtime RLS still applies.
       .insert(insertRow as never)
-      .select('id')
-      .single()
 
     if (error) {
       if (error.code === 'PGRST205') {
@@ -98,8 +100,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
     }
 
-    const row = data as { id: string } | null
-    return NextResponse.json({ ok: true, id: row?.id }, { status: 201 })
+    return NextResponse.json({ ok: true }, { status: 201 })
   } catch (e) {
     console.error('[storm-reports POST]', e)
     return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
