@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
 import { getWMODescription } from '@/lib/wmo-codes'

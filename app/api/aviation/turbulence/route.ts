@@ -11,7 +11,8 @@
  * Endpoint reference: https://aviationweather.gov/api/data/gairmet?type=turb&format=json
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 export type TurbulenceSeverity =

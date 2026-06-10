@@ -23,10 +23,11 @@
  * - Type-safe storage operations
  */
 
-import { WeatherData } from './types';
-import { LocationData } from './location-service';
+import type { WeatherData } from './types';
+import type { LocationData } from './location-service';
 import { safeStorage } from './safe-storage';
-import { ThemeType, THEME_LIST, DEFAULT_THEME } from './theme-config';
+import type { ThemeType} from './theme-config';
+import { THEME_LIST, DEFAULT_THEME } from './theme-config';
 
 /**
  * StoredLastLocation intentionally excludes precise coordinates.

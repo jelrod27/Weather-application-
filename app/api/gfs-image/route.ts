@@ -8,7 +8,8 @@
  * This avoids 403 Forbidden errors when users access images directly.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 

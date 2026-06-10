@@ -9,7 +9,8 @@
  * lib/services/flight-lookup-service.ts for fallback chain semantics.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import {
   lookupFlight,

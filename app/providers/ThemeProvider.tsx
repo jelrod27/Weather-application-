@@ -1,7 +1,7 @@
 'use client'
 
 import { ThemeProvider } from '@/components/theme-provider'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 export default function AppThemeProvider({ children }: { children: ReactNode }) {
   return (

@@ -9,7 +9,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { XMLParser } from 'fast-xml-parser';
-import { FEED_SOURCES, FeedSource, FeedCategory, CATEGORY_CONFIG } from './feedSources';
+import type { FeedSource, FeedCategory} from './feedSources';
+import { FEED_SOURCES, CATEGORY_CONFIG } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
 import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from './client'
-import { AuthError, User } from '@supabase/supabase-js'
+import type { AuthError, User } from '@supabase/supabase-js'
 
 export interface AuthResponse {
   user: User | null

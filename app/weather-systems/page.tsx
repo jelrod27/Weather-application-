@@ -18,7 +18,8 @@
 import React, { useState } from "react"
 import { useTheme } from "next-themes"
 import PageWrapper from "@/components/page-wrapper"
-import { ThemeType, getComponentStyles } from "@/lib/theme-utils"
+import type { ThemeType} from "@/lib/theme-utils";
+import { getComponentStyles } from "@/lib/theme-utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { weatherSystemsDatabase } from "@/data/weather-systems"

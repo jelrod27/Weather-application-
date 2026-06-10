@@ -17,7 +17,8 @@
  * Version 0.3.2
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { HOT_LOCATIONS, COLD_LOCATIONS, LOCATION_FACTS, LOCATION_DETAILS, HISTORICAL_AVERAGES, type LocationTemperature } from '@/lib/extremes/extremes-data';
 import { parseOptionalLatLonQuery } from '@/lib/extremes/parse-query-coords';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';

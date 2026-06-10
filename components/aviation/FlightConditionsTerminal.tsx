@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AlertTicker, { AviationAlert } from './AlertTicker';
+import type { AviationAlert } from './AlertTicker';
+import AlertTicker from './AlertTicker';
 import dynamic from 'next/dynamic';
 
 // Lazy load TurbulenceMap to optimize performance

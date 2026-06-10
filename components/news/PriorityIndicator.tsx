@@ -10,7 +10,7 @@
 import React from 'react';
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NewsPriority } from '@/lib/types/news';
+import type { NewsPriority } from '@/lib/types/news';
 
 interface PriorityIndicatorProps {
   priority: NewsPriority;

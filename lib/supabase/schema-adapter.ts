@@ -2,7 +2,7 @@
  * Schema adapter to handle differences between TypeScript types and actual database schema
  */
 
-import { SavedLocation } from './types'
+import type { SavedLocation } from './types'
 
 // Actual database schema
 export interface DbSavedLocation {

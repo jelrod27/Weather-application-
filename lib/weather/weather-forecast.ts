@@ -6,7 +6,7 @@
  * - Fetching supplementary weather data (pollen, air quality)
  */
 
-import { HourlyForecast } from '../types';
+import type { HourlyForecast } from '../types';
 import { getApiUrl } from './weather-utils';
 
 // ============================================================================

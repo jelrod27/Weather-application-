@@ -187,7 +187,7 @@ export function WeatherDisplay({
         <div className="space-y-4">
           <AirQualityDisplay
             aqi={weather.aqi}
-            theme={(theme || 'nord') as import('@/lib/theme-config').ThemeType}
+            theme={(theme || 'nord') as ThemeType}
             pollutants={weather.pollutants}
           />
 
@@ -481,7 +481,7 @@ export function WeatherDisplay({
           <CardContent className="text-center pt-2 px-4 pb-4">
             <PollenDisplay
               pollen={weather.pollen}
-              theme={(theme || 'nord') as import('@/lib/theme-config').ThemeType}
+              theme={(theme || 'nord') as ThemeType}
               minimal={true}
               className="border-none shadow-none p-0 bg-transparent"
             />

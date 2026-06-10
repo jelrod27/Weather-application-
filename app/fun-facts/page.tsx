@@ -19,7 +19,8 @@ import { useState } from "react"
 import { useTheme } from "next-themes"
 import PageWrapper from "@/components/page-wrapper"
 import { ChevronDown, ChevronUp } from "lucide-react"
-import { ThemeType, getComponentStyles } from "@/lib/theme-utils"
+import type { ThemeType} from "@/lib/theme-utils";
+import { getComponentStyles } from "@/lib/theme-utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { weatherPhenomena } from "@/data/fun-facts"
 

@@ -14,7 +14,8 @@
  * - WEATHER_RATE_LIMIT_BURST_WINDOW_MS: Burst window in ms (default: 300000 = 5 min)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/supabase/server';
 
 // Helper to safely parse env integers with validation

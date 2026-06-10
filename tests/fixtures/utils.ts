@@ -1,4 +1,5 @@
-import { Page, expect } from '@playwright/test';
+import type { Page} from '@playwright/test';
+import { expect } from '@playwright/test';
 
 /** True when E2E targets a deployed preview/prod URL (not localhost). */
 export function isRemotePreviewTarget(): boolean {

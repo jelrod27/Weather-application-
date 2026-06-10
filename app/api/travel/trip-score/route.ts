@@ -15,7 +15,8 @@
  * the trip score (matches the badge semantics elsewhere in the app).
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import {
   scoreAirportMisery,

@@ -4,8 +4,12 @@
 // PERFORMANCE: Defer Sentry initialization to after page load to improve LCP and TBT
 // Sentry adds ~200KB to the bundle and blocks the main thread during initialization
 
+// Type-only import: erased at compile time, so the runtime module still
+// loads lazily via the dynamic import() in initSentryLazy below.
+import type * as SentryNextjs from '@sentry/nextjs';
+
 let sentryInitialized = false;
-let sentryModule: typeof import('@sentry/nextjs') | null = null;
+let sentryModule: typeof SentryNextjs | null = null;
 
 /**
  * Lazy initialize Sentry after the page has loaded

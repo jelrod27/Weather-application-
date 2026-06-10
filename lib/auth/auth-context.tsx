@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
+import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
-import { Profile, UserPreferences } from '@/lib/supabase/types'
+import type { Profile, UserPreferences } from '@/lib/supabase/types'
 import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
 
