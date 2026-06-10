@@ -5,25 +5,10 @@ import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { MoonInfo } from '@/lib/stargazer/types';
 import { moonScore, getSubScoreLabel } from '@/lib/stargazer/score';
+import { formatTime, formatDate } from '@/lib/stargazer/format';
 
 interface MoonIntelProps {
   moon: MoonInfo;
-}
-
-function formatTime(date: Date | null): string {
-  if (!date) return '--:--';
-  return new Date(date).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 function daysUntil(target: Date): number {

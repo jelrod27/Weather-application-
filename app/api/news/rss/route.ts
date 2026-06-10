@@ -5,7 +5,8 @@
  * Licensed under Fair Source License, Version 0.9
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { aggregateFeeds, getFeaturedItem, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 

@@ -28,7 +28,7 @@ import {
   AQI_SCALE_LABELS,
   AQI_COLOR_SEGMENTS
 } from '@/lib/air-quality-utils'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 interface PollutantData {
   pm2_5?: number

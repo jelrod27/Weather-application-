@@ -1,23 +1,57 @@
 /**
  * Unit tests for weather/[city]/layout.tsx metadata generation
- * Verifies that transient API failures don't flood Sentry
+ * Verifies direct Open-Meteo enrichment and that transient API failures
+ * don't flood Sentry.
  */
 
 // Mock modules before imports
-jest.mock('@/lib/weather', () => ({
-  fetchWeatherData: jest.fn()
+jest.mock('next/cache', () => ({
+  // Pass through: tests exercise the inner fetch logic directly.
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+}))
+
+jest.mock('@/lib/open-meteo', () => ({
+  fetchOpenMeteoForecast: jest.fn(),
+}))
+
+jest.mock('@/lib/fetch-with-timeout', () => ({
+  fetchWithTimeout: jest.fn(),
 }))
 
 jest.mock('@/lib/error-utils', () => ({
-  captureError: jest.fn()
+  captureError: jest.fn(),
 }))
 
 import { generateMetadata } from '@/app/weather/[city]/layout'
-import { fetchWeatherData } from '@/lib/weather'
+import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { captureError } from '@/lib/error-utils'
 
-const mockFetchWeatherData = fetchWeatherData as jest.MockedFunction<typeof fetchWeatherData>
+const mockForecast = fetchOpenMeteoForecast as jest.MockedFunction<typeof fetchOpenMeteoForecast>
+const mockFetchWithTimeout = fetchWithTimeout as jest.MockedFunction<typeof fetchWithTimeout>
 const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>
+
+function mockGeoSuccess() {
+  mockFetchWithTimeout.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      results: [
+        { latitude: 39.52, longitude: -119.81, admin1: 'Nevada', country_code: 'US' },
+      ],
+    }),
+  } as Response)
+}
+
+function mockForecastSuccess() {
+  mockForecast.mockResolvedValue({
+    current: { temperature_2m: 72.4, weather_code: 0 },
+    daily: {
+      time: ['2026-06-09', '2026-06-10', '2026-06-11'],
+      temperature_2m_max: [75, 78, 74],
+      weather_code: [0, 2, 61],
+    },
+  } as never)
+}
 
 afterEach(() => {
   jest.clearAllMocks()
@@ -26,8 +60,8 @@ afterEach(() => {
 describe('generateMetadata', () => {
   const makeParams = (city: string) => Promise.resolve({ city })
 
-  it('should not call captureError for transient API failures in metadata fetch', async () => {
-    mockFetchWeatherData.mockRejectedValue(new Error('Geocoding API error: 401'))
+  it('should not call captureError for transient timeout failures in metadata fetch', async () => {
+    mockFetchWithTimeout.mockRejectedValue(new Error('Request timed out after 8000ms'))
 
     const metadata = await generateMetadata({ params: makeParams('reno-nv') })
 
@@ -40,12 +74,8 @@ describe('generateMetadata', () => {
   })
 
   it('should return enhanced metadata when weather fetch succeeds', async () => {
-    mockFetchWeatherData.mockResolvedValue({
-      temperature: 72,
-      unit: '°F',
-      condition: 'Clear',
-      forecast: [],
-    } as never)
+    mockGeoSuccess()
+    mockForecastSuccess()
 
     const metadata = await generateMetadata({ params: makeParams('reno-nv') })
 
@@ -54,17 +84,21 @@ describe('generateMetadata', () => {
     expect(mockCaptureError).not.toHaveBeenCalled()
   })
 
-  it('should not call captureError for authentication error messages without status code', async () => {
-    mockFetchWeatherData.mockRejectedValue(new Error('OpenWeatherMap API authentication error'))
+  it('should degrade to static metadata when geocoding finds nothing', async () => {
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [] }),
+    } as Response)
 
     const metadata = await generateMetadata({ params: makeParams('reno-nv') })
 
     expect(metadata.title).toContain('Reno Nv')
+    expect(metadata.description).not.toContain('Current weather')
     expect(mockCaptureError).not.toHaveBeenCalled()
   })
 
-  it('should call captureError for non-401 metadata fetch failures', async () => {
-    mockFetchWeatherData.mockRejectedValue(new Error('Upstream timeout'))
+  it('should call captureError for unexpected metadata fetch failures', async () => {
+    mockFetchWithTimeout.mockRejectedValue(new Error('Something exploded'))
 
     const metadata = await generateMetadata({ params: makeParams('reno-nv') })
 
@@ -73,12 +107,8 @@ describe('generateMetadata', () => {
   })
 
   it('should use 16bitweather.co URLs and dynamic OG images in metadata', async () => {
-    mockFetchWeatherData.mockResolvedValue({
-      temperature: 72,
-      unit: '\u00b0F',
-      condition: 'Clear',
-      forecast: [{ highTemp: 75, lowTemp: 58, day: 'Mon', condition: 'Clear' }],
-    } as never)
+    mockGeoSuccess()
+    mockForecastSuccess()
 
     const metadata = await generateMetadata({ params: makeParams('reno-nv') })
 

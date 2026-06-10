@@ -12,7 +12,7 @@
  * Report issues: https://github.com/deephouse23/Weather-application-/issues
  */
 
-import { UserPreferences, UserPreferencesUpdate } from '@/lib/supabase/types'
+import type { UserPreferences, UserPreferencesUpdate } from '@/lib/supabase/types'
 
 interface PreferencesResponse {
   preferences: UserPreferences

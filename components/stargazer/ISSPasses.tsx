@@ -4,24 +4,10 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { ISSPass } from '@/lib/stargazer/types';
+import { formatTime, formatDate } from '@/lib/stargazer/format';
 
 interface ISSPassesProps {
   passes: ISSPass[];
-}
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 export default function ISSPasses({ passes }: ISSPassesProps) {

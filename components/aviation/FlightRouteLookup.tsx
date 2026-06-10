@@ -14,6 +14,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Plane, MapPin, Search, AlertTriangle, Route, ArrowRight, RefreshCw, Info } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import dynamic from 'next/dynamic';
@@ -272,18 +273,6 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
     setRoutePireps([]);
     setSearchError(null);
     setHasSearched(false);
-  };
-
-  // Format time ago
-  const formatTimeAgo = (isoString: string): string => {
-    if (!isoString) return 'Unknown';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return 'Unknown';
-    const diff = Date.now() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m ago`;
   };
 
   // Format altitude

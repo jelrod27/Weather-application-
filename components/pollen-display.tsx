@@ -19,7 +19,7 @@
 
 import { cn } from '@/lib/utils'
 import { getPollenColor } from '@/lib/air-quality-utils'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 interface PollenData {
   tree: Record<string, string>

@@ -9,7 +9,9 @@
  * lib/services/flight-lookup-service.ts for fallback chain semantics.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import {
   lookupFlight,
   type AirlineData,
@@ -43,6 +45,14 @@ export interface FlightLookupResponse {
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit: this route is backed by paid FlightAware AeroAPI with a
+    // monthly usage cap. Without a limiter, anonymous traffic can burn the
+    // cap in minutes and degrade the feature to mock data for the month.
+    const rateLimit = await rateLimitRequest(request);
+    if (!rateLimit.allowed) {
+      return rateLimit.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const flightParam = searchParams.get('flight');
 

@@ -20,8 +20,8 @@
 import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from './error-boundary'
 import { LoadingSpinner } from '@/components/ui/loading-state'
-import { WeatherData, ForecastDay } from '@/lib/types'
-import { ThemeType } from '@/lib/theme-config'
+import type { WeatherData, ForecastDay } from '@/lib/types'
+import type { ThemeType } from '@/lib/theme-config'
 
 // Lazy load weather components
 const Forecast = lazy(() => import('./forecast'))

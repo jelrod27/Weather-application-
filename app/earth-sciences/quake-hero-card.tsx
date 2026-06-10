@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import type { ClientEarthquake } from './earth-sciences-client';
 import { safeExternalUrl } from '@/lib/safe-url';
 
@@ -54,23 +55,6 @@ function magnitudeTier(mag: number): {
     glow: 'shadow-[0_0_20px_rgba(234,179,8,0.15)]',
     label: 'LIGHT',
   };
-}
-
-function formatTimeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return 'unknown';
-  const diffMs = Date.now() - then;
-  if (diffMs < 0) return 'just now';
-
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }
 
 export interface QuakeHeroCardProps {

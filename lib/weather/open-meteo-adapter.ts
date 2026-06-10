@@ -67,9 +67,16 @@ export async function buildWeatherDataFromOpenMeteo(
     wind_speed_unit: windSpeedUnit,
     precipitation_unit: precipitationUnit,
   });
+  // Bounded: this chain also runs server-side (generateMetadata on city
+  // pages self-fetches through these URLs), where a hung request would
+  // block the render indefinitely.
   const [forecastRes, airQualityRes, pollenData] = await Promise.all([
-    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`)),
-    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`)).catch(() => null),
+    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`), {
+      signal: AbortSignal.timeout(10000),
+    }),
+    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`), {
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => null),
     fetchPollenData(lat, lon),
   ]);
 
@@ -160,10 +167,20 @@ export async function buildWeatherDataFromOpenMeteo(
   if (hourly?.time && hourly.time.length > 0) {
     const nowMs = Date.now();
 
+    // hourly.time[] entries are tz-naive wall-clock strings in the CITY's
+    // timezone (timezone=auto), e.g. "2026-06-09T14:00". Parsing them with
+    // new Date() interprets them in the RUNTIME's timezone, which shifts the
+    // window by the viewer<->city offset (a Tokyo lookup from New York
+    // started ~13h in the past). Convert each entry to a true epoch using
+    // utc_offset_seconds from the same response instead.
+    const utcOffsetMs = (forecast.utc_offset_seconds ?? 0) * 1000;
+    const cityWallClockToEpoch = (naive: string): number =>
+      Date.parse(`${naive}Z`) - utcOffsetMs;
+
     // Find the first hourly entry at or after the current time
     let startIdx = 0;
     for (let i = 0; i < hourly.time.length; i++) {
-      if (new Date(hourly.time[i]).getTime() >= nowMs - 30 * 60 * 1000) {
+      if (cityWallClockToEpoch(hourly.time[i]) >= nowMs - 30 * 60 * 1000) {
         startIdx = i;
         break;
       }
@@ -200,6 +217,17 @@ export async function buildWeatherDataFromOpenMeteo(
         uvIndex: hourly.uv_index?.[i] != null ? Math.round(hourly.uv_index[i]) : undefined,
         icon: undefined,
       });
+    }
+
+    // Surface the current-hour visibility on day 0. Open-Meteo reports
+    // visibility in meters; the Visibility card renders miles. Without this
+    // the card always showed "N/A" with a default-driven "Clear" badge,
+    // even in dense fog — the data was fetched and discarded.
+    const visibilityMeters = hourly.visibility?.[startIdx];
+    const day0Details = forecastDays[0]?.details;
+    if (visibilityMeters != null && day0Details) {
+      day0Details.visibility =
+        Math.round((visibilityMeters / 1609.34) * 10) / 10;
     }
   }
 

@@ -2,6 +2,7 @@ import nextPlugin from '@next/eslint-plugin-next';
 import reactPlugin from 'eslint-plugin-react';
 import hooksPlugin from 'eslint-plugin-react-hooks';
 import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default [
     {
@@ -56,6 +57,21 @@ export default [
             // Prevent debug console.log statements in production code
             // Allow console.warn and console.error for legitimate logging
             'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+        },
+    },
+    // Enforce the documented "import type" convention (CODING.md) instead of
+    // hand-policing it in review. Auto-fixable: eslint --fix converts value
+    // imports of type-only symbols to import type.
+    {
+        files: ['**/*.{ts,tsx}'],
+        plugins: {
+            '@typescript-eslint': tsPlugin,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': [
+                'warn',
+                { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
+            ],
         },
     },
     // Override for files where console.log is intentional

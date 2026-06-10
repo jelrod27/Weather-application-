@@ -17,7 +17,7 @@
 import { useCallback, useState, useEffect, useRef } from "react"
 import PageWrapper from "@/components/page-wrapper"
 import { TrendingUp, TrendingDown, MapPin, RefreshCw, Thermometer } from "lucide-react"
-import { ExtremesData, LocationTemperature } from "@/lib/extremes/extremes-data"
+import type { ExtremesData, LocationTemperature } from "@/lib/extremes/extremes-data"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

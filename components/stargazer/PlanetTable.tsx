@@ -4,18 +4,10 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { PlanetVisibility } from '@/lib/stargazer/types';
+import { formatTime } from '@/lib/stargazer/format';
 
 interface PlanetTableProps {
   planets: PlanetVisibility[];
-}
-
-function formatTime(date: Date | null): string {
-  if (!date) return '--:--';
-  return new Date(date).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 export default function PlanetTable({ planets }: PlanetTableProps) {

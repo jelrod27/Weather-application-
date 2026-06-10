@@ -8,8 +8,10 @@
  * from NOAA Aviation Weather Center
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 
 // Simple in-memory cache with 10-minute TTL
 const metarCache = new Map<string, { data: MetarResponse; expires: number }>();
@@ -228,6 +230,11 @@ function determineFlightCategory(
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request);
+    if (!rateLimit.allowed) {
+      return rateLimit.response;
+    }
+
     const sp = request.nextUrl.searchParams;
     const station = sp.get('station')?.toUpperCase();
 

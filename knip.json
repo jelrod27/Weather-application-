@@ -15,6 +15,7 @@
   "ignore": [
     "scripts/**",
     "tempest/**",
+    "_archive/**",
     "public/**",
     "tests/__mocks__/**",
     "supabase/**",

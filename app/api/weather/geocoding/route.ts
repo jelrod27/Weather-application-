@@ -14,7 +14,8 @@ import { sanitizeLogValue } from "@/lib/sanitize-log"
  *   (yes, ZIP returns a single object — legacy OWM quirk the caller depends on.)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { toStateAbbr } from '@/lib/us-states'

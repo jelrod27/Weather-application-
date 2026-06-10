@@ -5,7 +5,8 @@
  * or point-based queries for the warnings command center.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server'
 import {
   alertsToGeoJsonFeatureCollection,
   calculateWIS,

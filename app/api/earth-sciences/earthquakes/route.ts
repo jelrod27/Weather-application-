@@ -6,7 +6,8 @@
  * `minMagnitude` (default 2.5) and `days` (default 7) query params.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   fetchGlobalEarthquakes,
   type EarthquakeData,

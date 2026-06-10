@@ -10,7 +10,7 @@
 import { useInView } from 'react-intersection-observer'
 import dynamic from 'next/dynamic'
 import { MapSkeleton } from '@/components/skeletons/map-skeleton'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 // Dynamic import with ssr:false - OpenLayers requires browser APIs
 const WeatherMapOpenLayers = dynamic(

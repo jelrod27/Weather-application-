@@ -1,4 +1,4 @@
-import { Profile, ProfileUpdate, SavedLocation, SavedLocationInsert, SavedLocationUpdate, UserPreferences, UserPreferencesUpdate } from './types'
+import type { Profile, ProfileUpdate, SavedLocation, SavedLocationInsert, SavedLocationUpdate, UserPreferences, UserPreferencesUpdate } from './types'
 import { DbSavedLocation, dbToSavedLocation, savedLocationToDb } from './schema-adapter'
 import { captureDbError } from '../error-utils'
 
@@ -89,8 +89,12 @@ export const updateProfile = async (userId: string, updates: ProfileUpdate): Pro
 
   const supabase = getSupabaseClient()
 
-  // Filter out updates for columns that might not exist
-  const safeUpdates: any = {}
+  // Filter out updates for columns that might not exist. Typed as a narrow
+  // Pick so a typo'd or non-allowlisted column fails to compile instead of
+  // sailing through as any.
+  const safeUpdates: Partial<Pick<Profile,
+    'username' | 'full_name' | 'default_location' | 'avatar_url' | 'preferred_units' | 'timezone'
+  >> = {}
 
   // Include all common profile fields in safe updates
   if (updates.username !== undefined) safeUpdates.username = updates.username

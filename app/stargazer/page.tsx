@@ -47,6 +47,9 @@ function scoreBarColor(score: number): string {
   return 'bg-red-400';
 }
 
+// Intentionally local: unlike the shared 24-hour formatTime in
+// @/lib/stargazer/format, the page header uses 12-hour en-US time and
+// accepts ISO strings.
 function formatTime(date: Date | string | null): string {
   if (!date) return '--:--';
   const d = typeof date === 'string' ? new Date(date) : date;

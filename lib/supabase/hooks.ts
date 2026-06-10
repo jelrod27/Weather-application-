@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from './client'
-import { Profile, SavedLocation, UserPreferences } from './types'
+import type { Profile, SavedLocation, UserPreferences } from './types'
 import { getProfile, getSavedLocations, getUserPreferences } from './database'
 
 // Hook to get current user and session

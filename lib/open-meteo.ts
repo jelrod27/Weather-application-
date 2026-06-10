@@ -9,6 +9,7 @@ import type {
   OpenMeteoForecastResponse,
   OpenMeteoAirQualityResponse,
 } from '@/lib/open-meteo-types';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 const FORECAST_BASE = 'https://api.open-meteo.com/v1/forecast';
 const AIR_QUALITY_BASE = 'https://air-quality-api.open-meteo.com/v1/air-quality';
@@ -102,26 +103,19 @@ export async function fetchOpenMeteoForecast(
     url.searchParams.set('past_days', pastDays.toString());
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const response = await fetchWithTimeout(url.toString(), {
+    timeoutMs: 8000,
+    headers: { 'User-Agent': '16-Bit-Weather/open-meteo' },
+  });
 
-  try {
-    const response = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers: { 'User-Agent': '16-Bit-Weather/open-meteo' },
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(
-        `Open-Meteo Forecast API error ${response.status}: ${text}`
-      );
-    }
-
-    return response.json() as Promise<OpenMeteoForecastResponse>;
-  } finally {
-    clearTimeout(timeout);
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(
+      `Open-Meteo Forecast API error ${response.status}: ${text}`
+    );
   }
+
+  return response.json() as Promise<OpenMeteoForecastResponse>;
 }
 
 /**
@@ -151,24 +145,17 @@ export async function fetchOpenMeteoAirQuality(
   );
   url.searchParams.set('timezone', 'auto');
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const response = await fetchWithTimeout(url.toString(), {
+    timeoutMs: 8000,
+    headers: { 'User-Agent': '16-Bit-Weather/open-meteo' },
+  });
 
-  try {
-    const response = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers: { 'User-Agent': '16-Bit-Weather/open-meteo' },
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(
-        `Open-Meteo Air Quality API error ${response.status}: ${text}`
-      );
-    }
-
-    return response.json() as Promise<OpenMeteoAirQualityResponse>;
-  } finally {
-    clearTimeout(timeout);
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(
+      `Open-Meteo Air Quality API error ${response.status}: ${text}`
+    );
   }
+
+  return response.json() as Promise<OpenMeteoAirQualityResponse>;
 }

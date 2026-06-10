@@ -15,6 +15,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import type { EarthquakesApiResponse } from '@/app/api/earth-sciences/earthquakes/route';
 import QuakeHeroCard from './quake-hero-card';
 import { safeExternalUrl } from '@/lib/safe-url';
@@ -56,23 +57,6 @@ const FILTER_TABS: Array<{ key: MagFilter; label: string; minMag: number }> = [
   { key: '4.5', label: 'M4.5+', minMag: 4.5 },
   { key: '6', label: 'M6+', minMag: 6 },
 ];
-
-function formatTimeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return 'unknown';
-  const diffMs = Date.now() - then;
-  if (diffMs < 0) return 'just now';
-
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min${mins !== 1 ? 's' : ''} ago`;
-
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-
-  const days = Math.floor(hours / 24);
-  return `${days} day${days !== 1 ? 's' : ''} ago`;
-}
 
 function magnitudeBadgeClass(mag: number): string {
   if (mag >= 6) return 'bg-red-500/20 text-red-400 border-red-500/50';
@@ -314,7 +298,7 @@ export default function EarthSciencesClient() {
                     })()}
                   </td>
                   <td className="px-4 py-3 text-right text-muted-foreground">
-                    {formatTimeAgo(q.time)}
+                    {formatTimeAgo(q.time, { style: 'long' })}
                   </td>
                 </tr>
               ))}

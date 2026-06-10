@@ -15,7 +15,9 @@
  * the trip score (matches the badge semantics elsewhere in the app).
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import {
   scoreAirportMisery,
   scoreRoadMisery,
@@ -84,28 +86,6 @@ function getBaseUrl(): string {
   return 'http://localhost:3000';
 }
 
-async function fetchWithTimeout(
-  url: string,
-  ms: number = REQUEST_TIMEOUT_MS,
-  init?: RequestInit,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, {
-      ...init,
-      signal: controller.signal,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': '16-Bit-Weather/trip-score',
-        ...(init?.headers ?? {}),
-      },
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 /**
  * Resolve a free-text query to coordinates. Tries:
  *   1. IATA/ICAO code lookup against the major airports table.
@@ -147,7 +127,13 @@ async function resolveEndpoint(
   // 3) Generic geocoding for free-text input.
   try {
     const url = `${baseUrl}/api/weather/geocoding?q=${encodeURIComponent(trimmed)}&limit=1`;
-    const res = await fetchWithTimeout(url);
+    const res = await fetchWithTimeout(url, {
+      timeoutMs: REQUEST_TIMEOUT_MS,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': '16-Bit-Weather/trip-score',
+      },
+    });
     if (!res.ok) return null;
 
     const data = (await res.json()) as GeocodingResult[] | { error?: string };

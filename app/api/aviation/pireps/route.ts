@@ -8,7 +8,10 @@
  * Includes turbulence, icing, and weather observations
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // PIREP data structure
 export interface PIREPData {
@@ -91,6 +94,11 @@ const CONUS_BOUNDS = {
 };
 
 export async function GET(request: NextRequest) {
+  const rateLimit = await rateLimitRequest(request);
+  if (!rateLimit.allowed) {
+    return rateLimit.response;
+  }
+
   const { searchParams } = new URL(request.url);
 
   // Parse and validate query parameters
@@ -134,20 +142,14 @@ export async function GET(request: NextRequest) {
   const maxAltitude = maxAltParam;
 
   try {
-    // Set a timeout for the external fetch to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-    // Fetch PIREP cache file
-    const response = await fetch(PIREP_CACHE_URL, {
+    // Fetch PIREP cache file (15 second timeout)
+    const response = await fetchWithTimeout(PIREP_CACHE_URL, {
+      timeoutMs: 15000,
       headers: {
         'Accept-Encoding': 'gzip',
       },
-      signal: controller.signal,
       next: { revalidate: 300 }, // Cache for 5 minutes
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`NOAA API returned ${response.status}`);

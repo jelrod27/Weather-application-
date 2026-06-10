@@ -175,4 +175,54 @@ describe('buildWeatherDataFromOpenMeteo', () => {
     expect(result.hourlyForecast![0].precipChance).toBe(10);
     expect(result.hourlyForecast![0].windDirection).toBe('SW');
   });
+
+  // Regression: hourly.time[] entries are tz-naive wall-clock strings in the
+  // CITY's timezone. The window start must be selected using
+  // utc_offset_seconds, not the runtime's timezone — previously a city far
+  // from the viewer's timezone got a 48h strip starting hours in the past
+  // (or future), regardless of the runner's TZ.
+  it('should start the hourly window at the city-local current hour for remote timezones', async () => {
+    // Tokyo: UTC+9. Freeze "now" at 05:00 UTC == 14:00 Tokyo wall clock.
+    jest.spyOn(Date, 'now').mockReturnValue(new Date('2025-03-25T05:00:00Z').getTime());
+
+    const tokyoResponse = makeForecastResponse();
+    tokyoResponse.utc_offset_seconds = 32400;
+    tokyoResponse.timezone = 'Asia/Tokyo';
+    tokyoResponse.timezone_abbreviation = 'JST';
+    // Explicit naive wall-clock strings from Tokyo midnight, 72 hours.
+    tokyoResponse.hourly.time = Array.from({ length: 72 }, (_, i) => {
+      const day = 25 + Math.floor(i / 24);
+      const hour = i % 24;
+      return `2025-03-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00`;
+    });
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/open-meteo/forecast')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(tokyoResponse) });
+      }
+      if (url.includes('/api/open-meteo/air-quality')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(
+      35.68, 139.69, 'Tokyo', 'metric', 'JP'
+    );
+
+    // 05:00 UTC is 14:00 in Tokyo — the strip must start at the 2 PM slot.
+    expect(result.hourlyForecast![0].time).toBe('2 PM');
+    expect(result.hourlyForecast!.length).toBe(48);
+  });
+
+  // Regression: hourly visibility was fetched but never mapped, so the
+  // Visibility card always showed "N/A" with a default "Clear" badge.
+  it('should map current-hour visibility (meters) into day-0 details (miles)', async () => {
+    const result = await buildWeatherDataFromOpenMeteo(
+      40.71, -74.01, 'New York', 'imperial', 'US'
+    );
+
+    // Fixture visibility is 10000 m for every hour -> 6.2 mi.
+    expect(result.forecast[0].details.visibility).toBe(6.2);
+  });
 });

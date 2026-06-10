@@ -8,7 +8,7 @@ Product specs (PRDs) live under **`planning/prds/`** — see [`planning/prds/REA
 
 ## Project Overview
 
-16-Bit Weather is a retro-styled weather education platform built with Next.js 16 (App Router) and React 19. It combines real-time weather data with pixel-influenced visuals, educational content, global weather tracking, tool-backed AI (earth science and aviation aware), and Supabase-backed user AI memory. Live at 16bitweather.co, deployed on Vercel.
+16-Bit Weather is a retro-styled weather education platform built with Next.js 16 (App Router) and React 19. It combines real-time weather data with pixel-influenced visuals, educational content, global weather tracking, aviation and space weather tools, and stargazing forecasts. Live at 16bitweather.co, deployed on Vercel. (The AI chat subsystem was removed; if it returns, re-audit that surface first.)
 
 ## Common Commands
 
@@ -60,40 +60,40 @@ Config: `.git/hooks/pre-push` and `lighthouserc.js`
 
 ### API Route Groups
 
-- **Weather**: `api/weather/{current,forecast,onecall,precipitation,air-quality,uv,geocoding}`
-- **Aviation**: `api/aviation/{alerts,metar,pireps,flight-lookup,turbulence}`
-- **Space Weather**: `api/space-weather/{kp-index,aurora,coronagraph,cme,flares,alerts,solar-wind,xray-flux,sunspots,scales}`
-- **News**: `api/news/{aggregate,rss,fox,nasa,reddit}`
-- **AI Chat**: `api/chat` (uses Vercel AI SDK + `@ai-sdk/anthropic`)
-- **Radar**: `api/weather/{noaa-wms,iowa-nexrad,radar}`
+- **Weather**: `api/weather/{current,forecast,geocoding,air-quality,uv,pollen,precipitation-history,alerts,spc-outlook,storm-reports,wis}`
+- **Open-Meteo**: `api/open-meteo/{forecast,air-quality}` (primary weather source)
+- **Aviation**: `api/aviation/{alerts,metar,pireps,flight-lookup,turbulence,airport-misery}`
+- **Space Weather**: `api/space-weather/{kp-index,aurora,coronagraph,enlil,flares,alerts,solar-wind,magnetometer,plasma,proton-flux,sdo-image,xray-flux,sunspots,scales}`
+- **News**: `api/news/rss` (keyless RSS/Atom aggregation)
+- **Radar**: `api/weather/{noaa-wms,iowa-nexrad,iowa-nexrad-tiles,radar}`
+- **Other**: `api/{stargazer,travel,extremes,gfs-image,earth-sciences,storm-reports,locations,user,dashboard-weather,og,cron}`
 
 ### Key Directories
 
 - **`lib/`** - Core business logic
-  - `weather-server.ts` - Server-side weather data fetching
   - `location-service.ts` - Geolocation with GPS, IP fallback, and reverse geocoding
   - `user-cache-service.ts` - Client-side caching (10-min weather TTL)
-  - `theme-config.ts` - Theme definitions (12 themes with CSS custom properties)
+  - `theme-config.ts` - Theme definitions (6 themes with CSS custom properties)
   - `env-validation.ts` - Environment variable validation
   - `supabase/` - Database client, auth, middleware, SQL schemas
-  - `services/` - Domain services (news, GFS models, RSS, AI chat, aviation, space weather, USGS earthquakes, volcanoes)
+  - `services/` - Domain services (news/RSS, GFS models, aviation, space weather, USGS earthquakes, volcanoes, flight lookup, rate limiting)
   - `weather/` - Weather data modules (current, forecast, geocoding, utils)
   - `validations/` - Zod validation schemas
-  - `ai/` - AI utilities and configuration
+  - `stargazer/` - Astronomy calculations (moon, planets, ISS passes, sky scoring)
 
 - **`components/`** - React components
   - `ui/` - shadcn/ui primitives
-  - `dashboard/` - Dashboard cards, modals, theme selector (incl. AI personality selector)
+  - `dashboard/` - Dashboard cards, modals, theme selector
   - `aviation/` - Flight conditions terminal, turbulence map
   - `space-weather/` - Aurora forecast, Kp index, solar wind, coronagraph
   - `news/` - News grid, cards, filters
-  - `terminal/` - Terminal-style UI components
+  - `stargazer/` - Sky conditions, moon, planets, ISS passes
   - `location-context.tsx` - Location state provider
 
 - **`hooks/`** - Custom React hooks
-  - `useAIChat.ts` - AI chat functionality
   - `useWeatherController.ts` - Weather data orchestration
-  - `useNewsFeed.ts` - News feed data
+  - `useTurbulenceData.ts` - Aviation turbulence data
+  - `useDemoMode.ts` - Demo mode state
   - `use-theme-preview.ts` - Theme preview
 
 ### Data Flow
@@ -105,10 +105,10 @@ Config: `.git/hooks/pre-push` and `lighthouserc.js`
 
 ### External Services
 
-- **OpenWeatherMap** - Weather data, forecasts, AQI
+- **Open-Meteo** - Primary weather data, forecasts, air quality (keyless)
+- **OpenWeatherMap** - Legacy/fallback endpoints (pollen, UV, precipitation history, extremes)
 - **Supabase** - PostgreSQL database, authentication
 - **NOAA MRMS** - High-resolution US radar via WMS (nowcoast.noaa.gov)
-- **Vercel AI SDK + Anthropic** - AI chat (`@ai-sdk/anthropic`)
 - **USGS** - Earthquake data
 - **NASA** - Space/climate data
 - **Sentry** - Error monitoring
@@ -119,7 +119,7 @@ Config: `.git/hooks/pre-push` and `lighthouserc.js`
 Three main contexts wrap the app in `app/layout.tsx`:
 - `LocationContext` - Current location state
 - `AuthContext` - Supabase auth session
-- `ThemeContext` - 12 available themes with persistence
+- `ThemeContext` - 6 available themes with persistence
 
 ### Path Aliases
 

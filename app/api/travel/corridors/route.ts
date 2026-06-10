@@ -5,7 +5,8 @@
  * scores driving conditions, and returns corridor severity data.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   scoreWeatherSeverity,
   getSeverityLevel,

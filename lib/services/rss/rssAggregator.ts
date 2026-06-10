@@ -9,7 +9,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { XMLParser } from 'fast-xml-parser';
-import { FEED_SOURCES, FeedSource, FeedCategory, CATEGORY_CONFIG } from './feedSources';
+import type { FeedSource, FeedCategory} from './feedSources';
+import { FEED_SOURCES, CATEGORY_CONFIG } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
 import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
 
@@ -329,6 +330,12 @@ function buildItem(
   // Upgrade http -> https before the scheme guard: CSP img-src only allows
   // https, so an http feed image would otherwise be dropped or blocked.
   const safeImage = fields.rawImage ? safeExternalUrl(upgradeImageUrl(fields.rawImage)) : null;
+  // Guard against unparseable pubDate formats: an Invalid Date has a NaN
+  // epoch, which fails the freshness cutoff comparison and silently drops
+  // every item from the feed (and poisons sorting). Fall back to "now",
+  // matching the no-pubDate branch. The volcano parser already does this.
+  const parsedDate = fields.pubDate ? new Date(fields.pubDate) : new Date();
+  const timestamp = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
   return {
     id: `${source.id}-${simpleHash(fields.safeLink + index.toString())}-${index}`,
     title: cleanHtml(fields.title),
@@ -338,7 +345,7 @@ function buildItem(
     sourceId: source.id,
     category: source.category,
     priority: fields.priority ?? source.priority,
-    timestamp: fields.pubDate ? new Date(fields.pubDate) : new Date(),
+    timestamp,
     imageUrl: safeImage || undefined,
     author: fields.author ? cleanHtml(fields.author) : undefined,
     location: fields.location,

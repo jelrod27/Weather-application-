@@ -16,6 +16,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/format-time-ago';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import { Plane, AlertTriangle, Clock, Mountain, X } from 'lucide-react';
@@ -89,17 +90,6 @@ function getPirepColor(intensity: string | null): string {
 const CARTO_DARK_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 const CONUS_CENTER = [-98.5795, 39.8283];
 const CONUS_ZOOM = 4;
-
-function formatTimeAgo(isoString: string): string {
-  if (!isoString) return 'Unknown';
-  const date = new Date(isoString);
-  if (isNaN(date.getTime())) return 'Unknown';
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m ago`;
-}
 
 function formatAltitude(ft: number): string {
   if (ft >= 18000) return `FL${Math.round(ft / 100)}`;

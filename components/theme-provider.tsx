@@ -2,9 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
-import { ThemeType, THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
+import type { ThemeType} from '@/lib/theme-config';
+import { THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
 import { supabase } from '@/lib/supabase/client'
-import { AuthChangeEvent, Session } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 export type Theme = ThemeType
 

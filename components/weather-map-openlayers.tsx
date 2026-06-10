@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Layers, ChevronDown, Loader2 } from 'lucide-react'
 import { isInMRMSCoverage } from '@/lib/utils/location-utils'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 // OpenLayers imports
 import 'ol/ol.css'

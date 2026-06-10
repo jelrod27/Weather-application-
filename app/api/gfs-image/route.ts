@@ -8,7 +8,8 @@
  * This avoids 403 Forbidden errors when users access images directly.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
@@ -72,11 +73,15 @@ export async function GET(request: NextRequest) {
     // Get image data
     const imageData = await response.arrayBuffer();
 
-    // Return image with appropriate headers
+    // Return image with appropriate headers. s-maxage lets the CDN absorb
+    // repeat traffic: run/region are strict enums (24 possible URLs), so
+    // shared caching is the abuse control here — a per-isolate in-memory
+    // limiter is ineffective on the edge runtime where isolates are many
+    // and short-lived.
     return new NextResponse(imageData, {
       headers: {
         'Content-Type': 'image/gif',
-        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+        'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=600',
         'X-Source': 'NOAA GFS',
       },
     });

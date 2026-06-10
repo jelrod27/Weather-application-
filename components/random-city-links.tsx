@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { CITY_DATA } from '@/lib/city-data'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 // Convert CITY_DATA object to array for component use
 export const ALL_CITIES = Object.entries(CITY_DATA || {}).map(([slug, data]) => ({

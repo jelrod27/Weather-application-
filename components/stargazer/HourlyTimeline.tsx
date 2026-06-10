@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import type { HourlyCondition, DarkWindow } from '@/lib/stargazer/types';
+import { formatTime } from '@/lib/stargazer/format';
 
 interface HourlyTimelineProps {
   conditions: HourlyCondition[];
@@ -86,14 +87,6 @@ function formatCellValue(metric: MetricKey, value: number | string): string {
   if (metric === 'humidity' || metric.startsWith('cloudCover'))
     return `${Math.round(value as number)}%`;
   return String(Math.round(value as number));
-}
-
-function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
 }
 
 const metrics: MetricKey[] = [

@@ -15,7 +15,8 @@
  */
 
 
-import React, { Component, ErrorInfo, ReactNode } from "react"
+import type { ErrorInfo, ReactNode } from "react";
+import React, { Component } from "react"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"

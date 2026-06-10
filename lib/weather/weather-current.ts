@@ -6,7 +6,7 @@
  * - Fetching weather by coordinates
  */
 
-import { WeatherData } from '../types';
+import type { WeatherData } from '../types';
 import { parseLocationInput, geocodeLocation, reverseGeocodeLocation } from './weather-geocoding';
 import { buildWeatherDataFromOpenMeteo } from './open-meteo-adapter';
 

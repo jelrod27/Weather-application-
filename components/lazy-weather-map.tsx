@@ -14,7 +14,7 @@
  */
 
 import { MapContainer } from './maps/map-container'
-import { ThemeType } from '@/lib/theme-config'
+import type { ThemeType } from '@/lib/theme-config'
 
 interface LazyWeatherMapProps {
   latitude?: number

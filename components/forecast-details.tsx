@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Droplets, Wind, Eye, Gauge, Sunrise, Sunset, Info } from "lucide-react"
-import { ThemeType } from "@/lib/theme-config"
+import type { ThemeType } from "@/lib/theme-config"
 import type { ForecastDay } from "@/lib/types"
 
 interface ForecastDetailsProps {
