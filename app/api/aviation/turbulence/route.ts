@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 export type TurbulenceSeverity =
   | 'smooth'
@@ -155,22 +156,12 @@ function parseGairmetFeatures(raw: unknown): TurbulencePolygon[] {
   return polygons;
 }
 
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, {
-      signal: controller.signal,
-      next: { revalidate: 600 }, // 10-min CDN cache
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export async function GET(_request: NextRequest) {
   try {
-    const res = await fetchWithTimeout(AWC_GAIRMET_URL, FETCH_TIMEOUT_MS);
+    const res = await fetchWithTimeout(AWC_GAIRMET_URL, {
+      timeoutMs: FETCH_TIMEOUT_MS,
+      next: { revalidate: 600 }, // 10-min CDN cache
+    });
 
     if (!res.ok) {
       console.error(`[API] AWC G-AIRMET returned ${res.status}`);

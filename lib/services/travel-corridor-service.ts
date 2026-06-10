@@ -4,6 +4,8 @@
  * Scores weather conditions along US interstate corridors using Open-Meteo data.
  */
 
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+
 export interface WeatherConditions {
   precipitation: number;
   snowfall: number;
@@ -133,59 +135,44 @@ export async function fetchWeatherForWaypoints(
   }
   url.searchParams.set('timezone', 'auto');
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), WAYPOINT_FETCH_TIMEOUT_MS);
-  const onAbort = () => controller.abort();
-  // addEventListener only catches future aborts — if the caller's signal is
-  // already aborted, abort now instead of waiting out the 15s timeout.
-  if (options.requestSignal?.aborted) {
-    controller.abort();
-  } else {
-    options.requestSignal?.addEventListener('abort', onAbort, { once: true });
+  const response = await fetchWithTimeout(url.toString(), {
+    timeoutMs: WAYPOINT_FETCH_TIMEOUT_MS,
+    signal: options.requestSignal,
+    headers: { 'User-Agent': options.userAgent ?? '16-Bit-Weather/travel' },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Open-Meteo request failed: ${response.status}`);
   }
 
-  try {
-    const response = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers: { 'User-Agent': options.userAgent ?? '16-Bit-Weather/travel' },
-    });
+  const data = await response.json();
+  const locations = Array.isArray(data) ? data : [data];
 
-    if (!response.ok) {
-      throw new Error(`Open-Meteo request failed: ${response.status}`);
+  return locations.map((loc: Record<string, unknown>) => {
+    const current = loc.current as Record<string, number> | undefined;
+    if (forecastDay === 0 && current) {
+      return {
+        precipitation: current.precipitation ?? 0,
+        snowfall: current.snowfall ?? 0,
+        windGusts: current.wind_gusts_10m ?? 0,
+        visibility: current.visibility ?? 10000,
+        freezingLevel: 3000,
+      };
     }
 
-    const data = await response.json();
-    const locations = Array.isArray(data) ? data : [data];
+    const hourly = loc.hourly as Record<string, number[]> | undefined;
+    if (hourly) {
+      const targetHour = forecastDay * 24 + 12;
+      const idx = Math.min(targetHour, (hourly.precipitation?.length ?? 1) - 1);
+      return {
+        precipitation: hourly.precipitation?.[idx] ?? 0,
+        snowfall: hourly.snowfall?.[idx] ?? 0,
+        windGusts: hourly.wind_gusts_10m?.[idx] ?? 0,
+        visibility: hourly.visibility?.[idx] ?? 10000,
+        freezingLevel: 3000,
+      };
+    }
 
-    return locations.map((loc: Record<string, unknown>) => {
-      const current = loc.current as Record<string, number> | undefined;
-      if (forecastDay === 0 && current) {
-        return {
-          precipitation: current.precipitation ?? 0,
-          snowfall: current.snowfall ?? 0,
-          windGusts: current.wind_gusts_10m ?? 0,
-          visibility: current.visibility ?? 10000,
-          freezingLevel: 3000,
-        };
-      }
-
-      const hourly = loc.hourly as Record<string, number[]> | undefined;
-      if (hourly) {
-        const targetHour = forecastDay * 24 + 12;
-        const idx = Math.min(targetHour, (hourly.precipitation?.length ?? 1) - 1);
-        return {
-          precipitation: hourly.precipitation?.[idx] ?? 0,
-          snowfall: hourly.snowfall?.[idx] ?? 0,
-          windGusts: hourly.wind_gusts_10m?.[idx] ?? 0,
-          visibility: hourly.visibility?.[idx] ?? 10000,
-          freezingLevel: 3000,
-        };
-      }
-
-      return { ...DEFAULT_WEATHER_CONDITIONS };
-    });
-  } finally {
-    clearTimeout(timer);
-    options.requestSignal?.removeEventListener('abort', onAbort);
-  }
+    return { ...DEFAULT_WEATHER_CONDITIONS };
+  });
 }
