@@ -26,7 +26,7 @@
 import { WeatherData } from './types';
 import { LocationData } from './location-service';
 import { safeStorage } from './safe-storage';
-import { ThemeType } from './theme-config';
+import { ThemeType, THEME_LIST, DEFAULT_THEME } from './theme-config';
 
 /**
  * StoredLastLocation intentionally excludes precise coordinates.
@@ -93,7 +93,7 @@ export class UserCacheService {
       const defaultPreferences: UserPreferences = {
         settings: {
           units: 'imperial',
-          theme: 'nord',
+          theme: DEFAULT_THEME,
           cacheEnabled: true
         },
         updatedAt: Date.now()
@@ -103,18 +103,29 @@ export class UserCacheService {
   }
 
   /**
-   * Check if localStorage is available and functional
+   * Check if localStorage is available and functional.
+   * Memoized: the probe is a synchronous write+delete and this method is
+   * called at the top of every cache/preference operation (6+ times per
+   * weather load). Reset via invalidateStorageProbe() when quota is hit.
    */
+  private storageAvailableMemo: boolean | null = null;
+
   private isStorageAvailable(): boolean {
+    if (this.storageAvailableMemo !== null) return this.storageAvailableMemo;
     try {
       const testKey = this.STORAGE_PREFIX + 'test';
       safeStorage.setItem(testKey, 'test');
       safeStorage.removeItem(testKey);
-      return true;
+      this.storageAvailableMemo = true;
     } catch (error) {
       console.warn('localStorage not available:', error);
-      return false;
+      this.storageAvailableMemo = false;
     }
+    return this.storageAvailableMemo;
+  }
+
+  private invalidateStorageProbe(): void {
+    this.storageAvailableMemo = null;
   }
 
   /**
@@ -250,7 +261,10 @@ export class UserCacheService {
       }
     } catch (error) {
       console.warn('Failed to get cached weather data:', error);
-      this.handleCorruptedData(locationKey);
+      // Must rebuild the same key shape used by cacheWeatherData above —
+      // passing the bare locationKey removed a nonexistent key, so corrupted
+      // entries were never cleaned up and warned on every read.
+      this.handleCorruptedData(this.WEATHER_CACHE_KEY + '_' + this.sanitizeKey(locationKey));
     }
 
     return null;
@@ -457,6 +471,8 @@ export class UserCacheService {
    */
   private handleStorageQuotaExceeded(): void {
     console.warn('Storage quota exceeded, performing emergency cleanup');
+    // Storage state changed; re-probe availability on the next operation.
+    this.invalidateStorageProbe();
     this.cleanupOldestEntries();
     this.cleanupExpiredEntries();
   }
@@ -468,7 +484,7 @@ export class UserCacheService {
     const defaultPreferences: UserPreferences = {
       settings: {
         units: 'imperial',
-        theme: 'nord',
+        theme: DEFAULT_THEME,
         cacheEnabled: true
       },
       updatedAt: Date.now()
@@ -509,7 +525,11 @@ export class UserCacheService {
           units: preferences.settings.units === 'metric' || preferences.settings.units === 'imperial'
             ? preferences.settings.units
             : defaultPreferences.settings.units,
-          theme: ['nord', 'miami', 'synthwave84', 'dracula', 'cyberpunk', 'matrix'].includes(preferences.settings.theme as string)
+          // Validate against the canonical theme list. A hand-copied array
+          // here previously drifted: it rejected 'daybreak' (the platform
+          // default, silently rewritten to 'nord' on every read) and
+          // accepted 'miami', which no longer exists.
+          theme: (THEME_LIST as string[]).includes(preferences.settings.theme as string)
             ? (preferences.settings.theme as ThemeType)
             : defaultPreferences.settings.theme,
           cacheEnabled: typeof preferences.settings.cacheEnabled === 'boolean'
