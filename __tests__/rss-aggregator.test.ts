@@ -95,6 +95,21 @@ describe('parseRSSFeed', () => {
     expect(it.imageUrl).toBeUndefined();
   });
 
+  // Regression: an unparseable pubDate produced an Invalid Date (NaN epoch),
+  // which failed the freshness-cutoff comparison downstream and silently
+  // dropped the item after parsing succeeded.
+  it('falls back to now for unparseable pubDate instead of Invalid Date', () => {
+    const xml = `<rss version="2.0"><channel><item>
+      <title>Odd date</title>
+      <link>https://ok.example.com/odd</link>
+      <pubDate>2026年5月27日</pubDate>
+    </item></channel></rss>`;
+
+    const [it] = parseRSSFeed(xml, source());
+    expect(it.title).toBe('Odd date');
+    expect(Number.isNaN(it.timestamp.getTime())).toBe(false);
+  });
+
   it('caps output at MAX_ITEMS_PER_FEED (30)', () => {
     const entries = Array.from({ length: 40 }, (_, i) =>
       `<item><title>Item ${i}</title><link>https://e.example.com/${i}</link></item>`
