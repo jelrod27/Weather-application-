@@ -52,8 +52,6 @@ export function useWeatherController() {
         setShouldClearOnRouteChange(true)
     }, [setShouldClearOnRouteChange])
 
-
-
     // Update remaining searches on mount
     useEffect(() => {
         if (!isClient || didInitRemainingSearches.current) return
