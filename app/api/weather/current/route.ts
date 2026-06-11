@@ -14,6 +14,7 @@ import { trackWeatherApiCall } from '@/lib/services/sentry-metrics'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { apiError } from '@/lib/api/error-response'
+import { normalizeUnits } from '@/lib/api/query-params'
 
 const BASE_URL = 'https://api.openweathermap.org/data/2.5'
 
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const lat = searchParams.get('lat')
     const lon = searchParams.get('lon')
-    const units = searchParams.get('units') || 'imperial'
+    const units = normalizeUnits(searchParams.get('units'))
 
     // Validate required parameters
     if (!lat || !lon) {
