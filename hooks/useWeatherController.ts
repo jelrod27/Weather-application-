@@ -8,14 +8,13 @@ import { toastService } from '@/lib/toast-service'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
 import { safeStorage } from '@/lib/safe-storage'
+import { checkRateLimit, recordRateLimitedRequest } from '@/lib/weather-rate-limit'
 
 // Constants
 const CACHE_KEY = 'bitweather_city'
 const WEATHER_KEY = 'bitweather_weather_data'
 const CACHE_TIMESTAMP_KEY = 'bitweather_cache_timestamp'
-const RATE_LIMIT_KEY = 'weather-app-rate-limit'
 const SEARCH_CACHE_KEY = 'weather-search-cache'
-const MAX_REQUESTS_PER_HOUR = 60  // Increased from 10 to prevent blocking legitimate usage
 const SEARCH_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export function useWeatherController() {
@@ -54,72 +53,12 @@ export function useWeatherController() {
 
 
 
-    // Rate limiting logic
-    const getRateLimitData = useCallback(() => {
-        try {
-            const data = safeStorage.getItem(RATE_LIMIT_KEY)
-            return data ? JSON.parse(data) : { requests: [], lastReset: Date.now() }
-        } catch (error) {
-            console.warn('Failed to get rate limit data:', error)
-            return { requests: [], lastReset: Date.now() }
-        }
-    }, [])
-
-    const saveRateLimitData = useCallback((data: { requests: number[], lastReset: number }) => {
-        try {
-            safeStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(data))
-        } catch (error) {
-            console.warn('Failed to save rate limit data:', error)
-        }
-    }, [])
-
-    const checkRateLimit = useCallback((): { allowed: boolean, remaining: number, message?: string } => {
-        const now = Date.now()
-        const oneHour = 60 * 60 * 1000
-        let data = getRateLimitData()
-
-        if (now - data.lastReset > oneHour) {
-            data = { requests: [], lastReset: now }
-            saveRateLimitData(data)
-        }
-
-        const recentRequests = data.requests.filter((timestamp: number) => now - timestamp < oneHour)
-        const remaining = MAX_REQUESTS_PER_HOUR - recentRequests.length
-
-        if (recentRequests.length >= MAX_REQUESTS_PER_HOUR) {
-            const oldestRequest = Math.min(...recentRequests)
-            const waitTime = Math.ceil((oneHour - (now - oldestRequest)) / 1000 / 60)
-            return {
-                allowed: false,
-                remaining: 0,
-                message: `Too many requests. Please wait ${waitTime} minutes before searching again.`
-            }
-        }
-
-        return { allowed: true, remaining }
-    }, [getRateLimitData, saveRateLimitData])
-
     // Update remaining searches on mount
     useEffect(() => {
         if (!isClient || didInitRemainingSearches.current) return
         didInitRemainingSearches.current = true
-        const { remaining } = checkRateLimit()
-        setRemainingSearches(remaining)
-    }, [isClient, checkRateLimit])
-
-    const recordRequest = useCallback(() => {
-        const now = Date.now()
-        const data = getRateLimitData()
-        data.requests.push(now)
-
-        const oneHour = 60 * 60 * 1000
-        data.requests = data.requests.filter((timestamp: number) => now - timestamp < oneHour)
-
-        saveRateLimitData(data)
-
-        const { remaining } = checkRateLimit()
-        setRemainingSearches(remaining)
-    }, [getRateLimitData, saveRateLimitData, checkRateLimit])
+        setRemainingSearches(checkRateLimit().remaining)
+    }, [isClient])
 
     // Cache management
     const saveLocationToCache = useCallback((location: string) => {
@@ -335,7 +274,7 @@ export function useWeatherController() {
             setCurrentLocation(input)
             saveLocationToCache(input)
             saveWeatherToCache(weatherData)
-            recordRequest()
+            setRemainingSearches(recordRateLimitedRequest().remaining)
             addToSearchCache(input, weatherData, unitSystem)
 
         } catch (error: any) {
@@ -350,7 +289,7 @@ export function useWeatherController() {
                 setLoading(false)
             }
         }
-    }, [checkRateLimit, getFromSearchCache, preferences?.temperature_unit, setCurrentLocation, saveLocationToCache, saveWeatherToCache, recordRequest, addToSearchCache])
+    }, [getFromSearchCache, preferences?.temperature_unit, setCurrentLocation, saveLocationToCache, saveWeatherToCache, addToSearchCache])
 
     const handleLocationSearch = useCallback(async () => {
         if (!locationService.isGeolocationSupported()) {
@@ -370,14 +309,14 @@ export function useWeatherController() {
         try {
             const location = await locationService.getCurrentLocation()
             await handleLocationDetected(location)
-            recordRequest()
+            setRemainingSearches(recordRateLimitedRequest().remaining)
         } catch (error: any) {
             console.error("Location error:", error)
             setError(error.message || "Failed to get your location")
         } finally {
             setLoading(false)
         }
-    }, [isClient, handleLocationDetected, recordRequest])
+    }, [isClient, handleLocationDetected])
 
     // Auto-location effect
     useEffect(() => {
