@@ -7,15 +7,16 @@ import { userCacheService } from '@/lib/user-cache-service'
 import { toastService } from '@/lib/toast-service'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
-import { safeStorage } from '@/lib/safe-storage'
 import { checkRateLimit, recordRateLimitedRequest } from '@/lib/weather-rate-limit'
-
-// Constants
-const CACHE_KEY = 'bitweather_city'
-const WEATHER_KEY = 'bitweather_weather_data'
-const CACHE_TIMESTAMP_KEY = 'bitweather_cache_timestamp'
-const SEARCH_CACHE_KEY = 'weather-search-cache'
-const SEARCH_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+import {
+    CACHE_KEY,
+    WEATHER_KEY,
+    CACHE_TIMESTAMP_KEY,
+    saveLocationToCache,
+    saveWeatherToCache,
+    addToSearchCache,
+    getFromSearchCache,
+} from '@/lib/weather-search-cache'
 
 export function useWeatherController() {
     const {
@@ -59,80 +60,6 @@ export function useWeatherController() {
         didInitRemainingSearches.current = true
         setRemainingSearches(checkRateLimit().remaining)
     }, [isClient])
-
-    // Cache management
-    const saveLocationToCache = useCallback((location: string) => {
-        try {
-            safeStorage.setItem(CACHE_KEY, location)
-        } catch (error) {
-            console.warn('Failed to save location to cache:', error)
-        }
-    }, [])
-
-    const saveWeatherToCache = useCallback((weatherData: WeatherData) => {
-        try {
-            // Do not persist precise coordinates (lat/lon) in localStorage.
-            // WeatherData includes optional coordinates; strip them before caching.
-            const { coordinates, ...rest } = weatherData as any
-            safeStorage.setItem(WEATHER_KEY, JSON.stringify(rest))
-            safeStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
-        } catch (error) {
-            console.warn('Failed to save weather data to cache:', error)
-        }
-    }, [])
-
-    const getSearchCache = useCallback((): Map<string, { data: WeatherData; timestamp: number }> => {
-        try {
-            const cached = safeStorage.getItem(SEARCH_CACHE_KEY)
-            if (cached) {
-                const parsed = JSON.parse(cached)
-                const map = new Map<string, { data: WeatherData; timestamp: number }>()
-                const now = Date.now()
-                for (const [key, value] of Object.entries(parsed)) {
-                    if (typeof value === 'object' && value !== null && 'data' in value && 'timestamp' in value) {
-                        const cacheEntry = value as { data: WeatherData; timestamp: number }
-                        if (now - cacheEntry.timestamp < SEARCH_CACHE_DURATION) {
-                            map.set(key, cacheEntry)
-                        }
-                    }
-                }
-                return map
-            }
-        } catch (error) {
-            console.warn('Failed to get search cache:', error)
-        }
-        return new Map()
-    }, [])
-
-    const saveSearchCache = useCallback((cache: Map<string, { data: WeatherData; timestamp: number }>) => {
-        try {
-            const obj = Object.fromEntries(cache)
-            safeStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(obj))
-        } catch (error) {
-            console.warn('Failed to save search cache:', error)
-        }
-    }, [])
-
-    // Cache keys include the unit system: the cached WeatherData is
-    // unit-baked, so a C/F toggle (or a Supabase preference arriving after
-    // first fetch) must miss rather than serve wrong-unit payloads.
-    const addToSearchCache = useCallback((searchTerm: string, weatherData: WeatherData, unitSystem: string) => {
-        const cache = getSearchCache()
-        cache.set(`${searchTerm.toLowerCase().trim()}|${unitSystem}`, {
-            data: weatherData,
-            timestamp: Date.now()
-        })
-        saveSearchCache(cache)
-    }, [getSearchCache, saveSearchCache])
-
-    const getFromSearchCache = useCallback((searchTerm: string, unitSystem: string): WeatherData | null => {
-        const cache = getSearchCache()
-        const cached = cache.get(`${searchTerm.toLowerCase().trim()}|${unitSystem}`)
-        if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_DURATION) {
-            return cached.data
-        }
-        return null
-    }, [getSearchCache])
 
     // Weather handling
     const handleLocationDetected = useCallback(async (location: LocationData) => {
@@ -215,7 +142,7 @@ export function useWeatherController() {
                 setLoading(false)
             }
         }
-    }, [preferences?.temperature_unit, setLocationInput, setCurrentLocation, saveLocationToCache, saveWeatherToCache])
+    }, [preferences?.temperature_unit, setLocationInput, setCurrentLocation])
 
     const handleSearch = useCallback(async (input: string, fromCache = false, bypassRateLimit = false) => {
         if (!input.trim()) {
@@ -289,7 +216,7 @@ export function useWeatherController() {
                 setLoading(false)
             }
         }
-    }, [getFromSearchCache, preferences?.temperature_unit, setCurrentLocation, saveLocationToCache, saveWeatherToCache, addToSearchCache])
+    }, [preferences?.temperature_unit, setCurrentLocation])
 
     const handleLocationSearch = useCallback(async () => {
         if (!locationService.isGeolocationSupported()) {
