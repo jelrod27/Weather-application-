@@ -1,3 +1,5 @@
+> Archived 2026-06-11: the AI assistant feature was removed from the codebase; preserved for context if the feature returns.
+
 # AI assistant UX — plan and rollout
 
 Branch: `feat/ai-assistant-ux`
