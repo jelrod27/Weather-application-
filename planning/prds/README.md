@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-condition-alerts.md](./PRD-condition-alerts.md) | Location-scoped condition alerts — in-app alert center for stargazing windows at saved locations, daily Vercel cron evaluation, schema + RLS design |
 | [PRD-news-overhaul.md](./PRD-news-overhaul.md) | News section overhaul — fix dead feeds, remove orphaned subsystem, tiered caching + feed-health monitoring |
 
 Shipped PRDs are removed once the work lands; recover any from **git history** if needed. Recently completed and removed: open-meteo migration, Stargazer, newsletter redesign.

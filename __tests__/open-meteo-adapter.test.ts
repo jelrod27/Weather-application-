@@ -226,3 +226,156 @@ describe('buildWeatherDataFromOpenMeteo', () => {
     expect(result.forecast[0].details.visibility).toBe(6.2);
   });
 });
+
+describe('hourly window edge cases', () => {
+  // Test 1: truncated hourly array yields a short strip
+  it('should yield a short strip when the hourly array is truncated to 20 entries', async () => {
+    // "now" frozen at 2025-03-25T14:00:00Z (set in beforeEach).
+    // New York utc_offset_seconds: -18000 → city wall-clock "now" is 09:00.
+    // Explicit naive strings T00:00..T19:00 (20 entries) are deterministic
+    // regardless of runner timezone.
+    // cityWallClockToEpoch('2025-03-25T09:00') = parse('2025-03-25T09:00Z') - (-18000000ms)
+    //   = epoch of 09:00Z + 18000000ms = epoch of 14:00Z = nowMs → passes cutoff.
+    // cityWallClockToEpoch('2025-03-25T08:00') = 13:00Z < 13:30Z → fails.
+    // Therefore startIdx = 9, hourlyCount = min(20-9, 48) = 11.
+    const response = makeForecastResponse();
+    const count = 20;
+    const explicitTimes = Array.from({ length: count }, (_, i) =>
+      `2025-03-25T${String(i).padStart(2, '0')}:00`
+    );
+    response.hourly.time = explicitTimes;
+    response.hourly.temperature_2m = response.hourly.temperature_2m.slice(0, count);
+    response.hourly.apparent_temperature = response.hourly.apparent_temperature.slice(0, count);
+    response.hourly.relative_humidity_2m = response.hourly.relative_humidity_2m.slice(0, count);
+    response.hourly.weather_code = response.hourly.weather_code.slice(0, count);
+    response.hourly.wind_speed_10m = response.hourly.wind_speed_10m.slice(0, count);
+    response.hourly.wind_direction_10m = response.hourly.wind_direction_10m.slice(0, count);
+    response.hourly.uv_index = response.hourly.uv_index.slice(0, count);
+    response.hourly.visibility = response.hourly.visibility.slice(0, count);
+    response.hourly.precipitation = response.hourly.precipitation.slice(0, count);
+    response.hourly.precipitation_probability = response.hourly.precipitation_probability.slice(0, count);
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/open-meteo/forecast')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
+      }
+      if (url.includes('/api/open-meteo/air-quality')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+
+    expect(result.hourlyForecast!.length).toBe(11);
+    expect(result.hourlyForecast![0].time).toBe('9 AM');
+  });
+
+  // Test 2: missing utc_offset_seconds falls back to UTC interpretation
+  it('should treat naive strings as UTC when utc_offset_seconds is missing', async () => {
+    // "now" frozen at 2025-03-25T14:00:00Z.
+    // utc_offset_seconds = undefined → utcOffsetMs = 0 → naive strings read as UTC.
+    // Cutoff = 13:30Z → first entry >= 13:30Z is T14:00 at index 14.
+    // hourlyCount = min(72-14, 48) = 48.
+    const response = makeForecastResponse();
+    const count = 72;
+    (response as unknown as Record<string, unknown>).utc_offset_seconds = undefined;
+    const explicitTimes = Array.from({ length: count }, (_, i) => {
+      const day = 25 + Math.floor(i / 24);
+      const hour = i % 24;
+      return `2025-03-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00`;
+    });
+    response.hourly.time = explicitTimes;
+    response.hourly.temperature_2m = Array.from({ length: count }, () => 55);
+    response.hourly.apparent_temperature = Array.from({ length: count }, () => 52);
+    response.hourly.relative_humidity_2m = Array.from({ length: count }, () => 65);
+    response.hourly.weather_code = Array.from({ length: count }, () => 2);
+    response.hourly.wind_speed_10m = Array.from({ length: count }, () => 8);
+    response.hourly.wind_direction_10m = Array.from({ length: count }, () => 225);
+    response.hourly.uv_index = Array.from({ length: count }, () => 3);
+    response.hourly.visibility = Array.from({ length: count }, () => 10000);
+    response.hourly.precipitation = Array.from({ length: count }, () => 0);
+    response.hourly.precipitation_probability = Array.from({ length: count }, () => 10);
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/open-meteo/forecast')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
+      }
+      if (url.includes('/api/open-meteo/air-quality')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+
+    expect(result.hourlyForecast![0].time).toBe('2 PM');
+    expect(result.hourlyForecast!.length).toBe(48);
+  });
+
+  // Test 3: all-past hourly data falls back to the array start (stale strip)
+  it('should fall back to the array start when all hourly entries are in the past', async () => {
+    // Characterizes the fallback: an entirely-stale response renders
+    // from the array start rather than returning an empty strip.
+    // "now" frozen at 2025-03-25T14:00:00Z. All 168 naive strings are from
+    // the previous week (2025-03-18..2025-03-24). No entry passes the cutoff,
+    // so the for-loop never breaks and startIdx stays 0.
+    const response = makeForecastResponse();
+    const count = 168;
+    const staleTimes = Array.from({ length: count }, (_, i) => {
+      const dayOffset = Math.floor(i / 24); // 0..6
+      const day = 18 + dayOffset;           // 18..24
+      const hour = i % 24;
+      return `2025-03-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00`;
+    });
+    response.hourly.time = staleTimes;
+    // other arrays keep their 168-entry defaults from makeForecastResponse()
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/open-meteo/forecast')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
+      }
+      if (url.includes('/api/open-meteo/air-quality')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+
+    expect(result.hourlyForecast!.length).toBe(48);
+    expect(result.hourlyForecast![0].time).toBe('12 AM');
+  });
+
+  // Test 4: empty hourly time array yields an empty strip
+  it('should yield an empty hourlyForecast and not throw when hourly.time is empty', async () => {
+    const response = makeForecastResponse();
+    response.hourly.time = [];
+    response.hourly.temperature_2m = [];
+    response.hourly.apparent_temperature = [];
+    response.hourly.relative_humidity_2m = [];
+    response.hourly.weather_code = [];
+    response.hourly.wind_speed_10m = [];
+    response.hourly.wind_direction_10m = [];
+    response.hourly.uv_index = [];
+    response.hourly.visibility = [];
+    response.hourly.precipitation = [];
+    response.hourly.precipitation_probability = [];
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/open-meteo/forecast')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
+      }
+      if (url.includes('/api/open-meteo/air-quality')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+
+    expect(result.hourlyForecast).toEqual([]);
+    // Daily forecast is processed independently and must still be intact.
+    expect(result.forecast).toHaveLength(7);
+  });
+});

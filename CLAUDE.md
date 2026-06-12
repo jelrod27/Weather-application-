@@ -18,6 +18,7 @@ npm run dev              # Start development server (localhost:3000)
 npm run build            # Production build
 npm run start            # Start production server
 npm run lint             # ESLint
+npm run typecheck        # TypeScript type-check (same gate as CI's tsc --noEmit)
 npm run analyze          # Bundle analysis (ANALYZE=true build)
 
 # Unit Testing (Jest)
@@ -33,7 +34,7 @@ npx playwright test --project=chromium               # Single browser
 npx playwright test tests/e2e/weather-app.spec.ts    # Single test file
 
 # PR Validation
-npm run validate:pr      # Build + E2E + Lighthouse CI (runs on pre-push hook)
+npm run validate:pr      # Build + E2E + Lighthouse CI (run manually before PR; CI also runs these)
 
 # Dead Code Detection (Knip)
 npm run knip             # Find unused files, dependencies, and exports
@@ -41,13 +42,14 @@ npm run knip:fix         # Auto-remove unused exports and dependencies
 npm run lighthouse       # Lighthouse CI only
 ```
 
-## Pre-Push Git Hook
+## Git Hooks (husky)
 
-A pre-push hook runs automatically before every `git push`:
-1. Playwright E2E tests (Chromium)
-2. Lighthouse CI (performance score >= 85)
+Hooks live in `.husky/` (installed via the `prepare` script):
+- `pre-commit` — gitleaks secret scan of the staged diff
+- `pre-push` — gitleaks secret scan of unpushed commits
 
-Config: `.git/hooks/pre-push` and `lighthouserc.js`
+E2E (Playwright) and Lighthouse CI run in GitHub Actions
+(`.github/workflows/`), not in local hooks. Lighthouse config: `lighthouserc.js`.
 
 ## Architecture
 
@@ -130,7 +132,7 @@ Three main contexts wrap the app in `app/layout.tsx`:
 - `_archive/` — historical plans and legacy code; excluded from search/build flows.
 - `tempest/` — legacy E2E scripts not run in CI; current E2E is in `tests/e2e/`.
 - `scripts/` — one-off TypeScript utilities run via `tsx` (e.g. `npm run test:profile`).
-- `planning/` — in-progress design notes (e.g. `ai-assistant-ux.md`) and **`planning/prds/`** for product requirement docs.
+- `planning/` — in-progress design notes (e.g. `aviation-uplift.md`) and **`planning/prds/`** for product requirement docs.
 - `proxy.ts` — top-level proxy entry, separate from the Next.js app.
 
 ## Testing
