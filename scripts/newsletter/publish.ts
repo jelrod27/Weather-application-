@@ -6,6 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { blogHeroImage } from '@/lib/blog/hero';
 import type { ImageEntry } from './images';
 import type { TopicSlug } from './topics';
 
@@ -58,15 +59,18 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
   const datePrefix = isoDate.slice(0, 10);
 
   const { title, summary, slug } = buildHeader(input, datePrefix);
+  const tags = buildTags(input);
   // Hero is the page banner — should never be archival imagery presented
-  // without context. Prefer live > reference > archival, falling back to
-  // first image if every option is somehow archival.
+  // without context. Prefer live > reference > archival, then first image.
+  // When the catalog produced no images at all (a topic with no entries —
+  // the 2026-06-12 biometeorology post shipped with heroImage "" and the
+  // blog rendered without any picture), fall back to a generated OG banner
+  // so a post never publishes imageless.
   const heroImage =
     input.images.find((i) => i.kind === 'live')?.url ??
     input.images.find((i) => (i.kind ?? 'reference') === 'reference')?.url ??
     input.images[0]?.url ??
-    '';
-  const tags = buildTags(input);
+    blogHeroImage({ title, heroImage: '', tags });
 
   const frontmatterFields: Record<string, unknown> = {
     slug,
