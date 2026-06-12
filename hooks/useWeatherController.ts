@@ -411,6 +411,7 @@ export function useWeatherController() {
         remainingSearches,
         handleSearch,
         handleLocationSearch,
-        isAutoDetecting
+        isAutoDetecting,
+        autoLocationAttempted
     }
 }
