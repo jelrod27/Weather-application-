@@ -11,6 +11,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
 import { getPostCategoryIds, type BlogCategory } from '@/lib/blog/categories'
+import { blogHeroImage } from '@/lib/blog/hero'
 
 const POSTS_PER_PAGE = 10
 
@@ -41,10 +42,13 @@ export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps
           <p className="text-xs font-mono tracking-widest text-muted-foreground">
             // TRANSMISSION LOG
           </p>
+          {/* text-primary, not themeClasses.accentText: accentText maps to
+              text-primary-foreground (the on-primary-button color), which
+              blends into the page background — white-on-white in Daybreak. */}
           <h1
             className={cn(
               'text-4xl sm:text-5xl md:text-6xl font-extrabold font-mono',
-              themeClasses.accentText,
+              'text-primary',
               themeClasses.glow
             )}
           >
@@ -113,10 +117,14 @@ export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps
                 'bg-[hsl(var(--card))]'
               )}
             >
-              {feat.heroImage ? (
+              {/* blogHeroImage falls back to a generated OG banner when the
+                  frontmatter heroImage is empty, so the featured card always
+                  has art (the old imageless branch rendered its title in
+                  accentText, which was invisible on light themes). */}
+              {(
                 <div className="relative w-full h-56 sm:h-72 md:h-80">
                   <Image
-                    src={feat.heroImage}
+                    src={blogHeroImage(feat)}
                     alt={feat.title}
                     fill
                     priority
@@ -139,25 +147,6 @@ export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps
                       <span>|</span>
                       <span>BY {feat.author.toUpperCase()}</span>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-6">
-                  <span className="inline-block px-2 py-0.5 text-xs font-mono uppercase tracking-widest text-[hsl(var(--primary))] border border-[hsl(var(--primary))] rounded mb-3">
-                    FEATURED INTEL
-                  </span>
-                  <h2 className={cn(
-                    'text-2xl sm:text-3xl font-extrabold font-mono uppercase tracking-tight mb-2',
-                    themeClasses.accentText
-                  )}>
-                    {feat.title}
-                  </h2>
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground tracking-wider mb-3">
-                    <span>{new Date(feat.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
-                    <span>|</span>
-                    <span>{feat.readTime} MIN READ</span>
-                    <span>|</span>
-                    <span>BY {feat.author.toUpperCase()}</span>
                   </div>
                 </div>
               )}

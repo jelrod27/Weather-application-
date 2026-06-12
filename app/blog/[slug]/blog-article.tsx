@@ -13,6 +13,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts'
+import { blogHeroImage } from '@/lib/blog/hero'
 import { KeyTerms } from '@/components/blog/key-terms'
 
 interface BlogArticleProps {
@@ -36,20 +37,20 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
         {/* Hero image — LCP candidate, priority-loaded.
             unoptimized: heroImage is served by our own /api/og endpoint (already
             a generated image); re-optimizing at build time would require a
-            running server and adds no benefit. */}
-        {post.heroImage && (
-          <div className="relative w-full h-64 sm:h-80 mb-6 rounded-lg overflow-hidden">
-            <Image
-              src={post.heroImage}
-              alt={post.title}
-              fill
-              priority
-              unoptimized
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover"
-            />
-          </div>
-        )}
+            running server and adds no benefit.
+            blogHeroImage falls back to a generated OG banner when frontmatter
+            heroImage is empty, so this block always renders. */}
+        <div className="relative w-full h-64 sm:h-80 mb-6 rounded-lg overflow-hidden">
+          <Image
+            src={blogHeroImage(post)}
+            alt={post.title}
+            fill
+            priority
+            unoptimized
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover"
+          />
+        </div>
 
         {/* Back link */}
         <Link
@@ -68,10 +69,12 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
           <span>BY {post.author.toUpperCase()}</span>
         </div>
 
-        {/* Title */}
+        {/* Title — text-primary, not themeClasses.accentText: accentText maps
+            to text-primary-foreground, which is the on-primary-button color
+            and blends into the page background (white-on-white in Daybreak). */}
         <h1 className={cn(
           'text-3xl sm:text-4xl font-extrabold font-mono uppercase tracking-tight mb-4',
-          themeClasses.accentText
+          'text-primary'
         )}>
           {post.title}
         </h1>
