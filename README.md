@@ -36,7 +36,6 @@ The site targets learners and hobbyists who want accurate data without a generic
 - **Custom themes**: Twelve themes with persistence for signed-in users
 - **Weather Arcade**: Educational games with score tracking
 - **User accounts**: Saved locations and preferences via Supabase
-- **AI assistant**: Tool-backed answers spanning meteorology, aviation conditions, seismic activity, and space weather
 - **News and feeds**: Multi-source RSS including earth science and space categories
 - **Social sharing**: Share buttons on every major page with dynamic OG preview images
 
@@ -47,7 +46,6 @@ The site targets learners and hobbyists who want accurate data without a generic
 - **Language**: TypeScript
 - **Database**: Supabase (PostgreSQL, Auth, RLS)
 - **APIs**: OpenWeatherMap, NOAA SWPC, USGS, NASA, NHC, SPC, and other providers behind server routes
-- **AI**: Anthropic via Vercel AI SDK
 - **Monitoring**: Sentry error tracking
 - **Testing**: Jest (unit), Playwright (E2E), Lighthouse CI (performance gate)
 - **Deployment**: Vercel

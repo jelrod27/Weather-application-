@@ -56,11 +56,24 @@ function WeatherApp() {
     remainingSearches,
     handleSearch,
     handleLocationSearch,
-    isAutoDetecting
+    isAutoDetecting,
+    autoLocationAttempted
   } = useWeatherController()
 
   const [selectedDay, setSelectedDay] = React.useState<number | null>(null)
   const [precipitation, setPrecipitation] = React.useState<{rain24h: number; snow24h: number} | null>(null)
+
+  // Latch: cities mount once the initial auto-location flow has settled and
+  // never unmount again (manual searches must not flicker them; post-input
+  // shifts are CLS-exempt anyway). The rAF delays one paint so any lazily
+  // loaded WeatherDisplay chunk has time to expand before the cities append.
+  const [showCityLinks, setShowCityLinks] = React.useState(false)
+  React.useEffect(() => {
+    if (autoLocationAttempted && !loading && !isAutoDetecting) {
+      const id = requestAnimationFrame(() => setShowCityLinks(true))
+      return () => cancelAnimationFrame(id)
+    }
+  }, [autoLocationAttempted, loading, isAutoDetecting])
 
   // Fetch 24h precipitation data when weather loads
   React.useEffect(() => {
@@ -117,7 +130,7 @@ function WeatherApp() {
 
 
           {/* Welcome Message — START is a clickable affordance that triggers geolocation. */}
-          {!weather && !loading && !error && (
+          {!weather && !loading && !error && !isAutoDetecting && (
             <div className="text-center mt-8 mb-8 px-2 sm:px-0">
               <div className="w-full max-w-xl mx-auto">
                 <div className="p-2 sm:p-3 border-0 shadow-lg bg-weather-bg-elev border-weather-primary shadow-weather-primary/20">
@@ -180,8 +193,9 @@ function WeatherApp() {
             </ErrorBoundary>
           )}
 
-          {/* SEO City Links Section with Random Display */}
-          <RandomCityLinks theme={theme || 'nord'} />
+          {/* SEO City Links Section with Random Display — deferred until the weather
+              region above has settled, so it appends instead of being shoved (CLS). */}
+          {showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
         </ResponsiveContainer>
       </div>
     </PageWrapper>

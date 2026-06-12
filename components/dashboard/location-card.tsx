@@ -144,12 +144,20 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
     setDetailedLoading(true)
 
     try {
-      // Fetch current weather
-      const currentResponse = await fetch(
-        `/api/weather/current?lat=${location.latitude}&lon=${location.longitude}&units=${apiUnits}`
-      )
-      if (!currentResponse.ok) throw new Error('Failed to fetch current weather')
-      const currentRaw = await currentResponse.json()
+      const base = `lat=${location.latitude}&lon=${location.longitude}`
+      const [currentSettled, forecastSettled, uvSettled, aqiSettled] =
+        await Promise.allSettled([
+          fetch(`/api/weather/current?${base}&units=${apiUnits}`),
+          fetch(`/api/weather/forecast?${base}&units=${apiUnits}`),
+          fetch(`/api/weather/uv?${base}`),
+          fetch(`/api/weather/air-quality?${base}`),
+        ])
+
+      // Current weather: required — failure aborts like before
+      if (currentSettled.status === 'rejected' || !currentSettled.value.ok) {
+        throw new Error('Failed to fetch current weather')
+      }
+      const currentRaw = await currentSettled.value.json()
 
       // OWM /weather response shape — map to BasicWeatherData
       const currentData: BasicWeatherData = {
@@ -163,36 +171,29 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
         icon: currentRaw?.weather?.[0]?.icon ?? '',
       }
 
-      // Fetch forecast
-      const forecastResponse = await fetch(
-        `/api/weather/forecast?lat=${location.latitude}&lon=${location.longitude}&units=${apiUnits}`
-      )
-      if (!forecastResponse.ok) throw new Error('Failed to fetch forecast')
-      const forecastData = await forecastResponse.json()
+      // Forecast: required
+      if (forecastSettled.status === 'rejected' || !forecastSettled.value.ok) {
+        throw new Error('Failed to fetch forecast')
+      }
+      const forecastData = await forecastSettled.value.json()
 
-      // Fetch UV index
+      // UV index: optional — default 0 on any failure
       let uvIndex = 0
       try {
-        const uvResponse = await fetch(
-          `/api/weather/uv?lat=${location.latitude}&lon=${location.longitude}`
-        )
-        if (uvResponse.ok) {
-          const uvData = await uvResponse.json()
-          uvIndex = uvData.value ?? 0
+        if (uvSettled.status === 'fulfilled' && uvSettled.value.ok) {
+          const uvData = await uvSettled.value.json()
+          uvIndex = uvData.uvi ?? 0
         }
       } catch (err) {
         console.warn('UV index fetch failed:', err)
       }
 
-      // Fetch air quality
+      // Air quality: optional — defaults on any failure
       let aqi = 0
       let aqiCategory = 'No Data'
       try {
-        const aqiResponse = await fetch(
-          `/api/weather/air-quality?lat=${location.latitude}&lon=${location.longitude}`
-        )
-        if (aqiResponse.ok) {
-          const aqiData = await aqiResponse.json()
+        if (aqiSettled.status === 'fulfilled' && aqiSettled.value.ok) {
+          const aqiData = await aqiSettled.value.json()
           aqi = aqiData.aqi ?? 0
           aqiCategory = aqiData.category || 'No Data'
         }

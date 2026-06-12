@@ -8,7 +8,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { aggregateFeeds, getFeaturedItem, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
-import type { FeedCategory } from '@/lib/services/rss/feedSources';
+import { parseFeedCategories } from '@/lib/api/query-params';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,10 +24,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true';
 
     // Parse categories
-    let categories: FeedCategory[] | undefined;
-    if (categoriesParam) {
-      categories = categoriesParam.split(',').filter(Boolean) as FeedCategory[];
-    }
+    const categories = parseFeedCategories(categoriesParam);
 
     // Return featured item if requested
     if (featured) {
