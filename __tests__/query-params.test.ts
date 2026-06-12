@@ -31,6 +31,10 @@ describe('parseFeedCategories', () => {
     expect(parseFeedCategories(null)).toBeUndefined()
   })
 
+  it('returns undefined for empty string (empty param = all feeds, preserving mainline behavior)', () => {
+    expect(parseFeedCategories('')).toBeUndefined()
+  })
+
   it('returns matching categories for "severe,space"', () => {
     expect(parseFeedCategories('severe,space')).toEqual(['severe', 'space'])
   })

@@ -102,7 +102,7 @@ Vercel cron jobs allow up to 100 per project on all plans. The critical constrai
 
 Source: Vercel docs at `/docs/cron-jobs/usage-and-pricing` (verified 2026-06-11).
 
-A daily cron at e.g. `0 14 * * *` (2pm UTC, targeting "early evening local" for most US timezones) fits within Hobby limits and aligns with the feature: users want alerts for that night's window, so evaluating by mid-afternoon gives several hours of advance notice.
+A daily cron at e.g. `0 14 * * *` (14:00 UTC — morning/midday across the Americas, giving a full day of lead time before that night's window) fits within Hobby limits and aligns with the feature: users want alerts for that night's window, so evaluating by mid-afternoon gives several hours of advance notice.
 
 **Execution time budget:**
 - Hobby: maxDuration is 300s (5 minutes) — also the default for Pro.
@@ -141,7 +141,7 @@ Comparison:
 
 The `user_preferences` table already has a `notifications_enabled` boolean (types.ts line 105), though it is currently unwired. That field can serve as the opt-in gate for the in-app channel in v1 and extend to push/email in v2 without a schema change.
 
-**Future note:** The newsletter pipeline (`scripts/newsletter/`) represents the team's existing "email content" machinery. A future email-alert digest could reuse the same `alert_subscriptions` table with a different `channel` enum value — no schema migration needed.
+**Future note:** The newsletter pipeline (`scripts/newsletter/`) represents the team's existing "email content" machinery. A future email-alert digest could reuse the same `alert_subscriptions` table with a different `channel` enum value — the only migration required is widening the channel CHECK constraint (see §5.1) to allow the new value.
 
 ### 4.3 Evaluation logic placement
 
@@ -172,7 +172,7 @@ This is a factored, minimal evaluation path. No prototype code is needed to conf
 ### 4.4 Alert-fatigue control
 
 - **Score threshold:** Default 70 ("Good" label per `getScoreLabel` in `lib/stargazer/score.ts`). User-configurable to 50 ("Fair") or 85 ("Excellent") in subscription settings.
-- **Dedup window:** No more than one `stargazing_window` alert per `(user_id, saved_location_id)` pair within a 7-day rolling window. The cron route checks `user_alerts` for a recent alert before writing a new one.
+- **Dedup window:** No more than one `stargazing_window` alert per `(user_id, saved_location_id)` pair within a 7-day rolling window. The cron route checks `user_alerts` for a recent alert before writing a new one. A bare pre-insert SELECT is not race-safe against overlapping cron runs; the implementing plan must use an atomic guard — a unique partial index on (user_id, saved_location_id) scoped to the active window, or pg_advisory_xact_lock — not just read-before-write.
 - **Evaluation window:** Cron runs once daily at 14:00 UTC. The "upcoming night" is defined as the next dark window calculated from `lib/stargazer/astronomy.ts`'s `calculateDarkWindow`.
 
 ---

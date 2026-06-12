@@ -137,6 +137,39 @@ describe('LocationCard — parallel detailed-weather fetches', () => {
     )
   })
 
+  it('renders UV index from uvi field on successful fetch', async () => {
+    global.fetch = jest.fn((url: unknown) => {
+      const u = String(url)
+      if (u.includes('/api/weather/current')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ main: { temp: 60 }, weather: [{}] }),
+        })
+      }
+      if (u.includes('/api/weather/forecast')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ list: [] }),
+        })
+      }
+      if (u.includes('/api/weather/uv')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ uvi: 7, source: 'test' }),
+        })
+      }
+      if (u.includes('/api/weather/air-quality')) {
+        return Promise.resolve({ ok: false })
+      }
+      return Promise.reject(new Error('unexpected url'))
+    }) as jest.Mock
+
+    render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+    fireEvent.click(screen.getByText(/Click for detailed weather/i))
+
+    await waitFor(() => expect(screen.getByText(/UV Index: 7/i)).toBeDefined())
+  })
+
   it('aborts and logs when a required fetch fails', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 

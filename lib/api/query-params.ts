@@ -21,9 +21,11 @@ const VALID_CATEGORIES: ReadonlySet<string> = new Set([
 
 /**
  * Parse a comma-separated `categories` query param, keeping only known
- * FeedCategory values. Returns undefined when the param is absent; returns
- * an empty array when the param is present but contains no valid category
- * (preserving the current "no matching feeds" behavior for garbage input).
+ * FeedCategory values. Returns undefined when the param is absent OR empty
+ * (`?categories=`) — downstream this is treated as "all feeds", matching the
+ * pre-existing route behavior. For a non-empty param, returns the valid
+ * FeedCategory values, or an empty array when none are valid (e.g. all-garbage
+ * input like `?categories=bogus`, which yields no feeds).
  */
 export function parseFeedCategories(raw: string | null): FeedCategory[] | undefined {
   if (!raw) return undefined

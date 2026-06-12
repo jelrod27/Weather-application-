@@ -17,8 +17,17 @@ export interface RateLimitCheck {
 
 function getRateLimitData(): RateLimitData {
     try {
-        const data = safeStorage.getItem(RATE_LIMIT_KEY)
-        return data ? JSON.parse(data) : { requests: [], lastReset: Date.now() }
+        const raw = safeStorage.getItem(RATE_LIMIT_KEY)
+        if (!raw) return { requests: [], lastReset: Date.now() }
+        const parsed = JSON.parse(raw)
+        return {
+            requests: Array.isArray(parsed?.requests)
+                ? parsed.requests.filter((t: unknown): t is number => typeof t === 'number' && Number.isFinite(t))
+                : [],
+            lastReset: typeof parsed?.lastReset === 'number' && Number.isFinite(parsed.lastReset)
+                ? parsed.lastReset
+                : Date.now(),
+        }
     } catch (error) {
         console.warn('Failed to get rate limit data:', error)
         return { requests: [], lastReset: Date.now() }
@@ -58,7 +67,10 @@ export function checkRateLimit(now: number = Date.now()): RateLimitCheck {
 }
 
 export function recordRateLimitedRequest(now: number = Date.now()): RateLimitCheck {
-    const data = getRateLimitData()
+    let data = getRateLimitData()
+    if (now - data.lastReset > ONE_HOUR_MS) {
+        data = { requests: [], lastReset: now }
+    }
     data.requests.push(now)
     data.requests = data.requests.filter((timestamp: number) => now - timestamp < ONE_HOUR_MS)
     saveRateLimitData(data)

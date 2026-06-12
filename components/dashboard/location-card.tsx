@@ -182,7 +182,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
       try {
         if (uvSettled.status === 'fulfilled' && uvSettled.value.ok) {
           const uvData = await uvSettled.value.json()
-          uvIndex = uvData.value ?? 0
+          uvIndex = uvData.uvi ?? 0
         }
       } catch (err) {
         console.warn('UV index fetch failed:', err)

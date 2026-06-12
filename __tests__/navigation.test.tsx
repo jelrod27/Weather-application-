@@ -64,4 +64,10 @@ describe('Navigation', () => {
     render(<Navigation />);
     expect(screen.queryByText(/°F|°C/)).toBeNull();
   });
+
+  it('renders the header for a 0° temperature (not treated as missing)', () => {
+    render(<Navigation weatherLocation="Dublin, CA, US" weatherTemperature={0} weatherUnit="°F" />)
+    // Before the falsy-guard fix this chip was suppressed entirely.
+    expect(screen.getAllByText(/Dublin, CA/).length).toBeGreaterThan(0)
+  });
 });
