@@ -8,7 +8,7 @@
  * fake-timer interleaving too fragile to be a reliable characterization pin.
  * Plan 009 can revisit once the effect is extracted.
  */
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import type { WeatherData } from '@/lib/types'
 
 jest.mock('@/lib/weather', () => ({

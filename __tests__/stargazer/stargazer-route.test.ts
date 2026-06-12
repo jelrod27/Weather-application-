@@ -89,13 +89,13 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
 const setupNominalFetches = (utcOffsetSeconds = -18000) => {
   mockFetchWithTimeout.mockImplementation((url: string) => {
     const urlStr = String(url);
-    if (urlStr.includes('api.open-meteo.com')) {
+    if (urlStr.startsWith('https://api.open-meteo.com/')) {
       return Promise.resolve({
         ok: true,
         json: async () => makeOpenMeteoBody(utcOffsetSeconds),
       } as Response);
     }
-    if (urlStr.includes('nominatim')) {
+    if (urlStr.startsWith('https://nominatim.openstreetmap.org/')) {
       return Promise.resolve({ ok: false } as Response);
     }
     return Promise.resolve({ ok: false } as Response);
@@ -157,7 +157,7 @@ describe('GET /api/stargazer — validation and upstream failures', () => {
 
   it('returns 502 when Open-Meteo responds with a non-ok status', async () => {
     mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (String(url).includes('api.open-meteo.com')) {
+      if (String(url).startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({ ok: false, status: 503 } as Response);
       }
       return Promise.resolve({ ok: false } as Response);
@@ -296,7 +296,7 @@ describe('GET /api/stargazer — timezone-suffix handling', () => {
 
     mockFetchWithTimeout.mockImplementation((url: string) => {
       const urlStr = String(url);
-      if (urlStr.includes('api.open-meteo.com')) {
+      if (urlStr.startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({
           ok: true,
           json: async () => makeOpenMeteoBody(32400), // UTC+9
@@ -322,7 +322,7 @@ describe('GET /api/stargazer — timezone-suffix handling', () => {
 
     mockFetchWithTimeout.mockImplementation((url: string) => {
       const urlStr = String(url);
-      if (urlStr.includes('api.open-meteo.com')) {
+      if (urlStr.startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({
           ok: true,
           json: async () => makeOpenMeteoBody(-18000), // UTC-5
