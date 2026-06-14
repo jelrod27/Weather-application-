@@ -1,7 +1,8 @@
 /**
  * Validates a generated newsletter post before the GitHub Action commits and
- * opens a PR. This is intentionally stricter for Sunday posts because their
- * data-driven narrative can drift away from the generic image catalog.
+ * opens a PR. Sunday posts get the strictest narrative-fit checks because
+ * their data-driven lead can drift away from the generic image catalog, while
+ * Wednesday posts use the same technical gate plus image-audit metadata.
  */
 
 import fs from 'node:fs';
@@ -95,10 +96,15 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
     }
   }
 
-  if (data.cadence === 'sunday_rearview') {
-    if (auditEntries.length === 0) {
-      errors.push('Sunday post is missing image_audit frontmatter.');
-    }
+  if (
+    (data.cadence === 'sunday_rearview' || data.cadence === 'wednesday_topic') &&
+    imagesUsed.length > 0 &&
+    auditEntries.length === 0
+  ) {
+    errors.push(`${data.cadence} post has images_used but is missing image_audit frontmatter.`);
+  }
+
+  if (data.cadence === 'sunday_rearview' || data.cadence === 'wednesday_topic') {
     for (const entry of auditEntries) {
       if (!imagesUsed.includes(entry.id)) {
         errors.push(`image_audit id "${entry.id}" is not listed in images_used.`);
@@ -160,7 +166,7 @@ function validateNarrativeFit(content: string, image: ImageEntry, errors: string
   const hasMeaningfulSpace = /geomagnetic storm|aurora|x-class|m-class|\bkp\s*[4-9]\b|kp index maxed at [4-9]/.test(body);
 
   if (hasSevereOrQuakeLead && !hasMeaningfulSpace && /solar|sun|sdo|aurora|corona|magnetogram/.test(imageText)) {
-    errors.push(`Image "${image.id}" is solar/space imagery, but the Sunday lead is severe or seismic.`);
+    errors.push(`Image "${image.id}" is solar/space imagery, but the post lead is severe or seismic.`);
   }
 
   if (!/drought|soil moisture|agricultur|crop|dryness/.test(body) && /drought|cracked soil|agricultur/.test(imageText)) {
@@ -187,6 +193,10 @@ function renderAuditMarkdown(
 ): string {
   const lines = ['## Image Audit'];
   const ids = entries.length > 0 ? entries.map((entry) => entry.id) : imagesUsed;
+  if (ids.length === 0) {
+    lines.push('- No catalog images embedded; post relies on the generated OG hero.');
+    return lines.join('\n');
+  }
   for (const id of ids) {
     const entry = entries.find((item) => item.id === id);
     const image = imagesById.get(id);
