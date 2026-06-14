@@ -2,7 +2,7 @@
 
 Generates the 16bitweather.co weekly blog posts on two cadences.
 
-- **Wednesday — topic deep-dive.** Pulls one of 15 topics via weighted-random rotation, finds a current-news angle, writes a 600–900-word piece.
+- **Wednesday — topic deep-dive.** Pulls one of 16 topics via weighted-random rotation, finds a current-news angle, writes a 600–900-word piece.
 - **Sunday — Rearview + Roadmap.** Recap of past 7 days using real data (Iowa Mesonet, NOAA SPC, NOAA SWPC, USGS) plus a 7-day forward outlook with regional cuts.
 
 See [`planning/prds/PRD-newsletter-redesign.md`](../../planning/prds/PRD-newsletter-redesign.md) for the design.
@@ -89,7 +89,7 @@ Use `grep -l 'cadence: wednesday_topic' content/blog/*.md` to find all Wednesday
 ## Failure modes
 
 - **Iowa Mesonet returns empty** → `MesonetEmptyError`, workflow fails. Do not paper over with fabricated content.
-- **Image catalog starved** → `selectImages` throws `catalog could not satisfy ...`. Expand catalog (`scripts/newsletter/images.ts`) or shorten the 8-week reuse window.
+- **Image catalog starved** → Wednesday can publish without body images if the topic pool is exhausted; Sunday uses partial relevant lanes. Expand catalog (`scripts/newsletter/images.ts`) when a topic repeatedly falls back to the generated OG hero.
 - **Anthropic 429 / 5xx** → wrapper bubbles up the status. Re-run after a cool-down or upgrade rate limits.
 - **Voice violations** → up to 2 regenerations. After that, post persists with violations recorded — the next run will see them in the deny list.
 - **Similarity > 0.85** → up to 2 regenerations with trigger phrases injected into deny list. Persists either way; the score lands in `similarity_max` for trend monitoring.
@@ -102,10 +102,10 @@ Use `grep -l 'cadence: wednesday_topic' content/blog/*.md` to find all Wednesday
 
 `images.ts` holds the verified public-domain/attribution-compatible catalog. To add: append an `ImageEntry`, run `npm run validate:images`, fix any 404s. Sources used: NASA SDO, NOAA NESDIS GOES-16, NOAA SWPC, NOAA OPC, NOAA CPC, NOAA SPC, USGS, USDA Drought Monitor, Wikimedia Commons via `Special:FilePath`.
 
-Sunday posts run an additional hard gate before the workflow opens a PR:
+Both newsletter workflows run a hard post gate before opening a PR:
 
 ```bash
 npx tsx scripts/newsletter/validate-post.ts content/blog/<post>.md --audit
 ```
 
-The validator rejects placeholder images, disallowed image hosts, `images_used` mismatches, missing Sunday `image_audit` metadata, and obvious narrative/image mismatches such as solar or drought imagery in a tornado/earthquake-led post.
+The validator rejects placeholder images, disallowed image hosts, `images_used` mismatches, and missing `image_audit` metadata when a generated post embeds catalog images. Sunday also checks for obvious narrative/image mismatches such as solar or drought imagery in a tornado/earthquake-led post.

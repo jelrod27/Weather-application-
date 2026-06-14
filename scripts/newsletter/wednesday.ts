@@ -5,8 +5,8 @@
 
 import { getSpotlight } from '../blog-spotlight';
 import { pickCloser, type CloserChoice } from './closers';
-import { embedImagesInDraft, pickImagesForContent } from './content-match';
-import { selectImages, type ImageEntry } from './images';
+import { embedImagesInDraft, pickImagesForContent, type ImagePlacement } from './content-match';
+import { selectImages, type ImageAuditEntry, type ImageEntry } from './images';
 import { findAngleForTopic, fetchHeadlines, type NewsAngle } from './news';
 import {
   callAnthropic,
@@ -42,6 +42,7 @@ export interface WednesdayResult {
   keyPhrases: string[];
   openerHash: string;
   images: ImageEntry[];
+  imageAudit: ImageAuditEntry[];
   retries: number;
   wordCount: number;
   closer: CloserChoice;
@@ -77,21 +78,26 @@ export async function runWednesday(): Promise<WednesdayResult> {
   // Pull from the topic plus its neighbors so the judge has range.
   const candidatePool: ImageEntry[] = [];
   const poolIds = new Set<string>(recentImageIds);
-  try {
-    const topicPicks = selectImages({ topic: topic.slug, count: 6, excludeIds: poolIds });
-    for (const p of topicPicks) {
-      poolIds.add(p.id);
-      candidatePool.push(p);
-    }
-  } catch {
-    // topic pool starved
+  const topicPicks = selectImages({
+    topic: topic.slug,
+    count: 6,
+    excludeIds: poolIds,
+    allowPartial: true,
+  });
+  for (const p of topicPicks) {
+    poolIds.add(p.id);
+    candidatePool.push(p);
   }
   if (candidatePool.length < 6) {
-    try {
-      const broad = selectImages({ topic: 'tech_and_models', count: 4, excludeIds: poolIds });
-      for (const p of broad) candidatePool.push(p);
-    } catch {
-      // tech_and_models pool also starved
+    const broad = selectImages({
+      topic: 'tech_and_models',
+      count: 4,
+      excludeIds: poolIds,
+      allowPartial: true,
+    });
+    for (const p of broad) {
+      poolIds.add(p.id);
+      candidatePool.push(p);
     }
   }
   console.log(`[wednesday] candidate pool: ${candidatePool.length} images`);
@@ -165,10 +171,12 @@ export async function runWednesday(): Promise<WednesdayResult> {
   // first three pool entries if the judge call fails or returns nothing.
   const placements = await pickImagesForContent({ draft, pool: candidatePool, count: 3 });
   let images: ImageEntry[];
+  let finalPlacements: ImagePlacement[];
   let finalDraft: string;
   if (placements.length > 0) {
-    finalDraft = embedImagesInDraft(draft, placements);
-    images = placements.map((p) => p.image);
+    finalPlacements = placements;
+    finalDraft = embedImagesInDraft(draft, finalPlacements);
+    images = finalPlacements.map((p) => p.image);
     console.log(`[wednesday] content-match picked: ${images.map((i) => i.id).join(', ')}`);
   } else {
     console.warn('[wednesday] content-match returned no picks — falling back to first-from-pool');
@@ -176,14 +184,15 @@ export async function runWednesday(): Promise<WednesdayResult> {
     // Wednesday posts have variable section headings — embed function
     // appends to nearest section if anchors don't match; supply the
     // generic fallback anchors regardless.
-    const fallbackPlacements = images.map((image, i) => ({
+    finalPlacements = images.map((image, i) => ({
       image,
       insertAfter: i === 0 ? '## ' : i === 1 ? '##' : '##',
     }));
-    finalDraft = embedImagesInDraft(draft, fallbackPlacements);
+    finalDraft = embedImagesInDraft(draft, finalPlacements);
   }
 
   const keyPhrases = await extractKeyPhrases(finalDraft).catch(() => [] as string[]);
+  const imageAudit = buildWednesdayImageAudit(finalPlacements, topic.slug);
 
   return {
     topic,
@@ -194,10 +203,21 @@ export async function runWednesday(): Promise<WednesdayResult> {
     keyPhrases,
     openerHash,
     images,
+    imageAudit,
     retries,
     wordCount: wordCount(finalDraft),
     closer,
   };
+}
+
+function buildWednesdayImageAudit(placements: ImagePlacement[], lane: string): ImageAuditEntry[] {
+  return placements.map(({ image, insertAfter }) => ({
+    id: image.id,
+    caption: image.caption,
+    topic_tags: image.topic_tags,
+    anchor: insertAfter,
+    lane,
+  }));
 }
 
 interface GenerateOpts {

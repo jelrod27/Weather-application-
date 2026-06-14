@@ -105,4 +105,127 @@ The dominant synoptic feature is a ridge-trough pattern with precipitation chanc
     expect(result.errors.join('\n')).toMatch(/solar\/space imagery/);
     expect(result.errors.join('\n')).toMatch(/drought\/agriculture imagery/);
   });
+
+  it('passes a Wednesday post with audited topic imagery', () => {
+    const filePath = writePost(`---
+slug: how-radar-finds-a-storm
+title: How Radar Finds a Storm
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: A radar explainer.
+tags:
+  - weather
+  - severe
+heroImage: https://www.spc.noaa.gov/faq/tornado/mesof.gif
+readTime: 4
+cadence: wednesday_topic
+topic_slug: severe_storms
+topic_title: Severe Storms
+images_used:
+  - mesocyclone-diagram
+image_audit:
+  - "id=mesocyclone-diagram; lane=severe_storms; anchor=## Inside the storm; tags=severe_storms; caption=Schematic of mesocyclone structure within a supercell."
+---
+
+## Inside the storm
+
+A supercell can organize rotation before a tornado warning is issued.
+
+![Schematic of mesocyclone structure within a supercell.](https://www.spc.noaa.gov/faq/tornado/mesof.gif)
+*NOAA SPC*
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.auditMarkdown).toContain('mesocyclone-diagram');
+  });
+
+  it('allows a Wednesday post with no body images and no placeholders', () => {
+    const filePath = writePost(`---
+slug: biometeorology-without-images
+title: Biometeorology Without Images
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: A no-image deep dive.
+tags:
+  - weather
+heroImage: "/api/og/blog?title=Biometeorology&type=weather"
+readTime: 4
+cadence: wednesday_topic
+topic_slug: biometeorology
+topic_title: Biometeorology
+images_used: []
+---
+
+## The body forecast
+
+Heat, humidity, wind, and sun angle can change how weather feels to a human body.
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.auditMarkdown).toContain('No catalog images embedded');
+  });
+
+  it('rejects a Wednesday post with images_used but no image audit', () => {
+    const filePath = writePost(`---
+slug: radar-without-audit
+title: Radar Without Audit
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: A radar explainer.
+tags:
+  - weather
+heroImage: https://www.spc.noaa.gov/faq/tornado/mesof.gif
+readTime: 4
+cadence: wednesday_topic
+topic_slug: severe_storms
+topic_title: Severe Storms
+images_used:
+  - mesocyclone-diagram
+---
+
+## Inside the storm
+
+A supercell can organize rotation before a tornado warning is issued.
+
+![Schematic of mesocyclone structure within a supercell.](https://www.spc.noaa.gov/faq/tornado/mesof.gif)
+*NOAA SPC*
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/missing image_audit/);
+  });
+
+  it('rejects a Wednesday placeholder image before PR creation', () => {
+    const filePath = writePost(`---
+slug: placeholder-wednesday
+title: Placeholder Wednesday
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: Placeholder test.
+tags:
+  - weather
+heroImage: "/api/og/blog?title=Placeholder&type=weather"
+readTime: 4
+cadence: wednesday_topic
+topic_slug: atmosphere_layers
+topic_title: Atmosphere Layers
+images_used: []
+---
+
+## The invisible layer
+
+The boundary layer controls haze, gusts, and afternoon mixing.
+
+![A hallucinated weather image.](placeholder)
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/non-absolute image URL/);
+  });
 });
