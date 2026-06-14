@@ -7,14 +7,14 @@
  */
 
 import { getSpotlight } from '../blog-spotlight';
-import { embedImagesInDraft, pickImagesForContent } from './content-match';
+import { embedImagesInDraft, type ImagePlacement } from './content-match';
 import { fetchPastWeekQuakes } from './data/earthquakes';
 import { fetchForecastOutlook } from './data/forecast';
 import { fetchPastWeekWarnings, MesonetEmptyError } from './data/mesonet';
 import { fetchSpaceWeatherSummary } from './data/space-weather';
 import { fetchPastWeekReports } from './data/spc-reports';
 import { pickCloser, type CloserChoice } from './closers';
-import { getActiveTopics, selectImages, type ImageEntry } from './images';
+import { IMAGES, getActiveTopics, selectImages, type ImageAuditEntry, type ImageEntry } from './images';
 import type { TopicSlug } from './topics';
 import {
   callAnthropic,
@@ -45,6 +45,8 @@ export interface SundayResult {
   keyPhrases: string[];
   openerHash: string;
   images: ImageEntry[];
+  imageAudit: ImageAuditEntry[];
+  heroImage: string;
   retries: number;
   wordCount: number;
   closer: CloserChoice;
@@ -83,52 +85,17 @@ export async function runSunday(): Promise<SundayResult> {
   ]);
   console.log(`[sunday] SPC: ${spcSummary.total} reports, max Kp: ${spaceSummary.maxKpPastWeek}, quakes: ${quakeSummary.significantCount} significant`);
 
-  // Build a CANDIDATE POOL (not final picks). We feed this pool to a
-  // content-aware judge after the draft is written so the actual prose
-  // emphasis decides which images survive — not just "this data signal
-  // was non-zero." Pool size targets ~10 so the judge has real choices.
+  // Active topics remain useful for audit/debugging, but Sunday image slots
+  // are selected deterministically by story lane below. This prevents a broad
+  // candidate pool from letting weak side topics outrank the lead story.
   const activeTopics = getActiveTopics({
     severeReportCount: spcSummary.total,
     maxKpPastWeek: spaceSummary.maxKpPastWeek,
     notableFlareCount: spaceSummary.notableFlares.length,
     significantQuakeCount: quakeSummary.significantCount,
   });
-  const candidateOrder: TopicSlug[] = [
-    'severe_storms',
-    'space_weather',
-    'tech_and_models',
-    'atmosphere_layers',
-    'tropical',
-    'marine',
-    'aviation',
-    'agricultural',
-  ];
-  const candidatePool: ImageEntry[] = [];
-  const poolIds = new Set<string>(recentImageIds);
-  for (const t of candidateOrder) {
-    if (!activeTopics.has(t)) continue;
-    try {
-      const picked = selectImages({ topic: t, count: 3, excludeIds: poolIds });
-      for (const p of picked) {
-        poolIds.add(p.id);
-        candidatePool.push(p);
-      }
-    } catch {
-      // pool starved on this topic — skip and try the next
-    }
-  }
-  // Always include a few content-neutral live data products so the judge
-  // can fall back on them when the topic-specific options are weak.
-  if (candidatePool.length < 8) {
-    try {
-      const broad = selectImages({ topic: 'tech_and_models', count: 4, excludeIds: poolIds });
-      for (const p of broad) candidatePool.push(p);
-    } catch {
-      // pool exhausted; proceed with whatever we have
-    }
-  }
   console.log(
-    `[sunday] candidate pool: ${candidatePool.length} images (active topics: ${[...activeTopics].join(',')})`,
+    `[sunday] active image topics: ${[...activeTopics].join(',')}`,
   );
 
   const spotlight = getSpotlight();
@@ -213,33 +180,18 @@ export async function runSunday(): Promise<SundayResult> {
     }
   }
 
-  // Content-aware image selection. The draft is final at this point; the
-  // judge picks images from the candidate pool based on what the prose
-  // actually emphasizes, then we splice them in. If the judge fails or
-  // returns nothing, fall back to the legacy "first N from pool" picks
-  // so the post still ships with images.
-  const placements = await pickImagesForContent({
+  const imagePlan = buildSundayImagePlan({
     draft,
-    pool: candidatePool,
-    count: 3,
+    recentImageIds,
+    spcSummary,
+    spaceSummary,
+    quakeSummary,
   });
-  let images: ImageEntry[];
-  let finalDraft: string;
-  if (placements.length > 0) {
-    finalDraft = embedImagesInDraft(draft, placements);
-    images = placements.map((p) => p.image);
-    console.log(`[sunday] content-match picked: ${images.map((i) => i.id).join(', ')}`);
-  } else {
-    console.warn('[sunday] content-match returned no picks — falling back to first-from-pool');
-    images = candidatePool.slice(0, 3);
-    const fallbackPlacements = images.map((image, i) => ({
-      image,
-      // Spread evenly: end of intro / mid-Roadmap / end. The embed
-      // function handles missing anchors by appending to nearest section.
-      insertAfter: i === 0 ? '## Rearview' : i === 1 ? '## Roadmap' : '## Looking Ahead',
-    }));
-    finalDraft = embedImagesInDraft(draft, fallbackPlacements);
-  }
+  const finalDraft = embedImagesInDraft(draft, imagePlan.placements);
+  const images = imagePlan.placements.map((p) => p.image);
+  console.log(
+    `[sunday] image lane=${imagePlan.primaryLane} picked: ${images.map((i) => i.id).join(', ')}`,
+  );
 
   const keyPhrases = await extractKeyPhrases(finalDraft).catch(() => [] as string[]);
 
@@ -250,10 +202,215 @@ export async function runSunday(): Promise<SundayResult> {
     keyPhrases,
     openerHash,
     images,
+    imageAudit: imagePlan.audit,
+    heroImage: imagePlan.heroImage,
     retries,
     wordCount: wordCount(finalDraft),
     closer,
   };
+}
+
+type SundayStoryLane = 'severe' | 'earthquake' | 'forecast' | 'space';
+
+interface SundayImagePlan {
+  primaryLane: SundayStoryLane;
+  heroImage: string;
+  placements: ImagePlacement[];
+  audit: ImageAuditEntry[];
+}
+
+interface SundayImagePlanOpts {
+  draft: string;
+  recentImageIds: Set<string>;
+  spcSummary: Awaited<ReturnType<typeof fetchPastWeekReports>>;
+  spaceSummary: Awaited<ReturnType<typeof fetchSpaceWeatherSummary>>;
+  quakeSummary: Awaited<ReturnType<typeof fetchPastWeekQuakes>>;
+}
+
+function buildSundayImagePlan(opts: SundayImagePlanOpts): SundayImagePlan {
+  const primaryLane = choosePrimaryLane(opts);
+  const heroImage = heroImageForLane(primaryLane);
+  const usedIds = new Set<string>();
+  const placements: ImagePlacement[] = [];
+  const audit: ImageAuditEntry[] = [];
+
+  const add = (lane: SundayStoryLane, image: ImageEntry | null, anchor: string) => {
+    if (!image || usedIds.has(image.id)) return;
+    usedIds.add(image.id);
+    placements.push({ image, insertAfter: anchor });
+    audit.push({
+      id: image.id,
+      caption: image.caption,
+      topic_tags: image.topic_tags,
+      anchor,
+      lane,
+    });
+  };
+
+  if (primaryLane !== 'forecast') {
+    add(
+      primaryLane,
+      pickLaneImage(primaryLane, opts.recentImageIds, usedIds),
+      anchorForLane(opts.draft, primaryLane),
+    );
+  }
+
+  add('forecast', pickLaneImage('forecast', opts.recentImageIds, usedIds), anchorForLane(opts.draft, 'forecast'));
+
+  const secondaryLane = chooseSecondaryLane(opts, primaryLane);
+  if (secondaryLane) {
+    add(
+      secondaryLane,
+      pickLaneImage(secondaryLane, opts.recentImageIds, usedIds),
+      anchorForLane(opts.draft, secondaryLane),
+    );
+  }
+
+  if (placements.length === 0) {
+    add('forecast', pickLaneImage('forecast', new Set(), usedIds), '## Roadmap');
+  }
+
+  return { primaryLane, heroImage, placements, audit };
+}
+
+function choosePrimaryLane(opts: SundayImagePlanOpts): SundayStoryLane {
+  const tornadoReports = opts.spcSummary.byCategory.tornado;
+  const severeScore = tornadoReports * 20 + Math.min(opts.spcSummary.total, 1000) / 10;
+  const largestMag = opts.quakeSummary.largest?.mag ?? 0;
+  const quakeScore = opts.quakeSummary.significantCount * 35 + (largestMag >= 6 ? 35 : 0) + (largestMag >= 7 ? 35 : 0);
+  const spaceScore = opts.spaceSummary.maxKpPastWeek >= 4
+    ? opts.spaceSummary.maxKpPastWeek * 20
+    : opts.spaceSummary.notableFlares.length * 30;
+
+  if (severeScore >= quakeScore && severeScore >= spaceScore && severeScore > 0) return 'severe';
+  if (quakeScore >= spaceScore && quakeScore > 0) return 'earthquake';
+  if (spaceScore > 0) return 'space';
+  return 'forecast';
+}
+
+function chooseSecondaryLane(opts: SundayImagePlanOpts, primaryLane: SundayStoryLane): SundayStoryLane | null {
+  if (
+    primaryLane !== 'earthquake' &&
+    opts.quakeSummary.significantCount > 0 &&
+    draftMentionsLane(opts.draft, 'earthquake')
+  ) {
+    return 'earthquake';
+  }
+  if (
+    primaryLane !== 'severe' &&
+    opts.spcSummary.byCategory.tornado > 0 &&
+    draftMentionsLane(opts.draft, 'severe')
+  ) {
+    return 'severe';
+  }
+  if (
+    primaryLane !== 'space' &&
+    (opts.spaceSummary.maxKpPastWeek >= 4 || opts.spaceSummary.notableFlares.length > 0) &&
+    draftMentionsLane(opts.draft, 'space')
+  ) {
+    return 'space';
+  }
+  return null;
+}
+
+function pickLaneImage(
+  lane: SundayStoryLane,
+  recentImageIds: Set<string>,
+  usedIds: Set<string>,
+): ImageEntry | null {
+  const config = IMAGE_LANES[lane];
+  const blocked = new Set([...recentImageIds, ...usedIds]);
+  const preferred = config.preferredIds
+    .map((id) => IMAGES.find((img) => img.id === id))
+    .find((img): img is ImageEntry => Boolean(img && !blocked.has(img.id)));
+  if (preferred) return preferred;
+
+  const [fresh] = selectImages({
+    topic: config.topic,
+    count: 1,
+    excludeIds: blocked,
+    allowPartial: true,
+    rng: () => 0,
+  });
+  if (fresh) return fresh;
+
+  const relaxed = config.preferredIds
+    .map((id) => IMAGES.find((img) => img.id === id))
+    .find((img): img is ImageEntry => Boolean(img && !usedIds.has(img.id)));
+  if (relaxed) return relaxed;
+
+  return selectImages({
+    topic: config.topic,
+    count: 1,
+    excludeIds: usedIds,
+    allowPartial: true,
+    rng: () => 0,
+  })[0] ?? null;
+}
+
+const IMAGE_LANES: Record<SundayStoryLane, { topic: TopicSlug; preferredIds: string[] }> = {
+  severe: {
+    topic: 'severe_storms',
+    preferredIds: ['mesocyclone-diagram', 'goes16-visible-conus', 'chaparral-supercell', 'wall-cloud-lightning'],
+  },
+  earthquake: {
+    topic: 'earthquakes',
+    preferredIds: ['fault-types-usgs', 'earthquake-wave-paths', 'pacific-ring-of-fire'],
+  },
+  forecast: {
+    topic: 'atmosphere_layers',
+    preferredIds: ['goes16-water-vapor', 'opc-atlantic-surface', 'cpc-precip-outlook'],
+  },
+  space: {
+    topic: 'space_weather',
+    preferredIds: ['swpc-space-weather-overview', 'swpc-ovation-aurora', 'sdo-current-hmi-magnetogram'],
+  },
+};
+
+function heroImageForLane(lane: SundayStoryLane): string {
+  const type = lane === 'space' ? 'space' : lane === 'forecast' ? 'dispatch' : 'severe';
+  return `/api/og/blog?title=This%20Week%20in%20Weather&type=${type}`;
+}
+
+function anchorForLane(draft: string, lane: SundayStoryLane): string {
+  const heading = lane === 'forecast' ? '## Roadmap' : '## Rearview';
+  const section = sectionText(draft, heading);
+  const keywords = {
+    severe: [/tornado/i, /supercell/i, /SPC/i, /severe/i, /hail/i, /wind report/i],
+    earthquake: [/earthquake/i, /seismic/i, /aftershock/i, /subduction/i, /\bM\d(?:\.\d)?\b/i],
+    forecast: [/ridge/i, /trough/i, /precip/i, /front/i, /forecast/i, /Roadmap/i],
+    space: [/Kp/i, /flare/i, /aurora/i, /geomagnetic/i, /solar/i],
+  }[lane];
+  const paragraph = section
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .find((p) => p && keywords.some((rx) => rx.test(p)));
+  return paragraph ? firstWords(paragraph, 6) : heading;
+}
+
+function sectionText(draft: string, heading: string): string {
+  const idx = draft.indexOf(heading);
+  if (idx === -1) return draft;
+  const nextHeadingIdx = draft.indexOf('\n## ', idx + heading.length);
+  return draft.slice(idx, nextHeadingIdx === -1 ? undefined : nextHeadingIdx);
+}
+
+function firstWords(text: string, count: number): string {
+  return text
+    .replace(/^#+\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, count)
+    .join(' ');
+}
+
+function draftMentionsLane(draft: string, lane: SundayStoryLane): boolean {
+  const text = draft.toLowerCase();
+  if (lane === 'earthquake') return /\bearthquake|seismic|aftershock|subduction|\bm\d(?:\.\d)?\b/i.test(text);
+  if (lane === 'severe') return /tornado|supercell|severe|hail|wind report|spc/i.test(text);
+  if (lane === 'space') return /geomagnetic|aurora|solar flare|\bkp\b|x-class|m-class/i.test(text);
+  return /forecast|ridge|trough|front|precip/i.test(text);
 }
 
 interface GenerateOpts {

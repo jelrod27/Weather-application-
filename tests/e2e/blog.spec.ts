@@ -10,8 +10,8 @@ test('weekly blog renders topic-aligned imagery without generated placeholders',
   const article = page.locator('article');
   await expect(article.getByText(/205 tornado warnings/i)).toBeVisible();
   await expect(article.getByAltText(/mesocyclone structure within a supercell/i)).toBeVisible();
+  await expect(article.getByAltText(/normal, reverse, and strike-slip fault motion/i)).toBeVisible();
   await expect(article.getByAltText(/GOES-16 mid-level water vapor/i)).toBeVisible();
-  await expect(article.getByAltText(/Atlantic surface analysis/i)).toBeVisible();
 
   await expect(article.getByText(/Current Sun in 193/i)).toHaveCount(0);
   await expect(article.getByText(/Cracked soil from prolonged drought/i)).toHaveCount(0);

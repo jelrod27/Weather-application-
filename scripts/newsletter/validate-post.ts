@@ -1,0 +1,228 @@
+/**
+ * Validates a generated newsletter post before the GitHub Action commits and
+ * opens a PR. This is intentionally stricter for Sunday posts because their
+ * data-driven narrative can drift away from the generic image catalog.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+import matter from 'gray-matter';
+
+import { allowedBlogUrl } from '@/lib/blog/allowed-hosts';
+import { IMAGES, type ImageEntry } from './images';
+
+interface MarkdownImage {
+  alt: string;
+  url: string;
+}
+
+interface ParsedAuditEntry {
+  id: string;
+  lane: string;
+  anchor: string;
+  tags: string;
+  caption: string;
+}
+
+export interface ValidationResult {
+  ok: boolean;
+  errors: string[];
+  auditMarkdown: string;
+}
+
+export function validateGeneratedPost(filePath: string): ValidationResult {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const { data, content } = matter(raw);
+  const errors: string[] = [];
+  const imagesById = new Map(IMAGES.map((img) => [img.id, img]));
+  const imagesByUrl = new Map(IMAGES.map((img) => [img.url, img]));
+  const markdownImages = extractMarkdownImages(content);
+  const imagesUsed = Array.isArray(data.images_used)
+    ? data.images_used.filter((id): id is string => typeof id === 'string')
+    : [];
+  const auditEntries = parseAuditEntries(data.image_audit);
+  const heroImage = typeof data.heroImage === 'string' ? data.heroImage : '';
+
+  if (/!\[[^\]]*\](?!\()/g.test(content)) {
+    errors.push('Found bare image markdown without a URL.');
+  }
+
+  for (const image of markdownImages) {
+    if (!/^https?:\/\//i.test(image.url)) {
+      errors.push(`Found non-absolute image URL "${image.url}" for "${image.alt}".`);
+      continue;
+    }
+    if (!allowedBlogUrl(image.url)) {
+      errors.push(`Image URL is not on the blog allow-list: ${image.url}`);
+    }
+    if (!imagesByUrl.has(image.url)) {
+      errors.push(`Image URL is not present in scripts/newsletter/images.ts: ${image.url}`);
+    }
+  }
+
+  if (heroImage && !heroImage.startsWith('/api/og/')) {
+    if (!/^https?:\/\//i.test(heroImage)) {
+      errors.push(`Hero image must be a generated OG path or absolute URL: ${heroImage}`);
+    } else {
+      if (!allowedBlogUrl(heroImage)) {
+        errors.push(`Hero image URL is not on the blog allow-list: ${heroImage}`);
+      }
+      const catalogHero = imagesByUrl.get(heroImage);
+      if (!catalogHero) {
+        errors.push(`External hero image is not present in scripts/newsletter/images.ts: ${heroImage}`);
+      } else {
+        validateNarrativeFit(content, catalogHero, errors);
+      }
+    }
+  }
+
+  for (const id of imagesUsed) {
+    const image = imagesById.get(id);
+    if (!image) {
+      errors.push(`images_used references unknown catalog id "${id}".`);
+      continue;
+    }
+    if (!markdownImages.some((img) => img.url === image.url)) {
+      errors.push(`images_used id "${id}" does not appear as a body image URL.`);
+    }
+  }
+
+  for (const image of markdownImages) {
+    const catalogImage = imagesByUrl.get(image.url);
+    if (catalogImage && !imagesUsed.includes(catalogImage.id)) {
+      errors.push(`Body image "${catalogImage.id}" is missing from images_used.`);
+    }
+  }
+
+  if (data.cadence === 'sunday_rearview') {
+    if (auditEntries.length === 0) {
+      errors.push('Sunday post is missing image_audit frontmatter.');
+    }
+    for (const entry of auditEntries) {
+      if (!imagesUsed.includes(entry.id)) {
+        errors.push(`image_audit id "${entry.id}" is not listed in images_used.`);
+      }
+      if (!entry.anchor) {
+        errors.push(`image_audit id "${entry.id}" is missing a placement anchor.`);
+      }
+    }
+  }
+
+  for (const image of markdownImages) {
+    const catalogImage = imagesByUrl.get(image.url);
+    if (catalogImage) {
+      validateNarrativeFit(content, catalogImage, errors);
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    auditMarkdown: renderAuditMarkdown(auditEntries, imagesUsed, imagesById),
+  };
+}
+
+function extractMarkdownImages(content: string): MarkdownImage[] {
+  const images: MarkdownImage[] = [];
+  const rx = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = rx.exec(content)) !== null) {
+    images.push({ alt: match[1], url: match[2].trim() });
+  }
+  return images;
+}
+
+function parseAuditEntries(value: unknown): ParsedAuditEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => {
+      const fields = new Map<string, string>();
+      for (const part of entry.split(';')) {
+        const [key, ...rest] = part.trim().split('=');
+        if (key && rest.length > 0) fields.set(key, rest.join('=').trim());
+      }
+      return {
+        id: fields.get('id') ?? '',
+        lane: fields.get('lane') ?? '',
+        anchor: fields.get('anchor') ?? '',
+        tags: fields.get('tags') ?? '',
+        caption: fields.get('caption') ?? '',
+      };
+    });
+}
+
+function validateNarrativeFit(content: string, image: ImageEntry, errors: string[]): void {
+  const body = proseOnly(content).toLowerCase();
+  const imageText = `${image.id} ${image.caption} ${image.topic_tags.join(' ')}`.toLowerCase();
+  const hasSevereOrQuakeLead = /tornado|supercell|severe convective|spc storm|earthquake|seismic|aftershock|subduction/.test(body);
+  const hasMeaningfulSpace = /geomagnetic storm|aurora|x-class|m-class|\bkp\s*[4-9]\b|kp index maxed at [4-9]/.test(body);
+
+  if (hasSevereOrQuakeLead && !hasMeaningfulSpace && /solar|sun|sdo|aurora|corona|magnetogram/.test(imageText)) {
+    errors.push(`Image "${image.id}" is solar/space imagery, but the Sunday lead is severe or seismic.`);
+  }
+
+  if (!/drought|soil moisture|agricultur|crop|dryness/.test(body) && /drought|cracked soil|agricultur/.test(imageText)) {
+    errors.push(`Image "${image.id}" is drought/agriculture imagery without a matching drought story.`);
+  }
+
+  if (!/supercomputer|forecast model|model guidance|numerical model|weather modeling/.test(body) && /supercomputer|cray-1/.test(imageText)) {
+    errors.push(`Image "${image.id}" is modeling hardware without a matching modeling story.`);
+  }
+
+  if (!/hurricane|tropical|enso|sea surface|ocean current|pacific surface/.test(body) && /hurricane|enso|ocean current/.test(imageText)) {
+    errors.push(`Image "${image.id}" is tropical/ocean imagery without a matching tropical or ocean story.`);
+  }
+}
+
+function proseOnly(content: string): string {
+  return content.replace(/!\[[^\]]*\]\([^)]+\)\s*\n?\*[^*\n]+\*/g, '');
+}
+
+function renderAuditMarkdown(
+  entries: ParsedAuditEntry[],
+  imagesUsed: string[],
+  imagesById: Map<string, ImageEntry>,
+): string {
+  const lines = ['## Image Audit'];
+  const ids = entries.length > 0 ? entries.map((entry) => entry.id) : imagesUsed;
+  for (const id of ids) {
+    const entry = entries.find((item) => item.id === id);
+    const image = imagesById.get(id);
+    const caption = entry?.caption || image?.caption || 'Unknown image';
+    const tags = entry?.tags || image?.topic_tags.join(',') || 'unknown';
+    const lane = entry?.lane || 'unknown';
+    const anchor = entry?.anchor || 'unknown';
+    lines.push(`- \`${id}\` (${lane}; anchor: "${anchor}") — ${caption} Tags: ${tags}`);
+  }
+  return lines.join('\n');
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const fileArg = args.find((arg) => !arg.startsWith('-'));
+  const auditOnly = args.includes('--audit');
+  if (!fileArg) throw new Error('Usage: tsx scripts/newsletter/validate-post.ts <post.md> [--audit]');
+
+  const result = validateGeneratedPost(path.resolve(fileArg));
+  if (auditOnly && result.auditMarkdown) {
+    console.log(result.auditMarkdown);
+  }
+  if (!result.ok) {
+    for (const error of result.errors) {
+      console.error(`[validate-post] ${error}`);
+    }
+    process.exit(1);
+  }
+  if (!auditOnly) {
+    console.log(`[validate-post] ${fileArg} passed`);
+  }
+}
+
+if (process.argv[1]?.endsWith('validate-post.ts')) {
+  main().catch((err) => {
+    console.error('[validate-post] fatal:', err);
+    process.exit(1);
+  });
+}
