@@ -82,11 +82,14 @@ describe('embedImagesInDraft', () => {
 
   it('strips model-emitted bare image markdown before embedding real images', () => {
     // The generator is told not to emit image markdown, but the model
-    // sometimes hallucinates ![alt] placeholders with no URL. These must
-    // not survive into the published post.
+    // sometimes hallucinates ![alt] placeholders with no URL or with
+    // relative destinations like (image1). These must not survive into
+    // the published post.
     const draft =
       '## Rearview\n\nA tornado outbreak hit the Midwest.\n\n---\n\n' +
       '![A composite radar mosaic with tornado-warned cells in red polygons.]\n\n' +
+      '---\n\n' +
+      '![A 500 hPa analysis with the ridge and trough.](image1)\n\n' +
       '---\n\n## Roadmap\n\nA ridge builds over the Rockies.';
     const out = embedImagesInDraft(draft, [
       { image: liveImage, insertAfter: 'tornado outbreak' },
@@ -94,6 +97,8 @@ describe('embedImagesInDraft', () => {
     // No bare image (![alt] not followed by a URL) remains.
     expect(out).not.toMatch(/!\[[^\]]*\](?!\()/);
     expect(out).not.toContain('composite radar mosaic');
+    expect(out).not.toContain('500 hPa analysis');
+    expect(out).not.toContain('(image1)');
     // The real, URL-backed image was still embedded.
     expect(out).toContain(`![${liveImage.caption}](${liveImage.url})`);
     // Orphaned separators that bracketed the placeholder are gone.
@@ -108,6 +113,16 @@ describe('stripBareImageMarkdown', () => {
       '![Real caption.](https://example.com/real.png)\n*Credit*';
     const out = stripBareImageMarkdown(input);
     expect(out).not.toContain('hallucinated figure');
+    expect(out).toContain('![Real caption.](https://example.com/real.png)');
+  });
+
+  it('removes relative image placeholders but keeps absolute image URLs', () => {
+    const input =
+      'Intro.\n\n![A hallucinated analysis panel.](image2)\n\n' +
+      '![Real caption.](https://example.com/real.png)\n*Credit*';
+    const out = stripBareImageMarkdown(input);
+    expect(out).not.toContain('hallucinated analysis panel');
+    expect(out).not.toContain('(image2)');
     expect(out).toContain('![Real caption.](https://example.com/real.png)');
   });
 

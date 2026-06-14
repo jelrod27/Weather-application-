@@ -10,7 +10,7 @@ tags:
   - severe-weather
   - space-weather
   - roadmap
-heroImage: https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg
+heroImage: "/api/og/blog?title=This%20Week%20in%20Weather&type=severe"
 readTime: 6
 cadence: sunday_rearview
 opener_hash: 9b0de184
@@ -29,9 +29,9 @@ similarity_max: 0.82
 similarity_judge: claude-sonnet-4-6
 model_used: claude-sonnet-4-6
 images_used:
-  - sdo-current-193
-  - drought-cracked-soil
-  - supercomputer-rack
+  - mesocyclone-diagram
+  - goes16-water-vapor
+  - opc-atlantic-surface
 spotlight_active: null
 generation_retries: 0
 word_count: 1013
@@ -48,46 +48,28 @@ The second round moved northeast into Pennsylvania and Ohio during the afternoon
 
 Kansas (375 reports) and Missouri (279) rounded out the top five states, reinforcing that the week's convective axis ran along and east of the central Plains — not the Gulf Coast, not the Rockies.
 
+![Schematic of mesocyclone structure within a supercell.](https://www.spc.noaa.gov/faq/tornado/mesof.gif)
+*NOAA SPC*
+
 On the geophysical side, a M7.8 struck 26 km southwest of Kablalan in the Philippines on June 7 at 7:37 a.m. local time, the largest earthquake globally in the dataset. A separate M6.5 hit 20 km west-southwest of Balangonan, also in the Philippines, and a M6.1 occurred 102 km west-northwest of Mantua, Cuba. Solar activity was negligible: peak Kp of 0, with the week's strongest flare a C9.0 on June 11.
-
-![Current Sun in 193 Å — outer corona, ~1 million K plasma.](https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg)
-*NASA SDO*
-
----
-
-![A composite radar mosaic showing the June 14 convective line tracking from the Missouri Ozarks northeast through Ohio and into western Pennsylvania, with tornado-warned cells indicated in red polygons against a green-tinted precipitation field.](image1)
-
----
 
 ## Roadmap
 
 The dominant synoptic feature shaping the next seven days is a persistent upper-level ridge anchored over the western United States, with a progressive trough pattern across the central and eastern portions of the country. The ridge is keeping Denver's average high near 88°F with essentially no precipitation — 0.01 inches projected for the week, peak probability just 41% on June 20. San Francisco sits firmly under the ridge's western flank: 0.00 inches forecast, 5% peak probability. These numbers are consistent with a strong, positionally stable subtropical ridge that is not expected to break down meaningfully before June 21.
 
-![Cracked soil from prolonged drought.](https://commons.wikimedia.org/wiki/Special:FilePath/Drought.jpg?width=1280)
-*USDA NRCS*
+![GOES-16 mid-level water vapor — visualizes upper-tropospheric moisture and jet stream flow.](https://cdn.star.nesdis.noaa.gov/GOES16/ABI/CONUS/09/1250x750.jpg)
+*NOAA NESDIS*
 
 East of the ridge axis, the story changes sharply. The trough pattern is keeping the jet stream active across the northern tier, and the Chicago area is carrying the week's most aggressive precipitation signal: 1.86 inches projected, with a 90% precipitation probability on June 17. That spike is consistent with a well-organized frontal passage rather than diurnal convection — the probability is too high and too date-specific for scattered afternoon storms. Temperatures average near 70°F for the week, which is below the seasonal norm for mid-June Chicago and confirms that the post-frontal airmass will be cool and modified rather than humid and unstable. Severe weather potential is possible ahead of the front on June 16–17, particularly if residual Gulf moisture can stream northward before the boundary arrives.
 
 The Northeast follows a similar sequence on a slightly earlier timeline. New York City carries an 80% precipitation probability on June 15 — Sunday — with an average high of 83°F for the week. A 1.03-inch weekly total is moderate but not exceptional; the June 15 peak suggests a frontal or pre-frontal band rather than a slow-moving system. Behind it, the week likely turns drier and more comfortable.
 
----
-
-![A 500 hPa geopotential height analysis for mid-week showing the western ridge centered near 115°W and a positively-tilted trough digging into the Great Lakes region, with the associated surface front draped from the Upper Midwest into the Ohio Valley.](image2)
-
----
-
 The Southeast sees its main precipitation event later in the week — Atlanta's peak probability is 70% on June 19, with 1.81 inches total projected. This timing fits a secondary disturbance riding the southern branch of the jet or an enhanced sea-breeze/frontal interaction as the main trough lifts out. The South Plains (Dallas) average high of 89°F with only 0.88 inches and a 45% peak on June 19 suggests the region sits on the drier western fringe of whatever moisture axis feeds the Southeast event.
 
 Internationally, London is forecast to average 79°F — well above the June climatological mean of roughly 66–68°F — pointing to a continued warm anomaly over northwestern Europe that has persisted for multiple weeks.
 
-![Cray-1 supercomputer — early generation of weather modeling hardware.](https://commons.wikimedia.org/wiki/Special:FilePath/Cray-1-deutsches-museum.jpg?width=1280)
-*Wikimedia Commons*
-
----
-
-![A surface analysis chart for June 19–20 showing a frontal boundary extending from the Mid-Atlantic coast into the Gulf of Mexico, with moisture flux arrows indicating a southerly flow feeding the Southeast precipitation event.](image3)
-
----
+![NOAA Ocean Prediction Center Atlantic surface analysis.](https://ocean.weather.gov/A_sfc_full_ocean.gif)
+*NOAA OPC*
 
 ## Heads Up
 

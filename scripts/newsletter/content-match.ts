@@ -115,8 +115,8 @@ ${catalog}`;
 export function embedImagesInDraft(draft: string, placements: ImagePlacement[]): string {
   // The generator prompt forbids image markdown (images are spliced in here
   // with real URLs), but the model occasionally emits bare ![alt] tags with
-  // no URL — hallucinated figure descriptions that render as literal broken
-  // text on the published page. Strip them before inserting the real images.
+  // no URL, or ![alt](image1)-style relative placeholders. Strip them before
+  // inserting the real images.
   let out = stripBareImageMarkdown(draft);
   for (const placement of placements) {
     const block = renderImageMarkdown(placement.image);
@@ -140,14 +140,17 @@ function renderImageMarkdown(img: ImageEntry): string {
 }
 
 /**
- * Removes image markdown the model emitted without a URL: `![alt]` not
- * immediately followed by `(`. Real images use `![caption](url)` and are
- * added by embedImagesInDraft, so a bare `![...]` is always a hallucinated
- * placeholder. Also collapses the horizontal-rule separators the model
- * tends to wrap such placeholders in, plus any blank-line runs left behind.
+ * Removes image markdown the model emitted without a usable external URL:
+ * `![alt]` not immediately followed by `(`, or `![alt](image1)`-style
+ * relative placeholders. Real images use absolute URLs and are added by
+ * embedImagesInDraft. Also collapses the horizontal-rule separators the
+ * model tends to wrap such placeholders in, plus any blank-line runs left
+ * behind.
  */
 export function stripBareImageMarkdown(draft: string): string {
-  let out = draft.replace(/!\[[^\]]*\](?!\()/g, '');
+  let out = draft
+    .replace(/!\[[^\]]*\]\(\s*(?!https?:\/\/)[^)]+\)/gi, '')
+    .replace(/!\[[^\]]*\](?!\()/g, '');
   // Drop horizontal-rule separators that, after the placeholder removal, now
   // bracket only whitespace — i.e. two or more "---" lines in a row.
   out = out.replace(/(?:^[ \t]*---[ \t]*$\s*){2,}/gm, '');
