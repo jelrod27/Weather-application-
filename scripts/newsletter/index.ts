@@ -90,6 +90,8 @@ async function main() {
         similarityJudge: DEFAULT_MODEL,
         modelUsed: DEFAULT_MODEL,
         images: result.images,
+        imageAudit: result.imageAudit,
+        heroImage: result.heroImage,
         spotlight: result.spotlight,
         retries: result.retries,
         wordCount: result.wordCount,

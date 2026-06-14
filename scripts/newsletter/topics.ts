@@ -3,6 +3,7 @@ export const TOPIC_SLUGS = [
   'ocean_currents',
   'cryosphere',
   'severe_storms',
+  'earthquakes',
   'tropical',
   'atmosphere_layers',
   'space_weather',
@@ -91,6 +92,22 @@ export const TOPICS: Record<TopicSlug, Topic> = {
       'SPC',
       'dryline',
       'EF scale',
+    ],
+  },
+  earthquakes: {
+    slug: 'earthquakes',
+    title: 'Earthquakes & Seismic Hazards',
+    description:
+      'Earthquakes release stress along faults and plate boundaries, producing seismic waves that reveal both the rupture and the structure of the Earth beneath it. Magnitude, depth, focal mechanism, and tectonic setting determine whether an event is a local jolt, a damaging regional earthquake, or a tsunami-capable subduction-zone rupture. Weekly seismic recaps should distinguish felt domestic events from globally significant quakes, and should explain aftershock and tsunami context without implying weather causality.',
+    keywords: [
+      'earthquake',
+      'seismic waves',
+      'fault',
+      'subduction zone',
+      'aftershock',
+      'tsunami',
+      'magnitude',
+      'USGS',
     ],
   },
   tropical: {

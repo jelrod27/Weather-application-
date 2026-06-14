@@ -41,10 +41,17 @@ export async function fetchSpaceWeatherSummary(): Promise<SpaceWeatherSummary> {
     recentKp: kpRecent.slice(-16), // last 2 days for the recap
     maxKpPastWeek: maxKp,
     recentXrayClass: flareClass,
-    notableFlares: peakXray && flareClass && flareClass[0] !== 'A' && flareClass[0] !== 'B'
+    notableFlares: peakXray && flareClass && isOperationallyNotableFlare(flareClass)
       ? [{ time: peakXray.time, class: flareClass }]
       : [],
   };
+}
+
+function isOperationallyNotableFlare(flareClass: string): boolean {
+  // C-class peaks are worth a text mention as the week's strongest flare,
+  // but they should not activate solar imagery when geomagnetic activity is
+  // otherwise quiet. Reserve the image lane for M/X flares or Kp-driven storms.
+  return flareClass.startsWith('M') || flareClass.startsWith('X');
 }
 
 function parseKp(raw: KpRow[] | unknown): Array<{ time: string; kp: number }> {

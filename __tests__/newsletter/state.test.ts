@@ -144,7 +144,7 @@ describe('getTopicWeeksSinceLastUsed', () => {
     const map = getTopicWeeksSinceLastUsed([], 12, NOW);
     expect(map.get('volcanoes')).toBe(99);
     expect(map.get('paleoclimate')).toBe(99);
-    expect(map.size).toBe(15);
+    expect(map.size).toBe(16);
   });
 
   it('records weeks-ago for topics seen in the window', () => {

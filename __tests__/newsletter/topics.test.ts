@@ -1,9 +1,9 @@
 import { TOPICS, TOPIC_SLUGS, selectTopic, type TopicSlug } from '../../scripts/newsletter/topics';
 
 describe('TOPICS catalog', () => {
-  it('contains exactly 15 entries', () => {
-    expect(TOPIC_SLUGS).toHaveLength(15);
-    expect(Object.keys(TOPICS)).toHaveLength(15);
+  it('contains exactly 16 entries', () => {
+    expect(TOPIC_SLUGS).toHaveLength(16);
+    expect(Object.keys(TOPICS)).toHaveLength(16);
   });
 
   it('has unique slugs', () => {
@@ -37,7 +37,7 @@ describe('selectTopic', () => {
   it('selects from the full pool when no history exists', () => {
     const result = selectTopic(new Map(), () => 0);
     expect(TOPIC_SLUGS).toContain(result.topic.slug);
-    expect(result.candidates).toHaveLength(15);
+    expect(result.candidates).toHaveLength(16);
     expect(result.rationale).toMatch(/never used/i);
   });
 
@@ -78,7 +78,7 @@ describe('selectTopic', () => {
   it('returns a rationale string and candidate scores', () => {
     const result = selectTopic(new Map([['volcanoes', 4]]), () => 0);
     expect(result.rationale).toMatch(/Selected/);
-    expect(result.candidates.length).toBe(15);
+    expect(result.candidates.length).toBe(16);
     expect(result.candidates[0].score).toBeGreaterThanOrEqual(result.candidates[1].score);
   });
 });

@@ -122,6 +122,20 @@ describe('selectImages', () => {
     ).toThrow(/catalog could not satisfy/);
   });
 
+  it('can return partial relevant picks when requested', () => {
+    const severeIds = IMAGES.filter((i) => i.topic_tags.includes('severe_storms')).map((i) => i.id);
+    const keep = severeIds[0];
+    const excludeIds = new Set(IMAGES.map((i) => i.id).filter((id) => id !== keep));
+    const picked = selectImages({
+      topic: 'severe_storms',
+      count: 3,
+      excludeIds,
+      allowPartial: true,
+      rng: () => 0,
+    });
+    expect(picked.map((p) => p.id)).toEqual([keep]);
+  });
+
   it('excludes tropical from active topics outside hurricane season', () => {
     // April — not hurricane season — and no severe/space data signals.
     const active = getActiveTopics({
@@ -132,9 +146,11 @@ describe('selectImages', () => {
       now: new Date('2026-04-26T12:00:00Z'),
     });
     expect(active.has('tropical')).toBe(false);
-    // Atmosphere/aviation/marine etc. should always be allowed.
+    // Only forecast-analysis topics should always be allowed.
     expect(active.has('atmosphere_layers')).toBe(true);
-    expect(active.has('marine')).toBe(true);
+    expect(active.has('tech_and_models')).toBe(true);
+    expect(active.has('marine')).toBe(false);
+    expect(active.has('agricultural')).toBe(false);
   });
 
   it('includes tropical during hurricane season', () => {
@@ -168,7 +184,27 @@ describe('selectImages', () => {
     expect(active.has('severe_storms')).toBe(true);
   });
 
-  it('gates space_weather on Kp >= 4 OR notable flares', () => {
+  it('gates earthquakes behind significant quake counts', () => {
+    const quiet = getActiveTopics({
+      severeReportCount: 0,
+      maxKpPastWeek: 0,
+      notableFlareCount: 0,
+      significantQuakeCount: 0,
+      now: new Date('2026-04-26T12:00:00Z'),
+    });
+    expect(quiet.has('earthquakes')).toBe(false);
+
+    const active = getActiveTopics({
+      severeReportCount: 0,
+      maxKpPastWeek: 0,
+      notableFlareCount: 0,
+      significantQuakeCount: 1,
+      now: new Date('2026-04-26T12:00:00Z'),
+    });
+    expect(active.has('earthquakes')).toBe(true);
+  });
+
+  it('gates space_weather on Kp >= 4 OR operationally notable flares', () => {
     const quiet = getActiveTopics({
       severeReportCount: 0,
       maxKpPastWeek: 2,
@@ -178,14 +214,23 @@ describe('selectImages', () => {
     });
     expect(quiet.has('space_weather')).toBe(false);
 
-    const flareOnly = getActiveTopics({
+    const cClassOnly = getActiveTopics({
+      severeReportCount: 0,
+      maxKpPastWeek: 0,
+      notableFlareCount: 0,
+      significantQuakeCount: 0,
+      now: new Date('2026-04-26T12:00:00Z'),
+    });
+    expect(cClassOnly.has('space_weather')).toBe(false);
+
+    const notableFlare = getActiveTopics({
       severeReportCount: 0,
       maxKpPastWeek: 0,
       notableFlareCount: 1,
       significantQuakeCount: 0,
       now: new Date('2026-04-26T12:00:00Z'),
     });
-    expect(flareOnly.has('space_weather')).toBe(true);
+    expect(notableFlare.has('space_weather')).toBe(true);
 
     const stormy = getActiveTopics({
       severeReportCount: 0,

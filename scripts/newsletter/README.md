@@ -12,7 +12,7 @@ See [`planning/prds/PRD-newsletter-redesign.md`](../../planning/prds/PRD-newslet
 ```
 scripts/newsletter/
   index.ts                 # CLI entrypoint
-  topics.ts                # 15-topic catalog + weighted-random selection
+  topics.ts                # 16-topic catalog + weighted-random selection
   voice.ts                 # voice spec + forbidden-phrase regex sweep
   state.ts                 # frontmatter-based history queries (12-week lookback)
   images.ts                # 51-entry public-domain image catalog + selectImages
@@ -96,8 +96,16 @@ Use `grep -l 'cadence: wednesday_topic' content/blog/*.md` to find all Wednesday
 
 ## Curating the topic catalog
 
-`topics.ts` holds 15 entries with extended descriptions used as system prompt context. To add a topic, append a slug to `TOPIC_SLUGS`, add the entry to `TOPICS`, and update `TOPIC_NEIGHBORS` in `images.ts` so the image pool can fall back gracefully.
+`topics.ts` holds 16 entries with extended descriptions used as system prompt context. To add a topic, append a slug to `TOPIC_SLUGS`, add the entry to `TOPICS`, and update `TOPIC_NEIGHBORS` in `images.ts` so the image pool can fall back gracefully.
 
 ## Curating the image catalog
 
-`images.ts` holds 51 verified public-domain entries. To add: append an `ImageEntry`, run `npm run validate:images`, fix any 404s. Sources used: NASA SDO, NOAA NESDIS GOES-16, NOAA SWPC, NOAA OPC, NOAA CPC, NOAA SPC, USGS, USDA Drought Monitor, Wikimedia Commons via `Special:FilePath`.
+`images.ts` holds the verified public-domain/attribution-compatible catalog. To add: append an `ImageEntry`, run `npm run validate:images`, fix any 404s. Sources used: NASA SDO, NOAA NESDIS GOES-16, NOAA SWPC, NOAA OPC, NOAA CPC, NOAA SPC, USGS, USDA Drought Monitor, Wikimedia Commons via `Special:FilePath`.
+
+Sunday posts run an additional hard gate before the workflow opens a PR:
+
+```bash
+npx tsx scripts/newsletter/validate-post.ts content/blog/<post>.md --audit
+```
+
+The validator rejects placeholder images, disallowed image hosts, `images_used` mismatches, missing Sunday `image_audit` metadata, and obvious narrative/image mismatches such as solar or drought imagery in a tornado/earthquake-led post.

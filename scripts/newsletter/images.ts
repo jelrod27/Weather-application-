@@ -28,6 +28,14 @@ export interface ImageEntry {
   archival_year?: number;
 }
 
+export interface ImageAuditEntry {
+  id: string;
+  caption: string;
+  topic_tags: TopicSlug[];
+  anchor: string;
+  lane: string;
+}
+
 /**
  * Curated catalog of public-domain weather and earth-science imagery.
  * Sourced from NOAA, NASA, USGS, and Wikimedia Commons (PD/CC0 only).
@@ -210,6 +218,34 @@ export const IMAGES: ImageEntry[] = [
     credit: 'NOAA SPC',
     topic_tags: ['severe_storms'],
     license: 'PD-USGov',
+  },
+
+  // ============================================================
+  // earthquakes
+  // ============================================================
+  {
+    id: 'fault-types-usgs',
+    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Fault_types.svg?width=1280',
+    caption: 'USGS diagram of normal, reverse, and strike-slip fault motion.',
+    credit: 'USGS',
+    topic_tags: ['earthquakes'],
+    license: 'PD-USGov',
+  },
+  {
+    id: 'earthquake-wave-paths',
+    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Earthquake_wave_paths.svg?width=1280',
+    caption: 'Seismic wave paths through Earth after an earthquake.',
+    credit: 'USGS / Wikimedia Commons',
+    topic_tags: ['earthquakes', 'atmosphere_layers'],
+    license: 'PD',
+  },
+  {
+    id: 'pacific-ring-of-fire',
+    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pacific_Ring_of_Fire.svg?width=1280',
+    caption: 'Pacific Ring of Fire — major volcanic and earthquake belt around the Pacific basin.',
+    credit: 'Wikimedia Commons',
+    topic_tags: ['earthquakes', 'volcanoes'],
+    license: 'PD',
   },
 
   // ============================================================
@@ -556,6 +592,7 @@ const TOPIC_NEIGHBORS: Record<TopicSlug, TopicSlug[]> = {
   ocean_currents: ['cryosphere', 'tropical', 'paleoclimate'],
   cryosphere: ['ocean_currents', 'paleoclimate'],
   severe_storms: ['tropical', 'aviation'],
+  earthquakes: ['volcanoes', 'historical_events'],
   tropical: ['severe_storms', 'ocean_currents', 'marine'],
   atmosphere_layers: ['aviation', 'space_weather', 'tech_and_models'],
   space_weather: ['atmosphere_layers'],
@@ -573,6 +610,7 @@ export interface SelectImagesOptions {
   topic: TopicSlug;
   count: number;
   excludeIds: Set<string>;
+  allowPartial?: boolean;
   rng?: () => number;
 }
 
@@ -581,12 +619,12 @@ export interface SelectImagesOptions {
  * `excludeIds` (the 8-week reuse window) and falls back to topic-adjacent
  * tags if the primary topic pool is too thin after exclusions.
  *
- * Throws if the catalog cannot satisfy the request even after fallback.
- * Callers should treat this as a "catalog needs maintenance" error per
- * planning/prds/PRD-newsletter-redesign.md §7.
+ * Throws if the catalog cannot satisfy the request even after fallback unless
+ * `allowPartial` is set. Sunday uses partial results so a starved but relevant
+ * lane still contributes one good image instead of being skipped entirely.
  */
 export function selectImages(opts: SelectImagesOptions): ImageEntry[] {
-  const { topic, count, excludeIds, rng = Math.random } = opts;
+  const { topic, count, excludeIds, allowPartial = false, rng = Math.random } = opts;
   const picked: ImageEntry[] = [];
   const usedIds = new Set<string>();
 
@@ -606,7 +644,7 @@ export function selectImages(opts: SelectImagesOptions): ImageEntry[] {
     pickFrom(fallback, count, picked, usedIds, rng);
   }
 
-  if (picked.length < count) {
+  if (picked.length < count && !allowPartial) {
     throw new Error(
       `image catalog could not satisfy ${count} entries for topic "${topic}" (got ${picked.length}). The 8-week reuse window may have starved the pool — expand the catalog or shorten the window.`,
     );
@@ -635,9 +673,9 @@ function pickFrom(
  * data. Used by Sunday image selection so we don't drop Hurricane Katrina
  * into a post about late-April Plains tornadoes (it has happened).
  *
- * Topics that are always relevant — atmosphere structure, tech_and_models
- * (satellite imagery), aviation, marine, climate background — stay on. The
- * gates only filter event-driven topics: severe_storms, tropical, space_weather.
+ * Only broad forecast-analysis topics stay on by default. Event-driven topics
+ * must have a real signal so Sunday posts do not pull solar, drought, or
+ * tropical imagery for a tornado/earthquake lead.
  */
 export interface ActivityIndicators {
   severeReportCount: number;
@@ -658,24 +696,15 @@ export function getActiveTopics(indicators: ActivityIndicators): Set<TopicSlug> 
   const inHurricaneSeason = month >= 6 && month <= 11;
 
   const active = new Set<TopicSlug>();
-  // Always-on (content-neutral atmospheric and structural imagery)
+  // Always-on forecast-analysis imagery.
   for (const slug of [
     'atmosphere_layers',
-    'aviation',
-    'marine',
     'tech_and_models',
-    'cryosphere',
-    'paleoclimate',
-    'urban_climate',
-    'biometeorology',
-    'agricultural',
-    'historical_events',
-    'volcanoes',
-    'ocean_currents',
   ] as TopicSlug[]) {
     active.add(slug);
   }
   if (indicators.severeReportCount > 0) active.add('severe_storms');
+  if (indicators.significantQuakeCount > 0) active.add('earthquakes');
   if (indicators.maxKpPastWeek >= 4 || indicators.notableFlareCount > 0) {
     active.add('space_weather');
   }

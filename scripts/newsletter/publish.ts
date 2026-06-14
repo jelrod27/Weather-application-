@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { blogHeroImage } from '@/lib/blog/hero';
-import type { ImageEntry } from './images';
+import type { ImageAuditEntry, ImageEntry } from './images';
 import type { TopicSlug } from './topics';
 
 const BLOG_DIR = path.join(process.cwd(), 'content/blog');
@@ -24,6 +24,8 @@ export interface PublishWednesdayInput {
   similarityJudge: string;
   modelUsed: string;
   images: ImageEntry[];
+  imageAudit?: ImageAuditEntry[];
+  heroImage?: string;
   spotlight: string | null;
   retries: number;
   wordCount: number;
@@ -39,6 +41,8 @@ export interface PublishSundayInput {
   similarityJudge: string;
   modelUsed: string;
   images: ImageEntry[];
+  imageAudit?: ImageAuditEntry[];
+  heroImage?: string;
   spotlight: string | null;
   retries: number;
   wordCount: number;
@@ -66,7 +70,7 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
   // the 2026-06-12 biometeorology post shipped with heroImage "" and the
   // blog rendered without any picture), fall back to a generated OG banner
   // so a post never publishes imageless.
-  const heroImage =
+  const heroImage = input.heroImage ??
     input.images.find((i) => i.kind === 'live')?.url ??
     input.images.find((i) => (i.kind ?? 'reference') === 'reference')?.url ??
     input.images[0]?.url ??
@@ -88,6 +92,7 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
     similarity_judge: input.similarityJudge,
     model_used: input.modelUsed,
     images_used: input.images.map((i) => i.id),
+    image_audit: input.imageAudit?.map(formatImageAuditEntry),
     spotlight_active: input.spotlight,
     generation_retries: input.retries,
     word_count: input.wordCount,
@@ -114,6 +119,16 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
   fs.writeFileSync(filePath, fileBody, 'utf8');
   console.log(`[publish] wrote ${filePath} (${fileBody.length} bytes)`);
   return { filePath, slug, title };
+}
+
+function formatImageAuditEntry(entry: ImageAuditEntry): string {
+  return [
+    `id=${entry.id}`,
+    `lane=${entry.lane}`,
+    `anchor=${entry.anchor}`,
+    `tags=${entry.topic_tags.join(',')}`,
+    `caption=${entry.caption}`,
+  ].join('; ');
 }
 
 function buildHeader(input: PublishInput, datePrefix: string): { title: string; summary: string; slug: string } {
