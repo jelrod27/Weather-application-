@@ -153,6 +153,24 @@ describe('parseAtomFeed', () => {
     const [it] = parseAtomFeed(xml, source({ category: 'severe', format: 'atom' }));
     expect(it.url).toBe('https://www.example.com/human');
   });
+
+  it('maps NWS CAP alert links to readable forecast product pages', () => {
+    const xml = `<feed xmlns="http://www.w3.org/2005/Atom" xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2"><entry>
+      <title>Flash Flood Warning issued by NWS Austin/San Antonio TX</title>
+      <link rel="alternate" href="https://api.weather.gov/alerts/urn:oid:test-alert.cap" />
+      <summary>Flash flooding is ongoing.</summary>
+      <updated>2026-06-15T13:42:00Z</updated>
+      <cap:parameter>
+        <valueName>AWIPSidentifier</valueName>
+        <value>FFWEWX</value>
+      </cap:parameter>
+    </entry></feed>`;
+
+    const [it] = parseAtomFeed(xml, source({ id: 'nws-alerts', category: 'severe', format: 'atom' }));
+    expect(it.url).toBe(
+      'https://forecast.weather.gov/product.php?site=NWS&issuedby=EWX&product=FFW&format=CI&version=1&glossary=0'
+    );
+  });
 });
 
 describe('parseJsonFeed (USGS elevated volcanoes)', () => {
