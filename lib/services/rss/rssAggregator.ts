@@ -247,6 +247,38 @@ function atomLinkHref(node: XmlNode): string | undefined {
   return nodeText(chosen['@_href']) ?? nodeText(chosen.href);
 }
 
+/** Read a named CAP parameter from an NWS alert Atom entry. */
+function capParameterValue(node: XmlNode, name: string): string | undefined {
+  const parameter = asArray(node['cap:parameter']).find((parameter) => {
+    return nodeText(parameter.valueName) === name;
+  });
+  return parameter ? nodeText(parameter.value) : undefined;
+}
+
+/**
+ * The NWS active-alerts Atom feed marks CAP XML documents as rel="alternate".
+ * Those are machine-readable alert payloads and can download in browsers. When
+ * possible, route readers to the public forecast.weather.gov text product page.
+ */
+function nwsAlertReadableUrl(entry: XmlNode, fallbackUrl: string | undefined): string | undefined {
+  if (!fallbackUrl?.endsWith('.cap')) return fallbackUrl;
+
+  const awipsIdentifier = capParameterValue(entry, 'AWIPSidentifier');
+  const match = awipsIdentifier?.trim().match(/^([A-Z0-9]{3})([A-Z0-9]{3,4})$/i);
+  if (!match) return 'https://www.weather.gov/alerts';
+
+  const [, product, issuedBy] = match;
+  const params = new URLSearchParams({
+    site: 'NWS',
+    issuedby: issuedBy.toUpperCase(),
+    product: product.toUpperCase(),
+    format: 'CI',
+    version: '1',
+    glossary: '0',
+  });
+  return `https://forecast.weather.gov/product.php?${params.toString()}`;
+}
+
 // Hosts that serve players/embeds, not images. A feed's media:content can
 // point at a YouTube embed (medium="video"); shoved into <img> the browser
 // blocks it (ERR_BLOCKED_BY_ORB) and the card flashes a broken image.
@@ -419,7 +451,8 @@ function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
     const entry = entries[i];
     try {
       const title = firstText(entry, ['title']);
-      const link = atomLinkHref(entry) ?? firstText(entry, ['id']);
+      const rawLink = atomLinkHref(entry) ?? firstText(entry, ['id']);
+      const link = source.id === 'nws-alerts' ? nwsAlertReadableUrl(entry, rawLink) : rawLink;
       const summary = firstText(entry, ['summary', 'content']);
 
       // Author lives in a nested <author><name>…</name></author>.
