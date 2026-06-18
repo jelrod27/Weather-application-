@@ -39,4 +39,12 @@ describe('radar timestamps', () => {
     expect(frames).toHaveLength(3)
     expect(frames.map((frame) => frame.offsetMinutes)).toEqual([-20, -10, 0])
   })
+
+  it('clamps excessive pastSteps to the max history window', () => {
+    const frames = buildRadarFrames({ now, stepMinutes: 5, pastSteps: 999_999 })
+
+    expect(frames).toHaveLength(145)
+    expect(frames[0].offsetMinutes).toBe(-720)
+    expect(frames.at(-1)?.isLive).toBe(true)
+  })
 })

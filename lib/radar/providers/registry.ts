@@ -159,17 +159,18 @@ export function buildRadarMetadata(
   longitude: number,
   now = Date.now()
 ): RadarMetadata {
+  const safeNow = Number.isFinite(now) ? now : Date.now()
   const selection = selectRadarProvider(latitude, longitude)
   const provider = selection.selectedProvider
   const frames = buildRadarFrames({
-    now,
+    now: safeNow,
     stepMinutes: provider.frameStepMinutes,
     pastMinutes: provider.pastMinutes,
   })
 
   return {
     location: { lat: latitude, lon: longitude },
-    generatedAt: new Date(now).toISOString(),
+    generatedAt: new Date(safeNow).toISOString(),
     selectedProvider: provider,
     fallbackProvider: selection.fallbackProvider,
     frames,

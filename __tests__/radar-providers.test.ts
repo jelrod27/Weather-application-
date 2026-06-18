@@ -41,4 +41,12 @@ describe('radar providers', () => {
     expect(canada.frames).toHaveLength(31)
     expect(canada.legend[0].value).toContain('dBZ')
   })
+
+  it('defaults non-finite metadata timestamps to the current time', () => {
+    const metadata = buildRadarMetadata(40.7128, -74.006, Number.NaN)
+
+    expect(metadata.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(metadata.frames.length).toBeGreaterThan(0)
+    expect(Number.isFinite(Date.parse(metadata.generatedAt))).toBe(true)
+  })
 })

@@ -38,13 +38,15 @@ function quantizeTime(ms: number, stepMinutes: number): number {
 
 export function buildRadarFrames(options: BuildRadarFramesOptions = {}): RadarFrame[] {
   const stepMinutes = normalizeRadarStepMinutes(options.stepMinutes)
+  const maxPastSteps = Math.floor(MAX_PAST_MINUTES / stepMinutes)
   const now = typeof options.now === 'number' && Number.isFinite(options.now)
     ? options.now
     : Date.now()
   const base = quantizeTime(now, stepMinutes)
+  const pastStepsFromMinutes = Math.floor(normalizeRadarPastMinutes(options.pastMinutes) / stepMinutes)
   const pastSteps = typeof options.pastSteps === 'number' && Number.isFinite(options.pastSteps)
-    ? Math.max(0, Math.floor(options.pastSteps))
-    : Math.floor(normalizeRadarPastMinutes(options.pastMinutes) / stepMinutes)
+    ? Math.min(maxPastSteps, Math.max(0, Math.floor(options.pastSteps)))
+    : pastStepsFromMinutes
 
   const frames: RadarFrame[] = []
   for (let i = pastSteps; i >= 0; i -= 1) {
