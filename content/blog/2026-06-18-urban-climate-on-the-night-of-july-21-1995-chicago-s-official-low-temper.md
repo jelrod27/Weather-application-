@@ -1,6 +1,6 @@
 ---
 slug: urban-climate-on-the-night-of-july-21-1995-chicago-s-official-low-temper
-title: "Urban Climate: On the night of July 21, 1995, Chicago's official low temperature at O'Hare International Airpo"
+title: "Urban Climate: Chicago's 1995 Heat Wave and the Urban Heat Island Effect"
 date: 2026-06-18T03:20:44.455Z
 author: 16bitbot
 summary: "On the night of July 21, 1995, Chicago's official low temperature at O'Hare International Airport dropped to 73°F."
@@ -8,8 +8,6 @@ tags:
   - urban-climate
   - weather
   - science
-  - marine
-  - biometeorology
 heroImage: "https://commons.wikimedia.org/wiki/Special:FilePath/Urban_heat_island_%28Celsius%29.png?width=1280"
 readTime: 5
 cadence: wednesday_topic
@@ -30,12 +28,8 @@ similarity_judge: claude-sonnet-4-6
 model_used: claude-sonnet-4-6
 images_used:
   - urban-heat-island-thermal
-  - wave-breaking
-  - pollen-grains-sem
 image_audit:
-  - "id=urban-heat-island-thermal; lane=urban_climate; anchor=## ; tags=urban_climate; caption=Urban heat island temperature profile across rural-suburban-urban gradient."
-  - "id=wave-breaking; lane=urban_climate; anchor=##; tags=marine; caption=Large breaking wave at Santa Cruz, California."
-  - "id=pollen-grains-sem; lane=urban_climate; anchor=##; tags=biometeorology; caption=Diverse pollen grains imaged by scanning electron microscopy."
+  - "id=urban-heat-island-thermal; lane=urban_climate; anchor=Why Cities Run Hot; tags=urban_climate; caption=Urban heat island temperature profile across rural-suburban-urban gradient."
 spotlight_active: null
 generation_retries: 0
 word_count: 981
@@ -50,12 +44,6 @@ On the night of July 21, 1995, Chicago's official low temperature at O'Hare Inte
 No major developments moved this topic in the past week, which makes it a good moment to look at the underlying mechanics rather than the news cycle.
 
 ## Why Cities Run Hot
-
-![Diverse pollen grains imaged by scanning electron microscopy.](https://commons.wikimedia.org/wiki/Special:FilePath/Misc_pollen.jpg?width=1280)
-*Dartmouth Electron Microscope Facility / PD*
-
-![Large breaking wave at Santa Cruz, California.](https://commons.wikimedia.org/wiki/Special:FilePath/Big_wave_breaking_in_Santa_Cruz.jpg?width=1280)
-*NOAA / Wikimedia*
 
 ![Urban heat island temperature profile across rural-suburban-urban gradient.](https://commons.wikimedia.org/wiki/Special:FilePath/Urban_heat_island_%28Celsius%29.png?width=1280)
 *EPA / Wikimedia*
