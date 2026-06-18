@@ -180,6 +180,14 @@ function validateNarrativeFit(content: string, image: ImageEntry, errors: string
   if (!/hurricane|tropical|enso|sea surface|ocean current|pacific surface/.test(body) && /hurricane|enso|ocean current/.test(imageText)) {
     errors.push(`Image "${image.id}" is tropical/ocean imagery without a matching tropical or ocean story.`);
   }
+
+  if (!/\bpollen\b|allerg|aeroallergen|\bragweed\b|\bspore\b|\bplant/.test(body) && /\bpollen\b|aeroallergen|\bragweed\b|\bspore\b/.test(imageText)) {
+    errors.push(`Image "${image.id}" is pollen/biometeorology imagery without a matching pollen or plant-health story.`);
+  }
+
+  if (!/\bmarine\b|\bcoast(?:al)?\b|\bocean\b|\bsurf(?:ing)?\b|\bshore\b|\brip current\b|\bsea state\b|\bbreaking wave\b/.test(body) && /\bbreaking wave\b|\bsurf(?:ing)?\b/.test(imageText)) {
+    errors.push(`Image "${image.id}" is marine imagery without a matching marine or coastal story.`);
+  }
 }
 
 function proseOnly(content: string): string {

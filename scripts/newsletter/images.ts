@@ -598,7 +598,11 @@ const TOPIC_NEIGHBORS: Record<TopicSlug, TopicSlug[]> = {
   space_weather: ['atmosphere_layers'],
   historical_events: ['severe_storms', 'tropical', 'volcanoes', 'agricultural'],
   biometeorology: ['agricultural', 'urban_climate'],
-  urban_climate: ['biometeorology', 'marine'],
+  // Urban climate imagery should stay built-environment focused. Pulling
+  // biometeorology/marine neighbors produced pollen and surf photos in a
+  // Chicago heat-island post, which is technically weather-adjacent but
+  // visually misleading.
+  urban_climate: [],
   aviation: ['severe_storms', 'atmosphere_layers'],
   marine: ['tropical', 'urban_climate'],
   agricultural: ['historical_events', 'biometeorology'],

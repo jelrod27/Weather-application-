@@ -200,6 +200,78 @@ A supercell can organize rotation before a tornado warning is issued.
     expect(result.errors.join('\n')).toMatch(/missing image_audit/);
   });
 
+  it('rejects pollen and marine filler images in an urban climate post', () => {
+    const filePath = writePost(`---
+slug: urban-climate-mismatch
+title: Urban Climate Mismatch
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: A heat-island explainer.
+tags:
+  - urban-climate
+heroImage: https://commons.wikimedia.org/wiki/Special:FilePath/Urban_heat_island_%28Celsius%29.png?width=1280
+readTime: 4
+cadence: wednesday_topic
+topic_slug: urban_climate
+topic_title: Urban Climate
+images_used:
+  - pollen-grains-sem
+  - wave-breaking
+image_audit:
+  - "id=pollen-grains-sem; lane=urban_climate; anchor=## Why Cities Run Hot; tags=biometeorology; caption=Diverse pollen grains imaged by scanning electron microscopy."
+  - "id=wave-breaking; lane=urban_climate; anchor=## Why Cities Run Hot; tags=marine; caption=Large breaking wave at Santa Cruz, California."
+---
+
+## Why Cities Run Hot
+
+Cities replace evapotranspiring surfaces with asphalt, concrete, and roofs. The urban heat island peaks overnight during heat waves.
+
+![Diverse pollen grains imaged by scanning electron microscopy.](https://commons.wikimedia.org/wiki/Special:FilePath/Misc_pollen.jpg?width=1280)
+*Dartmouth Electron Microscope Facility / PD*
+
+![Large breaking wave at Santa Cruz, California.](https://commons.wikimedia.org/wiki/Special:FilePath/Big_wave_breaking_in_Santa_Cruz.jpg?width=1280)
+*NOAA / Wikimedia*
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/pollen\/biometeorology imagery/);
+    expect(result.errors.join('\n')).toMatch(/marine imagery/);
+  });
+
+  it('allows temperature outlook imagery in an urban climate post', () => {
+    const filePath = writePost(`---
+slug: urban-climate-temperature-outlook
+title: Urban Climate Temperature Outlook
+date: 2026-06-17T12:00:00.000Z
+author: 16bitbot
+summary: A heat-island explainer.
+tags:
+  - urban-climate
+heroImage: https://commons.wikimedia.org/wiki/Special:FilePath/Urban_heat_island_%28Celsius%29.png?width=1280
+readTime: 4
+cadence: wednesday_topic
+topic_slug: urban_climate
+topic_title: Urban Climate
+images_used:
+  - cpc-temp-outlook
+image_audit:
+  - "id=cpc-temp-outlook; lane=urban_climate; anchor=## Why Cities Run Hot; tags=biometeorology,urban_climate,tech_and_models; caption=NOAA CPC monthly temperature outlook — probabilistic anomalies."
+---
+
+## Why Cities Run Hot
+
+Cities replace evapotranspiring surfaces with asphalt, concrete, and roofs. The urban heat island peaks overnight during heat waves.
+
+![NOAA CPC monthly temperature outlook — probabilistic anomalies.](https://www.cpc.ncep.noaa.gov/products/predictions/long_range/lead01/off01_temp.gif)
+*NOAA CPC*
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
   it('rejects a Wednesday placeholder image before PR creation', () => {
     const filePath = writePost(`---
 slug: placeholder-wednesday
