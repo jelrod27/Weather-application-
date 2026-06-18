@@ -140,6 +140,55 @@ export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promi
   const nowIso = new Date().toISOString();
   const forecastDay = nowIso.split('T')[0];
 
+  await page.route('**/api/open-meteo/forecast**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      latitude: o.lat,
+      longitude: o.lon,
+      timezone: 'America/New_York',
+      utc_offset_seconds: -14400,
+      current: {
+        temperature_2m: o.tempF,
+        relative_humidity_2m: o.humidity,
+        weather_code: 0,
+        wind_speed_10m: 5,
+        wind_direction_10m: 45,
+        wind_gusts_10m: 12,
+        surface_pressure: o.pressure,
+        uv_index: 5,
+      },
+      daily: {
+        time: [forecastDay],
+        temperature_2m_max: [o.tempF + 3],
+        temperature_2m_min: [o.tempF - 3],
+        weather_code: [0],
+        precipitation_probability_max: [20],
+        sunrise: [`${forecastDay}T06:00`],
+        sunset: [`${forecastDay}T20:00`],
+      },
+      hourly: {
+        time: Array.from({ length: 48 }, (_, i) => {
+          const d = new Date(Date.now() + i * 60 * 60 * 1000);
+          return d.toISOString().slice(0, 16);
+        }),
+        temperature_2m: Array.from({ length: 48 }, () => o.tempF),
+        weather_code: Array.from({ length: 48 }, () => 0),
+        precipitation_probability: Array.from({ length: 48 }, () => 20),
+        wind_speed_10m: Array.from({ length: 48 }, () => 5),
+        wind_direction_10m: Array.from({ length: 48 }, () => 45),
+        relative_humidity_2m: Array.from({ length: 48 }, () => o.humidity),
+        visibility: Array.from({ length: 48 }, () => 16000),
+      },
+    })
+  }));
+
+  await page.route('**/api/open-meteo/air-quality**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ current: { us_aqi: 30 } })
+  }));
+
   // Regex (not globs): `**/precipitation**` matches `.../precipitation-history` because ** spans `-history`;
   // Playwright checks routes last-registered-first, so the wrong stub could win without exact paths.
   await page.route(/.*\/api\/weather\/precipitation-history(?:\?.*)?$/, (route) => route.fulfill({
@@ -665,56 +714,114 @@ export async function getCurrentTheme(page: Page): Promise<string> {
 //   RADAR MAP HELPERS
 //   ═══════════════════════════════════════════════════════════
 
+const transparentPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64'
+);
+
+export async function stubRadarApis(page: Page): Promise<void> {
+  await page.route('**/api/weather/noaa-wms**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
+  await page.route('**/geo.weather.gc.ca/geomet/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
+  await page.route('**/tilecache.rainviewer.com/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
+  await page.route('**/basemaps.cartocdn.com/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
+  await page.route('**/api/weather/alerts**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[-74.2, 40.6], [-73.8, 40.6], [-73.8, 40.9], [-74.2, 40.9], [-74.2, 40.6]]],
+        },
+        properties: {
+          id: 'alert-1',
+          event: 'Severe Thunderstorm Warning',
+          severity: 'Severe',
+          headline: 'Severe Thunderstorm Warning for test area',
+          areaDesc: 'Test County',
+          instruction: 'Move indoors.',
+        },
+      }],
+    }),
+  }));
+
+  await page.route('**/api/weather/spc-outlook**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[-75, 40], [-73, 40], [-73, 42], [-75, 42], [-75, 40]]],
+        },
+        properties: {
+          LABEL: 'SLGT',
+          LABEL2: 'Slight Risk',
+          fill: '#FFE066',
+          stroke: '#facc15',
+        },
+      }],
+    }),
+  }));
+
+  await page.route('**/api/weather/storm-reports**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      reports: [{
+        category: 'hail',
+        time: '2100',
+        size: '1.00',
+        location: 'Test City',
+        county: 'Test',
+        state: 'NY',
+        lat: 40.75,
+        lon: -74,
+        comments: 'Test hail report',
+        date: '2026-06-18',
+      }],
+      total: 1,
+      days: 2,
+    }),
+  }));
+}
+
+export async function navigateToRadarPage(page: Page, location = 'New York, US'): Promise<void> {
+  await page.goto(`/radar?location=${encodeURIComponent(location)}`, { waitUntil: 'domcontentloaded' });
+}
+
 export async function navigateToMapPage(page: Page): Promise<void> {
-  await page.goto('/map', { waitUntil: 'domcontentloaded' });
-  // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
-    // If networkidle times out, continue anyway
-  });
-  // Wait for map container to exist in DOM
-  await page.waitForSelector('[data-radar-container], [class*="map"], [class*="Map"], [class*="radar"], [class*="Radar"]', {
-    timeout: 15000,
-    state: 'attached'
-  }).catch(() => {
-    // If selector not found, that's okay - we'll check in waitForRadarToLoad
-  });
+  await navigateToRadarPage(page);
 }
 
 export async function waitForRadarToLoad(page: Page): Promise<void> {
-  // Wait for radar container or map element to be attached to DOM
-  // Try multiple selectors to be more flexible
-  const selectors = [
-    '[data-radar-container]',
-    '[class*="map"]',
-    '[class*="Map"]',
-    '[class*="radar"]',
-    '[class*="Radar"]',
-  ];
-
-  let found = false;
-  for (const selector of selectors) {
-    try {
-      await page.waitForSelector(selector, { timeout: 5000, state: 'attached' });
-      found = true;
-      break;
-    } catch (e) {
-      // Try next selector
-      continue;
-    }
-  }
-
-  if (!found) {
-    // If no specific selector found, wait for any div with height (map containers usually have height)
-    await page.waitForFunction(() => {
-      const containers = document.querySelectorAll('[data-radar-container], [class*="map"], [class*="Map"]');
-      return containers.length > 0;
-    }, { timeout: 10000 }).catch(() => {
-      // If still not found, that's okay - test will fail with a clear error
-    });
-  }
-
-  // Give the map a moment to render
-  await page.waitForTimeout(1000);
+  const radarContainer = page.locator('[data-radar-container]').first();
+  await expect(radarContainer).toBeVisible({ timeout: 20000 });
+  await expect(radarContainer.locator('.ol-viewport')).toBeVisible({ timeout: 20000 });
 }
 
 export async function checkRadarVisibility(page: Page): Promise<boolean> {

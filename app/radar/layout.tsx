@@ -1,6 +1,6 @@
 /**
  * 16-Bit Weather Platform - Radar Page Layout
- * SEO metadata for NOAA MRMS weather radar
+ * SEO metadata for North America weather radar
  */
 
 import type { Metadata } from 'next'
@@ -12,7 +12,7 @@ const radarJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "Live Weather Radar",
-  "description": "Real-time NOAA MRMS weather radar with precipitation overlays.",
+  "description": "North America weather radar with animated precipitation and severe weather overlays.",
   "url": "https://www.16bitweather.co/radar",
   "applicationCategory": "WeatherApplication",
   "operatingSystem": "Any",
@@ -24,17 +24,17 @@ const radarJsonLd = {
 }
 
 export const metadata: Metadata = {
-  title: 'Live Weather Radar Map - NOAA MRMS Radar | 16 Bit Weather',
-  description: 'Real-time NOAA MRMS weather radar with high-resolution precipitation tracking. View live rain, snow, and storm data across the United States in retro terminal style.',
-  keywords: 'weather radar, NOAA radar, MRMS radar, live radar, precipitation map, rain radar, storm tracker, doppler radar, US weather radar, real-time radar',
+  title: 'Live Weather Radar Map - North America Radar | 16 Bit Weather',
+  description: 'Animated North America weather radar with NOAA, Iowa NEXRAD, MSC GeoMet, RainViewer fallback, NWS alerts, SPC outlooks, and storm report overlays.',
+  keywords: 'weather radar, NOAA radar, MRMS radar, NEXRAD radar, Canada radar, RainViewer radar, live radar, precipitation map, rain radar, storm tracker, doppler radar, severe weather radar',
   openGraph: {
     title: 'Live Weather Radar - 16 Bit Weather',
-    description: 'Real-time NOAA MRMS weather radar with high-resolution precipitation tracking across the US.',
+    description: 'Animated North America weather radar with severe weather overlays and provider fallback.',
     url: 'https://www.16bitweather.co/radar',
     siteName: '16 Bit Weather',
     images: [
       {
-        url: '/api/og?title=Live+Weather+Radar&subtitle=NOAA+MRMS+Precipitation+Map',
+        url: '/api/og?title=Live+Weather+Radar&subtitle=North+America+Radar+And+Alerts',
         width: 1200,
         height: 630,
         alt: 'Live Weather Radar - 16 Bit Weather',
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Live Weather Radar - 16 Bit Weather',
-    description: 'Real-time NOAA MRMS weather radar with precipitation tracking',
-    images: ['/api/og?title=Live+Weather+Radar&subtitle=NOAA+MRMS+Precipitation+Map'],
+    description: 'Animated North America radar with severe weather overlays',
+    images: ['/api/og?title=Live+Weather+Radar&subtitle=North+America+Radar+And+Alerts'],
   },
   alternates: {
     canonical: 'https://www.16bitweather.co/radar',

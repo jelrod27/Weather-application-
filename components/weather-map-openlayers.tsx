@@ -4,9 +4,19 @@
 // Phase 2: CartoDB Dark Matter base map, precipitation legend, pulse marker animation
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Play, Pause, SkipBack, SkipForward, Layers, ChevronDown, Loader2 } from 'lucide-react'
-import { isInMRMSCoverage } from '@/lib/utils/location-utils'
 import type { ThemeType } from '@/lib/theme-config'
+import {
+  buildRadarFrames,
+  DEFAULT_RADAR_ZOOM,
+  mergeRadarUrlParams,
+  parseRadarUrlState,
+  serializeRadarUrlParams,
+  type RadarFrame,
+  type RadarMetadata,
+  type RadarProvider,
+} from '@/lib/radar'
 
 // OpenLayers imports
 import 'ol/ol.css'
@@ -20,31 +30,20 @@ import Feature from 'ol/Feature'
 import Point from 'ol/geom/Point'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Style, Icon } from 'ol/style'
-
-// CORRECT WMS-T endpoint that supports TIME parameter
-// Reference: https://mesonet.agron.iastate.edu/ogc/
-// The n0q.cgi endpoint does NOT support TIME - must use n0q-t.cgi
-const NEXRAD_WMS_URL = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q-t.cgi'
-const NEXRAD_LAYER = 'nexrad-n0q-wmst'
+import GeoJSON from 'ol/format/GeoJSON'
+import { Style, Icon, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
+import type { FeatureLike } from 'ol/Feature'
 
 // Animation tuning constants
 const TILE_TRANSITION_MS = 500 // Smooth crossfade between frames
 const BASE_ANIMATION_INTERVAL_MS = 500 // Fluid playback speed
 const PRELOAD_FRAMES_AHEAD = 3 // Number of frames to preload during playback
+const TILE_ERROR_FALLBACK_THRESHOLD = 5
+const URL_SYNC_DEBOUNCE_MS = 300
 
 // CartoDB Dark Matter base map for better radar contrast
 // Note: Removed {r} (Leaflet retina placeholder) - OpenLayers XYZ doesn't support it
 const CARTO_DARK_MATTER_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-
-// NEXRAD radar reflectivity legend (dBZ values) - industry standard scale
-const RADAR_LEGEND = [
-  { color: '#00ffc8', label: 'Light', dbz: '5-20' },
-  { color: '#00c800', label: 'Moderate', dbz: '20-35' },
-  { color: '#ffff00', label: 'Heavy', dbz: '35-50' },
-  { color: '#ff8c00', label: 'Very Heavy', dbz: '50-65' },
-  { color: '#ff0000', label: 'Extreme', dbz: '65+' },
-]
 
 interface WeatherMapProps {
   latitude?: number
@@ -54,6 +53,69 @@ interface WeatherMapProps {
   displayMode?: 'full-page' | 'widget'
 }
 
+type FeatureCollection = {
+  type: 'FeatureCollection'
+  features: Array<{
+    type?: string
+    geometry?: unknown
+    properties?: Record<string, unknown>
+  }>
+}
+
+interface StormReport {
+  category: 'tornado' | 'hail' | 'wind'
+  time: string
+  size: string
+  location: string
+  state: string
+  lat: number | null
+  lon: number | null
+  comments: string
+  date: string
+}
+
+function buildRadarXyzUrl(provider: RadarProvider, frame: RadarFrame): string | null {
+  if (!provider.xyz) return null
+  return provider.xyz.urlTemplate.replace('{epochSeconds}', String(frame.epochSeconds))
+}
+
+function alertStyle(feature: FeatureLike): Style {
+  const severity = String(feature.get('severity') ?? 'Minor')
+  const color = severity === 'Extreme'
+    ? '#dc2626'
+    : severity === 'Severe'
+      ? '#ea580c'
+      : severity === 'Moderate'
+        ? '#ca8a04'
+        : '#2563eb'
+
+  return new Style({
+    fill: new Fill({ color: `${color}33` }),
+    stroke: new Stroke({ color, width: 2 }),
+  })
+}
+
+function spcStyle(feature: FeatureLike): Style {
+  const fill = String(feature.get('fill') ?? '#facc15')
+  const stroke = String(feature.get('stroke') ?? '#fef08a')
+  return new Style({
+    fill: new Fill({ color: `${fill}66` }),
+    stroke: new Stroke({ color: stroke, width: 2 }),
+  })
+}
+
+function stormReportStyle(feature: FeatureLike): Style {
+  const category = String(feature.get('category') ?? '')
+  const color = category === 'tornado' ? '#ef4444' : category === 'hail' ? '#a855f7' : '#38bdf8'
+  return new Style({
+    image: new CircleStyle({
+      radius: 6,
+      fill: new Fill({ color: `${color}dd` }),
+      stroke: new Stroke({ color: '#020617', width: 1 }),
+    }),
+  })
+}
+
 const WeatherMapOpenLayers = ({
   latitude,
   longitude,
@@ -61,18 +123,44 @@ const WeatherMapOpenLayers = ({
   theme = 'nord',
   displayMode = 'full-page'
 }: WeatherMapProps) => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const parsedUrlStateRef = useRef(parseRadarUrlState(searchParams))
+
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<Map | null>(null)
-  const radarLayerRef = useRef<TileLayer<TileWMS> | null>(null)
-  const radarSourceRef = useRef<TileWMS | null>(null)
+  const radarLayerRef = useRef<TileLayer<TileWMS | XYZ> | null>(null)
+  const radarSourceRef = useRef<TileWMS | XYZ | null>(null)
+  const alertsLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
+  const spcLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
+  const stormReportsLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
+  const [radarMetadata, setRadarMetadata] = useState<RadarMetadata | null>(null)
+  const [metadataError, setMetadataError] = useState<string | null>(null)
+  const [activeProvider, setActiveProvider] = useState<RadarProvider | null>(null)
+  const [activeFrames, setActiveFrames] = useState<RadarFrame[]>([])
+  const [usingFallbackProvider, setUsingFallbackProvider] = useState(false)
+  const [radarStateReady, setRadarStateReady] = useState(false)
+  const [alertsGeoJson, setAlertsGeoJson] = useState<FeatureCollection | null>(null)
+  const [spcGeoJson, setSpcGeoJson] = useState<FeatureCollection | null>(null)
+  const [stormReports, setStormReports] = useState<StormReport[]>([])
+  const [selectedOverlay, setSelectedOverlay] = useState<{
+    x: number
+    y: number
+    title: string
+    body: string
+  } | null>(null)
 
-  const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
-    precipitation: true,
+  const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>(() => ({
+    precipitation: parsedUrlStateRef.current.layers.precipitation,
+    alerts: parsedUrlStateRef.current.layers.alerts,
+    spc: parsedUrlStateRef.current.layers.spc,
+    stormReports: parsedUrlStateRef.current.layers.stormReports,
     clouds: false,
     wind: false,
     pressure: false,
     temperature: false,
-  })
+  }))
 
   const [opacity, setOpacity] = useState(0.85)
   const [layerMenuOpen, setLayerMenuOpen] = useState(false)
@@ -85,10 +173,15 @@ const WeatherMapOpenLayers = ({
   const [radarVisible, setRadarVisible] = useState(false) // For fade-in animation
   const timerRef = useRef<number | null>(null)
   const preloadCacheRef = useRef<Set<string>>(new Set()) // Track preloaded frames
-
-  // NEXRAD configuration
-  const NEXRAD_STEP_MINUTES = 5
-  const NEXRAD_PAST_STEPS = 48 // 4 hours past (5 min * 48 = 240 min = 4 hours)
+  const isPlayingRef = useRef(isPlaying)
+  const opacityRef = useRef(opacity)
+  const frameIndexRef = useRef(frameIndex)
+  const tileErrorCountRef = useRef(0)
+  const usingFallbackRef = useRef(false)
+  const fallbackProviderRef = useRef<RadarProvider | undefined>(undefined)
+  const activeProviderRef = useRef<RadarProvider | null>(null)
+  const urlSyncTimerRef = useRef<number | null>(null)
+  const urlStateInitializedRef = useRef(false)
 
   // Track client-side mount to prevent hydration mismatch with Date.now()
   const [isMounted, setIsMounted] = useState(false)
@@ -96,34 +189,195 @@ const WeatherMapOpenLayers = ({
     setIsMounted(true)
   }, [])
 
-  // Check if location is in US
-  const isUSLocation = useMemo(() => {
-    if (!latitude || !longitude) return false
-    return isInMRMSCoverage(latitude, longitude)
-  }, [latitude, longitude])
-
-  // Generate NEXRAD timestamps - only after client mount to prevent hydration mismatch
-  const timestamps = useMemo(() => {
-    if (!isUSLocation || !isMounted) return []
-
-    const now = Date.now()
-    const quantize = (ms: number) => Math.floor(ms / (NEXRAD_STEP_MINUTES * 60 * 1000)) * (NEXRAD_STEP_MINUTES * 60 * 1000)
-    const base = quantize(now)
-    const times: number[] = []
-
-    for (let i = NEXRAD_PAST_STEPS; i >= 0; i -= 1) {
-      times.push(base - i * NEXRAD_STEP_MINUTES * 60 * 1000)
+  useEffect(() => {
+    if (!isMounted || latitude == null || longitude == null) {
+      setRadarMetadata(null)
+      return
     }
 
-    return times
-  }, [isUSLocation, isMounted])
+    const controller = new AbortController()
+
+    async function loadRadarMetadata() {
+      setMetadataError(null)
+      try {
+        const params = new URLSearchParams({
+          lat: String(latitude),
+          lon: String(longitude),
+        })
+        const response = await fetch(`/api/radar/metadata?${params.toString()}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          throw new Error(`Radar metadata failed: ${response.status}`)
+        }
+        const metadata = (await response.json()) as RadarMetadata
+        if (controller.signal.aborted) return
+        setRadarMetadata(metadata)
+        fallbackProviderRef.current = metadata.fallbackProvider
+
+        if (!usingFallbackRef.current) {
+          setActiveProvider(metadata.selectedProvider)
+          activeProviderRef.current = metadata.selectedProvider
+          setActiveFrames(metadata.frames)
+          setUsingFallbackProvider(false)
+
+          const urlFrame = parsedUrlStateRef.current.frameIndex
+          const liveIndex = Math.max(0, metadata.frames.length - 1)
+          if (!urlStateInitializedRef.current) {
+            const nextIndex = urlFrame != null
+              ? Math.min(urlFrame, liveIndex)
+              : liveIndex
+            frameIndexRef.current = nextIndex
+            setFrameIndex(nextIndex)
+            urlStateInitializedRef.current = true
+          }
+        } else if (activeProviderRef.current) {
+          const refreshedFrames = buildRadarFrames({
+            stepMinutes: activeProviderRef.current.frameStepMinutes,
+            pastMinutes: activeProviderRef.current.pastMinutes,
+          })
+          setActiveFrames(refreshedFrames)
+          setFrameIndex(Math.max(0, refreshedFrames.length - 1))
+        }
+        setRadarStateReady(true)
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return
+        console.error('[radar-map] metadata load failed', error)
+        setRadarMetadata(null)
+        setMetadataError('Radar metadata unavailable. Try again shortly.')
+        setRadarStateReady(false)
+      }
+    }
+
+    loadRadarMetadata()
+    const refreshTimer = window.setInterval(loadRadarMetadata, 5 * 60 * 1000)
+
+    return () => {
+      window.clearInterval(refreshTimer)
+      controller.abort()
+    }
+  }, [isMounted, latitude, longitude])
+
+  const locationQueryKey = useMemo(
+    () => `${latitude ?? ''}:${longitude ?? ''}:${searchParams.get('location') ?? ''}`,
+    [latitude, longitude, searchParams],
+  )
+
+  useEffect(() => {
+    usingFallbackRef.current = false
+    setUsingFallbackProvider(false)
+    tileErrorCountRef.current = 0
+    urlStateInitializedRef.current = false
+    setRadarStateReady(false)
+    parsedUrlStateRef.current = parseRadarUrlState(new URLSearchParams(window.location.search))
+    setActiveLayers((prev) => ({
+      ...prev,
+      precipitation: parsedUrlStateRef.current.layers.precipitation,
+      alerts: parsedUrlStateRef.current.layers.alerts,
+      spc: parsedUrlStateRef.current.layers.spc,
+      stormReports: parsedUrlStateRef.current.layers.stormReports,
+    }))
+  }, [locationQueryKey])
+
+  const activateFallbackProvider = useCallback(() => {
+    const fallback = fallbackProviderRef.current
+    const current = activeProviderRef.current
+    if (!fallback || current?.id === fallback.id) return
+
+    tileErrorCountRef.current = 0
+    usingFallbackRef.current = true
+    activeProviderRef.current = fallback
+
+    const frames = buildRadarFrames({
+      stepMinutes: fallback.frameStepMinutes,
+      pastMinutes: fallback.pastMinutes,
+    })
+
+    setUsingFallbackProvider(true)
+    setActiveProvider(fallback)
+    setActiveFrames(frames)
+    const nextIndex = Math.max(0, frames.length - 1)
+    frameIndexRef.current = nextIndex
+    setFrameIndex(nextIndex)
+    setMetadataError(null)
+    console.warn('[radar-map] switched to fallback provider', {
+      from: current?.id,
+      to: fallback.id,
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted || latitude == null || longitude == null) return
+
+    const controller = new AbortController()
+
+    async function loadSevereOverlays() {
+      try {
+        const point = `${latitude},${longitude}`
+        const [alertsRes, spcRes, reportsRes] = await Promise.all([
+          fetch(`/api/weather/alerts?geojson=1&point=${encodeURIComponent(point)}`, {
+            signal: controller.signal,
+          }),
+          fetch('/api/weather/spc-outlook?day=1&type=cat', {
+            signal: controller.signal,
+          }),
+          fetch('/api/weather/storm-reports?days=2', {
+            signal: controller.signal,
+          }),
+        ])
+
+        if (controller.signal.aborted) return
+
+        if (alertsRes.ok) {
+          const alerts = (await alertsRes.json()) as FeatureCollection
+          setAlertsGeoJson(alerts.type === 'FeatureCollection' ? alerts : null)
+        } else {
+          setAlertsGeoJson(null)
+        }
+
+        if (spcRes.ok) {
+          const spc = (await spcRes.json()) as FeatureCollection
+          setSpcGeoJson(spc.type === 'FeatureCollection' ? spc : null)
+        } else {
+          setSpcGeoJson(null)
+        }
+
+        if (reportsRes.ok) {
+          const reportsJson = (await reportsRes.json()) as { reports?: StormReport[] }
+          setStormReports(reportsJson.reports ?? [])
+        } else {
+          setStormReports([])
+        }
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return
+        console.warn('[radar-map] severe overlays unavailable', error)
+        setAlertsGeoJson(null)
+        setSpcGeoJson(null)
+        setStormReports([])
+      }
+    }
+
+    loadSevereOverlays()
+
+    return () => controller.abort()
+  }, [isMounted, latitude, longitude])
+
+  const radarProvider = activeProvider
+  const radarFrames = useMemo(() => activeFrames, [activeFrames])
+  const timestamps = useMemo(() => {
+    return radarFrames.map((frame) => frame.timestamp)
+  }, [radarFrames])
+  const hasRadarProvider = !!radarProvider && timestamps.length > 0
+  const metadataUpdatedAt = radarMetadata?.generatedAt
+    ? new Date(radarMetadata.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : null
 
   // Initialize map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return
 
-    const centerLon = longitude || -98.5795
-    const centerLat = latitude || 39.8283
+    const centerLon = -98.5795
+    const centerLat = 39.8283
 
 
     // Create base layer (CartoDB Dark Matter - better radar visibility)
@@ -137,17 +391,52 @@ const WeatherMapOpenLayers = ({
       opacity: 0.9,
     })
 
+    const initialZoom = parsedUrlStateRef.current.zoom ?? DEFAULT_RADAR_ZOOM
+
     // Create map
     const map = new Map({
       target: mapRef.current,
       layers: [baseLayer],
       view: new View({
         center: fromLonLat([centerLon, centerLat]),
-        zoom: 10,
+        zoom: initialZoom,
       }),
     })
 
     mapInstanceRef.current = map
+
+    map.on('click', (evt) => {
+      const hit = map.forEachFeatureAtPixel(evt.pixel, (feature) => feature)
+      if (!hit) {
+        setSelectedOverlay(null)
+        return
+      }
+
+      const props = hit.getProperties() as Record<string, unknown>
+      const title = String(props.event ?? props.LABEL2 ?? props.LABEL ?? props.category ?? props.label ?? 'Map feature')
+      const body = [
+        props.headline,
+        props.areaDesc,
+        props.instruction,
+        props.comments,
+        props.location && props.state ? `${props.location}, ${props.state}` : null,
+      ]
+        .filter(Boolean)
+        .map(String)
+        .join('\n\n')
+
+      setSelectedOverlay({
+        x: evt.pixel[0],
+        y: evt.pixel[1],
+        title,
+        body: body || 'No additional details available.',
+      })
+    })
+
+    map.on('pointermove', (evt) => {
+      const hit = map.forEachFeatureAtPixel(evt.pixel, () => true)
+      map.getTargetElement().style.cursor = hit ? 'pointer' : ''
+    })
 
     // Fix for production: force map to recalculate size multiple times
     // Sometimes the container size isn't ready immediately
@@ -191,15 +480,15 @@ const WeatherMapOpenLayers = ({
 
   // Update map center when location changes
   useEffect(() => {
-    if (!mapInstanceRef.current || !latitude || !longitude) return
+    if (!mapInstanceRef.current || latitude == null || longitude == null) return
 
     mapInstanceRef.current.getView().setCenter(fromLonLat([longitude, latitude]))
-    mapInstanceRef.current.getView().setZoom(10)
+    mapInstanceRef.current.getView().setZoom(parsedUrlStateRef.current.zoom ?? DEFAULT_RADAR_ZOOM)
   }, [latitude, longitude])
 
   // Add location marker
   useEffect(() => {
-    if (!mapInstanceRef.current || !latitude || !longitude) return
+    if (!mapInstanceRef.current || latitude == null || longitude == null) return
 
     const map = mapInstanceRef.current
 
@@ -253,9 +542,117 @@ const WeatherMapOpenLayers = ({
     map.addLayer(markerLayer)
   }, [latitude, longitude])
 
-  // Initialize SINGLE radar layer with WMS-T support
   useEffect(() => {
-    if (!mapInstanceRef.current || !isUSLocation || !activeLayers.precipitation) {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    if (alertsLayerRef.current) {
+      map.removeLayer(alertsLayerRef.current)
+      alertsLayerRef.current = null
+    }
+
+    if (!activeLayers.alerts || !alertsGeoJson?.features?.length) return
+
+    const filtered = {
+      ...alertsGeoJson,
+      features: alertsGeoJson.features.filter((feature) => feature.geometry != null),
+    }
+
+    if (!filtered.features.length) return
+
+    const source = new VectorSource({
+      features: new GeoJSON().readFeatures(filtered, {
+        featureProjection: 'EPSG:3857',
+        dataProjection: 'EPSG:4326',
+      }),
+    })
+
+    const layer = new VectorLayer({
+      source,
+      style: alertStyle,
+      zIndex: 700,
+    })
+
+    alertsLayerRef.current = layer
+    map.addLayer(layer)
+  }, [activeLayers.alerts, alertsGeoJson])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    if (spcLayerRef.current) {
+      map.removeLayer(spcLayerRef.current)
+      spcLayerRef.current = null
+    }
+
+    if (!activeLayers.spc || !spcGeoJson?.features?.length) return
+
+    const filtered = {
+      ...spcGeoJson,
+      features: spcGeoJson.features.filter((feature) => feature.geometry != null),
+    }
+
+    if (!filtered.features.length) return
+
+    const source = new VectorSource({
+      features: new GeoJSON().readFeatures(filtered, {
+        featureProjection: 'EPSG:3857',
+        dataProjection: 'EPSG:4326',
+      }),
+    })
+
+    const layer = new VectorLayer({
+      source,
+      style: spcStyle,
+      zIndex: 650,
+    })
+
+    spcLayerRef.current = layer
+    map.addLayer(layer)
+  }, [activeLayers.spc, spcGeoJson])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    if (stormReportsLayerRef.current) {
+      map.removeLayer(stormReportsLayerRef.current)
+      stormReportsLayerRef.current = null
+    }
+
+    if (!activeLayers.stormReports || !stormReports.length) return
+
+    const source = new VectorSource()
+    for (const report of stormReports) {
+      if (report.lat == null || report.lon == null) continue
+      source.addFeature(new Feature({
+        geometry: new Point(fromLonLat([report.lon, report.lat])),
+        category: report.category,
+        label: `${report.category.toUpperCase()} · ${report.size}`,
+        location: report.location,
+        state: report.state,
+        comments: report.comments,
+        date: report.date,
+        time: report.time,
+      }))
+    }
+
+    if (source.isEmpty()) return
+
+    const layer = new VectorLayer({
+      source,
+      style: stormReportStyle,
+      zIndex: 750,
+    })
+
+    stormReportsLayerRef.current = layer
+    map.addLayer(layer)
+  }, [activeLayers.stormReports, stormReports])
+
+  // Initialize provider-selected radar layer.
+  useEffect(() => {
+    if (!mapInstanceRef.current || !radarProvider || !activeLayers.precipitation || timestamps.length === 0) {
       // Remove radar layer if it exists
       if (radarLayerRef.current && mapInstanceRef.current) {
         mapInstanceRef.current.removeLayer(radarLayerRef.current)
@@ -275,21 +672,32 @@ const WeatherMapOpenLayers = ({
     // Reset fade-in state for new layer (fixes Cursor BugBot issue)
     setRadarVisible(false)
 
-    // Create WMS source with TIME support
-    // Key insight: n0q-t.cgi supports the TIME parameter, n0q.cgi does NOT
-    const radarSource = new TileWMS({
-      url: NEXRAD_WMS_URL,
-      params: {
-        'LAYERS': NEXRAD_LAYER,
-        'FORMAT': 'image/png',
-        'TRANSPARENT': 'true',
-        'VERSION': '1.1.1',
-        // TIME will be set via updateParams()
-      },
-      serverType: 'mapserver',
-      transition: TILE_TRANSITION_MS, // Smooth cross-fade between frames
-      crossOrigin: 'anonymous',
-    })
+    const latestFrame = radarFrames[radarFrames.length - 1]
+    let radarSource: TileWMS | XYZ | null = null
+
+    if (radarProvider.protocol === 'wms' && radarProvider.wms) {
+      radarSource = new TileWMS({
+        url: radarProvider.wms.url,
+        params: radarProvider.wms.params,
+        serverType: radarProvider.wms.serverType,
+        transition: TILE_TRANSITION_MS, // Smooth cross-fade between frames
+        crossOrigin: 'anonymous',
+      })
+    } else if (radarProvider.protocol === 'xyz' && latestFrame) {
+      const initialUrl = buildRadarXyzUrl(radarProvider, latestFrame)
+      if (initialUrl) {
+        radarSource = new XYZ({
+          url: initialUrl,
+          crossOrigin: 'anonymous',
+          transition: TILE_TRANSITION_MS,
+        })
+      }
+    }
+
+    if (!radarSource) {
+      setMetadataError('Radar provider is missing a usable tile source.')
+      return
+    }
 
     // Track loading state - use a counter to handle concurrent tile loads
     let loadingTileCount = 0
@@ -298,7 +706,7 @@ const WeatherMapOpenLayers = ({
     radarSource.on('tileloadstart', () => {
       loadingTileCount++
       // Only show loading indicator when not playing (to avoid button flicker)
-      if (!isPlaying && loadingTileCount === 1) {
+      if (!isPlayingRef.current && loadingTileCount === 1) {
         setIsLoading(true)
       }
     })
@@ -320,27 +728,41 @@ const WeatherMapOpenLayers = ({
       if (loadingTileCount === 0) {
         setIsLoading(false)
       }
-      console.warn('⚠️ [v6] Tile load error')
+      tileErrorCountRef.current += 1
+      console.warn('[radar-map] Tile load error', {
+        provider: radarProvider.id,
+        count: tileErrorCountRef.current,
+      })
+      if (tileErrorCountRef.current >= TILE_ERROR_FALLBACK_THRESHOLD) {
+        activateFallbackProvider()
+      }
     })
 
     const radarLayer = new TileLayer({
       source: radarSource,
-      opacity: opacity,
+      opacity: opacityRef.current,
       zIndex: 500,
     })
 
-    radarLayer.set('name', 'nexrad-radar')
+    radarLayer.set('name', `${radarProvider.id}-radar`)
     map.addLayer(radarLayer)
 
     radarLayerRef.current = radarLayer
     radarSourceRef.current = radarSource
 
-    // Set initial time to most recent
-    if (timestamps.length > 0) {
-      const initialIndex = timestamps.length - 1
-      const initialTime = new Date(timestamps[initialIndex]).toISOString()
-      radarSource.updateParams({ 'TIME': initialTime })
-      setFrameIndex(initialIndex)
+    // Apply the current timeline frame when the radar layer is created.
+    if (radarFrames.length > 0) {
+      const currentIndex = Math.min(
+        Math.max(frameIndexRef.current, 0),
+        radarFrames.length - 1,
+      )
+      const currentFrame = radarFrames[currentIndex]
+      if (radarProvider.protocol === 'wms' && radarProvider.wms && 'updateParams' in radarSource) {
+        radarSource.updateParams({ [radarProvider.wms.timeParam]: currentFrame.isoTime })
+      } else if (radarProvider.protocol === 'xyz' && 'setUrl' in radarSource) {
+        const nextUrl = buildRadarXyzUrl(radarProvider, currentFrame)
+        if (nextUrl) radarSource.setUrl(nextUrl)
+      }
     }
 
     return () => {
@@ -350,28 +772,43 @@ const WeatherMapOpenLayers = ({
         radarSourceRef.current = null
       }
     }
-  }, [isUSLocation, activeLayers.precipitation, timestamps.length > 0])
+  }, [radarProvider, activeLayers.precipitation, radarFrames, timestamps.length, activateFallbackProvider])
 
   // Update opacity when it changes
   useEffect(() => {
+    opacityRef.current = opacity
     if (radarLayerRef.current) {
       radarLayerRef.current.setOpacity(opacity)
     }
   }, [opacity])
 
-  // Update TIME parameter when frame changes - THIS IS THE KEY FIX
   useEffect(() => {
-    if (!radarSourceRef.current || timestamps.length === 0) return
+    isPlayingRef.current = isPlaying
+  }, [isPlaying])
 
-    const currentTimestamp = timestamps[frameIndex]
-    if (!currentTimestamp) return
+  useEffect(() => {
+    frameIndexRef.current = frameIndex
+  }, [frameIndex])
 
-    const timeISO = new Date(currentTimestamp).toISOString()
+  // Update provider frame when timeline changes.
+  useEffect(() => {
+    if (!radarSourceRef.current || !radarProvider || radarFrames.length === 0) return
 
-    // This is the correct way to animate WMS-T layers in OpenLayers
-    // updateParams() triggers a re-fetch with the new TIME value
-    radarSourceRef.current.updateParams({ 'TIME': timeISO })
-  }, [frameIndex, timestamps])
+    const currentFrame = radarFrames[frameIndex]
+    if (!currentFrame) return
+
+    const source = radarSourceRef.current
+
+    if (radarProvider.protocol === 'wms' && radarProvider.wms && 'updateParams' in source) {
+      source.updateParams({ [radarProvider.wms.timeParam]: currentFrame.isoTime })
+      return
+    }
+
+    if (radarProvider.protocol === 'xyz' && 'setUrl' in source) {
+      const nextUrl = buildRadarXyzUrl(radarProvider, currentFrame)
+      if (nextUrl) source.setUrl(nextUrl)
+    }
+  }, [frameIndex, radarFrames, radarProvider])
 
   // Clear preload cache when location changes (fixes CodeRabbit memory leak issue)
   useEffect(() => {
@@ -380,15 +817,15 @@ const WeatherMapOpenLayers = ({
 
   // Preload upcoming frames for smoother playback
   const preloadFrame = useCallback((index: number) => {
-    if (!timestamps[index] || !radarSourceRef.current || !mapInstanceRef.current) return
+    const frame = radarFrames[index]
+    if (!frame || !radarProvider || !radarSourceRef.current || !mapInstanceRef.current) return
     
     // Limit cache size to prevent memory bloat (fixes CodeRabbit issue)
     if (preloadCacheRef.current.size > 100) {
       preloadCacheRef.current.clear()
     }
     
-    const timeISO = new Date(timestamps[index]).toISOString()
-    const cacheKey = `${timeISO}`
+    const cacheKey = `${radarProvider.id}:${frame.isoTime}`
     
     if (preloadCacheRef.current.has(cacheKey)) return
     preloadCacheRef.current.add(cacheKey)
@@ -407,12 +844,98 @@ const WeatherMapOpenLayers = ({
       }
     }
     
+    let preloadUrl: string | null = null
+    if (radarProvider.protocol === 'wms' && radarProvider.wms) {
+      const params = new URLSearchParams({
+        SERVICE: 'WMS',
+        REQUEST: 'GetMap',
+        WIDTH: '256',
+        HEIGHT: '256',
+        BBOX: bbox,
+        ...radarProvider.wms.params,
+        [radarProvider.wms.timeParam]: frame.isoTime,
+      })
+      const version = radarProvider.wms.params.VERSION
+      params.set(version === '1.1.1' ? 'SRS' : 'CRS', 'EPSG:3857')
+      preloadUrl = `${radarProvider.wms.url}?${params.toString()}`
+    } else if (radarProvider.protocol === 'xyz') {
+      preloadUrl = buildRadarXyzUrl(radarProvider, frame)
+        ?.replace('{z}', '5')
+        .replace('{x}', '9')
+        .replace('{y}', '12') ?? null
+    }
+
+    if (!preloadUrl) return
+
     // Create a hidden image to preload the tile
-    const preloadUrl = `${NEXRAD_WMS_URL}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${NEXRAD_LAYER}&TIME=${encodeURIComponent(timeISO)}&FORMAT=image/png&TRANSPARENT=true&WIDTH=256&HEIGHT=256&SRS=EPSG:3857&BBOX=${bbox}`
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.src = preloadUrl
-  }, [timestamps, latitude, longitude])
+  }, [radarFrames, radarProvider])
+
+  // Keep shareable URL state in sync with map controls.
+  const syncRadarUrlState = useCallback(() => {
+    if (!radarStateReady || activeFrames.length === 0) return
+
+    if (urlSyncTimerRef.current) {
+      window.clearTimeout(urlSyncTimerRef.current)
+    }
+
+    urlSyncTimerRef.current = window.setTimeout(() => {
+      const liveIndex = Math.max(0, activeFrames.length - 1)
+      const frameForUrl = isPlayingRef.current ? liveIndex : frameIndex
+      const currentZoom = mapInstanceRef.current?.getView().getZoom() ?? null
+      const radarParams = serializeRadarUrlParams({
+        layers: {
+          precipitation: activeLayers.precipitation,
+          alerts: activeLayers.alerts,
+          spc: activeLayers.spc,
+          stormReports: activeLayers.stormReports,
+        },
+        frameIndex: frameForUrl,
+        zoom: currentZoom,
+        frameCount: activeFrames.length,
+      })
+      const merged = mergeRadarUrlParams(new URLSearchParams(window.location.search), radarParams)
+      const nextQuery = merged.toString()
+      const currentQuery = window.location.search.replace(/^\?/, '')
+      if (nextQuery !== currentQuery) {
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+      }
+    }, URL_SYNC_DEBOUNCE_MS)
+  }, [
+    activeFrames.length,
+    activeLayers.alerts,
+    activeLayers.precipitation,
+    activeLayers.spc,
+    activeLayers.stormReports,
+    frameIndex,
+    pathname,
+    radarStateReady,
+    router,
+  ])
+
+  useEffect(() => {
+    syncRadarUrlState()
+  }, [syncRadarUrlState])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    const view = map.getView()
+    const handleZoomChange = () => syncRadarUrlState()
+    view.on('change:resolution', handleZoomChange)
+    return () => view.un('change:resolution', handleZoomChange)
+  }, [syncRadarUrlState, radarProvider])
+
+  useEffect(() => {
+    return () => {
+      if (urlSyncTimerRef.current) {
+        window.clearTimeout(urlSyncTimerRef.current)
+      }
+    }
+  }, [])
 
   // Animation playback with preloading
   useEffect(() => {
@@ -447,7 +970,7 @@ const WeatherMapOpenLayers = ({
   // Keyboard controls
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!isUSLocation || !activeLayers.precipitation) return
+      if (!hasRadarProvider || !activeLayers.precipitation) return
 
       // Don't intercept keys when user is typing in an input field
       const activeElement = document.activeElement as HTMLElement
@@ -471,7 +994,7 @@ const WeatherMapOpenLayers = ({
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isUSLocation, activeLayers.precipitation, timestamps.length])
+  }, [hasRadarProvider, activeLayers.precipitation, timestamps.length])
 
   const currentTime = timestamps[frameIndex]
   const humanTime = currentTime ? new Date(currentTime).toUTCString().replace(' GMT', '') : ''
@@ -525,17 +1048,17 @@ const WeatherMapOpenLayers = ({
   // Jump to end (live)
   const handleSkipToEnd = useCallback(() => {
     setIsPlaying(false)
-    setFrameIndex(timestamps.length - 1)
+    setFrameIndex(Math.max(0, timestamps.length - 1))
   }, [timestamps.length])
 
   return (
     <div
       data-radar-container
-      className={`flex gap-2 w-full rounded-lg ${themeStyles.container}`}
+      className={`flex w-full flex-col gap-2 rounded-lg sm:flex-row ${themeStyles.container}`}
       style={{ height: '100%', minHeight: '350px' }}
     >
       {/* Main Map Area */}
-      <div className="relative flex-1 overflow-visible">
+      <div className="relative min-h-[350px] flex-1 overflow-visible">
       {/* Map Container - explicit dimensions for production */}
       <div
         ref={mapRef}
@@ -560,22 +1083,51 @@ const WeatherMapOpenLayers = ({
       )}
       
       {/* Radar fade-in overlay - stays in DOM and animates opacity (fixes Bugbot transition issue) */}
-      {isUSLocation && activeLayers.precipitation && (
+      {hasRadarProvider && activeLayers.precipitation && (
         <div 
           className={`absolute inset-0 bg-gray-900 z-[1998] transition-opacity duration-500 pointer-events-none ${radarVisible ? 'opacity-0' : 'opacity-100'}`}
         />
       )}
 
+      {selectedOverlay && (
+        <div
+          className="absolute z-[2100] max-w-sm rounded-md border border-cyan-500/40 bg-gray-950/95 p-3 text-xs font-mono text-white shadow-xl backdrop-blur-sm"
+          style={{
+            left: selectedOverlay.x + 12,
+            top: selectedOverlay.y + 12,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedOverlay(null)}
+            className="absolute right-2 top-1 text-gray-400 hover:text-white"
+            aria-label="Close radar feature details"
+          >
+            x
+          </button>
+          <p className="mb-1 pr-5 text-sm font-bold text-cyan-300">{selectedOverlay.title}</p>
+          <p className="whitespace-pre-wrap leading-relaxed text-gray-300">{selectedOverlay.body}</p>
+        </div>
+      )}
+
       {/* Status Badge */}
       <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-md font-mono text-xs font-bold z-[2000] ${themeStyles.badge}`}>
-        {isUSLocation ? (
+        {radarProvider ? (
           <span>
-            {isPlaying ? '▶️' : isLiveFrame ? '🔴 LIVE' : '🎬'} NEXRAD RADAR • 4 HOUR HISTORY
+            {usingFallbackProvider ? 'FALLBACK ' : ''}
+            {isPlaying ? 'PLAYING' : isLiveFrame ? 'LIVE' : 'HISTORY'} {radarProvider.shortName} RADAR • {Math.round(radarProvider.pastMinutes / 60)}H HISTORY
+            {metadataUpdatedAt ? ` • UPDATED ${metadataUpdatedAt}` : ''}
           </span>
         ) : (
-          <span>🌎 US LOCATIONS ONLY</span>
+          <span>{metadataError ?? 'RADAR METADATA LOADING'}</span>
         )}
       </div>
+
+      {radarProvider && (
+        <div className="absolute bottom-3 right-3 z-[1900] max-w-[70vw] rounded bg-gray-950/80 px-2 py-1 text-right font-mono text-[9px] uppercase tracking-wide text-gray-300 backdrop-blur-sm max-sm:bottom-16">
+          Source: {radarProvider.attribution}
+        </div>
+      )}
 
       {/* Layer Controls */}
       <div className="absolute top-4 right-4 z-[2000]">
@@ -598,7 +1150,31 @@ const WeatherMapOpenLayers = ({
               className={`w-full px-3 py-2 text-left font-mono text-xs hover:bg-gray-700 transition-colors ${activeLayers.precipitation ? 'bg-cyan-600/30 text-cyan-300' : 'text-gray-300'
                 }`}
             >
-              {activeLayers.precipitation ? '✓' : '○'} Precipitation {isUSLocation ? '(NEXRAD)' : ''}
+              {activeLayers.precipitation ? '✓' : '○'} Precipitation {radarProvider ? `(${radarProvider.shortName})` : ''}
+            </button>
+
+            <button
+              onClick={() => setActiveLayers(prev => ({ ...prev, alerts: !prev.alerts }))}
+              className={`w-full px-3 py-2 text-left font-mono text-xs hover:bg-gray-700 transition-colors ${activeLayers.alerts ? 'bg-red-600/30 text-red-300' : 'text-gray-300'
+                }`}
+            >
+              {activeLayers.alerts ? '✓' : '○'} NWS Alerts ({alertsGeoJson?.features?.length ?? 0})
+            </button>
+
+            <button
+              onClick={() => setActiveLayers(prev => ({ ...prev, spc: !prev.spc }))}
+              className={`w-full px-3 py-2 text-left font-mono text-xs hover:bg-gray-700 transition-colors ${activeLayers.spc ? 'bg-yellow-600/30 text-yellow-300' : 'text-gray-300'
+                }`}
+            >
+              {activeLayers.spc ? '✓' : '○'} SPC Outlook ({spcGeoJson?.features?.length ?? 0})
+            </button>
+
+            <button
+              onClick={() => setActiveLayers(prev => ({ ...prev, stormReports: !prev.stormReports }))}
+              className={`w-full px-3 py-2 text-left font-mono text-xs hover:bg-gray-700 transition-colors ${activeLayers.stormReports ? 'bg-purple-600/30 text-purple-300' : 'text-gray-300'
+                }`}
+            >
+              {activeLayers.stormReports ? '✓' : '○'} Storm Reports ({stormReports.length})
             </button>
 
             {/* Opacity slider */}
@@ -621,15 +1197,15 @@ const WeatherMapOpenLayers = ({
       </div>
 
       {/* Animation Controls - Position varies by display mode: top for full-page, bottom for widget */}
-      {isUSLocation && activeLayers.precipitation && timestamps.length > 0 && (
+      {hasRadarProvider && activeLayers.precipitation && timestamps.length > 0 && (
         <div
           className={`absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto ${
-            displayMode === 'widget' ? 'bottom-2 gap-1' : 'top-16 gap-2'
+            displayMode === 'widget' ? 'bottom-2 gap-1' : 'bottom-4 gap-2'
           }`}
           style={{ zIndex: 2000 }}
         >
           {/* Compact Controls Bar - smaller in widget mode */}
-          <div className={`flex items-center bg-gray-900/95 rounded-md border-2 border-cyan-500 shadow-2xl backdrop-blur-sm ${
+          <div className={`flex max-w-[92vw] flex-wrap items-center justify-center bg-gray-900/95 rounded-md border-2 border-cyan-500 shadow-2xl backdrop-blur-sm ${
             displayMode === 'widget' ? 'gap-1 px-2 py-1' : 'gap-2 px-3 py-2'
           }`}>
             <button
@@ -773,18 +1349,18 @@ const WeatherMapOpenLayers = ({
         </div>
       )}
 
-      {/* No Radar Message for International */}
-      {!isUSLocation && activeLayers.precipitation && (
+      {/* Metadata error message */}
+      {!hasRadarProvider && activeLayers.precipitation && metadataError && (
         <div className="absolute inset-0 flex items-center justify-center z-[2000] pointer-events-none">
           <div className="bg-gray-800/95 rounded-lg p-6 max-w-md text-center shadow-xl">
             <div className="text-2xl font-mono font-bold text-white mb-2">
-              HIGH-RESOLUTION RADAR UNAVAILABLE
+              RADAR UNAVAILABLE
             </div>
             <div className="text-sm text-gray-300 mb-4">
-              Animated radar is only available for US locations.
+              {metadataError}
             </div>
             <div className="text-xs text-gray-400">
-              Current conditions and forecasts are still available above.
+              Current conditions and forecasts are still available.
             </div>
           </div>
         </div>
@@ -792,20 +1368,20 @@ const WeatherMapOpenLayers = ({
       </div>
 
       {/* Radar Reflectivity Legend - Right Side, Outside Map */}
-      {isUSLocation && activeLayers.precipitation && radarVisible && (
-        <div className="flex-shrink-0 self-center">
+      {hasRadarProvider && activeLayers.precipitation && radarVisible && (
+        <div className="flex-shrink-0 self-center max-sm:absolute max-sm:bottom-3 max-sm:left-3 max-sm:z-[2000]">
           <div className="bg-gray-900/95 rounded-md p-1.5 backdrop-blur-sm shadow-xl">
             <div className="font-mono text-[8px] text-gray-400 mb-1 uppercase tracking-wide text-center">
               dBZ
             </div>
             <div className="flex flex-col gap-0.5">
-              {RADAR_LEGEND.map((item) => (
-                <div key={item.dbz} className="flex items-center gap-1">
+              {radarMetadata?.legend.map((item) => (
+                <div key={item.value} className="flex items-center gap-1">
                   <div
                     className="w-3 h-2.5 rounded-sm border border-gray-700"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="font-mono text-[8px] text-gray-300 whitespace-nowrap">{item.dbz}</span>
+                  <span className="font-mono text-[8px] text-gray-300 whitespace-nowrap">{item.value}</span>
                 </div>
               ))}
             </div>

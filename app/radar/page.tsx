@@ -10,18 +10,18 @@
  * See LICENSE file for full terms
  */
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import dynamicImport from 'next/dynamic'
 import Link from 'next/link'
-import { Home, Map as MapIcon, Share2 } from 'lucide-react'
+import { Home, Map as MapIcon } from 'lucide-react'
 import { useLocationContext } from '@/components/location-context'
-import { userCacheService } from '@/lib/user-cache-service'
 import type { WeatherData } from '@/lib/types'
 import { useTheme } from '@/components/theme-provider'
 import { fetchWeatherData } from '@/lib/weather'
 import Navigation from '@/components/navigation'
-import { ShareButtons } from '@/components/share-buttons';
+import { ShareButtons } from '@/components/share-buttons'
+import WeatherSearch from '@/components/weather-search'
 
 const WeatherMap = dynamicImport(() => import('@/components/weather-map'), {
   ssr: false,
@@ -36,13 +36,14 @@ const WeatherMap = dynamicImport(() => import('@/components/weather-map'), {
 })
 
 export default function MapPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const urlLocation = searchParams.get('location')
   const { currentLocation } = useLocationContext()
   const { theme } = useTheme()
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [shareSuccess, setShareSuccess] = useState(false)
+  const [searchError, setSearchError] = useState<string | undefined>()
 
   // Priority: URL location > context location
   const targetLocation = urlLocation || currentLocation
@@ -55,7 +56,7 @@ export default function MapPage() {
       if (targetLocation) {
         try {
           const freshData = await fetchWeatherData(targetLocation, 'imperial')
-          if (freshData?.coordinates?.lat && freshData?.coordinates?.lon) {
+          if (freshData?.coordinates?.lat != null && freshData?.coordinates?.lon != null) {
             setWeatherData(freshData)
             setIsLoading(false)
             return
@@ -71,32 +72,26 @@ export default function MapPage() {
     loadWeatherData()
   }, [targetLocation, urlLocation])
 
-  // Share location handler
-  const handleShare = async () => {
-    if (!weatherData) return
+  const shareUrl = useMemo(() => {
+    if (!weatherData) return 'https://www.16bitweather.co/radar'
 
-    // Coordinates may be intentionally omitted from cached weather data (privacy / CodeQL).
-    // Only include them in the share URL if present.
-    const shareUrl = weatherData.coordinates
-      ? `${window.location.origin}/map?lat=${weatherData.coordinates.lat}&lon=${weatherData.coordinates.lon}`
-      : `${window.location.origin}/map`
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Weather Radar - ${weatherData.location}`,
-          text: `Check out the weather radar for ${weatherData.location}`,
-          url: shareUrl
-        })
-      } else {
-        // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(shareUrl)
-        setShareSuccess(true)
-        setTimeout(() => setShareSuccess(false), 2000)
-      }
-    } catch (error) {
-      console.error('Share failed:', error)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('location', weatherData.location)
+    if (weatherData.coordinates) {
+      params.set('lat', String(weatherData.coordinates.lat))
+      params.set('lon', String(weatherData.coordinates.lon))
     }
+    return `https://www.16bitweather.co/radar?${params.toString()}`
+  }, [weatherData, searchParams])
+
+  const handleRadarSearch = (location: string) => {
+    const trimmed = location.trim()
+    if (!trimmed) {
+      setSearchError('Enter a location to load radar.')
+      return
+    }
+    setSearchError(undefined)
+    router.push(`/radar?location=${encodeURIComponent(trimmed)}`)
   }
 
   if (isLoading) {
@@ -124,10 +119,8 @@ export default function MapPage() {
   }
 
   // Check if we have valid coordinates for the radar
-  const hasValidCoordinates = weatherData?.coordinates?.lat &&
-    weatherData?.coordinates?.lon &&
-    weatherData.coordinates.lat !== 0 &&
-    weatherData.coordinates.lon !== 0
+  const hasValidCoordinates = weatherData?.coordinates?.lat != null &&
+    weatherData?.coordinates?.lon != null
 
   if (!weatherData) {
     return (
@@ -147,15 +140,14 @@ export default function MapPage() {
           <div className="text-white text-center max-w-md px-4">
             <div className="text-xl mb-4 font-mono">NO LOCATION DATA</div>
             <div className="text-sm text-gray-400 mb-6">
-              Search for a location on the home page first to view its weather map.
+              Search for a location to view North America radar and severe weather overlays.
             </div>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-mono px-4 py-2 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-colors rounded"
-            >
-              <Home className="w-4 h-4" />
-              Return to Home & Search
-            </Link>
+            <WeatherSearch
+              onSearch={handleRadarSearch}
+              isLoading={isLoading}
+              error={searchError}
+              hideLocationButton
+            />
           </div>
         </div>
       </div>
@@ -209,8 +201,8 @@ export default function MapPage() {
       <Navigation />
 
       {/* Breadcrumb Header */}
-      <div className="p-3 bg-gray-900 border-b border-gray-700 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="p-3 bg-gray-900 border-b border-gray-700 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 border-2 border-gray-600 hover:bg-gray-700 transition-colors rounded" aria-label="Return to Home">
             <Home className="w-3 h-3" />
             HOME
@@ -226,19 +218,30 @@ export default function MapPage() {
           )}
         </div>
 
+        <div className="w-full max-w-xl lg:flex-1">
+          <WeatherSearch
+            onSearch={handleRadarSearch}
+            isLoading={isLoading}
+            error={searchError}
+            hideLocationButton
+          />
+        </div>
+
         {/* Share Buttons */}
         <ShareButtons
           config={{
-            title: 'Live Weather Radar',
-            text: 'Live NOAA MRMS weather radar at 16bitweather.co',
-            url: 'https://www.16bitweather.co/radar',
+            title: weatherData.location ? `Live Weather Radar - ${weatherData.location}` : 'Live Weather Radar',
+            text: weatherData.location
+              ? `Live radar and severe weather overlays for ${weatherData.location}`
+              : 'Live North America radar and severe weather overlays at 16bitweather.co',
+            url: shareUrl,
           }}
+          className="justify-end"
         />
       </div>
 
-      {/* Map Container - explicit height for full-screen map page */}
-      {/* Note: Using explicit h-[calc(...)] class instead of flex-1 + inline style to ensure height propagates correctly */}
-      <div className="h-[calc(100vh-120px)] min-h-[400px] overflow-visible">
+      {/* Map Container */}
+      <div className="flex-1 min-h-[500px] overflow-visible">
         <WeatherMap
           latitude={weatherData.coordinates!.lat}
           longitude={weatherData.coordinates!.lon}

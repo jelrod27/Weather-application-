@@ -31,7 +31,7 @@ The site targets learners and hobbyists who want accurate data without a generic
 - **Tropical tracker**: NHC 2-day and 7-day outlooks, Atlantic satellite imagery, and sea surface temperature analysis
 - **Aviation weather**: SIGMETs, AIRMETs, turbulence maps, and real-time flight conditions in a terminal-style interface
 - **Learn Hub**: Cloud types, weather systems, extreme phenomena, fun facts, and a weather glossary
-- **Interactive radar**: Map-based NOAA MRMS radar with precipitation overlays
+- **Interactive radar**: North America radar with NOAA/Iowa NEXRAD, MSC GeoMet, RainViewer fallback, and severe weather overlays
 - **Global extremes**: Hot and cold location tracking with live data
 - **Custom themes**: Twelve themes with persistence for signed-in users
 - **Weather Arcade**: Educational games with score tracking

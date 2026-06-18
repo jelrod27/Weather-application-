@@ -74,7 +74,7 @@ const jsonLd = {
   featureList: [
     'Real-time weather data',
     '7-day weather forecast',
-    'NOAA MRMS weather radar',
+    'North America weather radar',
     'Air quality index',
     'Pollen count',
     'UV index',
