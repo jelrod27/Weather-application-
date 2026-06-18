@@ -74,13 +74,15 @@ export default function MapPage() {
 
   const shareUrl = useMemo(() => {
     if (!weatherData) return 'https://www.16bitweather.co/radar'
-    const params = new URLSearchParams({ location: weatherData.location })
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('location', weatherData.location)
     if (weatherData.coordinates) {
       params.set('lat', String(weatherData.coordinates.lat))
       params.set('lon', String(weatherData.coordinates.lon))
     }
     return `https://www.16bitweather.co/radar?${params.toString()}`
-  }, [weatherData])
+  }, [weatherData, searchParams])
 
   const handleRadarSearch = (location: string) => {
     const trimmed = location.trim()

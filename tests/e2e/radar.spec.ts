@@ -85,5 +85,17 @@ test.describe('Radar Map', () => {
 
     await expect(page.getByText(/GEOMET RADAR/i)).toBeVisible({ timeout: 15000 });
   });
+
+  test('radar honors shareable URL layer and frame params', async ({ page }) => {
+    await page.goto('/radar?location=Chicago&layers=precip,spc&frame=5&zoom=8');
+    await waitForRadarToLoad(page);
+
+    await page.getByRole('button', { name: /LAYERS/i }).click();
+    await expect(page.getByText(/✓ SPC Outlook/i)).toBeVisible();
+    await expect(page.locator('[data-radar-container] input[type="range"]').nth(1)).toHaveValue('5');
+    await expect(page).toHaveURL(/layers=precip(?:%2C|,)?spc/);
+    await expect(page).toHaveURL(/(?:^|[?&])frame=5(?:&|$)/);
+    await expect(page).toHaveURL(/(?:^|[?&])zoom=8(?:&|$)/);
+  });
 });
 
