@@ -4,9 +4,19 @@
 // Phase 2: CartoDB Dark Matter base map, precipitation legend, pulse marker animation
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Play, Pause, SkipBack, SkipForward, Layers, ChevronDown, Loader2 } from 'lucide-react'
 import type { ThemeType } from '@/lib/theme-config'
-import type { RadarFrame, RadarMetadata, RadarProvider } from '@/lib/radar'
+import {
+  buildRadarFrames,
+  DEFAULT_RADAR_ZOOM,
+  mergeRadarUrlParams,
+  parseRadarUrlState,
+  serializeRadarUrlParams,
+  type RadarFrame,
+  type RadarMetadata,
+  type RadarProvider,
+} from '@/lib/radar'
 
 // OpenLayers imports
 import 'ol/ol.css'
@@ -28,6 +38,8 @@ import type { FeatureLike } from 'ol/Feature'
 const TILE_TRANSITION_MS = 500 // Smooth crossfade between frames
 const BASE_ANIMATION_INTERVAL_MS = 500 // Fluid playback speed
 const PRELOAD_FRAMES_AHEAD = 3 // Number of frames to preload during playback
+const TILE_ERROR_FALLBACK_THRESHOLD = 5
+const URL_SYNC_DEBOUNCE_MS = 300
 
 // CartoDB Dark Matter base map for better radar contrast
 // Note: Removed {r} (Leaflet retina placeholder) - OpenLayers XYZ doesn't support it
@@ -111,6 +123,11 @@ const WeatherMapOpenLayers = ({
   theme = 'nord',
   displayMode = 'full-page'
 }: WeatherMapProps) => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const parsedUrlStateRef = useRef(parseRadarUrlState(searchParams))
+
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<Map | null>(null)
   const radarLayerRef = useRef<TileLayer<TileWMS | XYZ> | null>(null)
@@ -120,6 +137,10 @@ const WeatherMapOpenLayers = ({
   const stormReportsLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const [radarMetadata, setRadarMetadata] = useState<RadarMetadata | null>(null)
   const [metadataError, setMetadataError] = useState<string | null>(null)
+  const [activeProvider, setActiveProvider] = useState<RadarProvider | null>(null)
+  const [activeFrames, setActiveFrames] = useState<RadarFrame[]>([])
+  const [usingFallbackProvider, setUsingFallbackProvider] = useState(false)
+  const [radarStateReady, setRadarStateReady] = useState(false)
   const [alertsGeoJson, setAlertsGeoJson] = useState<FeatureCollection | null>(null)
   const [spcGeoJson, setSpcGeoJson] = useState<FeatureCollection | null>(null)
   const [stormReports, setStormReports] = useState<StormReport[]>([])
@@ -130,16 +151,16 @@ const WeatherMapOpenLayers = ({
     body: string
   } | null>(null)
 
-  const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
-    precipitation: true,
-    alerts: true,
-    spc: false,
-    stormReports: false,
+  const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>(() => ({
+    precipitation: parsedUrlStateRef.current.layers.precipitation,
+    alerts: parsedUrlStateRef.current.layers.alerts,
+    spc: parsedUrlStateRef.current.layers.spc,
+    stormReports: parsedUrlStateRef.current.layers.stormReports,
     clouds: false,
     wind: false,
     pressure: false,
     temperature: false,
-  })
+  }))
 
   const [opacity, setOpacity] = useState(0.85)
   const [layerMenuOpen, setLayerMenuOpen] = useState(false)
@@ -154,6 +175,13 @@ const WeatherMapOpenLayers = ({
   const preloadCacheRef = useRef<Set<string>>(new Set()) // Track preloaded frames
   const isPlayingRef = useRef(isPlaying)
   const opacityRef = useRef(opacity)
+  const frameIndexRef = useRef(frameIndex)
+  const tileErrorCountRef = useRef(0)
+  const usingFallbackRef = useRef(false)
+  const fallbackProviderRef = useRef<RadarProvider | undefined>(undefined)
+  const activeProviderRef = useRef<RadarProvider | null>(null)
+  const urlSyncTimerRef = useRef<number | null>(null)
+  const urlStateInitializedRef = useRef(false)
 
   // Track client-side mount to prevent hydration mismatch with Date.now()
   const [isMounted, setIsMounted] = useState(false)
@@ -185,12 +213,39 @@ const WeatherMapOpenLayers = ({
         const metadata = (await response.json()) as RadarMetadata
         if (controller.signal.aborted) return
         setRadarMetadata(metadata)
-        setFrameIndex(Math.max(0, metadata.frames.length - 1))
+        fallbackProviderRef.current = metadata.fallbackProvider
+
+        if (!usingFallbackRef.current) {
+          setActiveProvider(metadata.selectedProvider)
+          activeProviderRef.current = metadata.selectedProvider
+          setActiveFrames(metadata.frames)
+          setUsingFallbackProvider(false)
+
+          const urlFrame = parsedUrlStateRef.current.frameIndex
+          const liveIndex = Math.max(0, metadata.frames.length - 1)
+          if (!urlStateInitializedRef.current) {
+            const nextIndex = urlFrame != null
+              ? Math.min(urlFrame, liveIndex)
+              : liveIndex
+            frameIndexRef.current = nextIndex
+            setFrameIndex(nextIndex)
+            urlStateInitializedRef.current = true
+          }
+        } else if (activeProviderRef.current) {
+          const refreshedFrames = buildRadarFrames({
+            stepMinutes: activeProviderRef.current.frameStepMinutes,
+            pastMinutes: activeProviderRef.current.pastMinutes,
+          })
+          setActiveFrames(refreshedFrames)
+          setFrameIndex(Math.max(0, refreshedFrames.length - 1))
+        }
+        setRadarStateReady(true)
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
         console.error('[radar-map] metadata load failed', error)
         setRadarMetadata(null)
         setMetadataError('Radar metadata unavailable. Try again shortly.')
+        setRadarStateReady(false)
       }
     }
 
@@ -202,6 +257,54 @@ const WeatherMapOpenLayers = ({
       controller.abort()
     }
   }, [isMounted, latitude, longitude])
+
+  const locationQueryKey = useMemo(
+    () => `${latitude ?? ''}:${longitude ?? ''}:${searchParams.get('location') ?? ''}`,
+    [latitude, longitude, searchParams],
+  )
+
+  useEffect(() => {
+    usingFallbackRef.current = false
+    setUsingFallbackProvider(false)
+    tileErrorCountRef.current = 0
+    urlStateInitializedRef.current = false
+    setRadarStateReady(false)
+    parsedUrlStateRef.current = parseRadarUrlState(new URLSearchParams(window.location.search))
+    setActiveLayers((prev) => ({
+      ...prev,
+      precipitation: parsedUrlStateRef.current.layers.precipitation,
+      alerts: parsedUrlStateRef.current.layers.alerts,
+      spc: parsedUrlStateRef.current.layers.spc,
+      stormReports: parsedUrlStateRef.current.layers.stormReports,
+    }))
+  }, [locationQueryKey])
+
+  const activateFallbackProvider = useCallback(() => {
+    const fallback = fallbackProviderRef.current
+    const current = activeProviderRef.current
+    if (!fallback || current?.id === fallback.id) return
+
+    tileErrorCountRef.current = 0
+    usingFallbackRef.current = true
+    activeProviderRef.current = fallback
+
+    const frames = buildRadarFrames({
+      stepMinutes: fallback.frameStepMinutes,
+      pastMinutes: fallback.pastMinutes,
+    })
+
+    setUsingFallbackProvider(true)
+    setActiveProvider(fallback)
+    setActiveFrames(frames)
+    const nextIndex = Math.max(0, frames.length - 1)
+    frameIndexRef.current = nextIndex
+    setFrameIndex(nextIndex)
+    setMetadataError(null)
+    console.warn('[radar-map] switched to fallback provider', {
+      from: current?.id,
+      to: fallback.id,
+    })
+  }, [])
 
   useEffect(() => {
     if (!isMounted || latitude == null || longitude == null) return
@@ -259,8 +362,8 @@ const WeatherMapOpenLayers = ({
     return () => controller.abort()
   }, [isMounted, latitude, longitude])
 
-  const radarProvider = radarMetadata?.selectedProvider ?? null
-  const radarFrames = useMemo(() => radarMetadata?.frames ?? [], [radarMetadata])
+  const radarProvider = activeProvider
+  const radarFrames = useMemo(() => activeFrames, [activeFrames])
   const timestamps = useMemo(() => {
     return radarFrames.map((frame) => frame.timestamp)
   }, [radarFrames])
@@ -288,13 +391,15 @@ const WeatherMapOpenLayers = ({
       opacity: 0.9,
     })
 
+    const initialZoom = parsedUrlStateRef.current.zoom ?? DEFAULT_RADAR_ZOOM
+
     // Create map
     const map = new Map({
       target: mapRef.current,
       layers: [baseLayer],
       view: new View({
         center: fromLonLat([centerLon, centerLat]),
-        zoom: 10,
+        zoom: initialZoom,
       }),
     })
 
@@ -378,7 +483,7 @@ const WeatherMapOpenLayers = ({
     if (!mapInstanceRef.current || latitude == null || longitude == null) return
 
     mapInstanceRef.current.getView().setCenter(fromLonLat([longitude, latitude]))
-    mapInstanceRef.current.getView().setZoom(10)
+    mapInstanceRef.current.getView().setZoom(parsedUrlStateRef.current.zoom ?? DEFAULT_RADAR_ZOOM)
   }, [latitude, longitude])
 
   // Add location marker
@@ -623,7 +728,14 @@ const WeatherMapOpenLayers = ({
       if (loadingTileCount === 0) {
         setIsLoading(false)
       }
-      console.warn('[radar-map] Tile load error', { provider: radarProvider.id })
+      tileErrorCountRef.current += 1
+      console.warn('[radar-map] Tile load error', {
+        provider: radarProvider.id,
+        count: tileErrorCountRef.current,
+      })
+      if (tileErrorCountRef.current >= TILE_ERROR_FALLBACK_THRESHOLD) {
+        activateFallbackProvider()
+      }
     })
 
     const radarLayer = new TileLayer({
@@ -638,17 +750,19 @@ const WeatherMapOpenLayers = ({
     radarLayerRef.current = radarLayer
     radarSourceRef.current = radarSource
 
-    // Set initial time to most recent
+    // Apply the current timeline frame when the radar layer is created.
     if (radarFrames.length > 0) {
-      const initialIndex = timestamps.length - 1
-      const initialFrame = radarFrames[initialIndex]
+      const currentIndex = Math.min(
+        Math.max(frameIndexRef.current, 0),
+        radarFrames.length - 1,
+      )
+      const currentFrame = radarFrames[currentIndex]
       if (radarProvider.protocol === 'wms' && radarProvider.wms && 'updateParams' in radarSource) {
-        radarSource.updateParams({ [radarProvider.wms.timeParam]: initialFrame.isoTime })
+        radarSource.updateParams({ [radarProvider.wms.timeParam]: currentFrame.isoTime })
       } else if (radarProvider.protocol === 'xyz' && 'setUrl' in radarSource) {
-        const nextUrl = buildRadarXyzUrl(radarProvider, initialFrame)
+        const nextUrl = buildRadarXyzUrl(radarProvider, currentFrame)
         if (nextUrl) radarSource.setUrl(nextUrl)
       }
-      setFrameIndex(initialIndex)
     }
 
     return () => {
@@ -658,7 +772,7 @@ const WeatherMapOpenLayers = ({
         radarSourceRef.current = null
       }
     }
-  }, [radarProvider, activeLayers.precipitation, radarFrames, timestamps.length])
+  }, [radarProvider, activeLayers.precipitation, radarFrames, timestamps.length, activateFallbackProvider])
 
   // Update opacity when it changes
   useEffect(() => {
@@ -671,6 +785,10 @@ const WeatherMapOpenLayers = ({
   useEffect(() => {
     isPlayingRef.current = isPlaying
   }, [isPlaying])
+
+  useEffect(() => {
+    frameIndexRef.current = frameIndex
+  }, [frameIndex])
 
   // Update provider frame when timeline changes.
   useEffect(() => {
@@ -754,6 +872,70 @@ const WeatherMapOpenLayers = ({
     img.crossOrigin = 'anonymous'
     img.src = preloadUrl
   }, [radarFrames, radarProvider])
+
+  // Keep shareable URL state in sync with map controls.
+  const syncRadarUrlState = useCallback(() => {
+    if (!radarStateReady || activeFrames.length === 0) return
+
+    if (urlSyncTimerRef.current) {
+      window.clearTimeout(urlSyncTimerRef.current)
+    }
+
+    urlSyncTimerRef.current = window.setTimeout(() => {
+      const liveIndex = Math.max(0, activeFrames.length - 1)
+      const frameForUrl = isPlayingRef.current ? liveIndex : frameIndex
+      const currentZoom = mapInstanceRef.current?.getView().getZoom() ?? null
+      const radarParams = serializeRadarUrlParams({
+        layers: {
+          precipitation: activeLayers.precipitation,
+          alerts: activeLayers.alerts,
+          spc: activeLayers.spc,
+          stormReports: activeLayers.stormReports,
+        },
+        frameIndex: frameForUrl,
+        zoom: currentZoom,
+        frameCount: activeFrames.length,
+      })
+      const merged = mergeRadarUrlParams(new URLSearchParams(window.location.search), radarParams)
+      const nextQuery = merged.toString()
+      const currentQuery = window.location.search.replace(/^\?/, '')
+      if (nextQuery !== currentQuery) {
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+      }
+    }, URL_SYNC_DEBOUNCE_MS)
+  }, [
+    activeFrames.length,
+    activeLayers.alerts,
+    activeLayers.precipitation,
+    activeLayers.spc,
+    activeLayers.stormReports,
+    frameIndex,
+    pathname,
+    radarStateReady,
+    router,
+  ])
+
+  useEffect(() => {
+    syncRadarUrlState()
+  }, [syncRadarUrlState])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    const view = map.getView()
+    const handleZoomChange = () => syncRadarUrlState()
+    view.on('change:resolution', handleZoomChange)
+    return () => view.un('change:resolution', handleZoomChange)
+  }, [syncRadarUrlState, radarProvider])
+
+  useEffect(() => {
+    return () => {
+      if (urlSyncTimerRef.current) {
+        window.clearTimeout(urlSyncTimerRef.current)
+      }
+    }
+  }, [])
 
   // Animation playback with preloading
   useEffect(() => {
@@ -932,6 +1114,7 @@ const WeatherMapOpenLayers = ({
       <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-md font-mono text-xs font-bold z-[2000] ${themeStyles.badge}`}>
         {radarProvider ? (
           <span>
+            {usingFallbackProvider ? 'FALLBACK ' : ''}
             {isPlaying ? 'PLAYING' : isLiveFrame ? 'LIVE' : 'HISTORY'} {radarProvider.shortName} RADAR • {Math.round(radarProvider.pastMinutes / 60)}H HISTORY
             {metadataUpdatedAt ? ` • UPDATED ${metadataUpdatedAt}` : ''}
           </span>
