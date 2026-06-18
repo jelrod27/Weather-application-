@@ -21,7 +21,7 @@ test.describe('Radar Map', () => {
     
     const radarContainer = page.locator('[data-radar-container]').first();
     await expect(radarContainer).toBeVisible();
-    await expect(page.getByText(/MRMS RADAR/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/NEXRAD RADAR/i)).toBeVisible({ timeout: 15000 });
   });
 
   test('radar visible in synthwave theme', async ({ page }) => {
@@ -68,8 +68,8 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
     
-    await expect(page.getByText(/MRMS RADAR/i)).toBeVisible();
-    await expect(page.getByText(/Source: NOAA\/NWS MRMS/i)).toBeVisible();
+    await expect(page.getByText(/NEXRAD RADAR/i)).toBeVisible();
+    await expect(page.getByText(/Source: Iowa Environmental Mesonet/i)).toBeVisible();
   });
 
   test('Canada location selects GeoMet provider', async ({ page }) => {

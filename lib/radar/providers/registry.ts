@@ -134,9 +134,8 @@ export function selectRadarProvider(latitude: number, longitude: number): RadarP
 
   if (region === 'us') {
     return {
-      selectedProvider: RADAR_PROVIDERS['noaa-mrms'],
-      fallbackProvider: RADAR_PROVIDERS['iowa-nexrad'],
-      reason: 'US location selected official NOAA MRMS radar with Iowa NEXRAD fallback.',
+      selectedProvider: RADAR_PROVIDERS['iowa-nexrad'],
+      reason: 'US location selected Iowa NEXRAD direct because nowCOAST MRMS WMS is unavailable.',
     }
   }
 
