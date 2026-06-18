@@ -35,13 +35,13 @@ describe('GET /api/radar/metadata', () => {
     await expect(res.json()).resolves.toEqual({ error: 'Coordinates out of valid range' })
   })
 
-  it('returns US radar metadata with fallback provider', async () => {
+  it('returns US radar metadata with Iowa NEXRAD provider', async () => {
     const res = await GET(new NextRequest('http://localhost/api/radar/metadata?lat=40.7128&lon=-74.006'))
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.selectedProvider.id).toBe('noaa-mrms')
-    expect(body.fallbackProvider.id).toBe('iowa-nexrad')
+    expect(body.selectedProvider.id).toBe('iowa-nexrad')
+    expect(body.fallbackProvider).toBeUndefined()
     expect(body.frames.length).toBeGreaterThan(0)
     expect(res.headers['Cache-Control']).toContain('s-maxage=120')
   })

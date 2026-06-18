@@ -7,11 +7,11 @@ import {
 describe('radar providers', () => {
   const now = Date.UTC(2026, 5, 18, 21, 40, 0)
 
-  it('selects NOAA MRMS with Iowa fallback for US locations', () => {
+  it('selects Iowa NEXRAD for US locations', () => {
     const selection = selectRadarProvider(40.7128, -74.006)
 
-    expect(selection.selectedProvider.id).toBe('noaa-mrms')
-    expect(selection.fallbackProvider?.id).toBe('iowa-nexrad')
+    expect(selection.selectedProvider.id).toBe('iowa-nexrad')
+    expect(selection.fallbackProvider).toBeUndefined()
   })
 
   it('selects MSC GeoMet with RainViewer fallback for Canada locations', () => {
@@ -35,7 +35,7 @@ describe('radar providers', () => {
     const us = buildRadarMetadata(40.7128, -74.006, now)
     const canada = buildRadarMetadata(53.5461, -113.4938, now)
 
-    expect(us.selectedProvider.id).toBe('noaa-mrms')
+    expect(us.selectedProvider.id).toBe('iowa-nexrad')
     expect(us.frames).toHaveLength(49)
     expect(canada.selectedProvider.id).toBe('canada-geomet')
     expect(canada.frames).toHaveLength(31)

@@ -11,7 +11,7 @@ export interface RadarShareLayerState {
 
 export const DEFAULT_RADAR_LAYERS: RadarShareLayerState = {
   precipitation: true,
-  alerts: true,
+  alerts: false,
   spc: false,
   stormReports: false,
 }
