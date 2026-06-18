@@ -22,6 +22,7 @@ describe('radar-url-state', () => {
       alerts: false,
       spc: true,
       stormReports: false,
+      satellite: false,
     })
     expect(parsed.frameIndex).toBe(12)
     expect(parsed.zoom).toBe(8)
@@ -47,6 +48,7 @@ describe('radar-url-state', () => {
         alerts: false,
         spc: true,
         stormReports: false,
+        satellite: false,
       },
       frameIndex: 10,
       zoom: 7,

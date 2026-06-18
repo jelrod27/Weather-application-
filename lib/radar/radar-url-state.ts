@@ -1,12 +1,13 @@
 export const DEFAULT_RADAR_ZOOM = 10
 
-export type RadarLayerParam = 'precip' | 'alerts' | 'spc' | 'stormReports'
+export type RadarLayerParam = 'precip' | 'alerts' | 'spc' | 'stormReports' | 'satellite'
 
 export interface RadarShareLayerState {
   precipitation: boolean
   alerts: boolean
   spc: boolean
   stormReports: boolean
+  satellite: boolean
 }
 
 export const DEFAULT_RADAR_LAYERS: RadarShareLayerState = {
@@ -14,6 +15,7 @@ export const DEFAULT_RADAR_LAYERS: RadarShareLayerState = {
   alerts: true,
   spc: false,
   stormReports: false,
+  satellite: false,
 }
 
 export interface ParsedRadarUrlState {
@@ -27,6 +29,7 @@ const LAYER_PARAM_TO_STATE: Record<RadarLayerParam, keyof RadarShareLayerState> 
   alerts: 'alerts',
   spc: 'spc',
   stormReports: 'stormReports',
+  satellite: 'satellite',
 }
 
 const STATE_TO_LAYER_PARAM: Record<keyof RadarShareLayerState, RadarLayerParam> = {
@@ -34,6 +37,7 @@ const STATE_TO_LAYER_PARAM: Record<keyof RadarShareLayerState, RadarLayerParam> 
   alerts: 'alerts',
   spc: 'spc',
   stormReports: 'stormReports',
+  satellite: 'satellite',
 }
 
 function normalizeLayerToken(token: string): RadarLayerParam | null {
@@ -44,6 +48,7 @@ function normalizeLayerToken(token: string): RadarLayerParam | null {
   if (normalized === 'stormreports' || normalized === 'storm' || normalized === 'reports') {
     return 'stormReports'
   }
+  if (normalized === 'satellite' || normalized === 'goes' || normalized === 'ir') return 'satellite'
   return null
 }
 
@@ -56,11 +61,13 @@ export function parseRadarUrlState(searchParams: URLSearchParams): ParsedRadarUr
     layers.alerts = false
     layers.spc = false
     layers.stormReports = false
+    layers.satellite = false
   } else if (layersParam) {
     layers.precipitation = false
     layers.alerts = false
     layers.spc = false
     layers.stormReports = false
+    layers.satellite = false
 
     for (const token of layersParam.split(',')) {
       const key = normalizeLayerToken(token)
@@ -87,6 +94,7 @@ export function layersMatchDefault(layers: RadarShareLayerState): boolean {
     && layers.alerts === DEFAULT_RADAR_LAYERS.alerts
     && layers.spc === DEFAULT_RADAR_LAYERS.spc
     && layers.stormReports === DEFAULT_RADAR_LAYERS.stormReports
+    && layers.satellite === DEFAULT_RADAR_LAYERS.satellite
   )
 }
 

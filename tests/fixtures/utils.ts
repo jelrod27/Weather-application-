@@ -726,6 +726,12 @@ export async function stubRadarApis(page: Page): Promise<void> {
     body: transparentPng,
   }));
 
+  await page.route('**/api/weather/noaa-goes-wms**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
   await page.route('**/geo.weather.gc.ca/geomet/**', (route) => route.fulfill({
     status: 200,
     contentType: 'image/png',

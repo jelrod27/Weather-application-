@@ -8,11 +8,36 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Play, Pause, SkipBack, SkipForward, Layers, ChevronDown, Loader2 } from 'lucide-react'
 import type { ThemeType } from '@/lib/theme-config'
 import {
+  BASE_ANIMATION_INTERVAL_MS,
+  CARTO_DARK_MATTER_URL,
+  DEFAULT_MAP_CENTER,
+  PRELOAD_FRAMES_AHEAD,
+  TILE_ERROR_FALLBACK_THRESHOLD,
+  TILE_TRANSITION_MS,
+  URL_SYNC_DEBOUNCE_MS,
+} from '@/components/radar/radar-constants'
+import type {
+  RadarFeatureCollection,
+  RadarSelectedOverlay,
+  RadarStormReport,
+  WeatherMapProps,
+} from '@/components/radar/radar-map-types'
+import { alertStyle, spcStyle, stormReportStyle } from '@/components/radar/radar-styles'
+import { buildRadarXyzUrl } from '@/components/radar/radar-tile-utils'
+import {
   buildRadarFrames,
   DEFAULT_RADAR_ZOOM,
+  GOES_IR_ATTRIBUTION,
+  GOES_IR_TIME_PARAM,
+  GOES_IR_WMS_PARAMS,
+  GOES_IR_WMS_PROXY_PATH,
   mergeRadarUrlParams,
   parseRadarUrlState,
   serializeRadarUrlParams,
+  captureRadarMetadataClientError,
+  recordRadarMetadataClientLoad,
+  recordRadarProviderFallback,
+  recordRadarTileError,
   type RadarFrame,
   type RadarMetadata,
   type RadarProvider,
@@ -32,89 +57,6 @@ import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import GeoJSON from 'ol/format/GeoJSON'
 import { Style, Icon, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
-import type { FeatureLike } from 'ol/Feature'
-
-// Animation tuning constants
-const TILE_TRANSITION_MS = 500 // Smooth crossfade between frames
-const BASE_ANIMATION_INTERVAL_MS = 500 // Fluid playback speed
-const PRELOAD_FRAMES_AHEAD = 3 // Number of frames to preload during playback
-const TILE_ERROR_FALLBACK_THRESHOLD = 5
-const URL_SYNC_DEBOUNCE_MS = 300
-
-// CartoDB Dark Matter base map for better radar contrast
-// Note: Removed {r} (Leaflet retina placeholder) - OpenLayers XYZ doesn't support it
-const CARTO_DARK_MATTER_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-
-interface WeatherMapProps {
-  latitude?: number
-  longitude?: number
-  locationName?: string
-  theme?: ThemeType
-  displayMode?: 'full-page' | 'widget'
-}
-
-type FeatureCollection = {
-  type: 'FeatureCollection'
-  features: Array<{
-    type?: string
-    geometry?: unknown
-    properties?: Record<string, unknown>
-  }>
-}
-
-interface StormReport {
-  category: 'tornado' | 'hail' | 'wind'
-  time: string
-  size: string
-  location: string
-  state: string
-  lat: number | null
-  lon: number | null
-  comments: string
-  date: string
-}
-
-function buildRadarXyzUrl(provider: RadarProvider, frame: RadarFrame): string | null {
-  if (!provider.xyz) return null
-  return provider.xyz.urlTemplate.replace('{epochSeconds}', String(frame.epochSeconds))
-}
-
-function alertStyle(feature: FeatureLike): Style {
-  const severity = String(feature.get('severity') ?? 'Minor')
-  const color = severity === 'Extreme'
-    ? '#dc2626'
-    : severity === 'Severe'
-      ? '#ea580c'
-      : severity === 'Moderate'
-        ? '#ca8a04'
-        : '#2563eb'
-
-  return new Style({
-    fill: new Fill({ color: `${color}33` }),
-    stroke: new Stroke({ color, width: 2 }),
-  })
-}
-
-function spcStyle(feature: FeatureLike): Style {
-  const fill = String(feature.get('fill') ?? '#facc15')
-  const stroke = String(feature.get('stroke') ?? '#fef08a')
-  return new Style({
-    fill: new Fill({ color: `${fill}66` }),
-    stroke: new Stroke({ color: stroke, width: 2 }),
-  })
-}
-
-function stormReportStyle(feature: FeatureLike): Style {
-  const category = String(feature.get('category') ?? '')
-  const color = category === 'tornado' ? '#ef4444' : category === 'hail' ? '#a855f7' : '#38bdf8'
-  return new Style({
-    image: new CircleStyle({
-      radius: 6,
-      fill: new Fill({ color: `${color}dd` }),
-      stroke: new Stroke({ color: '#020617', width: 1 }),
-    }),
-  })
-}
 
 const WeatherMapOpenLayers = ({
   latitude,
@@ -132,6 +74,8 @@ const WeatherMapOpenLayers = ({
   const mapInstanceRef = useRef<Map | null>(null)
   const radarLayerRef = useRef<TileLayer<TileWMS | XYZ> | null>(null)
   const radarSourceRef = useRef<TileWMS | XYZ | null>(null)
+  const satelliteLayerRef = useRef<TileLayer<TileWMS> | null>(null)
+  const satelliteSourceRef = useRef<TileWMS | null>(null)
   const alertsLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const spcLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const stormReportsLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
@@ -141,21 +85,17 @@ const WeatherMapOpenLayers = ({
   const [activeFrames, setActiveFrames] = useState<RadarFrame[]>([])
   const [usingFallbackProvider, setUsingFallbackProvider] = useState(false)
   const [radarStateReady, setRadarStateReady] = useState(false)
-  const [alertsGeoJson, setAlertsGeoJson] = useState<FeatureCollection | null>(null)
-  const [spcGeoJson, setSpcGeoJson] = useState<FeatureCollection | null>(null)
-  const [stormReports, setStormReports] = useState<StormReport[]>([])
-  const [selectedOverlay, setSelectedOverlay] = useState<{
-    x: number
-    y: number
-    title: string
-    body: string
-  } | null>(null)
+  const [alertsGeoJson, setAlertsGeoJson] = useState<RadarFeatureCollection | null>(null)
+  const [spcGeoJson, setSpcGeoJson] = useState<RadarFeatureCollection | null>(null)
+  const [stormReports, setStormReports] = useState<RadarStormReport[]>([])
+  const [selectedOverlay, setSelectedOverlay] = useState<RadarSelectedOverlay | null>(null)
 
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>(() => ({
     precipitation: parsedUrlStateRef.current.layers.precipitation,
     alerts: parsedUrlStateRef.current.layers.alerts,
     spc: parsedUrlStateRef.current.layers.spc,
     stormReports: parsedUrlStateRef.current.layers.stormReports,
+    satellite: parsedUrlStateRef.current.layers.satellite,
     clouds: false,
     wind: false,
     pressure: false,
@@ -199,6 +139,7 @@ const WeatherMapOpenLayers = ({
 
     async function loadRadarMetadata() {
       setMetadataError(null)
+      const startedAt = performance.now()
       try {
         const params = new URLSearchParams({
           lat: String(latitude),
@@ -240,8 +181,11 @@ const WeatherMapOpenLayers = ({
           setFrameIndex(Math.max(0, refreshedFrames.length - 1))
         }
         setRadarStateReady(true)
+        recordRadarMetadataClientLoad(performance.now() - startedAt, true, latitude, longitude)
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
+        recordRadarMetadataClientLoad(performance.now() - startedAt, false, latitude, longitude)
+        captureRadarMetadataClientError(error, latitude, longitude)
         console.error('[radar-map] metadata load failed', error)
         setRadarMetadata(null)
         setMetadataError('Radar metadata unavailable. Try again shortly.')
@@ -276,6 +220,7 @@ const WeatherMapOpenLayers = ({
       alerts: parsedUrlStateRef.current.layers.alerts,
       spc: parsedUrlStateRef.current.layers.spc,
       stormReports: parsedUrlStateRef.current.layers.stormReports,
+      satellite: parsedUrlStateRef.current.layers.satellite,
     }))
   }, [locationQueryKey])
 
@@ -300,6 +245,7 @@ const WeatherMapOpenLayers = ({
     frameIndexRef.current = nextIndex
     setFrameIndex(nextIndex)
     setMetadataError(null)
+    recordRadarProviderFallback(current?.id, fallback.id, TILE_ERROR_FALLBACK_THRESHOLD)
     console.warn('[radar-map] switched to fallback provider', {
       from: current?.id,
       to: fallback.id,
@@ -329,21 +275,21 @@ const WeatherMapOpenLayers = ({
         if (controller.signal.aborted) return
 
         if (alertsRes.ok) {
-          const alerts = (await alertsRes.json()) as FeatureCollection
+          const alerts = (await alertsRes.json()) as RadarFeatureCollection
           setAlertsGeoJson(alerts.type === 'FeatureCollection' ? alerts : null)
         } else {
           setAlertsGeoJson(null)
         }
 
         if (spcRes.ok) {
-          const spc = (await spcRes.json()) as FeatureCollection
+          const spc = (await spcRes.json()) as RadarFeatureCollection
           setSpcGeoJson(spc.type === 'FeatureCollection' ? spc : null)
         } else {
           setSpcGeoJson(null)
         }
 
         if (reportsRes.ok) {
-          const reportsJson = (await reportsRes.json()) as { reports?: StormReport[] }
+          const reportsJson = (await reportsRes.json()) as { reports?: RadarStormReport[] }
           setStormReports(reportsJson.reports ?? [])
         } else {
           setStormReports([])
@@ -376,8 +322,8 @@ const WeatherMapOpenLayers = ({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return
 
-    const centerLon = -98.5795
-    const centerLat = 39.8283
+    const centerLon = DEFAULT_MAP_CENTER[0]
+    const centerLat = DEFAULT_MAP_CENTER[1]
 
 
     // Create base layer (CartoDB Dark Matter - better radar visibility)
@@ -729,6 +675,7 @@ const WeatherMapOpenLayers = ({
         setIsLoading(false)
       }
       tileErrorCountRef.current += 1
+      recordRadarTileError(radarProvider.id, tileErrorCountRef.current)
       console.warn('[radar-map] Tile load error', {
         provider: radarProvider.id,
         count: tileErrorCountRef.current,
@@ -774,6 +721,58 @@ const WeatherMapOpenLayers = ({
     }
   }, [radarProvider, activeLayers.precipitation, radarFrames, timestamps.length, activateFallbackProvider])
 
+  useEffect(() => {
+    if (!mapInstanceRef.current || !activeLayers.satellite || radarFrames.length === 0) {
+      if (satelliteLayerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(satelliteLayerRef.current)
+        satelliteLayerRef.current = null
+        satelliteSourceRef.current = null
+      }
+      return
+    }
+
+    const map = mapInstanceRef.current
+    if (satelliteLayerRef.current) {
+      map.removeLayer(satelliteLayerRef.current)
+    }
+
+    const currentIndex = Math.min(
+      Math.max(frameIndexRef.current, 0),
+      radarFrames.length - 1,
+    )
+    const currentFrame = radarFrames[currentIndex]
+
+    const satelliteSource = new TileWMS({
+      url: GOES_IR_WMS_PROXY_PATH,
+      params: {
+        ...GOES_IR_WMS_PARAMS,
+        [GOES_IR_TIME_PARAM]: currentFrame.isoTime,
+      },
+      serverType: 'mapserver',
+      transition: TILE_TRANSITION_MS,
+      crossOrigin: 'anonymous',
+    })
+
+    const satelliteLayer = new TileLayer({
+      source: satelliteSource,
+      opacity: 0.55,
+      zIndex: 450,
+    })
+
+    satelliteLayer.set('name', 'goes-ir-satellite')
+    map.addLayer(satelliteLayer)
+    satelliteLayerRef.current = satelliteLayer
+    satelliteSourceRef.current = satelliteSource
+
+    return () => {
+      if (satelliteLayerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(satelliteLayerRef.current)
+        satelliteLayerRef.current = null
+        satelliteSourceRef.current = null
+      }
+    }
+  }, [activeLayers.satellite, radarFrames, timestamps.length])
+
   // Update opacity when it changes
   useEffect(() => {
     opacityRef.current = opacity
@@ -808,7 +807,11 @@ const WeatherMapOpenLayers = ({
       const nextUrl = buildRadarXyzUrl(radarProvider, currentFrame)
       if (nextUrl) source.setUrl(nextUrl)
     }
-  }, [frameIndex, radarFrames, radarProvider])
+
+    if (satelliteSourceRef.current && activeLayers.satellite) {
+      satelliteSourceRef.current.updateParams({ [GOES_IR_TIME_PARAM]: currentFrame.isoTime })
+    }
+  }, [activeLayers.satellite, frameIndex, radarFrames, radarProvider])
 
   // Clear preload cache when location changes (fixes CodeRabbit memory leak issue)
   useEffect(() => {
@@ -891,6 +894,7 @@ const WeatherMapOpenLayers = ({
           alerts: activeLayers.alerts,
           spc: activeLayers.spc,
           stormReports: activeLayers.stormReports,
+          satellite: activeLayers.satellite,
         },
         frameIndex: frameForUrl,
         zoom: currentZoom,
@@ -909,6 +913,7 @@ const WeatherMapOpenLayers = ({
     activeLayers.precipitation,
     activeLayers.spc,
     activeLayers.stormReports,
+    activeLayers.satellite,
     frameIndex,
     pathname,
     radarStateReady,
@@ -1126,6 +1131,7 @@ const WeatherMapOpenLayers = ({
       {radarProvider && (
         <div className="absolute bottom-3 right-3 z-[1900] max-w-[70vw] rounded bg-gray-950/80 px-2 py-1 text-right font-mono text-[9px] uppercase tracking-wide text-gray-300 backdrop-blur-sm max-sm:bottom-16">
           Source: {radarProvider.attribution}
+          {activeLayers.satellite ? ` · ${GOES_IR_ATTRIBUTION}` : ''}
         </div>
       )}
 
@@ -1175,6 +1181,14 @@ const WeatherMapOpenLayers = ({
                 }`}
             >
               {activeLayers.stormReports ? '✓' : '○'} Storm Reports ({stormReports.length})
+            </button>
+
+            <button
+              onClick={() => setActiveLayers(prev => ({ ...prev, satellite: !prev.satellite }))}
+              className={`w-full px-3 py-2 text-left font-mono text-xs hover:bg-gray-700 transition-colors ${activeLayers.satellite ? 'bg-sky-600/30 text-sky-300' : 'text-gray-300'
+                }`}
+            >
+              {activeLayers.satellite ? '✓' : '○'} GOES IR Satellite
             </button>
 
             {/* Opacity slider */}
