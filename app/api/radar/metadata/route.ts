@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { buildRadarMetadata } from '@/lib/radar'
+import { captureRadarMetadataRouteError, trackRadarMetadataApi } from '@/lib/radar/telemetry'
 
 function parseCoordinate(value: string | null): number | null {
   if (value == null || value.trim() === '') return null
@@ -9,6 +10,7 @@ function parseCoordinate(value: string | null): number | null {
 }
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const lat = parseCoordinate(request.nextUrl.searchParams.get('lat'))
     const lon = parseCoordinate(request.nextUrl.searchParams.get('lon'))
@@ -28,6 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     const metadata = buildRadarMetadata(lat, lon)
+    trackRadarMetadataApi(Date.now() - startTime, true)
 
     return NextResponse.json(metadata, {
       headers: {
@@ -35,6 +38,8 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
+    trackRadarMetadataApi(Date.now() - startTime, false)
+    captureRadarMetadataRouteError(error)
     console.error('[radar-metadata]', error)
     return NextResponse.json(
       { error: 'Failed to build radar metadata' },
