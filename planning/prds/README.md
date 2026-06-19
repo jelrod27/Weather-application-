@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-radar-v2.md](./PRD-radar-v2.md) | Radar v2 ground-up redesign — RainViewer/WeatherWise–style full-screen map, bottom player dock, Severe preset, new `components/radar-v2/` architecture |
 | [PRD-condition-alerts.md](./PRD-condition-alerts.md) | Location-scoped condition alerts — in-app alert center for stargazing windows at saved locations, daily Vercel cron evaluation, schema + RLS design |
 | [PRD-news-overhaul.md](./PRD-news-overhaul.md) | News section overhaul — fix dead feeds, remove orphaned subsystem, tiered caching + feed-health monitoring |
 
