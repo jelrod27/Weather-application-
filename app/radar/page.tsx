@@ -197,11 +197,11 @@ export default function MapPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
+    <div className="flex h-screen w-full flex-col overflow-hidden">
       <Navigation />
 
       {/* Breadcrumb Header */}
-      <div className="p-3 bg-gray-900 border-b border-gray-700 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="shrink-0 p-3 bg-gray-900 border-b border-gray-700 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 border-2 border-gray-600 hover:bg-gray-700 transition-colors rounded" aria-label="Return to Home">
             <Home className="w-3 h-3" />
@@ -240,8 +240,8 @@ export default function MapPage() {
         />
       </div>
 
-      {/* Map Container */}
-      <div className="flex-1 min-h-[500px] overflow-visible">
+      {/* Map Container - flex-1 + min-h-0 fills remaining viewport below nav/header */}
+      <div className="min-h-0 flex-1 overflow-visible">
         <WeatherMap
           latitude={weatherData.coordinates!.lat}
           longitude={weatherData.coordinates!.lon}

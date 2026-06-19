@@ -86,6 +86,22 @@ test.describe('Radar Map', () => {
     await expect(page.getByText(/GEOMET RADAR/i)).toBeVisible({ timeout: 15000 });
   });
 
+  test('radar map fills the viewport below the page header', async ({ page }) => {
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+
+    const viewportHeight = await page.evaluate(() => window.innerHeight);
+    const mapHeight = await page.locator('[data-radar-container] .ol-viewport').evaluate(
+      (element) => element.getBoundingClientRect().height
+    );
+
+    // Full-page radar should use most of the screen, not collapse to the 350px widget minimum.
+    expect(mapHeight).toBeGreaterThan(viewportHeight * 0.5);
+  });
+
   test('radar honors shareable URL layer and frame params', async ({ page }) => {
     await page.goto('/radar?location=Chicago&layers=precip,spc&frame=5&zoom=8');
     await waitForRadarToLoad(page);
