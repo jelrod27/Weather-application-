@@ -1,5 +1,6 @@
 import {
   DEFAULT_RADAR_LAYERS,
+  DEFAULT_RADAR_TILE_PREFERENCES,
   DEFAULT_RADAR_ZOOM,
   mergeRadarUrlParams,
   parseRadarUrlState,
@@ -12,6 +13,8 @@ describe('radar-url-state', () => {
       layers: DEFAULT_RADAR_LAYERS,
       frameIndex: null,
       zoom: null,
+      tilePreferences: DEFAULT_RADAR_TILE_PREFERENCES,
+      explicitLayers: false,
     })
   })
 

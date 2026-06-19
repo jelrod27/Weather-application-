@@ -17,6 +17,28 @@ jest.mock('next/server', () => ({
   },
 }))
 
+const sampleManifest = {
+  version: '2.0',
+  generated: 1718841600,
+  host: 'https://tilecache.rainviewer.com',
+  radar: {
+    past: [
+      { time: 1718840400, path: '/v2/radar/1718840400' },
+      { time: 1718841000, path: '/v2/radar/1718841000' },
+      { time: 1718841600, path: '/v2/radar/1718841600' },
+    ],
+  },
+}
+
+jest.mock('@/lib/radar/rainviewer/fetch-manifest', () => ({
+  fetchRainViewerManifest: jest.fn(async () => ({
+    version: sampleManifest.version,
+    generated: sampleManifest.generated,
+    host: sampleManifest.host,
+    past: sampleManifest.radar.past,
+  })),
+}))
+
 import { GET } from '@/app/api/radar/metadata/route'
 import { NextRequest } from 'next/server'
 
@@ -35,22 +57,24 @@ describe('GET /api/radar/metadata', () => {
     await expect(res.json()).resolves.toEqual({ error: 'Coordinates out of valid range' })
   })
 
-  it('returns US radar metadata with Iowa NEXRAD provider', async () => {
+  it('returns RainViewer metadata for US locations', async () => {
     const res = await GET(new NextRequest('http://localhost/api/radar/metadata?lat=40.7128&lon=-74.006'))
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.selectedProvider.id).toBe('iowa-nexrad')
-    expect(body.fallbackProvider).toBeUndefined()
-    expect(body.frames.length).toBeGreaterThan(0)
+    expect(body.selectedProvider.id).toBe('rainviewer')
+    expect(body.frames.length).toBe(3)
+    expect(body.coverageRegion).toBe('us')
+    expect(body.rainviewer.host).toContain('tilecache.rainviewer.com')
     expect(res.headers['Cache-Control']).toContain('s-maxage=120')
   })
 
-  it('returns Canada radar metadata', async () => {
-    const res = await GET(new NextRequest('http://localhost/api/radar/metadata?lat=53.5461&lon=-113.4938'))
+  it('returns RainViewer metadata for international locations', async () => {
+    const res = await GET(new NextRequest('http://localhost/api/radar/metadata?lat=51.5072&lon=-0.1276'))
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.selectedProvider.id).toBe('canada-geomet')
+    expect(body.selectedProvider.id).toBe('rainviewer')
+    expect(body.coverageRegion).toBe('global')
   })
 })
