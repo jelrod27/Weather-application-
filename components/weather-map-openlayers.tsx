@@ -1051,19 +1051,21 @@ const WeatherMapOpenLayers = ({
     setFrameIndex(Math.max(0, timestamps.length - 1))
   }, [timestamps.length])
 
+  const isFullPage = displayMode === 'full-page'
+
   return (
     <div
       data-radar-container
-      className={`flex w-full flex-col gap-2 rounded-lg sm:flex-row ${themeStyles.container}`}
-      style={{ height: '100%', minHeight: '350px' }}
+      className={`flex w-full flex-col gap-2 rounded-lg sm:flex-row ${isFullPage ? 'h-full min-h-0' : ''} ${themeStyles.container}`}
+      style={isFullPage ? undefined : { height: '100%', minHeight: '350px' }}
     >
       {/* Main Map Area */}
-      <div className="relative min-h-[350px] flex-1 overflow-visible">
+      <div className={`relative flex-1 overflow-visible ${isFullPage ? 'min-h-0 h-full' : 'min-h-[350px]'}`}>
       {/* Map Container - explicit dimensions for production */}
       <div
         ref={mapRef}
-        className="w-full bg-gray-900 rounded-lg overflow-hidden"
-        style={{ zIndex: 1, height: '100%', minHeight: '350px', position: 'relative' }}
+        className={`w-full bg-gray-900 rounded-lg overflow-hidden ${isFullPage ? 'h-full' : ''}`}
+        style={{ zIndex: 1, position: 'relative', ...(isFullPage ? {} : { height: '100%', minHeight: '350px' }) }}
       />
 
       {/* Loading Indicator - Skeleton placeholder with shimmer effect */}
