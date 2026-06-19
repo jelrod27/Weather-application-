@@ -12,7 +12,7 @@ interface WeatherMapProps {
 }
 
 // Create a completely dynamic map component with no SSR
-const MapComponent = dynamic(() => import('./weather-map-openlayers'), {
+const MapComponent = dynamic(() => import('./radar-v2/radar-shell'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gray-900 rounded-lg flex items-center justify-center">

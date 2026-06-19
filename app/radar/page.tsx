@@ -23,12 +23,12 @@ import Navigation from '@/components/navigation'
 import { ShareButtons } from '@/components/share-buttons'
 import WeatherSearch from '@/components/weather-search'
 
-const WeatherMap = dynamicImport(() => import('@/components/weather-map'), {
+const RadarShell = dynamicImport(() => import('@/components/radar-v2/radar-shell'), {
   ssr: false,
   loading: () => (
     <div className="h-[calc(100vh-4rem)] w-full flex items-center justify-center bg-gray-900">
       <div className="text-white text-center">
-        <div className="mb-2">Loading Weather Map...</div>
+        <div className="mb-2">Loading Weather Radar...</div>
         <div className="text-sm text-gray-400">Initializing map components</div>
       </div>
     </div>
@@ -140,7 +140,7 @@ export default function MapPage() {
           <div className="text-white text-center max-w-md px-4">
             <div className="text-xl mb-4 font-mono">NO LOCATION DATA</div>
             <div className="text-sm text-gray-400 mb-6">
-              Search for a location to view North America radar and severe weather overlays.
+              Search for a location to view global precipitation radar and severe weather overlays.
             </div>
             <WeatherSearch
               onSearch={handleRadarSearch}
@@ -233,7 +233,7 @@ export default function MapPage() {
             title: weatherData.location ? `Live Weather Radar - ${weatherData.location}` : 'Live Weather Radar',
             text: weatherData.location
               ? `Live radar and severe weather overlays for ${weatherData.location}`
-              : 'Live North America radar and severe weather overlays at 16bitweather.co',
+              : 'Live global precipitation radar and severe weather overlays at 16bitweather.co',
             url: shareUrl,
           }}
           className="justify-end"
@@ -242,7 +242,7 @@ export default function MapPage() {
 
       {/* Map Container - flex-1 + min-h-0 fills remaining viewport below nav/header */}
       <div className="min-h-0 flex-1 overflow-visible">
-        <WeatherMap
+        <RadarShell
           latitude={weatherData.coordinates!.lat}
           longitude={weatherData.coordinates!.lon}
           locationName={weatherData.location}
