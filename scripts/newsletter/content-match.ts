@@ -22,6 +22,7 @@
 
 import { callAnthropic, DEFAULT_MODEL } from './repetition';
 import type { ImageEntry } from './images';
+import { passesNarrativeFit } from './narrative-fit';
 
 export interface ImagePlacement {
   image: ImageEntry;
@@ -62,6 +63,8 @@ Selection rules:
 - Strongly prefer images whose subject the prose actually dwells on (multiple sentences, a named region, a specific event), not topics the prose only name-checks.
 - Prefer kind=live and kind=reference over kind=archival. Pick archival only if the prose invokes the historical event it depicts, OR if no live/reference image fits.
 - Do not pick two images on the same narrow subject (e.g., two solar images for a draft that mentions space weather once).
+- Do not pick modeling hardware (supercomputer, Cray) unless the prose discusses forecast models or numerical weather prediction.
+- Do not pick drought, pollen, marine, or tropical imagery unless the prose actually develops that subject.
 - For each pick, return a 3-8 word verbatim snippet from the draft after which the image should appear. The snippet must occur exactly once in the draft so we can find the insertion point unambiguously. Pick a snippet at a paragraph boundary.
 
 Return JSON only, no prose, no fences:
@@ -103,6 +106,40 @@ ${catalog}`;
     placements.push({ image, insertAfter: pick.insert_after });
   }
   return placements;
+}
+
+/**
+ * Drops judge picks that fail the same narrative-fit rules used by
+ * validate-post.ts, then backfills from the remaining pool so the cron
+ * does not fail on a single mismatched image.
+ */
+export function filterPlacementsByNarrativeFit(
+  draft: string,
+  placements: ImagePlacement[],
+  pool: ImageEntry[],
+  count: number,
+): ImagePlacement[] {
+  const accepted: ImagePlacement[] = [];
+  const usedIds = new Set<string>();
+
+  for (const placement of placements) {
+    if (passesNarrativeFit(draft, placement.image)) {
+      accepted.push(placement);
+      usedIds.add(placement.image.id);
+      continue;
+    }
+    console.warn(`[content-match] dropping ${placement.image.id}: narrative mismatch`);
+  }
+
+  for (const image of pool) {
+    if (accepted.length >= count) break;
+    if (usedIds.has(image.id)) continue;
+    if (!passesNarrativeFit(draft, image)) continue;
+    usedIds.add(image.id);
+    accepted.push({ image, insertAfter: '##' });
+  }
+
+  return accepted.slice(0, count);
 }
 
 /**
