@@ -1,4 +1,4 @@
-import { embedImagesInDraft, stripBareImageMarkdown } from '../../scripts/newsletter/content-match';
+import { embedImagesInDraft, filterPlacementsByNarrativeFit, stripBareImageMarkdown } from '../../scripts/newsletter/content-match';
 import type { ImageEntry } from '../../scripts/newsletter/images';
 
 const liveImage: ImageEntry = {
@@ -21,6 +21,46 @@ const archivalImage: ImageEntry = {
   kind: 'archival',
   archival_year: 1981,
 };
+
+const supercomputerImage: ImageEntry = {
+  id: 'supercomputer-rack',
+  url: 'https://example.com/cray.jpg',
+  caption: 'Cray-1 supercomputer — early generation of weather modeling hardware.',
+  credit: 'Wikimedia Commons',
+  topic_tags: ['tech_and_models', 'historical_events'],
+  license: 'CC-BY-4.0',
+};
+
+const faultImage: ImageEntry = {
+  id: 'fault-types-usgs',
+  url: 'https://example.com/fault.svg',
+  caption: 'USGS diagram of normal, reverse, and strike-slip fault motion.',
+  credit: 'USGS',
+  topic_tags: ['earthquakes'],
+  license: 'PD-USGov',
+};
+
+describe('filterPlacementsByNarrativeFit', () => {
+  it('drops modeling hardware from an earthquake draft and backfills on-topic imagery', () => {
+    const draft = [
+      '## The rupture',
+      '',
+      'On January 17, 1994 at 4:30 a.m., a M6.7 earthquake struck near Northridge, California.',
+      '',
+      'The seismic waves traveled through a strike-slip fault system.',
+    ].join('\n');
+
+    const filtered = filterPlacementsByNarrativeFit(
+      draft,
+      [{ image: supercomputerImage, insertAfter: 'Northridge, California' }],
+      [supercomputerImage, faultImage],
+      1,
+    );
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].image.id).toBe('fault-types-usgs');
+  });
+});
 
 describe('embedImagesInDraft', () => {
   it('inserts an image after the paragraph containing the anchor snippet', () => {
