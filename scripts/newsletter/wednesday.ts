@@ -5,7 +5,7 @@
 
 import { getSpotlight } from '../blog-spotlight';
 import { pickCloser, type CloserChoice } from './closers';
-import { embedImagesInDraft, pickImagesForContent, type ImagePlacement } from './content-match';
+import { embedImagesInDraft, filterPlacementsByNarrativeFit, pickImagesForContent, type ImagePlacement } from './content-match';
 import { selectImages, type ImageAuditEntry, type ImageEntry } from './images';
 import { findAngleForTopic, fetchHeadlines, type NewsAngle } from './news';
 import {
@@ -169,7 +169,8 @@ export async function runWednesday(): Promise<WednesdayResult> {
   // Content-aware image picks: judge ranks the candidate pool against
   // the actual prose, then we splice the picks in. Falls back to the
   // first three pool entries if the judge call fails or returns nothing.
-  const placements = await pickImagesForContent({ draft, pool: candidatePool, count: 3 });
+  const rawPlacements = await pickImagesForContent({ draft, pool: candidatePool, count: 3 });
+  const placements = filterPlacementsByNarrativeFit(draft, rawPlacements, candidatePool, 3);
   let images: ImageEntry[];
   let finalPlacements: ImagePlacement[];
   let finalDraft: string;
