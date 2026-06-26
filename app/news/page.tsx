@@ -1,15 +1,10 @@
 /**
  * 16-Bit Weather Platform - News Page (RSS Aggregator)
- *
- * Copyright (C) 2025 16-Bit Weather
- * Licensed under Fair Source License, Version 0.9
- *
- * Multi-source RSS news aggregation: Earthquakes, Volcanoes, Space, Climate, Severe Weather
  */
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
@@ -18,14 +13,28 @@ import NewsHero from '@/components/news/NewsHero';
 import NewsFilter from '@/components/news/NewsFilter';
 import NewsGrid from '@/components/news/NewsGrid';
 import NewsCard from '@/components/news/NewsCard';
+import NewsSkeleton from '@/components/news/NewsSkeleton';
+import NewsFeedBanner from '@/components/news/NewsFeedBanner';
+import NewsSourceRow from '@/components/news/NewsSourceRow';
+import NewsCategorySections from '@/components/news/NewsCategorySections';
+import { excludeRailIds, groupItemsByCategory } from '@/lib/news/rails';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 
 type FilterCategory = FeedCategory | 'all';
 
-// "Happening Now" = high-priority items from the last 6 hours.
-const HAPPENING_NOW_WINDOW_MS = 6 * 60 * 60 * 1000;
-const HAPPENING_NOW_MAX = 8;
+interface NewsStats {
+  byCategory: Record<string, number>;
+  errors?: string[];
+  enabledSources?: string[];
+}
+
+function hydrateItems(items: RSSItem[]): RSSItem[] {
+  return items.map((item) => ({
+    ...item,
+    timestamp: new Date(item.timestamp),
+  }));
+}
 
 /** Short "Updated Xm ago" string for the freshness indicator. */
 function formatUpdatedAgo(date: Date): string {
@@ -41,92 +50,69 @@ export default function NewsPage() {
   const { theme } = useTheme();
   const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
 
-  // State
   const [news, setNews] = useState<RSSItem[]>([]);
+  const [happeningNow, setHappeningNow] = useState<RSSItem[]>([]);
   const [featuredStory, setFeaturedStory] = useState<RSSItem | null>(null);
   const [filteredNews, setFilteredNews] = useState<RSSItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentCategory, setCurrentCategory] = useState<FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState<{ byCategory: Record<string, number> } | null>(null);
+  const [stats, setStats] = useState<NewsStats | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  // Fetch news from RSS API
-  const fetchNews = useCallback(async () => {
+  const fetchNews = useCallback(async (category: FilterCategory, options?: { initial?: boolean }) => {
+    const initial = options?.initial ?? false;
     try {
-      setIsLoading(true);
+      if (initial) setIsLoading(true);
+      else setIsRefreshing(true);
       setError(null);
 
-      const response = await fetch('/api/news/rss?maxItems=60&maxAge=72');
+      const params = new URLSearchParams({ maxItems: '60', maxAge: '72' });
+      if (category !== 'all') params.set('categories', category);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch news');
-      }
+      const response = await fetch(`/api/news/rss?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch news');
 
       const data = await response.json();
-
-      if (data.status === 'ok' && data.items) {
-        // Convert timestamp strings to Date objects
-        const items = data.items.map((item: RSSItem) => ({
-          ...item,
-          timestamp: new Date(item.timestamp),
-        }));
-        setNews(items);
-        setFilteredNews(items);
-        setStats(data.stats);
-        setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
-      } else {
+      if (data.status !== 'ok' || !Array.isArray(data.items)) {
         throw new Error(data.message || 'No news available');
       }
+
+      const items = hydrateItems(data.items);
+      setNews(items);
+      setFilteredNews(items);
+      setHappeningNow(Array.isArray(data.happeningNow) ? hydrateItems(data.happeningNow) : []);
+      setFeaturedStory(data.featured ? hydrateItems([data.featured])[0] : null);
+      setStats(data.stats ?? null);
+      setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
+      hasLoadedRef.current = true;
     } catch (err) {
-      console.error('Error fetching news:', err);
+      console.error('[news] Error fetching news:', err);
       setError(err instanceof Error ? err.message : 'Failed to load news');
-      setNews([]);
-      setFilteredNews([]);
+      if (initial) {
+        setNews([]);
+        setFilteredNews([]);
+        setHappeningNow([]);
+        setFeaturedStory(null);
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
-  // Fetch featured story
-  const fetchFeaturedStory = useCallback(async () => {
-    try {
-      const response = await fetch('/api/news/rss?featured=true');
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'ok' && data.featured) {
-        setFeaturedStory({
-          ...data.featured,
-          timestamp: new Date(data.featured.timestamp),
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching featured story:', err);
-    }
-  }, []);
-
-  // Initial fetch
   useEffect(() => {
-    fetchNews();
-    fetchFeaturedStory();
-  }, [fetchNews, fetchFeaturedStory]);
+    void fetchNews(currentCategory, { initial: !hasLoadedRef.current });
+  }, [currentCategory, fetchNews]);
 
-  // Filter news based on category and search query
   useEffect(() => {
     let filtered = [...news];
-
-    // Filter by category
     if (currentCategory !== 'all') {
       filtered = filtered.filter((item) => item.category === currentCategory);
     }
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -134,138 +120,160 @@ export default function NewsPage() {
           item.title.toLowerCase().includes(query) ||
           item.description?.toLowerCase().includes(query) ||
           item.source.toLowerCase().includes(query) ||
-          item.location?.toLowerCase().includes(query)
+          item.location?.toLowerCase().includes(query),
       );
     }
-
     setFilteredNews(filtered);
   }, [news, currentCategory, searchQuery]);
 
-  // The default "home" view (unfiltered, no search) gets the Happening Now rail,
-  // featured story, and category grouping; an active tab/search shows flat results.
   const isHomeView = currentCategory === 'all' && !searchQuery;
+  const showInitialSkeleton = isLoading && news.length === 0;
 
-  // "Happening Now": recent high-priority hazards (severe alerts, M6+ quakes,
-  // NHC active systems). Only surfaced on the home view; omitted entirely when empty.
-  const happeningNow = useMemo(() => {
-    if (!isHomeView) return [];
-    const cutoff = Date.now() - HAPPENING_NOW_WINDOW_MS;
-    return news
-      .filter((item) => item.priority === 'high' && new Date(item.timestamp).getTime() >= cutoff)
-      .slice(0, HAPPENING_NOW_MAX);
-  }, [news, isHomeView]);
+  const railItems = useMemo(() => {
+    const rails: RSSItem[] = [...happeningNow];
+    if (featuredStory && isHomeView) rails.push(featuredStory);
+    return rails;
+  }, [happeningNow, featuredStory, isHomeView]);
 
-  // Refresh handler
+  const gridItems = useMemo(() => {
+    const deduped = isHomeView ? excludeRailIds(filteredNews, railItems) : filteredNews;
+    return deduped;
+  }, [filteredNews, railItems, isHomeView]);
+
+  const groupedSections = useMemo(() => {
+    if (!isHomeView || showInitialSkeleton) return [];
+    return groupItemsByCategory(gridItems);
+  }, [gridItems, isHomeView, showInitialSkeleton]);
+
   const handleRefresh = useCallback(() => {
-    fetchNews();
-    fetchFeaturedStory();
-  }, [fetchNews, fetchFeaturedStory]);
+    void fetchNews(currentCategory, { initial: false });
+  }, [fetchNews, currentCategory]);
 
-  // Determine empty state type
   const getEmptyType = (): 'no-alerts' | 'no-results' | 'error' | 'no-news' => {
     if (error) return 'error';
-    if (searchQuery || currentCategory !== 'all') return 'no-results';
+    if (searchQuery) return 'no-results';
+    if (currentCategory === 'severe' && news.length === 0) return 'no-alerts';
+    if (currentCategory !== 'all') return 'no-results';
     return 'no-news';
   };
+
+  const feedErrorCount = stats?.errors?.length ?? 0;
 
   return (
     <PageWrapper>
       <div className={cn('container mx-auto px-4 py-6', themeClasses.background)}>
-        {/* Header */}
-        <div className="mb-6">
+        <div className="news-page-header mb-6 border-b-2 border-primary/30 pb-6">
           <h1
             className={cn(
-              'text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 font-mono',
-              // text-primary (not accentText/text-primary-foreground): the latter
-              // is near-white and disappears on the light Daybreak background.
-              'text-primary'
+              'text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 font-mono text-primary',
             )}
           >
             EARTH & SPACE NEWS
           </h1>
           <p className={cn('text-sm sm:text-base font-mono', themeClasses.text)}>
-            Real-time feeds from USGS, NASA, NOAA, NWS, and scientific sources
+            Real-time hazard feeds from USGS, NASA, NOAA, NWS, NHC, and science publishers
           </p>
-          {lastUpdated && !isLoading && (
+          {lastUpdated && !showInitialSkeleton && (
             <p
-              className={cn('text-xs font-mono mt-1 opacity-70 flex items-center gap-1.5', themeClasses.text)}
+              className={cn(
+                'text-xs font-mono mt-2 opacity-70 flex items-center gap-1.5',
+                themeClasses.text,
+              )}
               aria-live="polite"
             >
-              <span
-                className="inline-block w-2 h-2 rounded-full bg-green-500"
-                aria-hidden="true"
-              />
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
               Updated {formatUpdatedAgo(lastUpdated)}
+              {isRefreshing && <span className="opacity-70"> — refreshing…</span>}
             </p>
           )}
         </div>
 
-        {/* Filter Controls */}
         <NewsFilter
           onCategoryChange={setCurrentCategory}
           onSearchChange={setSearchQuery}
           onRefresh={handleRefresh}
           currentCategory={currentCategory}
           searchQuery={searchQuery}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing}
           className="mb-6"
         />
 
-        {/* Happening Now rail — recent high-priority hazards. Omitted when empty. */}
-        {isHomeView && !isLoading && happeningNow.length > 0 && (
-          <div className="mb-8">
-            <h2 className={cn('text-xl font-bold font-mono mb-4 flex items-center gap-2', themeClasses.headerText)}>
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
-              HAPPENING NOW
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {happeningNow.map((item) => (
-                <NewsCard key={`now-${item.id}`} item={item} variant="compact" />
-              ))}
+        {!showInitialSkeleton && feedErrorCount > 0 && (
+          <NewsFeedBanner errorCount={feedErrorCount} />
+        )}
+
+        {showInitialSkeleton ? (
+          <div className="space-y-8">
+            <NewsSkeleton variant="hero" />
+            <NewsSkeleton count={6} />
+          </div>
+        ) : (
+          <>
+            {isHomeView && happeningNow.length > 0 && (
+              <div className="mb-8">
+                <h2
+                  className={cn(
+                    'text-xl font-bold font-mono mb-4 flex items-center gap-2',
+                    themeClasses.headerText,
+                  )}
+                >
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse news-live-dot"
+                    aria-hidden="true"
+                  />
+                  HAPPENING NOW
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {happeningNow.map((item) => (
+                    <NewsCard key={`now-${item.id}`} item={item} variant="compact" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isHomeView && featuredStory && (
+              <div className="mb-8">
+                <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
+                  TOP STORY
+                </h2>
+                <NewsHero item={featuredStory} />
+              </div>
+            )}
+
+            <div>
+              {currentCategory !== 'all' || searchQuery ? (
+                <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
+                  {filteredNews.length} RESULT{filteredNews.length !== 1 ? 'S' : ''} FOUND
+                </h2>
+              ) : (
+                <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
+                  LATEST NEWS
+                </h2>
+              )}
+
+              {isHomeView && groupedSections.length > 0 ? (
+                <NewsCategorySections sections={groupedSections} />
+              ) : (
+                <NewsGrid
+                  items={gridItems}
+                  isLoading={false}
+                  error={error}
+                  emptyType={getEmptyType()}
+                  onRetry={handleRefresh}
+                />
+              )}
             </div>
-          </div>
+          </>
         )}
 
-        {/* Featured Story */}
-        {featuredStory && !isLoading && currentCategory === 'all' && !searchQuery && (
-          <div className="mb-8">
-            <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
-              TOP STORY
-            </h2>
-            <NewsHero item={featuredStory} />
-          </div>
-        )}
-
-        {/* News Grid */}
-        <div>
-          {currentCategory !== 'all' || searchQuery ? (
-            <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
-              {filteredNews.length} RESULT{filteredNews.length !== 1 ? 'S' : ''} FOUND
-            </h2>
-          ) : (
-            <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
-              LATEST NEWS
-            </h2>
-          )}
-
-          <NewsGrid
-            items={filteredNews}
-            isLoading={isLoading}
-            error={error}
-            emptyType={getEmptyType()}
-            onRetry={handleRefresh}
-          />
-        </div>
-
-        {/* Stats Footer */}
-        {!isLoading && news.length > 0 && (
+        {!showInitialSkeleton && news.length > 0 && (
           <div className={cn('mt-8 pt-6 border-t border-subtle text-center')}>
             <p className={cn('text-xs font-mono', themeClasses.text)}>
-              Showing {filteredNews.length} of {news.length} articles
+              Showing {gridItems.length} of {news.length} articles
               {currentCategory !== 'all' && ` in ${currentCategory.toUpperCase()}`}
               {searchQuery && ` matching "${searchQuery}"`}
             </p>
-            {stats && (
+            {stats?.byCategory && (
               <p className={cn('text-xs font-mono mt-2', themeClasses.text)}>
                 {Object.entries(stats.byCategory)
                   .filter(([, count]) => count > 0)
@@ -273,9 +281,7 @@ export default function NewsPage() {
                   .join(' • ')}
               </p>
             )}
-            <p className={cn('text-xs font-mono mt-2 opacity-70', themeClasses.text)}>
-              Sources: USGS • NASA • NOAA • NWS • NHC • SPC • ScienceDaily
-            </p>
+            <NewsSourceRow sources={stats?.enabledSources ?? []} />
           </div>
         )}
       </div>

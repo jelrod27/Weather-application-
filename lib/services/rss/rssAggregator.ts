@@ -10,9 +10,13 @@
 import * as Sentry from '@sentry/nextjs';
 import { XMLParser } from 'fast-xml-parser';
 import type { FeedSource, FeedCategory} from './feedSources';
-import { FEED_SOURCES, CATEGORY_CONFIG } from './feedSources';
+import { FEED_SOURCES, CATEGORY_CONFIG, getEnabledSourceNames } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
 import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
+import {
+  selectFeaturedItem,
+  selectHappeningNow,
+} from '@/lib/news/rails';
 
 export interface RSSItem {
   id: string;
@@ -33,13 +37,25 @@ export interface RSSItem {
 
 export interface AggregatedResult {
   items: RSSItem[];
+  happeningNow: RSSItem[];
+  featured: RSSItem | null;
   stats: {
     total: number;
     byCategory: Record<FeedCategory, number>;
     bySource: Record<string, number>;
     errors: string[];
+    enabledSources: string[];
   };
   lastUpdated: Date;
+}
+
+/** Sentinel for items without a parseable publication date — sorts last, excluded from Happening Now. */
+export const MISSING_ITEM_TIMESTAMP = new Date(0);
+
+function parseItemTimestamp(raw: string | undefined): Date {
+  if (!raw?.trim()) return MISSING_ITEM_TIMESTAMP;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? MISSING_ITEM_TIMESTAMP : parsed;
 }
 
 // In-memory cache.
@@ -362,12 +378,7 @@ function buildItem(
   // Upgrade http -> https before the scheme guard: CSP img-src only allows
   // https, so an http feed image would otherwise be dropped or blocked.
   const safeImage = fields.rawImage ? safeExternalUrl(upgradeImageUrl(fields.rawImage)) : null;
-  // Guard against unparseable pubDate formats: an Invalid Date has a NaN
-  // epoch, which fails the freshness cutoff comparison and silently drops
-  // every item from the feed (and poisons sorting). Fall back to "now",
-  // matching the no-pubDate branch. The volcano parser already does this.
-  const parsedDate = fields.pubDate ? new Date(fields.pubDate) : new Date();
-  const timestamp = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  const timestamp = parseItemTimestamp(fields.pubDate);
   return {
     id: `${source.id}-${simpleHash(fields.safeLink + index.toString())}-${index}`,
     title: cleanHtml(fields.title),
@@ -531,8 +542,8 @@ function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
     const level = (notice.alert_level || 'ADVISORY').trim();
     const color = (notice.color_code || '').trim();
     const observatory = notice.obs_fullname?.trim() || 'USGS';
-    // sent_utc is "YYYY-MM-DD HH:MM:SS" in UTC; normalize to a parseable ISO string.
-    const sent = notice.sent_utc ? new Date(notice.sent_utc.replace(' ', 'T') + 'Z') : new Date();
+    const sentRaw = notice.sent_utc ? notice.sent_utc.replace(' ', 'T') + 'Z' : undefined;
+    const sent = parseItemTimestamp(sentRaw);
 
     items.push({
       id: `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`,
@@ -545,7 +556,7 @@ function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
       sourceId: source.id,
       category: source.category,
       priority: source.priority,
-      timestamp: isNaN(sent.getTime()) ? new Date() : sent,
+      timestamp: sent,
       location: name,
     });
   }
@@ -721,6 +732,9 @@ export async function aggregateFeeds(options: {
   // Limit items
   allItems = allItems.slice(0, maxItems);
 
+  const happeningNow = selectHappeningNow(allItems);
+  const featured = selectFeaturedItem(allItems, happeningNow);
+
   // Calculate stats by category
   const byCategory: Record<FeedCategory, number> = {
     earthquakes: 0,
@@ -737,11 +751,14 @@ export async function aggregateFeeds(options: {
 
   const result: AggregatedResult = {
     items: allItems,
+    happeningNow,
+    featured,
     stats: {
       total: allItems.length,
       byCategory,
       bySource,
       errors,
+      enabledSources: getEnabledSourceNames(),
     },
     lastUpdated: new Date(),
   };
@@ -758,17 +775,7 @@ export async function aggregateFeeds(options: {
  */
 export async function getFeaturedItem(): Promise<RSSItem | null> {
   const result = await aggregateFeeds({ maxItems: 20, maxAge: 24 });
-
-  // Filter out hurricanes category from featured consideration
-  const nonTropical = result.items.filter(i => i.category !== 'hurricanes');
-
-  // Prefer high priority items (excluding tropical)
-  const highPriority = nonTropical.filter(i => i.priority === 'high');
-  if (highPriority.length > 0) {
-    return highPriority[0];
-  }
-
-  return nonTropical[0] || result.items[0] || null;
+  return result.featured;
 }
 
 /**
@@ -797,4 +804,6 @@ export const __testing = {
   clearCache,
   extractImage,
   isLikelyImageUrl,
+  parseItemTimestamp,
+  MISSING_ITEM_TIMESTAMP,
 };
