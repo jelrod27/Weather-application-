@@ -2,7 +2,7 @@
  * Post-parse image enrichment: USGS shakemaps, Open Graph photos, category stock art.
  */
 
-import { getCategoryStockImage } from '@/lib/news/stock-images';
+import { pickCategoryStockImage } from '@/lib/news/stock-images';
 import type { RSSItem } from './rssAggregator';
 import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
 import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
@@ -41,7 +41,7 @@ export async function enrichItemImages(
 
   for (const item of result) {
     if (item.imageUrl) continue;
-    item.imageUrl = resolved.get(item.id) ?? getCategoryStockImage(item.category).url;
+    item.imageUrl = resolved.get(item.id) ?? pickCategoryStockImage(item.category, item.location ?? item.id).url;
   }
 
   return result;
@@ -53,7 +53,9 @@ async function resolveStoryImage(item: RSSItem): Promise<string | undefined> {
     if (shakemap) return shakemap;
   }
 
-  if (shouldAttemptOgImage(item.url)) {
+  // USGS elevated-volcano JSON items often share one daily notice URL, so OG
+  // would return the same image for every peak. Skip OG and use name-keyed art.
+  if (item.sourceId !== 'usgs-volcanoes' && shouldAttemptOgImage(item.url)) {
     const og = await resolveOgImage(item.url);
     if (og) return og;
   }

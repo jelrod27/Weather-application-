@@ -1,5 +1,5 @@
 import { parseOgImageFromHtml, shouldAttemptOgImage } from '@/lib/services/rss/resolve-og-image';
-import { getCategoryStockImage } from '@/lib/news/stock-images';
+import { getCategoryStockImage, pickVolcanoStockImage, VOLCANO_STOCK_POOL } from '@/lib/news/stock-images';
 import { __testing } from '@/lib/services/rss/rssAggregator';
 
 const { parseRSSFeed } = __testing;
@@ -75,5 +75,15 @@ describe('category stock images', () => {
     ] as const) {
       expect(getCategoryStockImage(category).url).toMatch(/^https:\/\//);
     }
+  });
+
+  it('assigns different volcano stock art per peak name', () => {
+    const greatSitkin = pickVolcanoStockImage('Great Sitkin');
+    const kupreanof = pickVolcanoStockImage('Kupreanof');
+    const kilauea = pickVolcanoStockImage('Kilauea');
+
+    expect(greatSitkin.url).not.toBe(kupreanof.url);
+    expect(kilauea.url).toContain('Puu_Oo');
+    expect(VOLCANO_STOCK_POOL.length).toBeGreaterThanOrEqual(6);
   });
 });
