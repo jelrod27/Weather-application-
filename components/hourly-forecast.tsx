@@ -130,7 +130,7 @@ function HourlyCard({
   return (
     <Card
       className={cn(
-        "flex-shrink-0 flex flex-col items-center justify-between snap-start",
+        "hourly-forecast-card flex-shrink-0 flex flex-col items-center justify-between snap-start",
         "rounded-xl p-3 sm:p-4 min-w-[100px] sm:min-w-[110px]",
         "transition-all duration-200 hover:-translate-y-0.5",
         "backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

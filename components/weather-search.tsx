@@ -245,7 +245,7 @@ export default function WeatherSearch({
                 "h-10 w-10",
                 themeClasses.secondaryText,
                 "hover:text-terminal-accent-warning",
-                themeClasses.glow
+                theme !== 'daybreak' && themeClasses.glow
               )}
               aria-label={isLoading ? "Searching..." : "Search for weather"}
             >

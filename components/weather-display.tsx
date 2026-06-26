@@ -60,7 +60,7 @@ interface WeatherDisplayProps {
 
 // Card style constants
 const HERO_CARD = "weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
-const METRIC_CARD = "group weather-card-enter border-0 border-t-2 border-t-primary/40 shadow-md weather-metric-glow weather-card-gradient hover:border-t-primary hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 min-h-[140px]"
+const METRIC_CARD = "weather-metric-card group weather-card-enter border-0 border-t-2 border-t-primary/40 shadow-md weather-metric-glow weather-card-gradient hover:border-t-primary hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 min-h-[140px]"
 
 export function WeatherDisplay({
   weather,
@@ -89,6 +89,9 @@ export function WeatherDisplay({
     ? Math.round((feelsLike - weather.temperature) * 10) / 10
     : 0
 
+  const deltaWarmClass = theme === 'daybreak' ? 'text-rose-600' : 'text-rose-400'
+  const deltaSameClass = theme === 'daybreak' ? 'text-emerald-700' : 'text-emerald-400'
+
   return (
     <div className="space-y-5 sm:space-y-7">
       {/* 1. Hero Weather Card */}
@@ -106,7 +109,7 @@ export function WeatherDisplay({
         windSpeed={weather.wind?.speed}
         windUnit={weather.unit === '°C' ? 'km/h' : 'mph'}
         precipChance={weather.forecast?.[0]?.details?.precipitationChance}
-        glowClass={themeClasses.glow}
+        glowClass={theme === 'daybreak' ? undefined : themeClasses.glow}
       />
 
       {/* 2. Hourly Forecast - Always visible if data exists */}
@@ -279,17 +282,20 @@ export function WeatherDisplay({
             {feelsLikeDelta !== 0 && (
               <div className="flex items-center justify-center gap-1 mt-2">
                 {feelsLikeDelta < 0 ? (
-                  <ArrowDown size={14} style={{ color: '#88C0D0' }} />
+                  <ArrowDown size={14} className="text-primary" />
                 ) : (
-                  <ArrowUp size={14} style={{ color: '#BF616A' }} />
+                  <ArrowUp size={14} className={deltaWarmClass} />
                 )}
-                <span className="text-sm" style={{ color: feelsLikeDelta < 0 ? '#88C0D0' : '#BF616A' }}>
+                <span className={cn(
+                  "text-sm",
+                  feelsLikeDelta < 0 ? "text-primary" : deltaWarmClass,
+                )}>
                   {Math.abs(feelsLikeDelta)}° {feelsLikeDelta < 0 ? 'cooler' : 'warmer'}
                 </span>
               </div>
             )}
             {feelsLikeDelta === 0 && (
-              <p className="text-sm mt-2" style={{ color: '#A3BE8C' }}>Same as actual</p>
+              <p className={cn("text-sm mt-2", deltaSameClass)}>Same as actual</p>
             )}
           </CardContent>
         </Card>

@@ -52,7 +52,7 @@ export const getThemeStyles = (theme?: ThemeType): ThemeStyles => {
     accentText: 'text-primary-foreground',
     cardBg: 'bg-card',
     hoverBg: 'hover:bg-primary/20',
-    glow: 'glow',
+    glow: theme === 'daybreak' ? '' : 'glow',
     secondary: 'text-secondary-foreground',
     headerText: 'text-primary font-mono font-bold',
     secondaryText: 'text-muted-foreground',
