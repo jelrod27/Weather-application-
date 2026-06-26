@@ -34,7 +34,6 @@ import { RadarWidgetBadge } from '@/components/radar-v2/radar-widget-badge'
 import {
   BASE_ANIMATION_INTERVAL_MS,
   CARTO_VOYAGER_URL,
-  LIVE_PAUSE_MS,
   MANIFEST_REFRESH_MS,
   URL_SYNC_DEBOUNCE_MS,
 } from '@/components/radar-v2/radar-constants'
@@ -110,6 +109,21 @@ function getRelativeTimeLabel(frame: RadarFrame | undefined): string {
   const hours = Math.floor(minutes / 60)
   const remainder = minutes % 60
   return remainder > 0 ? `${hours}h ${remainder}m ago` : `${hours}h ago`
+}
+
+function getTrustedWeatherLink(uri: unknown): string | null {
+  if (typeof uri !== 'string' || uri.trim() === '') return null
+  try {
+    const url = new URL(uri)
+    if (url.protocol !== 'https:') return null
+    const host = url.hostname.toLowerCase()
+    if (host === 'weather.gov' || host.endsWith('.weather.gov')) {
+      return url.href
+    }
+    return null
+  } catch {
+    return null
+  }
 }
 
 function getRadarTileFetchKey(preferences: RadarTilePreferences, tileSize: number): string {
@@ -192,6 +206,8 @@ export function RadarShell({
 
         setMetadata(nextMetadata)
 
+        const liveIndex = Math.max(0, nextMetadata.frames.length - 1)
+
         if (!urlStateInitializedRef.current) {
           const parsed = parsedUrlStateRef.current
           const defaultLayers = isWidget
@@ -203,7 +219,6 @@ export function RadarShell({
           setActivePreset(inferPreset(defaultLayers))
           setTilePreferences(parsed.tilePreferences)
 
-          const liveIndex = Math.max(0, nextMetadata.frames.length - 1)
           const nextIndex = isWidget
             ? liveIndex
             : parsed.frameIndex != null
@@ -213,6 +228,12 @@ export function RadarShell({
           setFrameIndex(nextIndex)
           urlStateInitializedRef.current = true
           setIsPlaying(isFullPage)
+        } else {
+          const clampedIndex = Math.min(frameIndexRef.current, liveIndex)
+          if (clampedIndex !== frameIndexRef.current) {
+            frameIndexRef.current = clampedIndex
+            setFrameIndex(clampedIndex)
+          }
         }
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
@@ -383,7 +404,7 @@ export function RadarShell({
           props.comments,
           props.location && props.state ? `${props.location}, ${props.state}` : null,
         ].filter(Boolean).map(String).join('\n\n') || 'No additional details available.',
-        link: typeof props.uri === 'string' ? props.uri : null,
+        link: getTrustedWeatherLink(props.uri),
       })
     })
 
@@ -482,11 +503,6 @@ export function RadarShell({
       const nextIndex = frameIndexRef.current >= liveIndex ? 0 : frameIndexRef.current + 1
       frameIndexRef.current = nextIndex
       setFrameIndex(nextIndex)
-      if (nextIndex === liveIndex) {
-        window.setTimeout(() => {
-          if (!isPlaying) return
-        }, LIVE_PAUSE_MS)
-      }
     }, interval)
 
     return () => {

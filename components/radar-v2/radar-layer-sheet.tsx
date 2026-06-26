@@ -69,6 +69,7 @@ export function RadarLayerSheet({
               value={opacity}
               onChange={(event) => onOpacityChange(Number.parseFloat(event.target.value))}
               className="w-full accent-cyan-400"
+              aria-label="Radar opacity"
             />
           </div>
         </section>

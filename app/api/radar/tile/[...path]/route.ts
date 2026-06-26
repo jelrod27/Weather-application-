@@ -5,6 +5,7 @@ const RAINVIEWER_TILE_HOST = 'https://tilecache.rainviewer.com'
 const TILE_CACHE_TTL_MS = 10 * 60 * 1000
 const TILE_STALE_TTL_MS = 60 * 60 * 1000
 const TILE_FETCH_TIMEOUT_MS = 8000
+const MAX_TILE_CACHE_ENTRIES = 512
 
 /** Allowed RainViewer tile paths — blocks open proxy abuse. */
 const TILE_PATH =
@@ -20,6 +21,28 @@ function tileResponse(body: ArrayBuffer, contentType: string, cacheControl: stri
       'Cache-Control': cacheControl,
     },
   })
+}
+
+function pruneTileCache(): void {
+  const staleBefore = Date.now() - TILE_STALE_TTL_MS
+  for (const [key, entry] of tileCache) {
+    if (entry.fetchedAt < staleBefore) {
+      tileCache.delete(key)
+    }
+  }
+
+  while (tileCache.size > MAX_TILE_CACHE_ENTRIES) {
+    let oldestKey: string | null = null
+    let oldestFetchedAt = Number.POSITIVE_INFINITY
+    for (const [key, entry] of tileCache) {
+      if (entry.fetchedAt < oldestFetchedAt) {
+        oldestFetchedAt = entry.fetchedAt
+        oldestKey = key
+      }
+    }
+    if (oldestKey == null) break
+    tileCache.delete(oldestKey)
+  }
 }
 
 function getCachedTile(joined: string, allowStale: boolean) {
@@ -59,6 +82,7 @@ async function fetchTileFromRainViewer(joined: string): Promise<{ body: ArrayBuf
       expires: Date.now() + TILE_CACHE_TTL_MS,
       fetchedAt: Date.now(),
     })
+    pruneTileCache()
 
     return { body, contentType }
   } finally {
@@ -70,40 +94,40 @@ export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  const { path } = await context.params
-  const joined = path.join('/')
-
-  if (!TILE_PATH.test(joined)) {
-    return NextResponse.json({ error: 'Invalid radar tile path' }, { status: 400 })
-  }
-
-  const fresh = getCachedTile(joined, false)
-  if (fresh) {
-    return tileResponse(fresh.body, fresh.contentType, 'public, max-age=300, s-maxage=600, stale-while-revalidate=120')
-  }
-
-  let pending = inFlightFetches.get(joined)
-  if (!pending) {
-    pending = fetchTileFromRainViewer(joined).finally(() => {
-      inFlightFetches.delete(joined)
-    })
-    inFlightFetches.set(joined, pending)
-  }
-
   try {
-    const { body, contentType } = await pending
-    return tileResponse(body, contentType, 'public, max-age=300, s-maxage=600, stale-while-revalidate=120')
-  } catch (error) {
-    const stale = getCachedTile(joined, true)
-    if (stale) {
-      return tileResponse(stale.body, stale.contentType, 'public, max-age=60, stale-while-revalidate=300')
-    }
-    console.error('[radar-tile]', joined, error)
-    return NextResponse.json({ error: 'Failed to fetch radar tile' }, { status: 502 })
-  }
-}
+    const { path } = await context.params
+    const joined = path.join('/')
 
-export function clearRadarTileCacheForTests(): void {
-  tileCache.clear()
-  inFlightFetches.clear()
+    if (!TILE_PATH.test(joined)) {
+      return NextResponse.json({ error: 'Invalid radar tile path' }, { status: 400 })
+    }
+
+    const fresh = getCachedTile(joined, false)
+    if (fresh) {
+      return tileResponse(fresh.body, fresh.contentType, 'public, max-age=300, s-maxage=600, stale-while-revalidate=120')
+    }
+
+    let pending = inFlightFetches.get(joined)
+    if (!pending) {
+      pending = fetchTileFromRainViewer(joined).finally(() => {
+        inFlightFetches.delete(joined)
+      })
+      inFlightFetches.set(joined, pending)
+    }
+
+    try {
+      const { body, contentType } = await pending
+      return tileResponse(body, contentType, 'public, max-age=300, s-maxage=600, stale-while-revalidate=120')
+    } catch (error) {
+      const stale = getCachedTile(joined, true)
+      if (stale) {
+        return tileResponse(stale.body, stale.contentType, 'public, max-age=60, stale-while-revalidate=300')
+      }
+      console.error('[radar-tile]', joined, error)
+      return NextResponse.json({ error: 'Failed to fetch radar tile' }, { status: 502 })
+    }
+  } catch (error) {
+    console.error('[radar-tile]', error)
+    return NextResponse.json({ error: 'Failed to process radar tile request' }, { status: 500 })
+  }
 }

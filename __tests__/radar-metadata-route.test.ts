@@ -66,7 +66,10 @@ describe('GET /api/radar/metadata', () => {
     expect(body.frames.length).toBe(3)
     expect(body.coverageRegion).toBe('us')
     expect(body.rainviewer.host).toContain('tilecache.rainviewer.com')
-    expect(res.headers['Cache-Control']).toContain('s-maxage=120')
+    const cacheControl = typeof res.headers.get === 'function'
+      ? res.headers.get('Cache-Control')
+      : (res.headers as Record<string, string>)['Cache-Control']
+    expect(cacheControl).toContain('s-maxage=120')
   })
 
   it('returns RainViewer metadata for international locations', async () => {
