@@ -178,19 +178,31 @@ export default function WeatherSearch({
     }
   }
 
+  const handleExamplePick = (value: string) => {
+    if (controlsDisabled) return
+    handleInputChange(value)
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('[data-testid="location-search-input"]')?.focus()
+    })
+  }
+
   const controlsDisabled = isLoading || isDisabled
 
   return (
     <div className="mb-4 sm:mb-6 w-full max-w-2xl mx-auto">
-      {/* Format hints with AI indicator for logged-in users */}
-      <div className="mb-2 sm:mb-3 text-center px-2">
-        <div className={`text-xs sm:text-sm ${themeClasses.secondaryText} uppercase tracking-wider break-words`}>
-          <>
-            <span className="hidden sm:inline">► 90210 • NEW YORK, NY • LONDON, UK ◄</span>
-            <span className="sm:hidden">► ZIP • CITY, STATE • CITY, COUNTRY ◄</span>
-          </>
-        </div>
-      </div>
+      <p className="mb-2 sm:mb-3 text-center px-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+        <span className="hidden sm:inline">
+          Try{' '}
+          <SearchExample value="90210" onPick={handleExamplePick} disabled={controlsDisabled} />
+          {', '}
+          <SearchExample value="New York, NY" onPick={handleExamplePick} disabled={controlsDisabled} />
+          {', or '}
+          <SearchExample value="London, UK" onPick={handleExamplePick} disabled={controlsDisabled} />
+        </span>
+        <span className="sm:hidden">
+          Search by ZIP, city and state, or city and country
+        </span>
+      </p>
 
       {/* Search Form - Mobile optimized */}
       <form onSubmit={handleSubmit} className="mb-3 sm:mb-4 px-2 sm:px-0">
@@ -202,18 +214,20 @@ export default function WeatherSearch({
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleInputKeyDown}
             onFocus={() => searchTerm.length >= 2 && setShowAutocomplete(true)}
-            placeholder={isDisabled ? "Rate limit reached..." : "ZIP, City+State, or City+Country..."}
+            placeholder={isDisabled ? "Rate limit reached…" : "Search city, state, or ZIP…"}
             disabled={controlsDisabled}
             aria-label="Search location"
-            className={`w-full pr-10 sm:pr-12 ${themeClasses.cardBg} border-0 ${themeClasses.text} ${themeClasses.placeholderText}
-                     font-mono text-sm sm:text-base uppercase tracking-wider
-                     transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed pixel-font
-                     min-h-[48px] touch-manipulation py-3 sm:py-4 px-3 sm:px-4`}
-            style={{
-              imageRendering: "pixelated",
-              fontFamily: "monospace",
-              fontSize: "clamp(12px, 3vw, 16px)"
-            }}
+            className={cn(
+              "location-search-input w-full pr-10 sm:pr-12 border border-[var(--border-subtle)]",
+              themeClasses.cardBg,
+              themeClasses.text,
+              themeClasses.placeholderText,
+              "text-sm sm:text-base font-sans",
+              "transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+              "min-h-[48px] touch-manipulation py-3 sm:py-4 px-3 sm:px-4",
+              "shadow-[0_1px_2px_rgba(60,45,30,0.04)]",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            )}
           />
           <div className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
             {/* Clear button */}
@@ -314,11 +328,11 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    themeClasses.glow
+                    theme !== 'daybreak' && themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >
-                  ZIP: 90210
+                  90210
                 </Button>
                 <Button
                   variant="link"
@@ -327,11 +341,11 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    themeClasses.glow
+                    theme !== 'daybreak' && themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >
-                  City + State: New York, NY
+                  New York, NY
                 </Button>
                 <Button
                   variant="link"
@@ -340,11 +354,11 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    themeClasses.glow
+                    theme !== 'daybreak' && themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >
-                  City + Country: London, UK
+                  London, UK
                 </Button>
               </div>
             </div>
@@ -370,5 +384,26 @@ export default function WeatherSearch({
         </div>
       )}
     </div>
+  )
+}
+
+function SearchExample({
+  value,
+  onPick,
+  disabled,
+}: {
+  value: string
+  onPick: (value: string) => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => onPick(value)}
+      className="font-medium text-primary hover:underline disabled:opacity-50 disabled:pointer-events-none"
+    >
+      {value}
+    </button>
   )
 }
