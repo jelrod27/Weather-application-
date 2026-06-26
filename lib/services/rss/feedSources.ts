@@ -145,6 +145,16 @@ export const FEED_SOURCES: FeedSource[] = [
     format: 'rss',
     refreshInterval: 120,
   },
+  {
+    id: 'yale-climate',
+    name: 'Yale Climate Connections',
+    url: 'https://yaleclimateconnections.org/feed/',
+    category: 'climate',
+    priority: 'medium',
+    enabled: true,
+    format: 'rss',
+    refreshInterval: 120,
+  },
 
   // Severe Weather
   {
@@ -229,52 +239,81 @@ export const FEED_SOURCES: FeedSource[] = [
 
 export const CATEGORY_CONFIG: Record<FeedCategory, {
   label: string;
+  shortLabel: string;
   icon: string;
-  color: string;
   description: string;
+  badgeClass: string;
+  bannerClass: string;
+  tabActiveClass: string;
 }> = {
   earthquakes: {
     label: 'Earthquakes',
+    shortLabel: 'QUAKES',
     icon: 'activity',
-    color: 'text-orange-500',
     description: 'Seismic activity worldwide from USGS',
+    badgeClass: 'bg-orange-600 text-white border-orange-800',
+    bannerClass: 'bg-orange-600/90 border-orange-800',
+    tabActiveClass: 'data-[state=active]:ring-orange-500',
   },
   volcanoes: {
     label: 'Volcanoes',
+    shortLabel: 'VOLCANOES',
     icon: 'mountain',
-    color: 'text-red-500',
     description: 'Volcanic activity and eruption alerts',
+    badgeClass: 'bg-red-700 text-white border-red-900',
+    bannerClass: 'bg-red-700/90 border-red-900',
+    tabActiveClass: 'data-[state=active]:ring-red-500',
   },
   space: {
     label: 'Space',
+    shortLabel: 'SPACE',
     icon: 'sun',
-    color: 'text-purple-500',
     description: 'Space weather, solar activity, and NASA updates',
+    badgeClass: 'bg-purple-600 text-white border-purple-800',
+    bannerClass: 'bg-purple-600/90 border-purple-800',
+    tabActiveClass: 'data-[state=active]:ring-purple-500',
   },
   climate: {
     label: 'Climate',
+    shortLabel: 'CLIMATE',
     icon: 'thermometer',
-    color: 'text-blue-500',
     description: 'Climate science and environmental news',
+    badgeClass: 'bg-teal-600 text-white border-teal-800',
+    bannerClass: 'bg-teal-600/90 border-teal-800',
+    tabActiveClass: 'data-[state=active]:ring-teal-500',
   },
   severe: {
     label: 'Severe',
+    shortLabel: 'SEVERE',
     icon: 'cloud-lightning',
-    color: 'text-yellow-500',
     description: 'Severe weather alerts and warnings',
+    badgeClass: 'bg-yellow-500 text-black border-yellow-700',
+    bannerClass: 'bg-yellow-500/90 border-yellow-700',
+    tabActiveClass: 'data-[state=active]:ring-yellow-500',
   },
   science: {
     label: 'Science',
+    shortLabel: 'SCIENCE',
     icon: 'flask-conical',
-    color: 'text-green-500',
     description: 'Earth science research and discoveries',
+    badgeClass: 'bg-green-600 text-white border-green-800',
+    bannerClass: 'bg-green-600/90 border-green-800',
+    tabActiveClass: 'data-[state=active]:ring-green-500',
   },
   hurricanes: {
     label: 'Hurricanes',
+    shortLabel: 'TROPICAL',
     icon: 'wind',
-    color: 'text-cyan-500',
     description: 'Tropical storms and hurricane tracking',
+    badgeClass: 'bg-cyan-600 text-white border-cyan-800',
+    bannerClass: 'bg-cyan-600/90 border-cyan-800',
+    tabActiveClass: 'data-[state=active]:ring-cyan-500',
   },
 };
+
+/** Short labels for enabled feed sources (footer attribution). */
+export function getEnabledSourceNames(): string[] {
+  return FEED_SOURCES.filter((source) => source.enabled).map((source) => source.name);
+}
 
 

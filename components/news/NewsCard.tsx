@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
-import CategoryBadge, { getCategoryConfig, type CategoryType } from './CategoryBadge';
+import CategoryBadge, { getCategoryConfig } from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { safeExternalUrl } from '@/lib/safe-url';
@@ -63,7 +63,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
   // edgeless and blended into the page on every theme.
   const priorityBorderClass =
     item.priority === 'high'
-      ? 'border-red-500 hover:border-red-400'
+      ? 'border-destructive hover:border-destructive/80'
       : item.priority === 'medium'
       ? 'border-yellow-500 hover:border-yellow-400'
       : 'border-border';
@@ -158,7 +158,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
   // image or it failed to load, so an errored image never leaves a blank banner
   // and a missing priority indicator.
   const showImage = Boolean(item.imageUrl) && !imageError;
-  const categoryConfig = getCategoryConfig(item.category as CategoryType);
+  const categoryConfig = getCategoryConfig(item.category);
   const CategoryIcon = categoryConfig.icon;
 
   return (

@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
-import type { FeedCategory } from '@/lib/services/rss/feedSources';
+import { CATEGORY_CONFIG, type FeedCategory } from '@/lib/services/rss/feedSources';
 
 type FilterCategory = FeedCategory | 'all';
 
@@ -40,15 +40,15 @@ interface NewsFilterProps {
   className?: string;
 }
 
-const categories: { id: FilterCategory; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const categories: { id: FilterCategory; label: string; icon: React.ComponentType<{ className?: string }>; tabClass?: string }[] = [
   { id: 'all', label: 'ALL', icon: LayoutGrid },
-  { id: 'earthquakes', label: 'QUAKES', icon: Activity },
-  { id: 'volcanoes', label: 'VOLCANOES', icon: Mountain },
-  { id: 'space', label: 'SPACE', icon: Sun },
-  { id: 'climate', label: 'CLIMATE', icon: Thermometer },
-  { id: 'severe', label: 'SEVERE', icon: CloudLightning },
-  { id: 'hurricanes', label: 'TROPICAL', icon: Wind },
-  { id: 'science', label: 'SCIENCE', icon: FlaskConical },
+  { id: 'earthquakes', label: 'QUAKES', icon: Activity, tabClass: CATEGORY_CONFIG.earthquakes.tabActiveClass },
+  { id: 'volcanoes', label: 'VOLCANOES', icon: Mountain, tabClass: CATEGORY_CONFIG.volcanoes.tabActiveClass },
+  { id: 'space', label: 'SPACE', icon: Sun, tabClass: CATEGORY_CONFIG.space.tabActiveClass },
+  { id: 'climate', label: 'CLIMATE', icon: Thermometer, tabClass: CATEGORY_CONFIG.climate.tabActiveClass },
+  { id: 'severe', label: 'SEVERE', icon: CloudLightning, tabClass: CATEGORY_CONFIG.severe.tabActiveClass },
+  { id: 'hurricanes', label: 'TROPICAL', icon: Wind, tabClass: CATEGORY_CONFIG.hurricanes.tabActiveClass },
+  { id: 'science', label: 'SCIENCE', icon: FlaskConical, tabClass: CATEGORY_CONFIG.science.tabActiveClass },
 ];
 
 export default function NewsFilter({
@@ -123,8 +123,11 @@ export default function NewsFilter({
                 key={cat.id}
                 value={cat.id}
                 className={cn(
-                  'flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wide data-[state=active]:ring-2 data-[state=active]:ring-current transition-all px-2 sm:px-3 py-1.5 card-inner',
-                  themeClasses.text
+                  'flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wide data-[state=active]:ring-2 transition-all px-2 sm:px-3 py-1.5 card-inner',
+                  cat.id === 'all'
+                    ? 'data-[state=active]:ring-primary'
+                    : cat.tabClass,
+                  themeClasses.text,
                 )}
               >
                 <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
