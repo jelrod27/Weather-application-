@@ -5,8 +5,29 @@ import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import WeatherIconModern from "@/components/weather-icon-modern"
 import { ShareButton } from "@/components/share-weather-modal"
+import { useTheme } from "@/components/theme-provider"
 import { getHeroAccent } from "@/lib/weather/hero-utils"
 import { ArrowDown, ArrowUp, CloudRain, Droplets, Thermometer, Wind } from "lucide-react"
+
+/** Icon tints tuned per theme — dark themes use pastel /90; daybreak uses saturated hues for cream bg. */
+const HERO_CHIP_ICON = {
+  dark: {
+    hi: "text-rose-300/90",
+    lo: "text-sky-300/90",
+    feels: "text-amber-300/90",
+    hum: "text-sky-300/90",
+    wind: "text-emerald-300/90",
+    rain: "text-blue-300/90",
+  },
+  daybreak: {
+    hi: "text-rose-600",
+    lo: "text-primary",
+    feels: "text-accent",
+    hum: "text-primary/80",
+    wind: "text-emerald-700",
+    rain: "text-blue-700",
+  },
+} as const
 
 const HERO_CARD_BASE =
   "hero-weather-card weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
@@ -44,8 +65,10 @@ export function HeroWeatherCard({
   precipChance,
   glowClass,
 }: HeroWeatherCardProps) {
+  const { theme } = useTheme()
   const accent = getHeroAccent(condition)
   const displayTemp = typeof temperature === 'number' ? Math.round(temperature) : null
+  const chipIcon = theme === 'daybreak' ? HERO_CHIP_ICON.daybreak : HERO_CHIP_ICON.dark
 
   return (
     <Card className={cn(HERO_CARD_BASE, accent, "relative overflow-hidden")}>
@@ -102,35 +125,35 @@ export function HeroWeatherCard({
 
             <div className="grid grid-cols-3 gap-1.5 text-xs sm:text-sm font-mono w-full">
               {highTemp !== undefined && (
-                <HeroChip icon={<ArrowUp size={12} className="text-rose-300/90" />} label="HI" value={`${Math.round(highTemp)}°`} />
+                <HeroChip icon={<ArrowUp size={12} className={chipIcon.hi} />} label="HI" value={`${Math.round(highTemp)}°`} />
               )}
               {lowTemp !== undefined && (
-                <HeroChip icon={<ArrowDown size={12} className="text-sky-300/90" />} label="LO" value={`${Math.round(lowTemp)}°`} />
+                <HeroChip icon={<ArrowDown size={12} className={chipIcon.lo} />} label="LO" value={`${Math.round(lowTemp)}°`} />
               )}
               {feelsLike != null && (
                 <HeroChip
-                  icon={<Thermometer size={12} className="text-amber-300/90" />}
+                  icon={<Thermometer size={12} className={chipIcon.feels} />}
                   label="FEELS"
                   value={`${feelsLike}°${feelsLikeDelta !== 0 ? (feelsLikeDelta > 0 ? ' ↑' : ' ↓') : ''}`}
                 />
               )}
               {humidity !== undefined && (
                 <HeroChip
-                  icon={<Droplets size={12} className="text-sky-300/90" />}
+                  icon={<Droplets size={12} className={chipIcon.hum} />}
                   label="HUM"
                   value={`${Math.round(humidity)}%`}
                 />
               )}
               {windSpeed !== undefined && (
                 <HeroChip
-                  icon={<Wind size={12} className="text-emerald-300/90" />}
+                  icon={<Wind size={12} className={chipIcon.wind} />}
                   label="WIND"
                   value={`${Math.round(windSpeed)} ${windUnit}`}
                 />
               )}
               {precipChance !== undefined && (
                 <HeroChip
-                  icon={<CloudRain size={12} className="text-blue-300/90" />}
+                  icon={<CloudRain size={12} className={chipIcon.rain} />}
                   label="RAIN"
                   value={`${Math.round(precipChance)}%`}
                 />
@@ -177,7 +200,7 @@ function HeroAmbientBackdrop({ condition }: { condition: string }) {
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* 1. Pixel grid — 16-bit texture, matches radar card */}
       <div
-        className="absolute inset-0 opacity-[0.045]"
+        className="hero-backdrop-grid absolute inset-0 opacity-[0.045]"
         style={{
           backgroundImage:
             'repeating-linear-gradient(0deg, rgba(var(--theme-accent-rgb),0.8) 0 1px, transparent 1px 28px), repeating-linear-gradient(90deg, rgba(var(--theme-accent-rgb),0.8) 0 1px, transparent 1px 28px)',
@@ -185,7 +208,7 @@ function HeroAmbientBackdrop({ condition }: { condition: string }) {
       />
 
       {/* 2. Rotating sweep arc — center-anchored, GPU-accelerated */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="hero-backdrop-sweep absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           className="h-[700px] w-[700px] motion-safe:animate-spin"
           style={{
@@ -203,7 +226,7 @@ function HeroAmbientBackdrop({ condition }: { condition: string }) {
           (No pulse animation: Tailwind animate-pulse overrides opacity-[0.06]
           up to 0.5–1 cycles, which both defeats the watermark subtlety and
           costs compositor work every frame.) */}
-      <div className="absolute top-1/2 left-[45%] -translate-y-1/2 opacity-[0.08]">
+      <div className="hero-backdrop-watermark absolute top-1/2 left-[45%] -translate-y-1/2 opacity-[0.08]">
         <WeatherIconModern condition={condition} size={320} />
       </div>
     </div>

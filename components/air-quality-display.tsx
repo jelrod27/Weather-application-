@@ -83,7 +83,7 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
   return (
     <div
       className={cn(
-        !minimal && "p-4 rounded-lg text-center",
+        !minimal && "aqi-panel p-4 rounded-lg text-center",
         !minimal && styles.container,
         severity?.borderStripeClass,
         severity?.pulse && "motion-safe:animate-pulse",

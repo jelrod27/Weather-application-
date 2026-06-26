@@ -631,6 +631,25 @@ input:focus-visible,
     hsl(42 72% 95%) 46%,
     hsl(28 88% 88%) 100%
   );
+  /* Drop the dark-theme left accent bar — it reads as generic "AI dashboard"
+     slop on cream. A warm top hairline + soft shadow gives structure instead. */
+  border-left-width: 0;
+  border-top: 2px solid hsl(28 58% 74%);
+  box-shadow:
+    0 1px 3px rgba(60, 45, 30, 0.08),
+    0 10px 28px -14px rgba(60, 45, 30, 0.16);
+}
+
+/* Location heading: plain primary text, no neon glow on a light surface. */
+[data-theme="daybreak"] .hero-weather-card h1 {
+  text-shadow: none;
+}
+
+/* Metric cards (moon phase, etc.): top accent instead of left stripe. */
+[data-theme="daybreak"] .weather-card-enter.border-l-4:not(.hero-weather-card) {
+  border-left-width: 0;
+  border-top-width: 2px;
+  border-top-color: hsl(var(--primary) / 0.28);
 }
 
 /* Sun-embossed hero number instead of a muddy blue halo: a crisp white top
@@ -640,6 +659,106 @@ input:focus-visible,
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.7),
     0 3px 10px rgba(190, 95, 25, 0.30);
+}
+
+/* Lighter backdrop: keep the watermark sun, drop grid + rotating sweep. */
+[data-theme="daybreak"] .hero-backdrop-grid,
+[data-theme="daybreak"] .hero-backdrop-sweep {
+  display: none;
+}
+
+[data-theme="daybreak"] .hero-backdrop-watermark {
+  opacity: 0.05;
+}
+
+/* No neon text-shadow on light surfaces — catches hardcoded `.glow` in JSX too. */
+[data-theme="daybreak"] .glow {
+  text-shadow: none;
+}
+
+/* Hero + metric cards: skip the hover "lift" micro-interaction (overused template trope). */
+[data-theme="daybreak"] .hero-weather-card:hover,
+[data-theme="daybreak"] .weather-metric-card:hover,
+[data-theme="daybreak"] .hourly-forecast-card:hover,
+[data-theme="daybreak"] .forecast-day-card:hover {
+  transform: none;
+}
+
+/* Metric grid: flat cream cards with warm hairlines — not gradient + top-accent stacks. */
+[data-theme="daybreak"] .weather-metric-card {
+  background: hsl(var(--card)) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-top-width: 1px !important;
+  box-shadow: 0 1px 2px rgba(60, 45, 30, 0.05);
+}
+
+[data-theme="daybreak"] .weather-metric-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 2px 8px rgba(60, 45, 30, 0.08);
+}
+
+[data-theme="daybreak"] .weather-metric-card.weather-metric-glow,
+[data-theme="daybreak"] .weather-metric-card.weather-metric-glow:hover {
+  box-shadow: 0 1px 2px rgba(60, 45, 30, 0.05);
+}
+
+[data-theme="daybreak"] .weather-metric-card.weather-metric-glow:hover {
+  box-shadow: 0 2px 8px rgba(60, 45, 30, 0.08);
+}
+
+/* Hourly strip: warm shadows instead of heavy dark drop shadows. */
+[data-theme="daybreak"] .hourly-forecast-card {
+  box-shadow: 0 1px 3px rgba(60, 45, 30, 0.07);
+}
+
+[data-theme="daybreak"] .hourly-forecast-card.current-hour {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.22);
+  background: hsl(var(--primary) / 0.07);
+}
+
+[data-theme="daybreak"] .hourly-forecast-card:hover {
+  box-shadow: 0 2px 8px rgba(60, 45, 30, 0.10);
+}
+
+/* 7-day forecast day tiles */
+[data-theme="daybreak"] .forecast-day-card {
+  box-shadow: 0 1px 3px rgba(60, 45, 30, 0.06);
+  background: hsl(var(--card) / 0.92);
+}
+
+[data-theme="daybreak"] .forecast-day-card:hover {
+  box-shadow: 0 2px 10px rgba(60, 45, 30, 0.10);
+}
+
+[data-theme="daybreak"] .forecast-day-card[class*="ring-2"] {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.35);
+}
+
+/* Radar / AQI panels */
+[data-theme="daybreak"] .dashboard-surface {
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(60, 45, 30, 0.07);
+}
+
+/* AQI severity: top edge instead of left stripe on light theme */
+[data-theme="daybreak"] .aqi-panel.border-l-orange-400\/70 {
+  border-left-width: 0;
+  border-top: 3px solid rgb(251 146 60 / 0.75);
+}
+
+[data-theme="daybreak"] .aqi-panel.border-l-red-400\/80 {
+  border-left-width: 0;
+  border-top: 3px solid rgb(248 113 113 / 0.85);
+}
+
+[data-theme="daybreak"] .aqi-panel.border-l-purple-400\/80 {
+  border-left-width: 0;
+  border-top: 3px solid rgb(192 132 252 / 0.85);
+}
+
+[data-theme="daybreak"] .aqi-panel.border-l-red-900 {
+  border-left-width: 0;
+  border-top: 3px solid rgb(127 29 29);
 }
 
 /* ═══════════════════════════════════════════════════════════
