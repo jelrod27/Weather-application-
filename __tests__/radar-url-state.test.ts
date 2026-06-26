@@ -52,12 +52,12 @@ describe('radar-url-state', () => {
         stormReports: false,
       },
       frameIndex: 10,
-      zoom: 7,
+      zoom: 8,
       frameCount: 49,
     })
 
     expect(params.get('layers')).toBe('precip,spc')
-    expect(params.get('zoom')).toBe('7')
+    expect(params.get('zoom')).toBe('8')
     expect(params.get('frame')).toBe('10')
   })
 

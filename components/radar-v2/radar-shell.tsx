@@ -18,6 +18,7 @@ import {
 import {
   buildRainViewerCoverageTileTemplate,
   buildRainViewerRadarTileTemplate,
+  RAINVIEWER_MAX_NATIVE_ZOOM,
   RAINVIEWER_MAX_ZOOM,
 } from '@/lib/radar/rainviewer'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
@@ -266,6 +267,7 @@ export function RadarShell({
         source: new XYZ({
           url: radarTemplate,
           crossOrigin: 'anonymous',
+          maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
         }),
         opacity,
         zIndex: 500,
@@ -273,7 +275,11 @@ export function RadarShell({
       radarLayerRef.current = layer
       map.addLayer(layer)
     } else {
-      radarLayerRef.current.setSource(new XYZ({ url: radarTemplate, crossOrigin: 'anonymous' }))
+      radarLayerRef.current.setSource(new XYZ({
+        url: radarTemplate,
+        crossOrigin: 'anonymous',
+        maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
+      }))
       radarLayerRef.current.setOpacity(opacity)
       radarLayerRef.current.setVisible(activeLayers.precipitation)
     }
@@ -284,14 +290,22 @@ export function RadarShell({
       })
       if (!coverageLayerRef.current) {
         const layer = new TileLayer({
-          source: new XYZ({ url: coverageTemplate, crossOrigin: 'anonymous' }),
+          source: new XYZ({
+            url: coverageTemplate,
+            crossOrigin: 'anonymous',
+            maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
+          }),
           opacity: 0.45,
           zIndex: 450,
         })
         coverageLayerRef.current = layer
         map.addLayer(layer)
       } else {
-        coverageLayerRef.current.setSource(new XYZ({ url: coverageTemplate, crossOrigin: 'anonymous' }))
+        coverageLayerRef.current.setSource(new XYZ({
+          url: coverageTemplate,
+          crossOrigin: 'anonymous',
+          maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
+        }))
         coverageLayerRef.current.setVisible(true)
       }
     } else if (coverageLayerRef.current) {

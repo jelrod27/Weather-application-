@@ -1,4 +1,4 @@
-export const DEFAULT_RADAR_ZOOM = 10
+export const DEFAULT_RADAR_ZOOM = 7
 
 export type RadarLayerParam = 'precip' | 'alerts' | 'spc' | 'stormReports'
 
