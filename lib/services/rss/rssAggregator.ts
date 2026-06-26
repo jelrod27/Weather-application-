@@ -17,6 +17,7 @@ import {
   selectFeaturedItem,
   selectHappeningNow,
 } from '@/lib/news/rails';
+import { enrichItemImages } from './enrich-images';
 
 export interface RSSItem {
   id: string;
@@ -327,6 +328,24 @@ function isImageMediaNode(media: XmlNode): boolean {
   return true; // no hints -> fall back to URL-shape check by the caller
 }
 
+/** Collect all HTML-bearing fields from an RSS/Atom item for image extraction. */
+function itemHtmlForImages(node: XmlNode): string {
+  const keys = ['content:encoded', 'content', 'description', 'summary'];
+  const parts: string[] = [];
+  for (const key of keys) {
+    const text = firstText(node, [key]);
+    if (text) parts.push(text);
+  }
+  return parts.join('\n');
+}
+
+/** Best-effort image extraction: media:* on the node, then inline <img> in all HTML fields. */
+function extractImageFromItem(node: XmlNode): string | undefined {
+  const fromMedia = extractImage(node, undefined);
+  if (fromMedia) return fromMedia;
+  return extractImage(node, itemHtmlForImages(node));
+}
+
 /** Best-effort image extraction: media:*, enclosure, then inline <img> in body. */
 function extractImage(node: XmlNode, body: string | undefined): string | undefined {
   const mediaThumb = node['media:thumbnail'] ?? node.thumbnail;
@@ -351,8 +370,12 @@ function extractImage(node: XmlNode, body: string | undefined): string | undefin
   }
 
   if (body) {
-    const imgMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgMatch && isLikelyImageUrl(imgMatch[1])) return imgMatch[1];
+    const imgRx = /<img[^>]+src=["']([^"']+)["']/gi;
+    let match: RegExpExecArray | null;
+    while ((match = imgRx.exec(body)) !== null) {
+      const raw = decodeHtmlEntities(match[1].trim());
+      if (raw && isLikelyImageUrl(raw)) return raw;
+    }
   }
 
   return undefined;
@@ -432,7 +455,7 @@ function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
           body,
           pubDate: firstText(item, ['pubDate', 'pubdate', 'dc:date', 'date']),
           author: firstText(item, ['author', 'dc:creator']),
-          rawImage: extractImage(item, body),
+          rawImage: extractImageFromItem(item),
         })
       );
     } catch {
@@ -495,7 +518,7 @@ function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
           body: summary,
           pubDate: firstText(entry, ['updated', 'published']),
           author,
-          rawImage: extractImage(entry, summary),
+          rawImage: extractImageFromItem(entry),
           priority: determinePriority(source, magnitude),
           location,
           magnitude,
@@ -729,8 +752,9 @@ export async function aggregateFeeds(options: {
     return b.timestamp.getTime() - a.timestamp.getTime();
   });
 
-  // Limit items
+  // Limit items, then enrich imagery (OG/USGS/stock) so cards feel like a news site.
   allItems = allItems.slice(0, maxItems);
+  allItems = await enrichItemImages(allItems);
 
   const happeningNow = selectHappeningNow(allItems);
   const featured = selectFeaturedItem(allItems, happeningNow);
