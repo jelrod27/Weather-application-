@@ -34,7 +34,7 @@ function makeItem(overrides: Partial<RSSItem> = {}): RSSItem {
     url: 'https://example.com/article',
     source: 'Example News',
     sourceId: 'src',
-    category: 'weather',
+    category: 'severe',
     priority: 'medium',
     timestamp: new Date(),
     imageUrl: 'https://cdn.example.com/a.jpg',

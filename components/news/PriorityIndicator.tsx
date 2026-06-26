@@ -1,8 +1,5 @@
 /**
  * 16-Bit Weather Platform - Priority Indicator Component
- *
- * Copyright (C) 2025 16-Bit Weather
- * Licensed under Fair Source License, Version 0.9
  */
 
 'use client';
@@ -10,7 +7,7 @@
 import React from 'react';
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NewsPriority } from '@/lib/types/news';
+import type { NewsPriority } from '@/lib/news/types';
 
 interface PriorityIndicatorProps {
   priority: NewsPriority;
@@ -31,8 +28,8 @@ const priorityConfig: Record<
   high: {
     label: 'URGENT',
     icon: AlertTriangle,
-    colorClass: 'text-red-500',
-    textClass: 'text-red-600 font-bold',
+    colorClass: 'text-destructive',
+    textClass: 'text-destructive font-bold',
   },
   medium: {
     label: 'WARNING',
@@ -57,22 +54,17 @@ export default function PriorityIndicator({
   const config = priorityConfig[priority];
   const Icon = config.icon;
 
-  // Size classes
   const sizeClasses = {
     sm: 'w-3 h-3',
     md: 'w-4 h-4',
     lg: 'w-5 h-5',
   };
 
-  // Use config colors
-  const themeColorClass = config.colorClass;
-  const themeTextClass = config.textClass;
-
   return (
     <div className={cn('inline-flex items-center gap-1.5', className)}>
-      <Icon className={cn(sizeClasses[size], themeColorClass)} />
+      <Icon className={cn(sizeClasses[size], config.colorClass)} />
       {showLabel && (
-        <span className={cn('text-xs font-mono uppercase tracking-wide', themeTextClass)}>
+        <span className={cn('text-xs font-mono uppercase tracking-wide', config.textClass)}>
           {config.label}
         </span>
       )}

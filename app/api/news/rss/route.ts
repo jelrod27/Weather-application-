@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Aggregate feeds
+    // Aggregate feeds — single payload includes rails for the page client.
     const result = await aggregateFeeds({
       categories,
       maxItems: Math.min(maxItems, 100), // Cap at 100
@@ -46,6 +46,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'ok',
       items: result.items,
+      happeningNow: result.happeningNow,
+      featured: result.featured,
       stats: result.stats,
       lastUpdated: result.lastUpdated.toISOString(),
       categories: getCategoryConfig(),

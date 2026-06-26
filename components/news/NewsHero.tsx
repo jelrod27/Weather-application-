@@ -38,18 +38,29 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
     window.open(safeUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openSafeUrl();
+    }
+  };
+
   // Calculate time ago
   const timeAgo = getTimeAgo(new Date(item.timestamp));
 
   return (
     <Card
       className={cn(
-        'overflow-hidden group cursor-pointer transition-all hover:shadow-xl container-primary',
-        item.priority === 'high' && 'ring-2 ring-red-500',
+        'overflow-hidden group cursor-pointer transition-all hover:shadow-xl container-primary card-interactive',
+        item.priority === 'high' && 'ring-2 ring-destructive',
         themeClasses.background,
         className
       )}
       onClick={openSafeUrl}
+      onKeyDown={handleKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`${item.title} from ${item.source}, ${timeAgo}. Opens in new tab`}
     >
       <div className="flex flex-col lg:flex-row">
         {/* Image */}

@@ -253,6 +253,20 @@ describe('deduplicateItems', () => {
   });
 });
 
+describe('parseItemTimestamp', () => {
+  const { parseItemTimestamp, MISSING_ITEM_TIMESTAMP } = __testing;
+
+  it('returns the epoch sentinel when pubDate is missing or invalid', () => {
+    expect(parseItemTimestamp(undefined)).toEqual(MISSING_ITEM_TIMESTAMP);
+    expect(parseItemTimestamp('not-a-date')).toEqual(MISSING_ITEM_TIMESTAMP);
+  });
+
+  it('parses valid pubDate strings', () => {
+    const parsed = parseItemTimestamp('2026-06-26T12:00:00Z');
+    expect(parsed.toISOString()).toBe('2026-06-26T12:00:00.000Z');
+  });
+});
+
 describe('cacheControlForCategories (tiered cache, §9)', () => {
   it('uses the Fast tier for severe', () => {
     expect(cacheControlForCategories(['severe'])).toContain('s-maxage=300');

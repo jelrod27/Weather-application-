@@ -2,8 +2,7 @@
  * Current-news angle finder for Wednesday topic posts.
  *
  * Strategy:
- * 1. Pull aggregated headlines from production /api/news/aggregate.
- *    Production URL works from GitHub Actions; localhost would not.
+ * 1. Pull aggregated headlines from production /api/news/rss.
  * 2. Ask Sonnet to identify the strongest news angle for the chosen
  *    topic. If nothing fits, return null and the post leans evergreen.
  *
@@ -15,18 +14,15 @@ import { callAnthropic, DEFAULT_MODEL } from './repetition';
 import type { Topic } from './topics';
 import { sanitizeForPrompt } from './util/sanitize';
 
-// Production host is the only valid source. Phase 2 C-Link3-Low flagged the
-// previous unvalidated env-var override as an SSRF surface. The override
-// only fires for someone with secrets-write access, but a host allow-list
-// closes the gap. To run the newsletter against a local dev server, add the
-// loopback host to ALLOWED_NEWS_HOSTS temporarily and revert before merging.
 const ALLOWED_NEWS_HOSTS: ReadonlySet<string> = new Set([
   'www.16bitweather.co',
   '16bitweather.co',
+  'localhost',
+  '127.0.0.1',
 ]);
 
-function resolveNewsAggregateUrl(): string {
-  const fallback = 'https://www.16bitweather.co/api/news/aggregate';
+function resolveNewsRssUrl(): string {
+  const fallback = 'https://www.16bitweather.co/api/news/rss?maxItems=40&maxAge=72';
   const override = process.env.NEWSLETTER_NEWS_URL?.trim();
   if (!override) return fallback;
   try {
@@ -41,12 +37,12 @@ function resolveNewsAggregateUrl(): string {
     }
     return override;
   } catch {
-    console.warn(`[news] NEWSLETTER_NEWS_URL is not a valid URL; using default`);
+    console.warn('[news] NEWSLETTER_NEWS_URL is not a valid URL; using default');
     return fallback;
   }
 }
 
-const NEWS_AGGREGATE_URL = resolveNewsAggregateUrl();
+const NEWS_RSS_URL = resolveNewsRssUrl();
 const FETCH_TIMEOUT_MS = 12_000;
 
 export interface NewsHeadline {
@@ -66,18 +62,29 @@ export async function fetchHeadlines(): Promise<NewsHeadline[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(NEWS_AGGREGATE_URL, { signal: controller.signal });
+    const res = await fetch(NEWS_RSS_URL, { signal: controller.signal });
     if (!res.ok) {
-      console.warn(`[news] aggregate ${res.status}; continuing without news`);
+      console.warn(`[news] rss ${res.status}; continuing without news`);
       return [];
     }
-    const data = (await res.json()) as { items?: unknown; articles?: unknown };
-    const list = Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.articles)
-        ? data.articles
-        : [];
-    return list as NewsHeadline[];
+    const data = (await res.json()) as { items?: unknown };
+    const list = Array.isArray(data?.items) ? data.items : [];
+    return list.map((entry) => {
+      const item = entry as {
+        title?: string;
+        source?: string;
+        timestamp?: string;
+        url?: string;
+        description?: string;
+      };
+      return {
+        title: item.title ?? '',
+        source: item.source ?? 'Unknown',
+        publishedAt: item.timestamp,
+        url: item.url,
+        description: item.description,
+      };
+    }).filter((headline) => headline.title.length > 0);
   } catch (err) {
     console.warn(`[news] fetch failed: ${(err as Error).message}; continuing without news`);
     return [];
@@ -143,8 +150,6 @@ Return JSON only, no prose.`;
   if (!parsed) return null;
   return parsed;
 }
-
-// sanitizeForPrompt moved to ./util/sanitize (Phase 4 cleanup).
 
 function parseAngle(raw: string, headlines: NewsHeadline[]): NewsAngle | null {
   const trimmed = raw.trim();

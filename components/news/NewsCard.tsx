@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
-import CategoryBadge, { getCategoryConfig, type CategoryType } from './CategoryBadge';
+import CategoryBadge, { getCategoryConfig } from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { safeExternalUrl } from '@/lib/safe-url';
@@ -63,7 +63,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
   // edgeless and blended into the page on every theme.
   const priorityBorderClass =
     item.priority === 'high'
-      ? 'border-red-500 hover:border-red-400'
+      ? 'border-destructive hover:border-destructive/80'
       : item.priority === 'medium'
       ? 'border-yellow-500 hover:border-yellow-400'
       : 'border-border';
@@ -158,7 +158,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
   // image or it failed to load, so an errored image never leaves a blank banner
   // and a missing priority indicator.
   const showImage = Boolean(item.imageUrl) && !imageError;
-  const categoryConfig = getCategoryConfig(item.category as CategoryType);
+  const categoryConfig = getCategoryConfig(item.category);
   const CategoryIcon = categoryConfig.icon;
 
   return (
@@ -177,13 +177,17 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
     >
       {/* Image */}
       {showImage ? (
-        <div className="relative w-full h-48 overflow-hidden">
+        <div className="relative w-full h-52 sm:h-56 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.imageUrl}
             alt={item.title}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent"
+            aria-hidden="true"
           />
           <div className="absolute top-2 right-2 flex gap-2">
             <PriorityIndicator priority={item.priority} size="md" />
