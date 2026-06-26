@@ -1,10 +1,11 @@
 import type { RadarFrame } from '@/lib/radar/radar-timestamps'
+import type { RadarCoverageRegion } from '@/lib/radar/providers/coverage'
 
-export type RadarProviderId = 'noaa-mrms' | 'iowa-nexrad' | 'canada-geomet' | 'rainviewer'
+export type RadarProviderId = 'rainviewer'
 
-export type RadarProviderCoverage = 'us' | 'canada' | 'north-america-fallback'
+export type RadarProviderCoverage = 'global'
 
-export type RadarProviderProtocol = 'wms' | 'xyz'
+export type RadarProviderProtocol = 'xyz'
 
 export interface RadarWmsConfig {
   url: string
@@ -49,6 +50,16 @@ export interface RadarProviderSelection {
   reason: string
 }
 
+export interface RainViewerMetadataConfig {
+  host: string
+  generated: number
+  version: string
+  colorScheme: number
+  smooth: boolean
+  snow: boolean
+  tileSize: 256 | 512
+}
+
 export interface RadarMetadata {
   location: {
     lat: number
@@ -61,4 +72,6 @@ export interface RadarMetadata {
   refreshIntervalSeconds: number
   legend: RadarLegendBand[]
   selectionReason: string
+  coverageRegion: RadarCoverageRegion
+  rainviewer: RainViewerMetadataConfig
 }

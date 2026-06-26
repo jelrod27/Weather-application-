@@ -14,7 +14,7 @@ import type { ThemeType } from '@/lib/theme-config'
 
 // Dynamic import with ssr:false - OpenLayers requires browser APIs
 const WeatherMapOpenLayers = dynamic(
-  () => import('../weather-map-openlayers').then(mod => mod.default),
+  () => import('../radar-v2/radar-shell').then(mod => mod.default),
   {
     ssr: false,
     loading: () => <MapSkeleton height="h-full" />
@@ -45,8 +45,8 @@ export function MapContainer({
     threshold: 0,
   })
 
-  const height = displayMode === 'full-page' ? 'h-[600px]' : 'h-[450px]'
-  const minHeight = displayMode === 'full-page' ? '600px' : '450px'
+  const height = displayMode === 'full-page' ? 'h-[600px]' : 'h-full'
+  const minHeight = displayMode === 'full-page' ? '600px' : undefined
 
   return (
     <div

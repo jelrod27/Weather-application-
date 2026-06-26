@@ -773,10 +773,21 @@ input:focus-visible,
 }
 
 [data-radar-container] img,
-[data-radar-container] canvas {
+[data-radar-container] .radar-basemap-layer canvas {
   image-rendering: auto;
   mix-blend-mode: normal;
   filter: none;
+}
+
+/* RainViewer precip display schemes — must not be overridden by the basemap canvas reset above */
+[data-radar-container] .radar-precip-layer {
+  filter: var(--radar-scheme-filter, none);
+}
+
+/* Home page radar preview — isolate repaints so animation never flickers the page */
+[data-radar-widget='true'] {
+  contain: layout paint style;
+  isolation: isolate;
 }
 
 /* Ensure OpenLayers viewport fills its container and doesn't clip content */

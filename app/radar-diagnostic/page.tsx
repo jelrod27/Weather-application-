@@ -2,11 +2,11 @@
 
 export default function RadarDiagnostic() {
   const buildInfo = {
-    version: 'v3-wms-fix',
+    version: 'radar-v2-rainviewer',
     timestamp: new Date().toISOString(),
-    component: 'weather-map-openlayers.tsx',
-    expectedLog: '[v2] WMS source created with TIME',
-    expectedURL: 'mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi',
+    component: 'components/radar-v2/radar-shell.tsx',
+    expectedLog: '[radar-v2] metadata load',
+    expectedURL: 'api.rainviewer.com/public/weather-maps.json',
   }
 
   return (

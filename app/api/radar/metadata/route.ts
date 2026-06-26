@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const metadata = buildRadarMetadata(lat, lon)
+    const metadata = await buildRadarMetadata(lat, lon)
 
     return NextResponse.json(metadata, {
       headers: {

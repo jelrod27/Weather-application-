@@ -11,6 +11,7 @@ export interface RadarFrame {
   epochSeconds: number
   offsetMinutes: number
   isLive: boolean
+  tilePath?: string
 }
 
 const DEFAULT_STEP_MINUTES = 5

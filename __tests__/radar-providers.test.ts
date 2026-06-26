@@ -1,44 +1,41 @@
-import {
-  buildRadarMetadata,
-  getRadarCoverageRegion,
-  selectRadarProvider,
-} from '@/lib/radar'
+import { buildRadarMetadata, selectRadarProvider } from '@/lib/radar'
+
+const sampleManifest = {
+  version: '2.0',
+  generated: 1718841600,
+  host: 'https://tilecache.rainviewer.com',
+  radar: {
+    past: Array.from({ length: 13 }, (_, index) => ({
+      time: 1718841600 - (12 - index) * 600,
+      path: `/v2/radar/${1718841600 - (12 - index) * 600}`,
+    })),
+  },
+}
 
 describe('radar providers', () => {
-  const now = Date.UTC(2026, 5, 18, 21, 40, 0)
+  const fetchMock = jest.fn(async () => ({
+    ok: true,
+    json: async () => sampleManifest,
+  })) as unknown as typeof fetch
 
-  it('selects Iowa NEXRAD for US locations', () => {
-    const selection = selectRadarProvider(40.7128, -74.006)
-
-    expect(selection.selectedProvider.id).toBe('iowa-nexrad')
-    expect(selection.fallbackProvider).toBeUndefined()
+  beforeEach(() => {
+    fetchMock.mockClear()
   })
 
-  it('selects MSC GeoMet with RainViewer fallback for Canada locations', () => {
-    const selection = selectRadarProvider(53.5461, -113.4938)
-
-    expect(selection.selectedProvider.id).toBe('canada-geomet')
-    expect(selection.fallbackProvider?.id).toBe('rainviewer')
-  })
-
-  it('selects RainViewer fallback for Mexico and broader North America', () => {
-    expect(getRadarCoverageRegion(19.4326, -99.1332)).toBe('north-america-fallback')
+  it('selects RainViewer for all coverage regions', () => {
+    expect(selectRadarProvider(40.7128, -74.006).selectedProvider.id).toBe('rainviewer')
+    expect(selectRadarProvider(53.5461, -113.4938).selectedProvider.id).toBe('rainviewer')
     expect(selectRadarProvider(19.4326, -99.1332).selectedProvider.id).toBe('rainviewer')
-  })
-
-  it('uses RainViewer as a degraded global fallback outside North America', () => {
-    expect(getRadarCoverageRegion(51.5072, -0.1276)).toBe('global')
     expect(selectRadarProvider(51.5072, -0.1276).selectedProvider.id).toBe('rainviewer')
   })
 
-  it('builds metadata with provider-specific frame windows', () => {
-    const us = buildRadarMetadata(40.7128, -74.006, now)
-    const canada = buildRadarMetadata(53.5461, -113.4938, now)
+  it('builds metadata from the RainViewer manifest', async () => {
+    const metadata = await buildRadarMetadata(40.7128, -74.006, fetchMock)
 
-    expect(us.selectedProvider.id).toBe('iowa-nexrad')
-    expect(us.frames).toHaveLength(49)
-    expect(canada.selectedProvider.id).toBe('canada-geomet')
-    expect(canada.frames).toHaveLength(31)
-    expect(canada.legend[0].value).toContain('dBZ')
+    expect(metadata.selectedProvider.id).toBe('rainviewer')
+    expect(metadata.frames).toHaveLength(13)
+    expect(metadata.rainviewer.host).toBe('https://tilecache.rainviewer.com')
+    expect(metadata.coverageRegion).toBe('us')
+    expect(metadata.frames.at(-1)?.isLive).toBe(true)
   })
 })

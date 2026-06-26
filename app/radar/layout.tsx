@@ -12,7 +12,7 @@ const radarJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "Live Weather Radar",
-  "description": "North America weather radar with animated precipitation and severe weather overlays.",
+  "description": "Global weather radar with animated precipitation and severe weather overlays.",
   "url": "https://www.16bitweather.co/radar",
   "applicationCategory": "WeatherApplication",
   "operatingSystem": "Any",
@@ -24,12 +24,12 @@ const radarJsonLd = {
 }
 
 export const metadata: Metadata = {
-  title: 'Live Weather Radar Map - North America Radar | 16 Bit Weather',
-  description: 'Animated North America weather radar with NOAA, Iowa NEXRAD, MSC GeoMet, RainViewer fallback, NWS alerts, SPC outlooks, and storm report overlays.',
-  keywords: 'weather radar, NOAA radar, MRMS radar, NEXRAD radar, Canada radar, RainViewer radar, live radar, precipitation map, rain radar, storm tracker, doppler radar, severe weather radar',
+  title: 'Live Weather Radar Map - Global Precipitation Radar | 16 Bit Weather',
+  description: 'Animated global precipitation radar from RainViewer with NWS alerts, SPC outlooks, and storm report overlays.',
+  keywords: 'weather radar, RainViewer radar, live radar, precipitation map, rain radar, storm tracker, severe weather radar, global radar',
   openGraph: {
     title: 'Live Weather Radar - 16 Bit Weather',
-    description: 'Animated North America weather radar with severe weather overlays and provider fallback.',
+    description: 'Animated global precipitation radar with severe weather overlays.',
     url: 'https://www.16bitweather.co/radar',
     siteName: '16 Bit Weather',
     images: [
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Live Weather Radar - 16 Bit Weather',
-    description: 'Animated North America radar with severe weather overlays',
+    description: 'Animated global radar with severe weather overlays',
     images: ['/api/og?title=Live+Weather+Radar&subtitle=North+America+Radar+And+Alerts'],
   },
   alternates: {

@@ -1,5 +1,6 @@
 import {
   DEFAULT_RADAR_LAYERS,
+  DEFAULT_RADAR_TILE_PREFERENCES,
   DEFAULT_RADAR_ZOOM,
   mergeRadarUrlParams,
   parseRadarUrlState,
@@ -12,6 +13,8 @@ describe('radar-url-state', () => {
       layers: DEFAULT_RADAR_LAYERS,
       frameIndex: null,
       zoom: null,
+      tilePreferences: DEFAULT_RADAR_TILE_PREFERENCES,
+      explicitLayers: false,
     })
   })
 
@@ -49,12 +52,12 @@ describe('radar-url-state', () => {
         stormReports: false,
       },
       frameIndex: 10,
-      zoom: 7,
+      zoom: 8,
       frameCount: 49,
     })
 
     expect(params.get('layers')).toBe('precip,spc')
-    expect(params.get('zoom')).toBe('7')
+    expect(params.get('zoom')).toBe('8')
     expect(params.get('frame')).toBe('10')
   })
 

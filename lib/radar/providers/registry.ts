@@ -1,4 +1,11 @@
-import { buildRadarFrames } from '@/lib/radar/radar-timestamps'
+import type { RadarFrame } from '@/lib/radar/radar-timestamps'
+import {
+  buildFramesFromRainViewerPast,
+  fetchRainViewerManifest,
+  RAINVIEWER_ATTRIBUTION,
+  RAINVIEWER_FRAME_STEP_MINUTES,
+  RAINVIEWER_PAST_MINUTES,
+} from '@/lib/radar/rainviewer'
 import { getRadarCoverageRegion } from '@/lib/radar/providers/coverage'
 import type {
   RadarLegendBand,
@@ -9,120 +16,37 @@ import type {
 } from '@/lib/radar/providers/types'
 
 export const REFLECTIVITY_LEGEND: RadarLegendBand[] = [
-  { color: '#00ffc8', label: 'Light', value: '5-20 dBZ' },
+  { color: '#93e4dd', label: 'Light', value: '5-20 dBZ' },
   { color: '#00c800', label: 'Moderate', value: '20-35 dBZ' },
   { color: '#ffff00', label: 'Heavy', value: '35-50 dBZ' },
   { color: '#ff8c00', label: 'Very Heavy', value: '50-65 dBZ' },
   { color: '#ff0000', label: 'Extreme', value: '65+ dBZ' },
 ]
 
+export const RAINVIEWER_PROVIDER: RadarProvider = {
+  id: 'rainviewer',
+  displayName: 'RainViewer Radar',
+  shortName: 'RainViewer',
+  coverage: 'global',
+  protocol: 'xyz',
+  attribution: RAINVIEWER_ATTRIBUTION,
+  refreshIntervalSeconds: 300,
+  frameStepMinutes: RAINVIEWER_FRAME_STEP_MINUTES,
+  pastMinutes: RAINVIEWER_PAST_MINUTES,
+  supportsAnimation: true,
+  qualityTier: 'community',
+  xyz: {
+    urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/512/{z}/{x}/{y}/6/1_1.png',
+    direct: true,
+  },
+  notes: [
+    'Global composite radar tiles from the RainViewer Weather Maps API.',
+    'Frame list and tile host come from weather-maps.json.',
+  ],
+}
+
 export const RADAR_PROVIDERS: Record<RadarProviderId, RadarProvider> = {
-  'noaa-mrms': {
-    id: 'noaa-mrms',
-    displayName: 'NOAA MRMS Radar',
-    shortName: 'MRMS',
-    coverage: 'us',
-    protocol: 'wms',
-    attribution: 'NOAA/NWS MRMS',
-    refreshIntervalSeconds: 300,
-    frameStepMinutes: 5,
-    pastMinutes: 240,
-    supportsAnimation: true,
-    qualityTier: 'official',
-    fallbackProviderId: 'iowa-nexrad',
-    wms: {
-      url: '/api/weather/noaa-wms',
-      params: {
-        LAYERS: '1',
-        FORMAT: 'image/png',
-        TRANSPARENT: 'true',
-        VERSION: '1.3.0',
-        STYLES: '',
-      },
-      serverType: 'mapserver',
-      timeParam: 'TIME',
-      direct: false,
-    },
-    notes: [
-      'Official US radar mosaic via the existing NOAA WMS proxy.',
-      'Falls back to Iowa NEXRAD if the proxy or upstream service is unhealthy.',
-    ],
-  },
-  'iowa-nexrad': {
-    id: 'iowa-nexrad',
-    displayName: 'Iowa State NEXRAD Radar',
-    shortName: 'NEXRAD',
-    coverage: 'us',
-    protocol: 'wms',
-    attribution: 'Iowa Environmental Mesonet / NOAA NEXRAD',
-    refreshIntervalSeconds: 300,
-    frameStepMinutes: 5,
-    pastMinutes: 240,
-    supportsAnimation: true,
-    qualityTier: 'community',
-    wms: {
-      url: 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q-t.cgi',
-      params: {
-        LAYERS: 'nexrad-n0q-wmst',
-        FORMAT: 'image/png',
-        TRANSPARENT: 'true',
-        VERSION: '1.1.1',
-      },
-      serverType: 'mapserver',
-      timeParam: 'TIME',
-      direct: true,
-    },
-    notes: ['Reliable public WMS-T fallback for US reflectivity loops.'],
-  },
-  'canada-geomet': {
-    id: 'canada-geomet',
-    displayName: 'Canada MSC GeoMet Radar',
-    shortName: 'GeoMet',
-    coverage: 'canada',
-    protocol: 'wms',
-    attribution: 'Environment and Climate Change Canada MSC GeoMet',
-    refreshIntervalSeconds: 360,
-    frameStepMinutes: 6,
-    pastMinutes: 180,
-    supportsAnimation: true,
-    qualityTier: 'official',
-    fallbackProviderId: 'rainviewer',
-    wms: {
-      url: 'https://geo.weather.gc.ca/geomet/',
-      params: {
-        LAYERS: 'RADAR_1KM_RRAI',
-        FORMAT: 'image/png',
-        TRANSPARENT: 'true',
-        VERSION: '1.3.0',
-        TILED: 'true',
-      },
-      serverType: 'geoserver',
-      timeParam: 'TIME',
-      direct: true,
-    },
-    notes: ['Official Canadian radar via time-enabled MSC GeoMet WMS.'],
-  },
-  rainviewer: {
-    id: 'rainviewer',
-    displayName: 'RainViewer Radar',
-    shortName: 'RainViewer',
-    coverage: 'north-america-fallback',
-    protocol: 'xyz',
-    attribution: 'RainViewer',
-    refreshIntervalSeconds: 300,
-    frameStepMinutes: 10,
-    pastMinutes: 120,
-    supportsAnimation: true,
-    qualityTier: 'fallback',
-    xyz: {
-      urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/256/{z}/{x}/{y}/2/1_1.png',
-      direct: true,
-    },
-    notes: [
-      'Fallback radar tile source for Mexico and general North America coverage.',
-      'Use requires attribution and commercial-term review before high-volume production use.',
-    ],
-  },
+  rainviewer: RAINVIEWER_PROVIDER,
 }
 
 export function getRadarProvider(id: RadarProviderId): RadarProvider {
@@ -131,49 +55,38 @@ export function getRadarProvider(id: RadarProviderId): RadarProvider {
 
 export function selectRadarProvider(latitude: number, longitude: number): RadarProviderSelection {
   const region = getRadarCoverageRegion(latitude, longitude)
-
-  if (region === 'us') {
-    return {
-      selectedProvider: RADAR_PROVIDERS['iowa-nexrad'],
-      reason: 'US location selected Iowa NEXRAD direct because nowCOAST MRMS WMS is unavailable.',
-    }
-  }
-
-  if (region === 'canada') {
-    return {
-      selectedProvider: RADAR_PROVIDERS['canada-geomet'],
-      fallbackProvider: RADAR_PROVIDERS.rainviewer,
-      reason: 'Canada location selected official MSC GeoMet radar with RainViewer fallback.',
-    }
-  }
-
   return {
-    selectedProvider: RADAR_PROVIDERS.rainviewer,
-    reason: 'Location outside official US/Canada radar coverage selected RainViewer fallback.',
+    selectedProvider: RAINVIEWER_PROVIDER,
+    reason: `RainViewer global composite selected for ${region} coverage region.`,
   }
 }
 
-export function buildRadarMetadata(
+export async function buildRadarMetadata(
   latitude: number,
   longitude: number,
-  now = Date.now()
-): RadarMetadata {
+  fetchImpl?: typeof fetch,
+): Promise<RadarMetadata> {
   const selection = selectRadarProvider(latitude, longitude)
-  const provider = selection.selectedProvider
-  const frames = buildRadarFrames({
-    now,
-    stepMinutes: provider.frameStepMinutes,
-    pastMinutes: provider.pastMinutes,
-  })
+  const manifest = await fetchRainViewerManifest(fetchImpl)
+  const frames = buildFramesFromRainViewerPast(manifest.past)
 
   return {
     location: { lat: latitude, lon: longitude },
-    generatedAt: new Date(now).toISOString(),
-    selectedProvider: provider,
-    fallbackProvider: selection.fallbackProvider,
+    generatedAt: new Date(manifest.generated * 1000).toISOString(),
+    selectedProvider: selection.selectedProvider,
     frames,
-    refreshIntervalSeconds: provider.refreshIntervalSeconds,
+    refreshIntervalSeconds: RAINVIEWER_PROVIDER.refreshIntervalSeconds,
     legend: REFLECTIVITY_LEGEND,
     selectionReason: selection.reason,
+    coverageRegion: getRadarCoverageRegion(latitude, longitude),
+    rainviewer: {
+      host: manifest.host,
+      generated: manifest.generated,
+      version: manifest.version,
+      colorScheme: 6,
+      smooth: true,
+      snow: true,
+      tileSize: 512,
+    },
   }
 }

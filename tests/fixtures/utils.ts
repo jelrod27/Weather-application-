@@ -720,6 +720,61 @@ const transparentPng = Buffer.from(
 );
 
 export async function stubRadarApis(page: Page): Promise<void> {
+  const metadataFrames = Array.from({ length: 13 }, (_, index) => {
+    const epochSeconds = 1718841600 - (12 - index) * 600
+    return {
+      timestamp: epochSeconds * 1000,
+      isoTime: new Date(epochSeconds * 1000).toISOString(),
+      epochSeconds,
+      offsetMinutes: index === 12 ? 0 : -((12 - index) * 10),
+      isLive: index === 12,
+      tilePath: `/v2/radar/${epochSeconds}`,
+    }
+  })
+
+  await page.route('**/api/radar/metadata**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      location: { lat: 40.7128, lon: -74.006 },
+      generatedAt: new Date(1718841600 * 1000).toISOString(),
+      selectedProvider: {
+        id: 'rainviewer',
+        displayName: 'RainViewer Radar',
+        shortName: 'RainViewer',
+        coverage: 'global',
+        protocol: 'xyz',
+        attribution: 'RainViewer',
+        refreshIntervalSeconds: 300,
+        frameStepMinutes: 10,
+        pastMinutes: 120,
+        supportsAnimation: true,
+        qualityTier: 'community',
+        notes: [],
+      },
+      frames: metadataFrames,
+      refreshIntervalSeconds: 300,
+      legend: [],
+      selectionReason: 'RainViewer global composite selected for test coverage region.',
+      coverageRegion: 'us',
+      rainviewer: {
+        host: 'https://tilecache.rainviewer.com',
+        generated: 1718841600,
+        version: '2.0',
+        colorScheme: 6,
+        smooth: true,
+        snow: true,
+        tileSize: 512,
+      },
+    }),
+  }))
+
+  await page.route('**/api/radar/tile/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
+
   await page.route('**/api/weather/noaa-wms**', (route) => route.fulfill({
     status: 200,
     contentType: 'image/png',

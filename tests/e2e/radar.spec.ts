@@ -21,7 +21,7 @@ test.describe('Radar Map', () => {
     
     const radarContainer = page.locator('[data-radar-container]').first();
     await expect(radarContainer).toBeVisible();
-    await expect(page.getByText(/NEXRAD RADAR/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible({ timeout: 15000 });
   });
 
   test('radar visible in synthwave theme', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
     
-    await expect(page.getByRole('button', { name: /PLAY/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Play|Pause)$/i })).toBeVisible();
     await page.getByRole('button', { name: /LAYERS/i }).click();
     await expect(page.getByText(/NWS Alerts/i)).toBeVisible();
     await expect(page.getByText(/SPC Outlook/i)).toBeVisible();
@@ -68,11 +68,11 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
     
-    await expect(page.getByText(/NEXRAD RADAR/i)).toBeVisible();
-    await expect(page.getByText(/Source: Iowa Environmental Mesonet/i)).toBeVisible();
+    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible();
+    await expect(page.getByText(/Source:\s*RainViewer/i)).toBeVisible();
   });
 
-  test('Canada location selects GeoMet provider', async ({ page }) => {
+  test('international location uses RainViewer provider', async ({ page }) => {
     await setupStableApp(page, {
       cityName: 'Edmonton',
       country: 'CA',
@@ -83,23 +83,35 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page, 'Edmonton, CA');
     await waitForRadarToLoad(page);
 
-    await expect(page.getByText(/GEOMET RADAR/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible({ timeout: 15000 });
   });
 
   test('radar map fills the viewport below the page header', async ({ page }) => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
 
-    const viewport = page.viewportSize();
-    expect(viewport).not.toBeNull();
+    await expect(page.getByTestId('radar-top-bar')).toBeVisible();
 
     const viewportHeight = await page.evaluate(() => window.innerHeight);
+    const containerHeight = await page.locator('[data-radar-container]').evaluate(
+      (element) => element.getBoundingClientRect().height
+    );
     const mapHeight = await page.locator('[data-radar-container] .ol-viewport').evaluate(
       (element) => element.getBoundingClientRect().height
     );
 
-    // Full-page radar should use most of the screen, not collapse to the 350px widget minimum.
-    expect(mapHeight).toBeGreaterThan(viewportHeight * 0.5);
+    // Full-viewport radar shell — map should dominate the screen (controls float over it).
+    expect(containerHeight).toBeGreaterThan(viewportHeight * 0.92);
+    expect(mapHeight).toBeGreaterThan(viewportHeight * 0.55);
+  });
+
+  test('radar player dock and presets float over the map', async ({ page }) => {
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    await expect(page.getByTestId('radar-player-dock')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Radar$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Severe$/i })).toBeVisible();
   });
 
   test('radar honors shareable URL layer and frame params', async ({ page }) => {
@@ -107,11 +119,23 @@ test.describe('Radar Map', () => {
     await waitForRadarToLoad(page);
 
     await page.getByRole('button', { name: /LAYERS/i }).click();
-    await expect(page.getByText(/✓ SPC Outlook/i)).toBeVisible();
-    await expect(page.locator('[data-radar-container] input[type="range"]').nth(1)).toHaveValue('5');
+    await expect(page.getByRole('checkbox', { name: /SPC Outlook/i })).toBeChecked();
+    await expect(page.getByRole('slider', { name: /Radar timeline/i })).toHaveValue('5');
     await expect(page).toHaveURL(/layers=precip(?:%2C|,)?spc/);
     await expect(page).toHaveURL(/(?:^|[?&])frame=5(?:&|$)/);
     await expect(page).toHaveURL(/(?:^|[?&])zoom=8(?:&|$)/);
   });
-});
 
+  test('radar color scheme selection updates shareable URL', async ({ page }) => {
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    await page.getByRole('button', { name: /LAYERS/i }).click();
+    await page.getByLabel('Radar color scheme').selectOption('1');
+
+    await expect(page).toHaveURL(/(?:^|[?&])scheme=1(?:&|$)/, { timeout: 5000 });
+
+    await page.getByLabel('Radar color scheme').selectOption('4');
+    await expect(page).toHaveURL(/(?:^|[?&])scheme=4(?:&|$)/, { timeout: 5000 });
+  });
+});
