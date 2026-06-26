@@ -34,3 +34,29 @@ export function safeExternalUrl(url: unknown): string | null {
 export function upgradeImageUrl(url: string): string {
   return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url;
 }
+
+/** Known feed/CDN thumbnail paths upgraded to card-friendly resolution. */
+const FEED_IMAGE_RESOLUTION_UPGRADES: Array<(url: string) => string> = [
+  // Phys.org RSS media:thumbnail is 90×90; article pages use ~800px JPEGs.
+  (url) => url.replace(
+    /^(https?:\/\/scx\d+\.b-cdn\.net\/csz\/news\/)tmb\//i,
+    (_, prefix) => `${prefix}800a/`,
+  ),
+  // ScienceDaily RSS sometimes surfaces /images/150/ previews; /1920/ is the hero size.
+  (url) => url.replace(
+    /^(https?:\/\/(?:www\.)?sciencedaily\.com\/images\/)150\//i,
+    '$11920/',
+  ),
+];
+
+/**
+ * Normalize a feed image URL for display: HTTPS upgrade plus publisher-specific
+ * thumbnail → full-size rewrites where we know the CDN pattern.
+ */
+export function upgradeFeedImageUrl(url: string): string {
+  let upgraded = upgradeImageUrl(url);
+  for (const rewrite of FEED_IMAGE_RESOLUTION_UPGRADES) {
+    upgraded = rewrite(upgraded);
+  }
+  return upgraded;
+}

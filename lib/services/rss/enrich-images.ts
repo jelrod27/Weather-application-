@@ -2,10 +2,10 @@
  * Post-parse image enrichment: USGS shakemaps, Open Graph photos, category stock art.
  */
 
-import { pickCategoryStockImage } from '@/lib/news/stock-images';
+import { pickCategoryStockImage, resolveNhcOutlookImage, resolveNwsAlertImage } from '@/lib/news/stock-images';
 import type { RSSItem } from './rssAggregator';
 import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
-import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
 const USGS_EVENT_ID = /earthquakes\/eventpage\/([a-z0-9]+)/i;
 const USGS_DETAIL_CACHE = new Map<string, { url: string | null; expires: number }>();
@@ -24,6 +24,8 @@ const DEFAULTS: Required<EnrichImagesOptions> = {
 };
 
 const USGS_EARTHQUAKE_SOURCES = new Set(['usgs-significant', 'usgs-m45', 'usgs-m25']);
+const NHC_SOURCES = new Set(['nhc-atlantic', 'nhc-pacific']);
+const NWS_ALERT_SOURCES = new Set(['nws-alerts']);
 
 export async function enrichItemImages(
   items: RSSItem[],
@@ -41,7 +43,9 @@ export async function enrichItemImages(
 
   for (const item of result) {
     if (item.imageUrl) continue;
-    item.imageUrl = resolved.get(item.id) ?? pickCategoryStockImage(item.category, item.location ?? item.id).url;
+    const stockSeed = item.category === 'volcanoes' ? (item.location ?? item.id) : item.title;
+    item.imageUrl = resolved.get(item.id)
+      ?? pickCategoryStockImage(item.category, stockSeed, item.sourceId).url;
   }
 
   return result;
@@ -51,6 +55,15 @@ async function resolveStoryImage(item: RSSItem): Promise<string | undefined> {
   if (USGS_EARTHQUAKE_SOURCES.has(item.sourceId)) {
     const shakemap = await resolveUsgsEarthquakeImage(item.url);
     if (shakemap) return shakemap;
+  }
+
+  if (NHC_SOURCES.has(item.sourceId)) {
+    const outlook = resolveNhcOutlookImage(item);
+    if (outlook) return outlook;
+  }
+
+  if (NWS_ALERT_SOURCES.has(item.sourceId)) {
+    return resolveNwsAlertImage(item);
   }
 
   // USGS elevated-volcano JSON items often share one daily notice URL, so OG
@@ -99,7 +112,7 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
       const preferredKeys = ['download/intensity.jpg', 'download/pin-thumbnail.png', 'download/pga.jpg'];
       for (const key of preferredKeys) {
         const url = contents[key]?.url;
-        const safe = url ? safeExternalUrl(upgradeImageUrl(url)) : null;
+        const safe = url ? safeExternalUrl(upgradeFeedImageUrl(url)) : null;
         if (safe) {
           resolved = safe;
           break;

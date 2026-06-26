@@ -12,7 +12,7 @@ import { XMLParser } from 'fast-xml-parser';
 import type { FeedSource, FeedCategory} from './feedSources';
 import { FEED_SOURCES, CATEGORY_CONFIG, getEnabledSourceNames } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
-import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 import {
   selectFeaturedItem,
   selectHappeningNow,
@@ -400,7 +400,7 @@ function buildItem(
 ): RSSItem {
   // Upgrade http -> https before the scheme guard: CSP img-src only allows
   // https, so an http feed image would otherwise be dropped or blocked.
-  const safeImage = fields.rawImage ? safeExternalUrl(upgradeImageUrl(fields.rawImage)) : null;
+  const safeImage = fields.rawImage ? safeExternalUrl(upgradeFeedImageUrl(fields.rawImage)) : null;
   const timestamp = parseItemTimestamp(fields.pubDate);
   return {
     id: `${source.id}-${simpleHash(fields.safeLink + index.toString())}-${index}`,

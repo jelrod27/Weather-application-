@@ -1,4 +1,4 @@
-import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeFeedImageUrl, upgradeImageUrl } from '@/lib/safe-url';
 
 describe('safeExternalUrl', () => {
   test('drops javascript: URI', () => {
@@ -69,5 +69,25 @@ describe('upgradeImageUrl', () => {
     expect(safeExternalUrl(upgradeImageUrl('http://cdn.example.com/a.jpg'))).toBe(
       'https://cdn.example.com/a.jpg'
     );
+  });
+});
+
+describe('upgradeFeedImageUrl', () => {
+  test('upgrades Phys.org 90px RSS thumbnails to 800px article images', () => {
+    expect(
+      upgradeFeedImageUrl('https://scx1.b-cdn.net/csz/news/tmb/2026/wheelchair-outside.jpg'),
+    ).toBe('https://scx1.b-cdn.net/csz/news/800a/2026/wheelchair-outside.jpg');
+  });
+
+  test('upgrades ScienceDaily 150px previews to 1920px hero images', () => {
+    expect(
+      upgradeFeedImageUrl('https://www.sciencedaily.com/images/150/preview.webp'),
+    ).toBe('https://www.sciencedaily.com/images/1920/preview.webp');
+  });
+
+  test('still upgrades http to https', () => {
+    expect(
+      upgradeFeedImageUrl('http://scx2.b-cdn.net/csz/news/tmb/2026/sample.jpg'),
+    ).toBe('https://scx2.b-cdn.net/csz/news/800a/2026/sample.jpg');
   });
 });

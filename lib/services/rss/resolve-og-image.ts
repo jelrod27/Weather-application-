@@ -4,7 +4,7 @@
  */
 
 import { decodeHtmlEntities } from '@/lib/services/rss/html-utils';
-import { safeExternalUrl, upgradeImageUrl } from '@/lib/safe-url';
+import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
 const OG_CACHE = new Map<string, { url: string | null; expires: number }>();
 const OG_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -97,7 +97,7 @@ export function parseOgImageFromHtml(html: string, pageUrl: string): string | nu
     if (!match?.[1]) continue;
     const candidate = decodeHtmlEntities(match[1].trim());
     const absolute = resolveMaybeRelativeUrl(candidate, pageUrl);
-    const safe = absolute ? safeExternalUrl(upgradeImageUrl(absolute)) : null;
+    const safe = absolute ? safeExternalUrl(upgradeFeedImageUrl(absolute)) : null;
     if (safe && !isGenericSiteLogo(safe)) return safe;
   }
   return null;
