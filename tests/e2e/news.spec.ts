@@ -13,9 +13,14 @@ test.beforeEach(async ({ page }) => {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      // status:'ok' drives the success path; lastUpdated is omitted so the page
-      // falls back to "just now", keeping the freshness assertion deterministic.
-      body: JSON.stringify({ status: 'ok', items: [], stats: { byCategory: {} }, categories: {} }),
+      body: JSON.stringify({
+        status: 'ok',
+        items: [],
+        happeningNow: [],
+        featured: null,
+        stats: { byCategory: {}, errors: [], enabledSources: [] },
+        categories: {},
+      }),
     })
   );
   await page.goto('/news', { waitUntil: 'domcontentloaded' });
