@@ -13,3 +13,12 @@ export const RAINVIEWER_LEGEND = [
   { color: '#ff8c00', label: 'Very Heavy', value: '50-65 dBZ' },
   { color: '#ff0000', label: 'Extreme', value: '65+ dBZ' },
 ] as const
+
+/** RainViewer tile color scheme IDs (see rainviewer.com/api.html). */
+export const RAINVIEWER_COLOR_SCHEMES = [
+  { id: 2, label: 'Universal Blue' },
+  { id: 1, label: 'Original' },
+  { id: 4, label: 'The Weather Channel' },
+  { id: 6, label: 'NEXRAD Level-III' },
+  { id: 8, label: 'Rainbow' },
+] as const

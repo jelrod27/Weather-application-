@@ -90,8 +90,7 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
 
-    const viewport = page.viewportSize();
-    expect(viewport).not.toBeNull();
+    await expect(page.getByTestId('radar-top-bar')).toBeVisible();
 
     const viewportHeight = await page.evaluate(() => window.innerHeight);
     const containerHeight = await page.locator('[data-radar-container]').evaluate(
@@ -101,10 +100,18 @@ test.describe('Radar Map', () => {
       (element) => element.getBoundingClientRect().height
     );
 
-    // Radar chrome (preset bar + player dock) shares the flex column; container should still fill the viewport.
-    expect(containerHeight).toBeGreaterThan(viewportHeight * 0.45);
-    // Map canvas should not collapse to the 350px widget minimum.
-    expect(mapHeight).toBeGreaterThan(250);
+    // Full-viewport radar shell — map should dominate the screen (controls float over it).
+    expect(containerHeight).toBeGreaterThan(viewportHeight * 0.92);
+    expect(mapHeight).toBeGreaterThan(viewportHeight * 0.55);
+  });
+
+  test('radar player dock and presets float over the map', async ({ page }) => {
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    await expect(page.getByTestId('radar-player-dock')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Radar$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Severe$/i })).toBeVisible();
   });
 
   test('radar honors shareable URL layer and frame params', async ({ page }) => {

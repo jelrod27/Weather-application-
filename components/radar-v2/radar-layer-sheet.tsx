@@ -1,7 +1,7 @@
 'use client'
 
 import type { RadarShareLayerState, RadarTilePreferences } from '@/lib/radar/radar-url-state'
-import { RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
+import { RAINVIEWER_COLOR_SCHEMES, RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
 
 interface RadarLayerSheetProps {
   open: boolean
@@ -89,6 +89,26 @@ export function RadarLayerSheet({
               checked={tilePreferences.snow}
               onChange={(event) => onTilePreferencesChange({ ...tilePreferences, snow: event.target.checked })}
             />
+          </label>
+          <label className="flex flex-col gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
+            <span>Color scheme</span>
+            <select
+              value={tilePreferences.colorScheme}
+              onChange={(event) =>
+                onTilePreferencesChange({
+                  ...tilePreferences,
+                  colorScheme: Number.parseInt(event.target.value, 10),
+                })
+              }
+              className="rounded-md border border-white/10 bg-black/40 px-2 py-2 text-sm text-white"
+              aria-label="Radar color scheme"
+            >
+              {RAINVIEWER_COLOR_SCHEMES.map((scheme) => (
+                <option key={scheme.id} value={scheme.id}>
+                  {scheme.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
             <span>Coverage mask</span>

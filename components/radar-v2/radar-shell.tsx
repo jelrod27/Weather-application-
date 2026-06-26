@@ -25,6 +25,7 @@ import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
 import { RadarPresetBar } from '@/components/radar-v2/radar-preset-bar'
 import { RadarStatusChip } from '@/components/radar-v2/radar-status-chip'
+import { RadarTopBar } from '@/components/radar-v2/radar-top-bar'
 import {
   BASE_ANIMATION_INTERVAL_MS,
   CARTO_DARK_MATTER_URL,
@@ -52,6 +53,13 @@ interface RadarShellProps {
   locationName?: string
   theme?: ThemeType
   displayMode?: 'full-page' | 'widget'
+  onLocationSearch?: (location: string) => void
+  searchError?: string
+  shareConfig?: {
+    title: string
+    text: string
+    url: string
+  }
 }
 
 type FeatureCollection = {
@@ -102,8 +110,12 @@ function getRelativeTimeLabel(frame: RadarFrame | undefined): string {
 export function RadarShell({
   latitude,
   longitude,
+  locationName,
   theme: _theme = 'nord',
   displayMode = 'full-page',
+  onLocationSearch,
+  searchError,
+  shareConfig,
 }: RadarShellProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -473,14 +485,23 @@ export function RadarShell({
     <div
       data-radar-container
       data-radar-v2
-      className={`flex w-full flex-col ${isFullPage ? 'h-full min-h-0' : ''}`}
+      className={`relative flex w-full flex-col ${isFullPage ? 'h-full min-h-0 bg-black' : ''}`}
     >
-      <div className={`relative flex-1 min-h-0 ${isFullPage ? 'h-full' : 'min-h-[350px]'}`}>
+      <div className={`relative min-h-0 flex-1 ${isFullPage ? 'h-full' : 'min-h-[350px]'}`}>
         <div ref={mapRef} className={`h-full w-full bg-black ${isFullPage ? '' : 'rounded-lg'}`} />
+
+        {isFullPage && locationName && onLocationSearch && shareConfig ? (
+          <RadarTopBar
+            locationName={locationName}
+            onSearch={onLocationSearch}
+            searchError={searchError}
+            shareConfig={shareConfig}
+          />
+        ) : null}
 
         {metadata && frames.length > 0 ? (
           <RadarStatusChip
-            providerLabel={metadata.selectedProvider.shortName.toUpperCase()}
+            providerLabel={`${metadata.selectedProvider.shortName.toUpperCase()} RADAR`}
             updatedLabel={updatedLabel ?? ''}
             freshnessClassName={statusClass}
             isPlaying={isPlaying}
@@ -522,46 +543,47 @@ export function RadarShell({
             onClose={() => setInspector(null)}
           />
         ) : null}
-      </div>
 
-      {isFullPage && frames.length > 0 ? (
-        <>
-          <RadarPresetBar
-            activePreset={activePreset}
-            onPresetChange={(preset) => {
-              setActivePreset(preset)
-              setActiveLayers(getPresetLayers(preset))
-            }}
-            onOpenLayers={() => setLayerSheetOpen(true)}
-          />
-          <RadarPlayerDock
-            frameIndex={frameIndex}
-            frameCount={frames.length}
-            isPlaying={isPlaying}
-            isLiveFrame={isLiveFrame}
-            relativeTime={getRelativeTimeLabel(currentFrame)}
-            speed={speed}
-            onPlayPause={() => setIsPlaying((value) => !value)}
-            onSkipToStart={() => {
-              setIsPlaying(false)
-              setFrameIndex(0)
-            }}
-            onSkipToEnd={() => {
-              setIsPlaying(false)
-              setFrameIndex(Math.max(0, frames.length - 1))
-            }}
-            onSpeedChange={setSpeed}
-            onFrameChange={(index) => {
-              setIsPlaying(false)
-              setFrameIndex(index)
-            }}
-            onLiveTap={() => {
-              setIsPlaying(false)
-              setFrameIndex(Math.max(0, frames.length - 1))
-            }}
-          />
-        </>
-      ) : null}
+        {isFullPage && frames.length > 0 ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2500] flex flex-col">
+            <div className="pointer-events-none h-16 bg-gradient-to-t from-black/80 to-transparent" aria-hidden="true" />
+            <RadarPresetBar
+              activePreset={activePreset}
+              onPresetChange={(preset) => {
+                setActivePreset(preset)
+                setActiveLayers(getPresetLayers(preset))
+              }}
+              onOpenLayers={() => setLayerSheetOpen(true)}
+            />
+            <RadarPlayerDock
+              frameIndex={frameIndex}
+              frameCount={frames.length}
+              isPlaying={isPlaying}
+              isLiveFrame={isLiveFrame}
+              relativeTime={getRelativeTimeLabel(currentFrame)}
+              speed={speed}
+              onPlayPause={() => setIsPlaying((value) => !value)}
+              onSkipToStart={() => {
+                setIsPlaying(false)
+                setFrameIndex(0)
+              }}
+              onSkipToEnd={() => {
+                setIsPlaying(false)
+                setFrameIndex(Math.max(0, frames.length - 1))
+              }}
+              onSpeedChange={setSpeed}
+              onFrameChange={(index) => {
+                setIsPlaying(false)
+                setFrameIndex(index)
+              }}
+              onLiveTap={() => {
+                setIsPlaying(false)
+                setFrameIndex(Math.max(0, frames.length - 1))
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
