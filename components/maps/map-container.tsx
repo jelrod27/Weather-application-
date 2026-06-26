@@ -45,8 +45,8 @@ export function MapContainer({
     threshold: 0,
   })
 
-  const height = displayMode === 'full-page' ? 'h-[600px]' : 'h-[450px]'
-  const minHeight = displayMode === 'full-page' ? '600px' : '450px'
+  const height = displayMode === 'full-page' ? 'h-[600px]' : 'h-full'
+  const minHeight = displayMode === 'full-page' ? '600px' : undefined
 
   return (
     <div

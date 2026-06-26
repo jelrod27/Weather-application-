@@ -8,17 +8,32 @@ export function buildRainViewerRadarTileTemplate(
   host: string,
   path: string,
   options: RainViewerTileOptions,
+  useProxy = true,
 ): string {
   const normalizedHost = host.replace(/\/$/, '')
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const optionSuffix = formatRainViewerTileOptions(options)
-  return `${normalizedHost}${normalizedPath}/${options.size}/{z}/{x}/{y}/${options.colorScheme}/${optionSuffix}.png`
+  const suffix = `${options.size}/{z}/{x}/{y}/${options.colorScheme}/${optionSuffix}.png`
+
+  if (useProxy) {
+    const cleanPath = normalizedPath.replace(/^\//, '')
+    return `/api/radar/tile/${cleanPath}/${suffix}`
+  }
+
+  return `${normalizedHost}${normalizedPath}/${suffix}`
 }
 
 export function buildRainViewerCoverageTileTemplate(
   host: string,
   options: Pick<RainViewerTileOptions, 'size'>,
+  useProxy = true,
 ): string {
   const normalizedHost = host.replace(/\/$/, '')
-  return `${normalizedHost}/v2/coverage/0/${options.size}/{z}/{x}/{y}/0/0_0.png`
+  const suffix = `v2/coverage/0/${options.size}/{z}/{x}/{y}/0/0_0.png`
+
+  if (useProxy) {
+    return `/api/radar/tile/${suffix}`
+  }
+
+  return `${normalizedHost}/${suffix}`
 }

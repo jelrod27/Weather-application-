@@ -36,7 +36,7 @@ export const RAINVIEWER_PROVIDER: RadarProvider = {
   supportsAnimation: true,
   qualityTier: 'community',
   xyz: {
-    urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/256/{z}/{x}/{y}/2/1_1.png',
+    urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/512/{z}/{x}/{y}/6/1_1.png',
     direct: true,
   },
   notes: [
@@ -83,10 +83,10 @@ export async function buildRadarMetadata(
       host: manifest.host,
       generated: manifest.generated,
       version: manifest.version,
-      colorScheme: 2,
+      colorScheme: 6,
       smooth: true,
       snow: true,
-      tileSize: 256,
+      tileSize: 512,
     },
   }
 }

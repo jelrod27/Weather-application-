@@ -761,13 +761,19 @@ export async function stubRadarApis(page: Page): Promise<void> {
         host: 'https://tilecache.rainviewer.com',
         generated: 1718841600,
         version: '2.0',
-        colorScheme: 2,
+        colorScheme: 6,
         smooth: true,
         snow: true,
-        tileSize: 256,
+        tileSize: 512,
       },
     }),
   }))
+
+  await page.route('**/api/radar/tile/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPng,
+  }));
 
   await page.route('**/api/weather/noaa-wms**', (route) => route.fulfill({
     status: 200,

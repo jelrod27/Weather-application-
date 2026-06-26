@@ -1,8 +1,8 @@
 export const RAINVIEWER_MANIFEST_URL = 'https://api.rainviewer.com/public/weather-maps.json'
 
 export const DEFAULT_RAINVIEWER_TILE_OPTIONS = {
-  size: 256,
-  colorScheme: 2,
+  size: 512,
+  colorScheme: 6,
   smooth: true,
   snow: true,
 } as const

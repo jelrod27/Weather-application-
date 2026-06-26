@@ -1,3 +1,6 @@
+export const CARTO_VOYAGER_URL = 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+
+/** @deprecated Use CARTO_VOYAGER_URL — kept for imports that still reference dark basemap. */
 export const CARTO_DARK_MATTER_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
 
 export const TILE_TRANSITION_MS = 500
@@ -14,11 +17,5 @@ export const RAINVIEWER_LEGEND = [
   { color: '#ff0000', label: 'Extreme', value: '65+ dBZ' },
 ] as const
 
-/** RainViewer tile color scheme IDs (see rainviewer.com/api.html). */
-export const RAINVIEWER_COLOR_SCHEMES = [
-  { id: 2, label: 'Universal Blue' },
-  { id: 1, label: 'Original' },
-  { id: 4, label: 'The Weather Channel' },
-  { id: 6, label: 'NEXRAD Level-III' },
-  { id: 8, label: 'Rainbow' },
-] as const
+/** Display presets for RainViewer tiles (applied client-side; see color-schemes.ts). */
+export { RAINVIEWER_DISPLAY_SCHEMES as RAINVIEWER_COLOR_SCHEMES } from '@/lib/radar/rainviewer/color-schemes'

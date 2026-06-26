@@ -26,7 +26,7 @@ export interface RadarTilePreferences {
 }
 
 export const DEFAULT_RADAR_TILE_PREFERENCES: RadarTilePreferences = {
-  colorScheme: 2,
+  colorScheme: 6,
   smooth: true,
   snow: true,
   coverage: false,

@@ -109,6 +109,9 @@ export function RadarLayerSheet({
                 </option>
               ))}
             </select>
+            <p className="text-xs text-zinc-400">
+              Remaps the radar palette on your device. Changes apply instantly — no reload needed.
+            </p>
           </label>
           <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
             <span>Coverage mask</span>

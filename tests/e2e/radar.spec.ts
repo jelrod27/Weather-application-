@@ -125,4 +125,17 @@ test.describe('Radar Map', () => {
     await expect(page).toHaveURL(/(?:^|[?&])frame=5(?:&|$)/);
     await expect(page).toHaveURL(/(?:^|[?&])zoom=8(?:&|$)/);
   });
+
+  test('radar color scheme selection updates shareable URL', async ({ page }) => {
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    await page.getByRole('button', { name: /LAYERS/i }).click();
+    await page.getByLabel('Radar color scheme').selectOption('1');
+
+    await expect(page).toHaveURL(/(?:^|[?&])scheme=1(?:&|$)/, { timeout: 5000 });
+
+    await page.getByLabel('Radar color scheme').selectOption('4');
+    await expect(page).toHaveURL(/(?:^|[?&])scheme=4(?:&|$)/, { timeout: 5000 });
+  });
 });

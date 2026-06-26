@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ThemeType } from '@/lib/theme-config'
 import type { RadarFrame, RadarMetadata } from '@/lib/radar'
@@ -18,18 +18,22 @@ import {
 import {
   buildRainViewerCoverageTileTemplate,
   buildRainViewerRadarTileTemplate,
+  getRainViewerDisplayFilter,
   RAINVIEWER_MAX_NATIVE_ZOOM,
   RAINVIEWER_MAX_ZOOM,
+  RAINVIEWER_TILE_COLOR_PARAM,
 } from '@/lib/radar/rainviewer'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
 import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
+import { RadarPrecipLegend } from '@/components/radar-v2/radar-precip-legend'
 import { RadarPresetBar } from '@/components/radar-v2/radar-preset-bar'
 import { RadarStatusChip } from '@/components/radar-v2/radar-status-chip'
 import { RadarTopBar } from '@/components/radar-v2/radar-top-bar'
+import { RadarWidgetBadge } from '@/components/radar-v2/radar-widget-badge'
 import {
   BASE_ANIMATION_INTERVAL_MS,
-  CARTO_DARK_MATTER_URL,
+  CARTO_VOYAGER_URL,
   LIVE_PAUSE_MS,
   MANIFEST_REFRESH_MS,
   URL_SYNC_DEBOUNCE_MS,
@@ -108,6 +112,10 @@ function getRelativeTimeLabel(frame: RadarFrame | undefined): string {
   return remainder > 0 ? `${hours}h ${remainder}m ago` : `${hours}h ago`
 }
 
+function getRadarTileFetchKey(preferences: RadarTilePreferences, tileSize: number): string {
+  return `${tileSize}:${preferences.smooth}:${preferences.snow}`
+}
+
 export function RadarShell({
   latitude,
   longitude,
@@ -134,7 +142,7 @@ export function RadarShell({
   const [activeLayers, setActiveLayers] = useState<RadarShareLayerState>(() => parsedUrlStateRef.current.layers)
   const [tilePreferences, setTilePreferences] = useState<RadarTilePreferences>(() => parsedUrlStateRef.current.tilePreferences)
   const [activePreset, setActivePreset] = useState<RadarPreset>('radar')
-  const [opacity, setOpacity] = useState(0.85)
+  const [opacity, setOpacity] = useState(0.92)
   const [layerSheetOpen, setLayerSheetOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [frameIndex, setFrameIndex] = useState(0)
@@ -148,6 +156,7 @@ export function RadarShell({
   const urlSyncTimerRef = useRef<number | null>(null)
   const urlStateInitializedRef = useRef(false)
   const frameIndexRef = useRef(0)
+  const lastRadarTileFetchRef = useRef<string | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
@@ -157,6 +166,7 @@ export function RadarShell({
   const currentFrame = frames[frameIndex]
   const isLiveFrame = currentFrame?.isLive ?? false
   const isFullPage = displayMode === 'full-page'
+  const isWidget = displayMode === 'widget'
 
   useEffect(() => {
     if (!isMounted || latitude == null || longitude == null) {
@@ -184,21 +194,25 @@ export function RadarShell({
 
         if (!urlStateInitializedRef.current) {
           const parsed = parsedUrlStateRef.current
-          const defaultLayers = parsed.explicitLayers
-            ? parsed.layers
-            : getDefaultLayersForRegion(nextMetadata.coverageRegion)
+          const defaultLayers = isWidget
+            ? getPresetLayers('radar')
+            : parsed.explicitLayers
+              ? parsed.layers
+              : getDefaultLayersForRegion(nextMetadata.coverageRegion)
           setActiveLayers(defaultLayers)
           setActivePreset(inferPreset(defaultLayers))
           setTilePreferences(parsed.tilePreferences)
 
           const liveIndex = Math.max(0, nextMetadata.frames.length - 1)
-          const nextIndex = parsed.frameIndex != null
-            ? Math.min(parsed.frameIndex, liveIndex)
-            : liveIndex
+          const nextIndex = isWidget
+            ? liveIndex
+            : parsed.frameIndex != null
+              ? Math.min(parsed.frameIndex, liveIndex)
+              : liveIndex
           frameIndexRef.current = nextIndex
           setFrameIndex(nextIndex)
           urlStateInitializedRef.current = true
-          setIsPlaying(true)
+          setIsPlaying(isFullPage)
         }
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
@@ -209,15 +223,17 @@ export function RadarShell({
     }
 
     loadMetadata()
-    const refreshTimer = window.setInterval(loadMetadata, MANIFEST_REFRESH_MS)
+    const refreshTimer = isFullPage
+      ? window.setInterval(loadMetadata, MANIFEST_REFRESH_MS)
+      : null
     return () => {
-      window.clearInterval(refreshTimer)
+      if (refreshTimer != null) window.clearInterval(refreshTimer)
       controller.abort()
     }
-  }, [isMounted, latitude, longitude])
+  }, [isMounted, isFullPage, isWidget, latitude, longitude])
 
   useEffect(() => {
-    if (!isMounted || latitude == null || longitude == null) return
+    if (!isMounted || latitude == null || longitude == null || isWidget) return
     const controller = new AbortController()
 
     async function loadOverlays() {
@@ -245,7 +261,7 @@ export function RadarShell({
 
     loadOverlays()
     return () => controller.abort()
-  }, [isMounted, latitude, longitude])
+  }, [isMounted, isWidget, latitude, longitude])
 
   const updateRadarTiles = useCallback(() => {
     const map = mapInstanceRef.current
@@ -256,11 +272,15 @@ export function RadarShell({
       currentFrame.tilePath,
       {
         size: metadata.rainviewer.tileSize,
-        colorScheme: tilePreferences.colorScheme,
+        colorScheme: RAINVIEWER_TILE_COLOR_PARAM,
         smooth: tilePreferences.smooth,
         snow: tilePreferences.snow,
       },
     )
+    const tileFetchKey = getRadarTileFetchKey(tilePreferences, metadata.rainviewer.tileSize)
+    const tileFetchChanged = lastRadarTileFetchRef.current != null
+      && lastRadarTileFetchRef.current !== tileFetchKey
+    lastRadarTileFetchRef.current = tileFetchKey
 
     if (!radarLayerRef.current) {
       const layer = new TileLayer({
@@ -268,18 +288,25 @@ export function RadarShell({
           url: radarTemplate,
           crossOrigin: 'anonymous',
           maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
+          tileSize: metadata.rainviewer.tileSize,
+          transition: 0,
         }),
         opacity,
         zIndex: 500,
+        className: 'radar-precip-layer',
+        useInterimTilesOnError: false,
       })
+      layer.setVisible(activeLayers.precipitation)
       radarLayerRef.current = layer
       map.addLayer(layer)
     } else {
-      radarLayerRef.current.setSource(new XYZ({
-        url: radarTemplate,
-        crossOrigin: 'anonymous',
-        maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
-      }))
+      const source = radarLayerRef.current.getSource()
+      if (source instanceof XYZ) {
+        source.setUrl(radarTemplate)
+        if (tileFetchChanged) {
+          source.refresh()
+        }
+      }
       radarLayerRef.current.setOpacity(opacity)
       radarLayerRef.current.setVisible(activeLayers.precipitation)
     }
@@ -294,18 +321,20 @@ export function RadarShell({
             url: coverageTemplate,
             crossOrigin: 'anonymous',
             maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
+            tileSize: metadata.rainviewer.tileSize,
+            transition: 0,
           }),
           opacity: 0.45,
           zIndex: 450,
+          useInterimTilesOnError: false,
         })
         coverageLayerRef.current = layer
         map.addLayer(layer)
       } else {
-        coverageLayerRef.current.setSource(new XYZ({
-          url: coverageTemplate,
-          crossOrigin: 'anonymous',
-          maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
-        }))
+        const source = coverageLayerRef.current.getSource()
+        if (source instanceof XYZ) {
+          source.setUrl(coverageTemplate)
+        }
         coverageLayerRef.current.setVisible(true)
       }
     } else if (coverageLayerRef.current) {
@@ -320,12 +349,13 @@ export function RadarShell({
       target: mapRef.current,
       layers: [
         new TileLayer({
+          className: 'radar-basemap-layer',
           source: new XYZ({
-            url: CARTO_DARK_MATTER_URL,
+            url: CARTO_VOYAGER_URL,
             crossOrigin: 'anonymous',
             attributions: '&copy; CARTO &copy; OpenStreetMap',
           }),
-          opacity: 0.92,
+          opacity: 1,
         }),
       ],
       view: new View({
@@ -466,7 +496,7 @@ export function RadarShell({
   }, [frames.length, isPlaying, speed])
 
   useEffect(() => {
-    if (!metadata || frames.length === 0) return
+    if (!isFullPage || !metadata || frames.length === 0) return
     if (urlSyncTimerRef.current != null) window.clearTimeout(urlSyncTimerRef.current)
     urlSyncTimerRef.current = window.setTimeout(() => {
       const radarParams = serializeRadarUrlParams({
@@ -487,7 +517,14 @@ export function RadarShell({
     return () => {
       if (urlSyncTimerRef.current != null) window.clearTimeout(urlSyncTimerRef.current)
     }
-  }, [activeLayers, frameIndex, frames.length, metadata, pathname, router, searchParams, tilePreferences])
+  }, [activeLayers, frameIndex, frames.length, isFullPage, metadata, pathname, router, searchParams, tilePreferences])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !metadata) return
+    const timer = window.setTimeout(() => map.updateSize(), 50)
+    return () => window.clearTimeout(timer)
+  }, [metadata, isWidget])
 
   const updatedLabel = metadata?.generatedAt
     ? new Date(metadata.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -499,10 +536,15 @@ export function RadarShell({
     <div
       data-radar-container
       data-radar-v2
-      className={`relative flex w-full flex-col ${isFullPage ? 'h-full min-h-0 bg-black' : ''}`}
+      data-radar-widget={isWidget ? 'true' : undefined}
+      data-radar-color-scheme={tilePreferences.colorScheme}
+      style={{
+        '--radar-scheme-filter': getRainViewerDisplayFilter(tilePreferences.colorScheme),
+      } as CSSProperties}
+      className={`relative flex w-full flex-col ${isFullPage ? 'h-full min-h-0 bg-black' : 'h-full min-h-0'}`}
     >
-      <div className={`relative min-h-0 flex-1 ${isFullPage ? 'h-full' : 'min-h-[350px]'}`}>
-        <div ref={mapRef} className={`h-full w-full bg-black ${isFullPage ? '' : 'rounded-lg'}`} />
+      <div className={`relative min-h-0 flex-1 ${isFullPage ? 'h-full' : 'h-full min-h-[280px]'}`}>
+        <div ref={mapRef} className={`h-full w-full ${isFullPage ? 'bg-black' : 'bg-[#e8e4dc]'} ${isFullPage ? '' : 'rounded-lg'}`} />
 
         {isFullPage && locationName && onLocationSearch && shareConfig ? (
           <RadarTopBar
@@ -513,7 +555,15 @@ export function RadarShell({
           />
         ) : null}
 
-        {metadata && frames.length > 0 ? (
+        {isWidget && metadata && frames.length > 0 ? (
+          <RadarWidgetBadge updatedLabel={updatedLabel} />
+        ) : null}
+
+        {isFullPage && metadata && frames.length > 0 && activeLayers.precipitation ? (
+          <RadarPrecipLegend />
+        ) : null}
+
+        {isFullPage && metadata && frames.length > 0 ? (
           <RadarStatusChip
             providerLabel={`${metadata.selectedProvider.shortName.toUpperCase()} RADAR`}
             updatedLabel={updatedLabel ?? ''}
@@ -532,24 +582,26 @@ export function RadarShell({
           </div>
         ) : null}
 
-        <RadarLayerSheet
-          open={layerSheetOpen}
-          layers={activeLayers}
-          tilePreferences={tilePreferences}
-          opacity={opacity}
-          alertCount={alertsGeoJson?.features?.length ?? 0}
-          spcCount={spcGeoJson?.features?.length ?? 0}
-          stormReportCount={stormReports.length}
-          onClose={() => setLayerSheetOpen(false)}
-          onLayersChange={(layers) => {
-            setActiveLayers(layers)
-            setActivePreset(inferPreset(layers))
-          }}
-          onTilePreferencesChange={setTilePreferences}
-          onOpacityChange={setOpacity}
-        />
+        {isFullPage ? (
+          <RadarLayerSheet
+            open={layerSheetOpen}
+            layers={activeLayers}
+            tilePreferences={tilePreferences}
+            opacity={opacity}
+            alertCount={alertsGeoJson?.features?.length ?? 0}
+            spcCount={spcGeoJson?.features?.length ?? 0}
+            stormReportCount={stormReports.length}
+            onClose={() => setLayerSheetOpen(false)}
+            onLayersChange={(layers) => {
+              setActiveLayers(layers)
+              setActivePreset(inferPreset(layers))
+            }}
+            onTilePreferencesChange={setTilePreferences}
+            onOpacityChange={setOpacity}
+          />
+        ) : null}
 
-        {inspector ? (
+        {isFullPage && inspector ? (
           <RadarInspector
             title={inspector.title}
             body={inspector.body}
