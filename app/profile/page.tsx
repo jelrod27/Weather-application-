@@ -1,20 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { ProtectedRoute } from '@/lib/auth'
 import { useAuth } from '@/lib/auth'
 import { updateProfile } from '@/lib/supabase/database'
-import { updateUserPreferencesAPI } from '@/lib/services/preferences-service'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
-import { User, Mail, MapPin, Save, Settings, Loader2 } from 'lucide-react'
+import { User, Mail, Save, Loader2 } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import Link from 'next/link'
 
 export default function ProfilePage() {
   return (
@@ -25,39 +23,28 @@ export default function ProfilePage() {
 }
 
 function ProfileContent() {
-  const router = useRouter()
-  const { user, profile, preferences, profileLoading, refreshProfile, refreshPreferences } = useAuth()
+  const { user, profile, profileLoading, refreshProfile } = useAuth()
   const { theme } = useTheme()
   const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
 
   const [editing, setEditing] = useState(false)
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
-  const [defaultLocation, setDefaultLocation] = useState('')
-  const [autoLocation, setAutoLocation] = useState<boolean>(true)
-  const [temperatureUnit, setTemperatureUnit] = useState<'fahrenheit' | 'celsius'>('fahrenheit')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('success')
   const [mounted, setMounted] = useState(false)
 
-  // Handle mounting to prevent hydration issues
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Initialize form values when profile loads
   useEffect(() => {
-    if (profile) {
+    if (profile && !editing) {
       setUsername(profile.username || '')
       setFullName(profile.full_name || '')
-      setDefaultLocation(profile.default_location || '')
     }
-    if (preferences) {
-      setAutoLocation(preferences.auto_location)
-      setTemperatureUnit(preferences.temperature_unit)
-    }
-  }, [profile, preferences])
+  }, [profile, editing])
 
   const handleSave = async () => {
     if (!user) return
@@ -70,59 +57,25 @@ function ProfileContent() {
       const updates = {
         username: username?.trim() || null,
         full_name: fullName?.trim() || null,
-        default_location: defaultLocation?.trim() || null,
       }
 
       const updatedProfile = await updateProfile(user.id, updates)
 
       if (updatedProfile) {
-        // Refresh profile to verify changes persisted
         await refreshProfile()
-
-        // Save preferences updates (auto-location and units)
-        try {
-          const preferencesResult = await updateUserPreferencesAPI({
-            auto_location: autoLocation,
-            temperature_unit: temperatureUnit
-          })
-
-          if (!preferencesResult) {
-            setMessageType('error')
-            setMessage('Profile saved, but preferences failed to save. Please try updating preferences again.')
-            setLoading(false)
-            return
-          }
-
-          await refreshPreferences()
-        } catch (prefError) {
-          console.error('Error updating preferences:', prefError)
-          setMessageType('error')
-          setMessage('Profile saved, but preferences failed to save. Please try updating preferences again.')
-          setLoading(false)
-          return
-        }
-
         setEditing(false)
         setMessageType('success')
-        setMessage('Profile updated successfully! Redirecting...')
-
-        // Redirect to dashboard after showing success message briefly
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 1500)
+        setMessage('Profile updated successfully.')
       } else {
-        // updateProfile returned null - database error
-        console.error('updateProfile returned null - check database schema and RLS policies')
+        console.error('[profile]', 'updateProfile returned null - check database schema and RLS policies')
         setMessageType('error')
         setMessage('Failed to update profile. Please check your database configuration or try again later.')
-        setLoading(false)
       }
     } catch (error) {
-      console.error('Profile update error:', error)
+      console.error('[profile]', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setMessageType('error')
 
-      // Provide user-friendly error messages based on error type
       if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
         setMessage('Permission denied. Please ensure you are logged in and have permission to update your profile.')
       } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
@@ -130,11 +83,11 @@ function ProfileContent() {
       } else {
         setMessage(`Unable to save profile: ${errorMessage}. Please try again or contact support if the issue persists.`)
       }
+    } finally {
       setLoading(false)
     }
   }
 
-  // Don't render until mounted to prevent hydration issues
   if (!mounted) {
     return (
       <div className="min-h-screen bg-terminal-bg-primary">
@@ -161,13 +114,16 @@ function ProfileContent() {
                 User Profile
               </CardTitle>
               <CardDescription className={`font-mono mt-2 ${themeClasses.secondary || themeClasses.text}`}>
-                Manage your account settings and preferences
+                Update your display name and username. Weather units and saved locations live on the{' '}
+                <Link href="/dashboard" className={`font-bold hover:underline ${themeClasses.accentText}`}>
+                  dashboard
+                </Link>
+                .
               </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Success/Error Message */}
             {message && (
               <div className={`p-4 border-2 text-sm font-mono rounded-md ${messageType === 'success'
                   ? 'border-green-500 bg-green-950/30 text-green-400'
@@ -177,7 +133,6 @@ function ProfileContent() {
               </div>
             )}
 
-            {/* Profile Loading Indicator */}
             {profileLoading && (
               <div className="flex items-center justify-center p-4 border-2 border-cyan-500/50 bg-cyan-950/20 rounded-md">
                 <Loader2 className="w-4 h-4 animate-spin text-cyan-400 mr-2" />
@@ -185,7 +140,6 @@ function ProfileContent() {
               </div>
             )}
 
-            {/* Email (Read-only) */}
             <div className="space-y-2">
               <Label className={`text-xs font-mono font-bold uppercase ${themeClasses.text}`}>
                 Email Address
@@ -204,7 +158,6 @@ function ProfileContent() {
               </p>
             </div>
 
-            {/* Username */}
             <div className="space-y-2">
               <Label className={`text-xs font-mono font-bold uppercase ${themeClasses.text}`}>
                 Username
@@ -222,7 +175,6 @@ function ProfileContent() {
               </div>
             </div>
 
-            {/* Full Name */}
             <div className="space-y-2">
               <Label className={`text-xs font-mono font-bold uppercase ${themeClasses.text}`}>
                 Full Name
@@ -240,71 +192,6 @@ function ProfileContent() {
               </div>
             </div>
 
-            {/* Default Location */}
-            <div className="space-y-2">
-              <Label className={`text-xs font-mono font-bold uppercase ${themeClasses.text}`}>
-                Default Location
-              </Label>
-              <div className="relative">
-                <MapPin className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                <Input
-                  type="text"
-                  value={defaultLocation}
-                  onChange={(e) => setDefaultLocation(e.target.value)}
-                  disabled={!editing}
-                  className={`pl-10 font-mono bg-transparent ${themeClasses.borderColor} ${themeClasses.text}`}
-                  placeholder="Enter default location"
-                />
-              </div>
-            </div>
-
-            {/* Location Preferences */}
-            <div className="border-t pt-6 mt-6 space-y-6">
-              <div className="flex items-center space-x-2">
-                <Settings className={`w-5 h-5 ${themeClasses.text}`} />
-                <h3 className={`text-lg font-bold uppercase tracking-wider font-mono ${themeClasses.text}`}>
-                  Preferences
-                </h3>
-              </div>
-
-              {/* Auto-detect Location */}
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-white/5">
-                <div className="space-y-0.5">
-                  <Label className={`text-sm font-mono font-bold uppercase ${themeClasses.text}`}>
-                    Auto-Detect Location
-                  </Label>
-                  <p className={`text-xs font-mono ${themeClasses.mutedText}`}>
-                    Use your current location on startup
-                  </p>
-                </div>
-                <Switch
-                  checked={autoLocation}
-                  onCheckedChange={setAutoLocation}
-                  disabled={!editing}
-                  className={`${autoLocation ? 'bg-green-500' : 'bg-gray-600'}`}
-                />
-              </div>
-
-              {/* Temperature Units */}
-              <div className="space-y-2">
-                <Label className={`text-xs font-mono font-bold uppercase ${themeClasses.text}`}>
-                  Temperature Units
-                </Label>
-                <div className="relative">
-                  <select
-                    value={temperatureUnit}
-                    disabled={!editing}
-                    onChange={(e) => setTemperatureUnit(e.target.value as 'fahrenheit' | 'celsius')}
-                    className={`flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono ${themeClasses.borderColor} ${themeClasses.text}`}
-                  >
-                    <option value="fahrenheit" className="bg-gray-900">Fahrenheit (°F)</option>
-                    <option value="celsius" className="bg-gray-900">Celsius (°C)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
             <div className="flex space-x-4 pt-4">
               {!editing ? (
                 <Button
@@ -336,7 +223,6 @@ function ProfileContent() {
                       setEditing(false)
                       setUsername(profile?.username || '')
                       setFullName(profile?.full_name || '')
-                      setDefaultLocation(profile?.default_location || '')
                     }}
                     className={`flex-1 font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-white/10`}
                   >

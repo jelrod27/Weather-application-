@@ -91,8 +91,8 @@ export default function SavedLocationsPanel({
             <p
               className={`text-sm font-mono mb-6 ${themeClasses.text} opacity-75 max-w-sm mx-auto`}
             >
-              Save your favorite weather locations for quick access. Search from the home page
-              and tap the save icon, or add one directly below.
+              Add your first location to unlock quick weather cards and pick a default city.
+              Search from the home page and tap save, or add one directly below.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <Button

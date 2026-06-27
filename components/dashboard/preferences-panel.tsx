@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Save, Settings, Thermometer, Wind } from 'lucide-react'
+import { Save, Settings, Thermometer, Wind, MapPin, Bell } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 import { useAuth } from '@/lib/auth'
@@ -34,6 +35,8 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
   const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('fahrenheit')
   const [windUnit, setWindUnit] = useState<WindUnit>('mph')
   const [defaultLocation, setDefaultLocation] = useState<string>('')
+  const [autoLocation, setAutoLocation] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [messageType, setMessageType] = useState<'success' | 'error'>('success')
@@ -43,6 +46,8 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
     if (preferences) {
       setTemperatureUnit(preferences.temperature_unit)
       setWindUnit(preferences.wind_unit)
+      setAutoLocation(preferences.auto_location)
+      setNotificationsEnabled(preferences.notifications_enabled)
     }
   }, [preferences])
 
@@ -67,9 +72,11 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
     if (!preferences) return false
     if (temperatureUnit !== preferences.temperature_unit) return true
     if (windUnit !== preferences.wind_unit) return true
+    if (autoLocation !== preferences.auto_location) return true
+    if (notificationsEnabled !== preferences.notifications_enabled) return true
     if ((profile?.default_location ?? '') !== defaultLocation) return true
     return false
-  }, [preferences, profile?.default_location, temperatureUnit, windUnit, defaultLocation])
+  }, [preferences, profile?.default_location, temperatureUnit, windUnit, autoLocation, notificationsEnabled, defaultLocation])
 
   const handleSave = async () => {
     if (!user) return
@@ -80,6 +87,8 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
       const prefsResult = await updateUserPreferencesAPI({
         temperature_unit: temperatureUnit,
         wind_unit: windUnit,
+        auto_location: autoLocation,
+        notifications_enabled: notificationsEnabled,
       })
 
       if (!prefsResult) {
@@ -126,7 +135,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
           Preferences
         </CardTitle>
         <CardDescription className={`font-mono ${themeClasses.mutedText}`}>
-          Units, default location, and AI personality persist across sessions.
+          Units, default location, and startup behavior persist across sessions.
         </CardDescription>
       </CardHeader>
 
@@ -193,6 +202,43 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Auto-detect Location */}
+        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-black/20 border-[var(--weather-border)]">
+          <div className="space-y-0.5">
+            <Label className={`flex items-center gap-2 font-mono uppercase tracking-wider ${themeClasses.text}`}>
+              <MapPin className="w-4 h-4" aria-hidden="true" />
+              Auto-Detect Location
+            </Label>
+            <p className={`text-xs font-mono ${themeClasses.mutedText}`}>
+              Use your current location when you open the app
+            </p>
+          </div>
+          <Switch
+            checked={autoLocation}
+            onCheckedChange={setAutoLocation}
+            aria-label="Auto-detect location on startup"
+          />
+        </div>
+
+        {/* Notifications (UI only until Condition Watch ships) */}
+        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-black/20 border-[var(--weather-border)]">
+          <div className="space-y-0.5">
+            <Label className={`flex items-center gap-2 font-mono uppercase tracking-wider ${themeClasses.text}`}>
+              <Bell className="w-4 h-4" aria-hidden="true" />
+              Weather Notifications
+            </Label>
+            <p className={`text-xs font-mono ${themeClasses.mutedText}`}>
+              Saved for future alert delivery — no emails or push yet
+            </p>
+          </div>
+          <Switch
+            checked={notificationsEnabled}
+            onCheckedChange={setNotificationsEnabled}
+            aria-label="Enable weather notifications"
+            data-testid="notifications-enabled-toggle"
+          />
         </div>
 
         {/* Default Location */}

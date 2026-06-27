@@ -82,7 +82,7 @@ function DashboardContent() {
           onAddLocation={() => setIsAddModalOpen(true)}
         />
 
-        {/* Preferences (includes AI personality) */}
+        {/* Preferences (units, default location, auto-location) */}
         <PreferencesPanel locations={locations} />
 
         {/* Theme */}
