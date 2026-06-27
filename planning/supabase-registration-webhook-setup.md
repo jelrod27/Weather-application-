@@ -10,8 +10,9 @@ Set these environment variables in Vercel (production) and optionally in `.env.l
 |----------|---------|
 | `SUPABASE_WEBHOOK_SECRET` | Shared secret sent in the `x-webhook-secret` header |
 | `ADMIN_NOTIFICATION_EMAIL` | Your inbox for signup alerts |
-| `RESEND_API_KEY` | Resend API key |
-| `RESEND_FROM_EMAIL` | Verified sender (e.g. `noreply@16bitweather.co`) |
+| `RESEND_API_KEY` | Resend API key (admin alerts + post-confirmation welcome email) |
+| `RESEND_FROM_EMAIL` | Verified sender (e.g. `16 Bit Weather <noreply@16bitweather.co>`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Marks `profiles.welcome_email_sent_at` after welcome email (server-only) |
 | `SLACK_WEBHOOK_URL` | Optional Slack incoming webhook |
 | `DISCORD_WEBHOOK_URL` | Optional Discord webhook |
 
@@ -44,3 +45,12 @@ The `handle_new_user()` trigger creates a `profiles` row (and `user_preferences`
 ## Retries and duplicates
 
 Supabase may retry failed webhook deliveries. Duplicate admin emails on retry are possible; acceptable for low-volume signup alerts. Add an `admin_events` dedupe table later if needed.
+
+## User welcome email (post-confirmation)
+
+Supabase sends the **confirmation** email. After the user confirms (or completes OAuth), the app sends a separate **welcome** email via Resend:
+
+1. Primary: `GET /auth/callback` after `exchangeCodeForSession` (confirm link or OAuth).
+2. Fallback: `POST /api/auth/welcome-email` when the dashboard loads (covers password sign-in after confirm).
+
+Requires `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `SUPABASE_SERVICE_ROLE_KEY`. Run migration `20260625_profiles_welcome_email_sent.sql` so `profiles.welcome_email_sent_at` prevents duplicate sends.

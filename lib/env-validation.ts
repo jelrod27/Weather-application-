@@ -80,11 +80,15 @@ const envConfig: EnvConfig = {
     },
     RESEND_API_KEY: {
       name: 'RESEND_API_KEY',
-      description: 'Resend API key for admin registration emails (optional).',
+      description: 'Resend API key for welcome and admin registration emails (optional).',
     },
     RESEND_FROM_EMAIL: {
       name: 'RESEND_FROM_EMAIL',
-      description: 'Verified Resend sender address (optional).',
+      description: 'Verified Resend sender address for welcome and admin emails (optional).',
+    },
+    SUPABASE_SERVICE_ROLE_KEY: {
+      name: 'SUPABASE_SERVICE_ROLE_KEY',
+      description: 'Supabase service role key for server tasks such as welcome email idempotency (optional).',
     },
     SLACK_WEBHOOK_URL: {
       name: 'SLACK_WEBHOOK_URL',

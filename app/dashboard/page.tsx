@@ -54,6 +54,14 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!user || loading) return
+
+    void fetch('/api/auth/welcome-email', { method: 'POST' }).catch((error) => {
+      console.error('[dashboard] welcome email request failed', error)
+    })
+  }, [user, loading])
+
+  useEffect(() => {
+    if (!user || loading) return
     if (hasLocations) {
       setShowOnboarding(false)
       return

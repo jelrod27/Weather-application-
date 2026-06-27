@@ -19,6 +19,7 @@ export interface Database {
           preferred_units: 'metric' | 'imperial'
           default_location: string | null
           timezone: string | null
+          welcome_email_sent_at: string | null
           created_at: string
           updated_at: string
         }
@@ -31,6 +32,7 @@ export interface Database {
           preferred_units?: 'metric' | 'imperial'
           default_location?: string | null
           timezone?: string | null
+          welcome_email_sent_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -43,9 +45,11 @@ export interface Database {
           preferred_units?: 'metric' | 'imperial'
           default_location?: string | null
           timezone?: string | null
+          welcome_email_sent_at?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       saved_locations: {
         Row: {

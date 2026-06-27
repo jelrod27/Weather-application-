@@ -3,7 +3,7 @@
  * Sends email (Resend) and optional Slack/Discord webhook messages.
  */
 
-import { Resend } from 'resend'
+import { getResendFromConfig } from '@/lib/services/resend-client'
 
 export interface NewRegistrationPayload {
   userId: string
@@ -36,20 +36,18 @@ function buildRegistrationSummary(payload: NewRegistrationPayload): string {
 export async function sendAdminRegistrationEmail(
   payload: NewRegistrationPayload,
 ): Promise<{ sent: boolean; reason?: string }> {
-  const apiKey = process.env.RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL
+  const config = getResendFromConfig()
   const toEmail = process.env.ADMIN_NOTIFICATION_EMAIL
 
-  if (!apiKey || !fromEmail || !toEmail) {
+  if (!config || !toEmail) {
     return { sent: false, reason: 'Resend or admin email env vars not configured' }
   }
 
   try {
-    const resend = new Resend(apiKey)
     const body = buildRegistrationSummary(payload)
 
-    const { error } = await resend.emails.send({
-      from: fromEmail,
+    const { error } = await config.resend.emails.send({
+      from: config.fromEmail,
       to: toEmail,
       subject: `[16 Bit Weather] New signup: ${payload.email}`,
       text: body,
