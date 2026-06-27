@@ -105,13 +105,14 @@ describe('DashboardOnboardingPanel', () => {
     mockSaveUserLocation.mockResolvedValue(undefined)
 
     const onLocationSaved = jest.fn()
+    const onDismiss = jest.fn()
     render(
       <DashboardOnboardingPanel
         userId="user-1"
         displayName=""
         onAddLocation={jest.fn()}
         onLocationSaved={onLocationSaved}
-        onDismiss={jest.fn()}
+        onDismiss={onDismiss}
       />,
     )
 
@@ -126,8 +127,9 @@ describe('DashboardOnboardingPanel', () => {
           is_favorite: true,
         }),
       )
+      expect(mockDismissOnboarding).toHaveBeenCalledWith('user-1')
+      expect(onDismiss).toHaveBeenCalledTimes(1)
+      expect(onLocationSaved).toHaveBeenCalledTimes(1)
     })
-    expect(mockDismissOnboarding).toHaveBeenCalledWith('user-1')
-    expect(onLocationSaved).toHaveBeenCalledTimes(1)
   })
 })

@@ -6,6 +6,7 @@ import type { Database } from '@/lib/supabase/types'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import { maybeSendWelcomeEmail } from '@/lib/services/welcome-email-service'
 import { resolvePostAuthRedirect } from '@/lib/auth/post-auth-redirect'
+import { sanitizeLogValue } from '@/lib/sanitize-log'
 
 export async function handleAuthCallbackWelcome(user: {
   id: string
@@ -29,7 +30,11 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description')
 
   if (error) {
-    console.error('[Auth Callback] OAuth error:', error, errorDescription)
+    console.error(
+      '[Auth Callback] OAuth error:',
+      sanitizeLogValue(error),
+      sanitizeLogValue(errorDescription),
+    )
     return NextResponse.redirect(
       `${origin}/auth/login?error=${encodeURIComponent(errorDescription || error)}`,
     )
@@ -66,7 +71,7 @@ export async function GET(request: NextRequest) {
   const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError) {
-    console.error('[Auth Callback] Exchange error:', exchangeError.message)
+    console.error('[Auth Callback] Exchange error:', sanitizeLogValue(exchangeError.message))
     return NextResponse.redirect(
       `${origin}/auth/login?error=${encodeURIComponent(exchangeError.message)}`,
     )

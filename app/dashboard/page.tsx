@@ -14,9 +14,7 @@ import SavedLocationsPanel from '@/components/dashboard/saved-locations-panel'
 import PreferencesPanel from '@/components/dashboard/preferences-panel'
 import DashboardOnboardingPanel from '@/components/dashboard/dashboard-onboarding-panel'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { isOnboardingDismissed } from '@/lib/dashboard/onboarding-state'
-
-const WELCOME_MODAL_KEY = 'dashboard-welcome-modal-opened'
+import { isOnboardingDismissed, getWelcomeModalSessionKey } from '@/lib/dashboard/onboarding-state'
 
 export default function DashboardPage() {
   return (
@@ -70,14 +68,17 @@ function DashboardContent() {
   }, [user, loading, hasLocations])
 
   useEffect(() => {
-    if (!mounted || loading || hasLocations) return
+    if (!mounted || loading || hasLocations || !user) return
     if (searchParams.get('welcome') !== '1') return
+    if (isOnboardingDismissed(user.id)) return
     if (typeof window === 'undefined') return
-    if (window.sessionStorage.getItem(WELCOME_MODAL_KEY) === '1') return
 
-    window.sessionStorage.setItem(WELCOME_MODAL_KEY, '1')
+    const welcomeKey = getWelcomeModalSessionKey(user.id)
+    if (window.sessionStorage.getItem(welcomeKey) === '1') return
+
+    window.sessionStorage.setItem(welcomeKey, '1')
     setIsAddModalOpen(true)
-  }, [mounted, loading, hasLocations, searchParams])
+  }, [mounted, loading, hasLocations, searchParams, user])
 
   const handleLocationUpdate = useCallback(() => {
     refetch()

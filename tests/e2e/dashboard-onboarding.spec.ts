@@ -4,6 +4,7 @@ import { setupStableApp, setupMockAuth, stubSupabaseProfile, isRemotePreviewTarg
 const skipAuthTests = isRemotePreviewTarget();
 const USER_ID = '00000000-0000-0000-0000-000000000000';
 const DISMISS_KEY = `dashboard-onboarding-dismissed:${USER_ID}`;
+const WELCOME_MODAL_KEY = `dashboard-welcome-modal-opened:${USER_ID}`;
 
 test.describe('Dashboard onboarding', () => {
   test.skip(skipAuthTests, 'Auth mocking not supported against deployed preview URLs');
@@ -20,10 +21,10 @@ test.describe('Dashboard onboarding', () => {
       email: 'test@example.com',
     });
 
-    await page.addInitScript((key) => {
-      window.localStorage.removeItem(key);
-      window.sessionStorage.removeItem('dashboard-welcome-modal-opened');
-    }, DISMISS_KEY);
+    await page.addInitScript(({ dismissKey, welcomeKey }) => {
+      window.localStorage.removeItem(dismissKey);
+      window.sessionStorage.removeItem(welcomeKey);
+    }, { dismissKey: DISMISS_KEY, welcomeKey: WELCOME_MODAL_KEY });
   });
 
   test('shows onboarding panel when user has no saved locations', async ({ page }) => {
@@ -46,5 +47,8 @@ test.describe('Dashboard onboarding', () => {
     await expect(page.getByTestId('dashboard-onboarding-panel')).toBeVisible({ timeout: 15000 });
 
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 });
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
   });
 });

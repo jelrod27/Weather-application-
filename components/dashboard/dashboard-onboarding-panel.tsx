@@ -64,6 +64,7 @@ export default function DashboardOnboardingPanel({
       })
 
       dismissOnboarding(userId)
+      onDismiss()
       onLocationSaved()
     } catch (error) {
       console.error('[dashboard-onboarding] geolocation save failed', error)
