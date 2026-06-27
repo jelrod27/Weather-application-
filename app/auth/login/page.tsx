@@ -14,9 +14,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = searchParams ? await searchParams : {}
   const rawError = params.error
   const initialError =
-    typeof rawError === 'string' && rawError.length > 0
-      ? decodeURIComponent(rawError.replace(/\+/g, ' '))
-      : undefined
+    typeof rawError === 'string' && rawError.length > 0 ? rawError : undefined
 
   return <AuthForm mode="signin" initialError={initialError} />
 }

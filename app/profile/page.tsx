@@ -40,11 +40,11 @@ function ProfileContent() {
   }, [])
 
   useEffect(() => {
-    if (profile) {
+    if (profile && !editing) {
       setUsername(profile.username || '')
       setFullName(profile.full_name || '')
     }
-  }, [profile])
+  }, [profile, editing])
 
   const handleSave = async () => {
     if (!user) return
@@ -67,12 +67,12 @@ function ProfileContent() {
         setMessageType('success')
         setMessage('Profile updated successfully.')
       } else {
-        console.error('updateProfile returned null - check database schema and RLS policies')
+        console.error('[profile]', 'updateProfile returned null - check database schema and RLS policies')
         setMessageType('error')
         setMessage('Failed to update profile. Please check your database configuration or try again later.')
       }
     } catch (error) {
-      console.error('Profile update error:', error)
+      console.error('[profile]', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       setMessageType('error')
 

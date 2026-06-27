@@ -84,7 +84,7 @@ describe('AuthForm', () => {
       target: { value: 'bad@example.com' },
     })
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
-      target: { value: 'wrong' },
+      target: { value: 'wrong12' },
     })
     fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
 

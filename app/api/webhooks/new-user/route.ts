@@ -21,6 +21,19 @@ export interface SupabaseProfileWebhookPayload {
   } | null
 }
 
+export interface NewRegistrationFromWebhook {
+  userId: string
+  email: string
+  username: string | null
+  fullName: string | null
+  createdAt: string
+}
+
+export type ProfileWebhookParseResult =
+  | { status: 'skip' }
+  | { status: 'invalid'; message: string }
+  | { status: 'ok'; registration: NewRegistrationFromWebhook }
+
 export function verifyWebhookSecret(request: NextRequest, expectedSecret: string): boolean {
   const provided = request.headers.get(WEBHOOK_SECRET_HEADER) ?? ''
   const a = Buffer.from(provided)
@@ -29,30 +42,35 @@ export function verifyWebhookSecret(request: NextRequest, expectedSecret: string
   return timingSafeEqual(a, b)
 }
 
-export function parseProfileInsertPayload(body: unknown): NewRegistrationFromWebhook | null {
-  if (body == null || typeof body !== 'object') return null
+export function parseProfileInsertPayload(body: unknown): ProfileWebhookParseResult {
+  if (body == null || typeof body !== 'object') {
+    return { status: 'invalid', message: 'Webhook body must be a JSON object' }
+  }
 
   const payload = body as SupabaseProfileWebhookPayload
 
-  if (payload.type !== 'INSERT') return null
-  if (payload.table !== 'profiles') return null
-  if (!payload.record?.id || !payload.record.email) return null
+  if (payload.type !== 'INSERT' || payload.table !== 'profiles') {
+    return { status: 'skip' }
+  }
+
+  const record = payload.record
+  if (!record?.id || !record.email || !record.created_at) {
+    return {
+      status: 'invalid',
+      message: 'profiles INSERT payload missing required record.id, record.email, or record.created_at',
+    }
+  }
 
   return {
-    userId: payload.record.id,
-    email: payload.record.email,
-    username: payload.record.username ?? null,
-    fullName: payload.record.full_name ?? null,
-    createdAt: payload.record.created_at ?? new Date().toISOString(),
+    status: 'ok',
+    registration: {
+      userId: record.id,
+      email: record.email,
+      username: record.username ?? null,
+      fullName: record.full_name ?? null,
+      createdAt: record.created_at,
+    },
   }
-}
-
-export interface NewRegistrationFromWebhook {
-  userId: string
-  email: string
-  username: string | null
-  fullName: string | null
-  createdAt: string
 }
 
 export async function POST(request: NextRequest) {
@@ -73,13 +91,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const registration = parseProfileInsertPayload(body)
-  if (!registration) {
+  const parsed = parseProfileInsertPayload(body)
+  if (parsed.status === 'skip') {
     return NextResponse.json({ ok: true, skipped: true, reason: 'Not a profiles INSERT event' })
+  }
+  if (parsed.status === 'invalid') {
+    return NextResponse.json({ error: parsed.message }, { status: 400 })
   }
 
   try {
-    const results = await notifyNewRegistration(registration)
+    const results = await notifyNewRegistration(parsed.registration)
 
     const anySent = results.email.sent || results.slack.sent || results.discord.sent
     if (!anySent) {
@@ -88,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      userId: registration.userId,
+      userId: parsed.registration.userId,
       notifications: results,
     })
   } catch (error) {

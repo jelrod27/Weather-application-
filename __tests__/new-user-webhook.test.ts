@@ -79,7 +79,11 @@ describe('new-user webhook', () => {
   })
 
   afterAll(() => {
-    process.env.SUPABASE_WEBHOOK_SECRET = originalSecret
+    if (originalSecret === undefined) {
+      delete process.env.SUPABASE_WEBHOOK_SECRET
+    } else {
+      process.env.SUPABASE_WEBHOOK_SECRET = originalSecret
+    }
   })
 
   describe('verifyWebhookSecret', () => {
@@ -98,16 +102,34 @@ describe('new-user webhook', () => {
     it('parses a profiles INSERT record', () => {
       const parsed = parseProfileInsertPayload(VALID_PAYLOAD)
       expect(parsed).toEqual({
-        userId: VALID_PAYLOAD.record.id,
-        email: VALID_PAYLOAD.record.email,
-        username: 'newuser',
-        fullName: 'New User',
-        createdAt: VALID_PAYLOAD.record.created_at,
+        status: 'ok',
+        registration: {
+          userId: VALID_PAYLOAD.record.id,
+          email: VALID_PAYLOAD.record.email,
+          username: 'newuser',
+          fullName: 'New User',
+          createdAt: VALID_PAYLOAD.record.created_at,
+        },
       })
     })
 
-    it('ignores non-INSERT events', () => {
-      expect(parseProfileInsertPayload({ ...VALID_PAYLOAD, type: 'UPDATE' })).toBeNull()
+    it('skips non-INSERT events', () => {
+      expect(parseProfileInsertPayload({ ...VALID_PAYLOAD, type: 'UPDATE' })).toEqual({
+        status: 'skip',
+      })
+    })
+
+    it('rejects profiles INSERT missing required fields', () => {
+      expect(
+        parseProfileInsertPayload({
+          ...VALID_PAYLOAD,
+          record: { ...VALID_PAYLOAD.record, email: '' },
+        }),
+      ).toEqual({
+        status: 'invalid',
+        message:
+          'profiles INSERT payload missing required record.id, record.email, or record.created_at',
+      })
     })
   })
 
@@ -143,6 +165,20 @@ describe('new-user webhook', () => {
       expect(response.status).toBe(200)
       const json = await response.json()
       expect(json.skipped).toBe(true)
+      expect(mockNotify).not.toHaveBeenCalled()
+    })
+
+    it('returns 400 for malformed profiles INSERT payloads', async () => {
+      const response = await POST(
+        makeRequest({
+          secret: 'test-webhook-secret',
+          body: {
+            ...VALID_PAYLOAD,
+            record: { id: VALID_PAYLOAD.record.id },
+          },
+        }),
+      )
+      expect(response.status).toBe(400)
       expect(mockNotify).not.toHaveBeenCalled()
     })
   })

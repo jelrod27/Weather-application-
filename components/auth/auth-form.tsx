@@ -73,6 +73,8 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
   const handleOAuthSignIn = async (provider: 'google' | 'github') => {
     try {
       setLoading(true)
+      setError('')
+      setSuccess('')
       const { error } = await signInWithProvider(provider)
       if (error) {
         setError(error.message)

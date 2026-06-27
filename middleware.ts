@@ -1,7 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isPlaywrightTestModeRequest } from '@/lib/playwright-test-mode'
-import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import { resolveAuthenticatedAuthRouteRedirect } from '@/lib/auth/middleware-redirects'
 
 /**

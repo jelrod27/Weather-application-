@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { setupStableApp, setupMockAuth, isRemotePreviewTarget } from '../fixtures/utils';
+import { setupStableApp, isRemotePreviewTarget } from '../fixtures/utils';
 
 const skipAuthTests = isRemotePreviewTarget();
 
@@ -31,17 +31,12 @@ test.describe('Auth flow', () => {
     // Middleware auth redirect requires a real Supabase session cookie; Playwright test mode
     // bypasses middleware auth checks, so this behavior is covered by manual QA + unit tests.
     test.skip(true, 'Requires real Supabase session; middleware bypassed in Playwright test mode');
-    await setupMockAuth(page);
-    await page.waitForTimeout(200);
     await page.goto('/auth/login', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
 
   test('legacy /settings redirects to dashboard', async ({ page }) => {
-    await setupMockAuth(page);
-    await page.waitForTimeout(200);
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1000);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
 });

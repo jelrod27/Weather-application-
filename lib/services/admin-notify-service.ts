@@ -44,22 +44,30 @@ export async function sendAdminRegistrationEmail(
     return { sent: false, reason: 'Resend or admin email env vars not configured' }
   }
 
-  const resend = new Resend(apiKey)
-  const body = buildRegistrationSummary(payload)
+  try {
+    const resend = new Resend(apiKey)
+    const body = buildRegistrationSummary(payload)
 
-  const { error } = await resend.emails.send({
-    from: fromEmail,
-    to: toEmail,
-    subject: `[16 Bit Weather] New signup: ${payload.email}`,
-    text: body,
-  })
+    const { error } = await resend.emails.send({
+      from: fromEmail,
+      to: toEmail,
+      subject: `[16 Bit Weather] New signup: ${payload.email}`,
+      text: body,
+    })
 
-  if (error) {
+    if (error) {
+      console.error('[admin-notify] Resend error:', error)
+      return { sent: false, reason: error.message }
+    }
+
+    return { sent: true }
+  } catch (error) {
     console.error('[admin-notify] Resend error:', error)
-    return { sent: false, reason: error.message }
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'Resend request failed',
+    }
   }
-
-  return { sent: true }
 }
 
 export async function sendSlackRegistrationNotification(
@@ -77,19 +85,27 @@ export async function sendSlackRegistrationNotification(
     `User ID: \`${payload.userId}\``,
   ].join('\n')
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
-  })
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
 
-  if (!response.ok) {
-    const reason = `Slack webhook returned ${response.status}`
-    console.error('[admin-notify]', reason)
-    return { sent: false, reason }
+    if (!response.ok) {
+      const reason = `Slack webhook returned ${response.status}`
+      console.error('[admin-notify]', reason)
+      return { sent: false, reason }
+    }
+
+    return { sent: true }
+  } catch (error) {
+    console.error('[admin-notify] Slack error:', error)
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'Slack request failed',
+    }
   }
-
-  return { sent: true }
 }
 
 export async function sendDiscordRegistrationNotification(
@@ -107,19 +123,41 @@ export async function sendDiscordRegistrationNotification(
     `User ID: ${payload.userId}`,
   ].join('\n')
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
-  })
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
 
-  if (!response.ok) {
-    const reason = `Discord webhook returned ${response.status}`
-    console.error('[admin-notify]', reason)
-    return { sent: false, reason }
+    if (!response.ok) {
+      const reason = `Discord webhook returned ${response.status}`
+      console.error('[admin-notify]', reason)
+      return { sent: false, reason }
+    }
+
+    return { sent: true }
+  } catch (error) {
+    console.error('[admin-notify] Discord error:', error)
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'Discord request failed',
+    }
   }
+}
 
-  return { sent: true }
+function settledChannelResult(
+  result: PromiseSettledResult<{ sent: boolean; reason?: string }>,
+  channel: string,
+): { sent: boolean; reason?: string } {
+  if (result.status === 'fulfilled') {
+    return result.value
+  }
+  console.error(`[admin-notify] ${channel} error:`, result.reason)
+  return {
+    sent: false,
+    reason: result.reason instanceof Error ? result.reason.message : `${channel} request failed`,
+  }
 }
 
 export async function notifyNewRegistration(
@@ -129,11 +167,15 @@ export async function notifyNewRegistration(
   slack: { sent: boolean; reason?: string }
   discord: { sent: boolean; reason?: string }
 }> {
-  const [email, slack, discord] = await Promise.all([
+  const [email, slack, discord] = await Promise.allSettled([
     sendAdminRegistrationEmail(payload),
     sendSlackRegistrationNotification(payload),
     sendDiscordRegistrationNotification(payload),
   ])
 
-  return { email, slack, discord }
+  return {
+    email: settledChannelResult(email, 'email'),
+    slack: settledChannelResult(slack, 'slack'),
+    discord: settledChannelResult(discord, 'discord'),
+  }
 }
