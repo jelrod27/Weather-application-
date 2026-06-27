@@ -1,5 +1,6 @@
 import type { Page} from '@playwright/test';
 import { expect } from '@playwright/test';
+import { stargazerE2eFixture } from './stargazer-e2e-fixture';
 
 /** True when E2E targets a deployed preview/prod URL (not localhost). */
 export function isRemotePreviewTarget(): boolean {
@@ -925,15 +926,7 @@ export async function stubRadarApis(page: Page): Promise<void> {
   await page.route(/\/api\/stargazer/, (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({
-      score: {
-        overall: 72,
-        label: 'Good',
-        color: '#4ade80',
-        summary: 'Partly cloudy with fair seeing tonight',
-        subScores: { cloud: 70, moon: 80, seeing: 65, transparency: 75, ground: 70 },
-      },
-    }),
+    body: JSON.stringify(stargazerE2eFixture()),
   }));
 
   await page.route('**/api/weather/storm-reports**', (route) => route.fulfill({
