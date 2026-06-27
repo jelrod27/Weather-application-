@@ -86,15 +86,25 @@ describe('Sitemap SEO', () => {
     expect(sitemapPaths.some((p) => p.startsWith('/stargazer/objects/'))).toBe(true)
   })
 
-  it('sitemap should include education detail guide pages', async () => {
+  it('sitemap should include all featured education detail guide pages', async () => {
+    const { FEATURED_DETAIL_SLUGS, getEducationDetailHref } = await import('@/lib/education/entries')
     const { default: sitemap } = await import('../app/sitemap')
     const entries = await sitemap()
     const sitemapPaths = entries.map((e: { url: string }) => {
       try { return new URL(e.url).pathname } catch { return e.url }
     })
 
-    expect(sitemapPaths).toContain('/education/weather-systems/cyclones')
-    expect(sitemapPaths).toContain('/education/cloud-types/cirrus')
-    expect(sitemapPaths).toContain('/education/phenomena/thundersnow')
+    const expectedPaths = [
+      ...FEATURED_DETAIL_SLUGS['weather-system'].map((slug) =>
+        getEducationDetailHref('weather-system', slug),
+      ),
+      ...FEATURED_DETAIL_SLUGS.cloud.map((slug) => getEducationDetailHref('cloud', slug)),
+      ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => getEducationDetailHref('phenomenon', slug)),
+    ]
+
+    expect(expectedPaths).toHaveLength(20)
+    for (const path of expectedPaths) {
+      expect(sitemapPaths).toContain(path)
+    }
   })
 })

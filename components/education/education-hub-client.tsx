@@ -28,6 +28,7 @@ import { countEncyclopediaEntries } from '@/lib/education/entries'
 import { cloudDatabase } from '@/data/cloud-types'
 import { weatherPhenomena } from '@/data/fun-facts'
 import { weatherSystemsDatabase } from '@/data/weather-systems'
+import { decodeHtmlEntities } from '@/lib/services/rss/html-utils'
 import { getAllConcepts } from '@/lib/weather-concepts'
 import { getAllMetrics } from '@/lib/weather-definitions'
 
@@ -35,7 +36,7 @@ export interface EducationHubPost {
   slug: string
   title: string
   summary: string
-  date: string
+  displayDate: string
   href: string
 }
 
@@ -256,23 +257,21 @@ export default function EducationHubClient({ latestPosts }: EducationHubClientPr
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {latestPosts.map((post) => (
-                <Link key={post.slug} href={post.href} className="block h-full">
+              {latestPosts.map((post, index) => (
+                <Link key={index} href={post.href} className="block h-full">
                   <Card className={cn('container-nested h-full glow-interactive hover:scale-[1.02] transition-transform', themeClasses.background)}>
                     <CardHeader className="pb-2">
                       <CardTitle className={cn('text-base font-mono uppercase leading-snug', themeClasses.headerText)}>
-                        {post.title}
+                        {decodeHtmlEntities(post.title)}
                       </CardTitle>
                       <p className={cn('text-[10px] font-mono uppercase', themeClasses.text)}>
-                        {new Date(post.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {post.displayDate}
                       </p>
                     </CardHeader>
                     <CardContent>
-                      <p className={cn('text-sm font-mono line-clamp-3', themeClasses.text)}>{post.summary}</p>
+                      <p className={cn('text-sm font-mono line-clamp-3', themeClasses.text)}>
+                        {decodeHtmlEntities(post.summary)}
+                      </p>
                     </CardContent>
                   </Card>
                 </Link>
