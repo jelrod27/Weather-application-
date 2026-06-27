@@ -52,35 +52,61 @@ export const metadata: Metadata = {
   },
 }
 
-// JSON-LD structured data for the homepage
+const SITE_URL = 'https://www.16bitweather.co'
+
+// JSON-LD structured data for the homepage (Organization + WebSite + WebApplication)
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: '16 Bit Weather',
-  description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics',
-  url: 'https://www.16bitweather.co',
-  applicationCategory: 'WeatherApplication',
-  operatingSystem: 'Web',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  author: {
-    '@type': 'Organization',
-    name: '16 Bit Weather',
-    url: 'https://www.16bitweather.co',
-  },
-  featureList: [
-    'Real-time weather data',
-    '7-day weather forecast',
-    'North America weather radar',
-    'Air quality index',
-    'Pollen count',
-    'UV index',
-    'Hourly forecast',
-    'Multiple retro themes',
-    'City weather search',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: '16 Bit Weather',
+      url: SITE_URL,
+      logo: `${SITE_URL}/favicon.svg`,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: '16 Bit Weather',
+      description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics',
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/weather/{search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': `${SITE_URL}/#webapp`,
+      name: '16 Bit Weather',
+      description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics',
+      url: SITE_URL,
+      applicationCategory: 'WeatherApplication',
+      operatingSystem: 'Web',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+      author: { '@id': `${SITE_URL}/#organization` },
+      featureList: [
+        'Real-time weather data',
+        '7-day weather forecast',
+        'North America weather radar',
+        'Air quality index',
+        'Pollen count',
+        'UV index',
+        'Hourly forecast',
+        'Multiple retro themes',
+        'City weather search',
+      ],
+    },
   ],
 }
 
