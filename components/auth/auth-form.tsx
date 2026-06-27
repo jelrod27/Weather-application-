@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Mail, Lock, User, Globe, Code } from 'lucide-react'
 import { signIn, signUp, signInWithProvider } from '@/lib/supabase/auth'
+import { AnalyticsEvents } from '@/lib/analytics/events'
+import { captureAnalyticsEvent } from '@/lib/analytics/posthog'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 
@@ -51,6 +53,7 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
           router.refresh()
         }
       } else {
+        captureAnalyticsEvent(AnalyticsEvents.SIGNUP_STARTED, { method: 'email' })
         const { user, error } = await signUp({
           email,
           password,
@@ -60,6 +63,7 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
         if (error) {
           setError(error.message)
         } else {
+          captureAnalyticsEvent(AnalyticsEvents.SIGNUP_EMAIL_SENT, { method: 'email' })
           setSuccess('Check your email for a confirmation link to finish signing up.')
         }
       }
@@ -75,6 +79,7 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
       setLoading(true)
       setError('')
       setSuccess('')
+      captureAnalyticsEvent(AnalyticsEvents.OAUTH_SIGN_IN_STARTED, { provider })
       const { error } = await signInWithProvider(provider)
       if (error) {
         setError(error.message)
