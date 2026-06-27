@@ -4,6 +4,7 @@ describe('getPrecipSeverity', () => {
   it('returns none tier below 20%', () => {
     expect(getPrecipSeverity(10).tier).toBe('none');
     expect(getPrecipSeverity(10).stripClass).toBe('');
+    expect(getPrecipSeverity(Number.NaN).tier).toBe('none');
   });
 
   it('escalates strip and wash with higher probability', () => {

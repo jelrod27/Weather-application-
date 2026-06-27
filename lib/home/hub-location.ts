@@ -9,7 +9,7 @@ export interface HubUserLocation {
   country: string;
 }
 
-const US_STATE_CODES = new Set([
+export const US_STATE_CODES = new Set([
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
   'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
@@ -17,6 +17,9 @@ const US_STATE_CODES = new Set([
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
   'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
 ]);
+
+/** State abbreviations that collide with common English words when matched with \\b. */
+const AMBIGUOUS_STATE_CODES = new Set(['OR', 'IN', 'ME', 'OK', 'HI', 'AS']);
 
 export function parseUsStateCode(locationLabel: string): string | null {
   const match = locationLabel.match(/,\s*([A-Z]{2})\b/);
@@ -39,8 +42,13 @@ export function isGeographicallyRelatedToUser(
 ): boolean {
   const state = parseUsStateCode(user.locationLabel);
   if (state) {
-    const stateRe = new RegExp(`\\b${state}\\b`, 'i');
-    if (stateRe.test(text)) return true;
+    const stateLower = state.toLowerCase();
+    const commaStateRe = new RegExp(`,\\s*${stateLower}(?:\\s|,|$)`);
+    if (commaStateRe.test(text)) return true;
+    if (!AMBIGUOUS_STATE_CODES.has(state)) {
+      const tokenStateRe = new RegExp(`(?:^|\\s)${stateLower}(?:\\s|,|$)`);
+      if (tokenStateRe.test(text)) return true;
+    }
   }
 
   const city = parseCityName(user.locationLabel);

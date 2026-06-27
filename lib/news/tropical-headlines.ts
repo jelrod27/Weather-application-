@@ -31,10 +31,13 @@ export function isActiveTropicalHeadline(item: Pick<RSSItem, 'title' | 'descript
   if (item.category !== 'hurricanes') return true;
 
   const text = tropicalText(item);
+  if (TROPICAL_ACTIVE_PATTERNS.some((pattern) => pattern.test(text))) {
+    return true;
+  }
   if (TROPICAL_CALM_PATTERNS.some((pattern) => pattern.test(text))) {
     return false;
   }
-  return TROPICAL_ACTIVE_PATTERNS.some((pattern) => pattern.test(text));
+  return false;
 }
 
 /** High-priority headlines suitable for home hub / happening-now discovery. */

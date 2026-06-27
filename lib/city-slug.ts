@@ -1,3 +1,5 @@
+import { US_STATE_CODES } from '@/lib/home/hub-location';
+
 /** Normalize "San Ramon, CA" → "san-ramon-ca" for /weather/[city] routes. */
 export function locationInputToSlug(input: string): string {
   return input
@@ -20,10 +22,12 @@ export function slugToDisplayName(slug: string): string {
 export function slugToSearchTerm(slug: string): string {
   const parts = slug.split('-')
   if (parts.length > 1) {
-    const state = parts[parts.length - 1].toUpperCase()
-    const cityParts = parts.slice(0, -1)
-    const cityName = cityParts.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-    return `${cityName}, ${state}`
+    const maybeState = parts[parts.length - 1].toUpperCase()
+    if (maybeState.length === 2 && US_STATE_CODES.has(maybeState)) {
+      const cityParts = parts.slice(0, -1)
+      const cityName = cityParts.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+      return `${cityName}, ${maybeState}`
+    }
   }
   return slugToDisplayName(slug)
 }

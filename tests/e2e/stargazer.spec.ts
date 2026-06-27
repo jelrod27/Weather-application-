@@ -37,9 +37,7 @@ test.beforeEach(async ({ page }) => {
 
 test('renders the Stargazer Command Center shell', async ({ page }) => {
   await expect(page).toHaveTitle(/Stargazer/i);
-  await expect(
-    page.getByRole('heading', { name: /STARGAZER COMMAND CENTER/i }).first()
-  ).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId('stargazer-page-title')).toBeVisible({ timeout: 30000 });
 });
 
 test('exposes the location search form', async ({ page }) => {

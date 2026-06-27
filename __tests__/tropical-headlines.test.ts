@@ -45,6 +45,13 @@ describe('tropical-headlines', () => {
       ).toBe(true);
       expect(
         isActiveTropicalHeadline({
+          title: 'Special Tropical Weather Outlook issued',
+          description: '',
+          category: 'hurricanes',
+        }),
+      ).toBe(true);
+      expect(
+        isActiveTropicalHeadline({
           title: 'Tropical Storm Debby Advisory Number 8',
           description: '',
           category: 'hurricanes',

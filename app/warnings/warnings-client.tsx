@@ -70,6 +70,8 @@ export default function WarningsClient() {
   const searchParams = useSearchParams()
   const alertFromUrl = searchParams.get('alert')
   const detailRef = useRef<HTMLDivElement | null>(null)
+  const initialAlertAppliedRef = useRef(false)
+  const initialScrollAppliedRef = useRef(false)
   const [alerts, setAlerts] = useState<NWSAlertDetail[]>([])
   const [wis, setWis] = useState<WISScore | null>(null)
   const [geoJson, setGeoJson] = useState<AlertsFeatureCollection | null>(null)
@@ -218,15 +220,19 @@ export default function WarningsClient() {
   )
 
   useEffect(() => {
-    if (!alertFromUrl || alerts.length === 0) return
+    if (!alertFromUrl || alerts.length === 0 || initialAlertAppliedRef.current) return
     const matchedId = findAlertByQueryParam(alerts, alertFromUrl)
-    if (matchedId) setSelectedId(matchedId)
+    if (matchedId) {
+      setSelectedId(matchedId)
+      initialAlertAppliedRef.current = true
+    }
   }, [alertFromUrl, alerts])
 
   useEffect(() => {
-    if (!selected || !alertFromUrl) return
+    if (!selected || !initialAlertAppliedRef.current || initialScrollAppliedRef.current) return
+    initialScrollAppliedRef.current = true
     detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [selected, alertFromUrl])
+  }, [selected])
 
   function requestBrowserLocation() {
     if (!navigator.geolocation) return

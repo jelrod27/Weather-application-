@@ -49,7 +49,10 @@ export function selectFeaturedItem(
   );
   if (highPriority.length > 0) return highPriority[0];
 
-  return pool[0] ?? items[0] ?? null;
+  const actionablePool = pool.filter(
+    (item) => item.category !== 'hurricanes' || isActiveTropicalHeadline(item),
+  );
+  return actionablePool[0] ?? items[0] ?? null;
 }
 
 export function excludeRailIds(items: RSSItem[], rails: RSSItem[]): RSSItem[] {

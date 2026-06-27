@@ -9,7 +9,6 @@ import {
   truncateText,
   type HubUserLocation,
 } from '@/lib/home/hub-utils';
-import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 
 const NYC: HubUserLocation = {
@@ -18,25 +17,6 @@ const NYC: HubUserLocation = {
   locationLabel: 'New York, NY',
   country: 'US',
 };
-
-function alert(partial: Partial<NWSAlertDetail> & Pick<NWSAlertDetail, 'id' | 'event' | 'severity'>): NWSAlertDetail {
-  return {
-    headline: '',
-    urgency: 'Expected',
-    expires: '',
-    areaDesc: '',
-    sent: '',
-    effective: '',
-    ends: '',
-    description: '',
-    instruction: '',
-    certainty: '',
-    response: '',
-    sender: '',
-    geometry: null,
-    ...partial,
-  };
-}
 
 describe('hub-utils', () => {
   describe('formatUpdatedAgo', () => {

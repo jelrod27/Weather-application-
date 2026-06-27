@@ -8,7 +8,7 @@
  * tab navigation, and organized content sections.
  */
 
-import React, { useEffect, useState, useCallback, startTransition, useRef } from 'react';
+import React, { useEffect, useState, useCallback, startTransition, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
@@ -379,14 +379,57 @@ function LaunchesPanel({ data }: { data: StargazerData }) {
 // Main Page
 // ============================================================================
 
-export default function StargazerPage() {
+function StargazerShell({
+  children,
+  themeClasses,
+}: {
+  children: React.ReactNode;
+  themeClasses: ReturnType<typeof getComponentStyles>;
+}) {
+  return (
+    <PageWrapper>
+      <div className={cn('container mx-auto px-4 py-8', themeClasses.background)}>
+        <div className="mb-8">
+          <h1
+            data-testid="stargazer-page-title"
+            className={cn(
+              'text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 font-mono',
+              themeClasses.accentText,
+              themeClasses.glow,
+            )}
+          >
+            STARGAZER COMMAND CENTER
+          </h1>
+          <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
+            Tonight&apos;s astrophotography forecast. Seeing, transparency, moon phase, planet
+            visibility, deep sky targets, ISS passes, and upcoming launches -- all in one place.
+          </p>
+          <p className="text-sm font-mono text-muted-foreground mt-2">
+            Tonight: {formatTonightDate(new Date())}
+          </p>
+        </div>
+
+        <ShareButtons
+          config={{
+            title: 'Stargazer - Astrophotography Forecast',
+            text: "Tonight's stargazing conditions at 16bitweather.co",
+            url: 'https://www.16bitweather.co/stargazer',
+          }}
+          className="mt-3 mb-6"
+        />
+
+        {children}
+      </div>
+    </PageWrapper>
+  );
+}
+
+function StargazerPageContent() {
   const searchParams = useSearchParams();
   const { currentLocation, locationInput } = useLocationContext();
   const latParam = searchParams.get('lat');
   const lonParam = searchParams.get('lon');
   const qParam = searchParams.get('q')?.trim() ?? '';
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
   const [data, setData] = useState<StargazerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -531,37 +574,7 @@ export default function StargazerPage() {
   }, [resolveAndLoad]);
 
   return (
-    <PageWrapper>
-      <div className={cn('container mx-auto px-4 py-8', themeClasses.background)}>
-        {/* Page Title */}
-        <div className="mb-8">
-          <h1
-            className={cn(
-              'text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 font-mono',
-              themeClasses.accentText,
-              themeClasses.glow
-            )}
-          >
-            STARGAZER COMMAND CENTER
-          </h1>
-          <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
-            Tonight&apos;s astrophotography forecast. Seeing, transparency, moon phase, planet
-            visibility, deep sky targets, ISS passes, and upcoming launches -- all in one place.
-          </p>
-          <p className="text-sm font-mono text-muted-foreground mt-2">
-            Tonight: {formatTonightDate(new Date())}
-          </p>
-        </div>
-
-        <ShareButtons
-          config={{
-            title: 'Stargazer - Astrophotography Forecast',
-            text: "Tonight's stargazing conditions at 16bitweather.co",
-            url: 'https://www.16bitweather.co/stargazer',
-          }}
-          className="mt-3 mb-6"
-        />
-
+    <>
         {/* Location Search */}
         <form onSubmit={handleLocationSearch} className="mb-6 flex gap-2 max-w-md">
           <input
@@ -626,7 +639,23 @@ export default function StargazerPage() {
             <StargazerAttribution />
           </div>
         )}
-      </div>
-    </PageWrapper>
+    </>
+  );
+}
+
+export default function StargazerPage() {
+  const { theme } = useTheme();
+  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+
+  return (
+    <StargazerShell themeClasses={themeClasses}>
+      <Suspense
+        fallback={
+          <p className="font-mono text-sm text-muted-foreground animate-pulse">Loading location…</p>
+        }
+      >
+        <StargazerPageContent />
+      </Suspense>
+    </StargazerShell>
   );
 }

@@ -38,6 +38,25 @@ describe('hub-location', () => {
     ).toBe(false);
   });
 
+  it('does not false-positive Oregon on the word "or"', () => {
+    const portland = {
+      lat: 45.5152,
+      lon: -122.6784,
+      locationLabel: 'Portland, OR',
+      country: 'US',
+    };
+    expect(isGeographicallyRelatedToUser('hail 1 inch or higher expected', portland)).toBe(false);
+    expect(
+      isGeographicallyRelatedToUser('severe thunderstorm warning for portland, or', portland),
+    ).toBe(true);
+  });
+
+  it('matches space-separated state tokens for unambiguous codes', () => {
+    expect(
+      isGeographicallyRelatedToUser('severe thunderstorm warning for new york ny', NYC),
+    ).toBe(true);
+  });
+
   it('shows nearby moderate quakes but not distant ones', () => {
     expect(
       isHeadlineRelevantToUser(

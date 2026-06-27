@@ -18,7 +18,8 @@ export interface PrecipSeverity {
 }
 
 export function getPrecipSeverity(prob: number | null | undefined): PrecipSeverity {
-  const p = typeof prob === 'number' ? prob : 0
+  const raw = typeof prob === 'number' && Number.isFinite(prob) ? prob : 0;
+  const p = Math.max(0, raw);
 
   if (p < 20) {
     return {

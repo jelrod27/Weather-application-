@@ -12,6 +12,7 @@ describe('city-slug', () => {
 
   it('builds search terms from slugs', () => {
     expect(slugToSearchTerm('denver-co')).toBe('Denver, CO');
+    expect(slugToSearchTerm('kansas-city')).toBe('Kansas City');
     expect(slugToDisplayName('london-uk')).toBe('London Uk');
   });
 });
