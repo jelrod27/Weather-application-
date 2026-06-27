@@ -6,8 +6,18 @@ import {
   type SPCOutlookType,
   type SPCOutlookGeoJSON,
 } from '@/lib/services/spc-outlook-service';
+import { getHighestSpcRiskAtPoint } from '@/lib/geo/spc-point-risk';
 
 const VALID_TYPES = new Set(['cat', 'torn', 'hail', 'wind']);
+
+function parsePoint(raw: string | null): { lat: number; lon: number } | null {
+  if (!raw) return null;
+  const parts = raw.split(',').map((s) => parseFloat(s.trim()));
+  if (parts.length !== 2 || parts.some((n) => Number.isNaN(n))) return null;
+  const [lat, lon] = parts;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  return { lat, lon };
+}
 
 /**
  * Filter out features with empty GeometryCollections.
@@ -40,6 +50,14 @@ export async function GET(request: NextRequest) {
   try {
     const dayParam = request.nextUrl.searchParams.get('day') ?? '1';
     const typeParam = request.nextUrl.searchParams.get('type') ?? 'cat';
+    const pointParam = request.nextUrl.searchParams.get('point');
+    const point = parsePoint(pointParam);
+    if (pointParam != null && pointParam.trim() !== '' && !point) {
+      return NextResponse.json(
+        { error: 'Invalid point parameter; use lat,lon in decimal degrees (WGS84).' },
+        { status: 400 },
+      );
+    }
 
     if (!/^[123]$/.test(dayParam)) {
       return NextResponse.json({ error: 'day must be 1, 2, or 3' }, { status: 400 });
@@ -52,8 +70,9 @@ export async function GET(request: NextRequest) {
 
     const rawGeojson = await fetchSPCOutlook(day, typeParam as SPCOutlookType);
     const { geojson, noRiskLabel } = filterEmptyGeometries(rawGeojson);
+    const pointRisk = point ? getHighestSpcRiskAtPoint(geojson, point.lat, point.lon) : null;
 
-    return NextResponse.json({ ...geojson, noRiskLabel }, {
+    return NextResponse.json({ ...geojson, noRiskLabel, pointRisk }, {
       headers: {
         'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=300',
       },

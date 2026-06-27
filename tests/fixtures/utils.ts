@@ -805,47 +805,134 @@ export async function stubRadarApis(page: Page): Promise<void> {
     body: transparentPng,
   }));
 
-  await page.route('**/api/weather/alerts**', (route) => route.fulfill({
+  await page.route('**/api/weather/alerts**', (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('detail') === '1') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          alerts: [{
+            id: 'alert-1',
+            event: 'Severe Thunderstorm Warning',
+            severity: 'Severe',
+            headline: 'Severe Thunderstorm Warning for test area',
+            areaDesc: 'Test County',
+            urgency: 'Immediate',
+            expires: new Date(Date.now() + 3600000).toISOString(),
+            sent: new Date().toISOString(),
+            effective: new Date().toISOString(),
+            ends: new Date(Date.now() + 3600000).toISOString(),
+            description: 'Take shelter.',
+            instruction: 'Move indoors.',
+            certainty: 'Likely',
+            response: 'Shelter',
+            sender: 'NWS',
+            geometry: null,
+          }],
+          wis: {
+            score: 45,
+            level: 'orange',
+            label: 'Elevated',
+            activeWarnings: 1,
+            activeWatches: 0,
+            activeAdvisories: 0,
+            totalAlerts: 1,
+            nwsWarnings: 1,
+            nwsWatches: 0,
+            nwsAdvisories: 0,
+          },
+          total: 1,
+        }),
+      });
+    }
+
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[[-74.2, 40.6], [-73.8, 40.6], [-73.8, 40.9], [-74.2, 40.9], [-74.2, 40.6]]],
+          },
+          properties: {
+            id: 'alert-1',
+            event: 'Severe Thunderstorm Warning',
+            severity: 'Severe',
+            headline: 'Severe Thunderstorm Warning for test area',
+            areaDesc: 'Test County',
+            instruction: 'Move indoors.',
+          },
+        }],
+      }),
+    });
+  });
+
+  await page.route('**/api/weather/spc-outlook**', (route) => {
+    const url = new URL(route.request().url());
+    const hasPoint = url.searchParams.has('point');
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[[-75, 40], [-73, 40], [-73, 42], [-75, 42], [-75, 40]]],
+          },
+          properties: {
+            LABEL: 'SLGT',
+            LABEL2: 'Slight Risk',
+            fill: '#FFE066',
+            stroke: '#facc15',
+          },
+        }],
+        pointRisk: hasPoint
+          ? { riskCode: 'SLGT', label: 'Slight', fill: '#FFE066' }
+          : null,
+      }),
+    });
+  });
+
+  await page.route(/\/api\/news\/rss/, (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
-      type: 'FeatureCollection',
-      features: [{
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[[-74.2, 40.6], [-73.8, 40.6], [-73.8, 40.9], [-74.2, 40.9], [-74.2, 40.6]]],
-        },
-        properties: {
-          id: 'alert-1',
-          event: 'Severe Thunderstorm Warning',
-          severity: 'Severe',
-          headline: 'Severe Thunderstorm Warning for test area',
-          areaDesc: 'Test County',
-          instruction: 'Move indoors.',
-        },
+      status: 'ok',
+      items: [],
+      happeningNow: [{
+        id: 'hub-headline-1',
+        title: 'M6.2 earthquake strikes test region',
+        description: 'Test headline for home hub',
+        url: 'https://earthquake.usgs.gov/',
+        source: 'USGS',
+        category: 'earthquakes',
+        priority: 'high',
+        timestamp: new Date().toISOString(),
       }],
+      featured: null,
+      stats: { byCategory: {}, errors: [], enabledSources: [] },
+      lastUpdated: new Date().toISOString(),
+      categories: {},
     }),
   }));
 
-  await page.route('**/api/weather/spc-outlook**', (route) => route.fulfill({
+  await page.route(/\/api\/stargazer/, (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
-      type: 'FeatureCollection',
-      features: [{
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[[-75, 40], [-73, 40], [-73, 42], [-75, 42], [-75, 40]]],
-        },
-        properties: {
-          LABEL: 'SLGT',
-          LABEL2: 'Slight Risk',
-          fill: '#FFE066',
-          stroke: '#facc15',
-        },
-      }],
+      score: {
+        overall: 72,
+        label: 'Good',
+        color: '#4ade80',
+        summary: 'Partly cloudy with fair seeing tonight',
+        subScores: { cloud: 70, moon: 80, seeing: 65, transparency: 75, ground: 70 },
+      },
     }),
   }));
 

@@ -37,14 +37,19 @@ test.beforeEach(async ({ page }) => {
 
 test('renders the Stargazer Command Center shell', async ({ page }) => {
   await expect(page).toHaveTitle(/Stargazer/i);
-  await expect(
-    page.getByRole('heading', { name: /STARGAZER COMMAND CENTER/i }).first()
-  ).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId('stargazer-page-title')).toBeVisible({ timeout: 30000 });
 });
 
 test('exposes the location search form', async ({ page }) => {
-  // The search form renders unconditionally (above the loading/data gates),
-  // so it is a stable shell assertion independent of the forecast payload.
-  await expect(page.getByLabel(/Search location/i)).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId('stargazer-location-search')).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('button', { name: /^Go$/i })).toBeVisible();
+});
+
+test('prefills location from hub query params', async ({ page }) => {
+  await page.goto('/stargazer?lat=33.5779&lon=-101.8552&q=Lubbock%2C%20TX', {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.getByTestId('stargazer-location-search')).toHaveValue('Lubbock, TX', {
+    timeout: 30000,
+  });
 });

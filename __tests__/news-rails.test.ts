@@ -38,12 +38,29 @@ describe('news rails', () => {
     expect(selectFeaturedItem([other, happening], [happening])).toEqual(happening);
   });
 
-  it('includes hurricanes in featured selection during hurricane season', () => {
-    const tropical = item({ id: 'tropical', priority: 'high', category: 'hurricanes' });
+  it('includes active hurricanes in featured selection during hurricane season', () => {
+    const tropical = item({
+      id: 'tropical',
+      priority: 'high',
+      category: 'hurricanes',
+      title: 'Hurricane Warning issued for Example County',
+    });
     const science = item({ id: 'science', priority: 'medium', category: 'science' });
     const july = new Date('2026-07-01T12:00:00Z');
     expect(isHurricaneSeason(july)).toBe(true);
     expect(selectFeaturedItem([science, tropical], [], july)).toEqual(tropical);
+  });
+
+  it('excludes calm tropical posts from featured selection during hurricane season', () => {
+    const tropical = item({
+      id: 'tropical',
+      priority: 'high',
+      category: 'hurricanes',
+      title: 'There are no tropical cyclones at this time.',
+    });
+    const science = item({ id: 'science', priority: 'high', category: 'science' });
+    const july = new Date('2026-07-01T12:00:00Z');
+    expect(selectFeaturedItem([tropical, science], [], july)).toEqual(science);
   });
 
   it('excludes hurricanes from featured selection off-season', () => {

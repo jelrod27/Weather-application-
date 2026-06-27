@@ -1,5 +1,6 @@
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
+import { isActiveTropicalHeadline, isDiscoveryHeadline } from '@/lib/news/tropical-headlines';
 
 export const HAPPENING_NOW_WINDOW_MS = 6 * 60 * 60 * 1000;
 export const HAPPENING_NOW_MAX = 8;
@@ -27,7 +28,8 @@ export function selectHappeningNow(items: RSSItem[], now = Date.now()): RSSItem[
       (item) =>
         item.priority === 'high' &&
         item.timestamp.getTime() > 0 &&
-        item.timestamp.getTime() >= cutoff,
+        item.timestamp.getTime() >= cutoff &&
+        isDiscoveryHeadline(item),
     )
     .slice(0, HAPPENING_NOW_MAX);
 }
@@ -42,10 +44,15 @@ export function selectFeaturedItem(
   const includeTropical = isHurricaneSeason(now);
   const pool = includeTropical ? items : items.filter((item) => item.category !== 'hurricanes');
 
-  const highPriority = pool.filter((item) => item.priority === 'high');
+  const highPriority = pool.filter(
+    (item) => item.priority === 'high' && isActiveTropicalHeadline(item),
+  );
   if (highPriority.length > 0) return highPriority[0];
 
-  return pool[0] ?? items[0] ?? null;
+  const actionablePool = pool.filter(
+    (item) => item.category !== 'hurricanes' || isActiveTropicalHeadline(item),
+  );
+  return actionablePool[0] ?? items[0] ?? null;
 }
 
 export function excludeRailIds(items: RSSItem[], rails: RSSItem[]): RSSItem[] {

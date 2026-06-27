@@ -734,6 +734,19 @@ input:focus-visible,
   box-shadow: 0 0 0 1px hsl(var(--primary) / 0.35);
 }
 
+/* Wet-day tiles: top strip instead of left accent (matches AQI panel pattern) */
+[data-theme="daybreak"] .forecast-day-card[data-precip-tier="light"] {
+  background: hsl(200 45% 97% / 0.95);
+}
+
+[data-theme="daybreak"] .forecast-day-card[data-precip-tier="moderate"] {
+  background: hsl(200 50% 95% / 0.98);
+}
+
+[data-theme="daybreak"] .forecast-day-card[data-precip-tier="heavy"] {
+  background: hsl(200 55% 93% / 1);
+}
+
 /* Radar / AQI panels */
 [data-theme="daybreak"] .dashboard-surface {
   border: 1px solid var(--border-subtle);
