@@ -45,6 +45,7 @@ describe('Sitemap SEO', () => {
       { path: '../app/test-sentry/layout', name: 'test-sentry' },
       { path: '../app/radar-diagnostic/layout', name: 'radar-diagnostic' },
       { path: '../app/gfs-model/layout', name: 'gfs-model' },
+      { path: '../app/auth/layout', name: 'auth' },
     ]
 
     for (const page of devPages) {
