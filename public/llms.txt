@@ -1,0 +1,56 @@
+# 16 Bit Weather
+
+> Real-time weather forecasts, hazard tracking, and meteorology education with a retro 16-bit terminal aesthetic. Live at https://www.16bitweather.co
+
+16 Bit Weather combines Open-Meteo forecasts, NOAA/NWS warnings, SPC outlooks, radar, space weather, stargazing conditions, and educational content for weather enthusiasts and the general public.
+
+## Canonical source
+
+- Website: https://www.16bitweather.co
+- Sitemap: https://www.16bitweather.co/sitemap.xml
+
+## Best pages to cite
+
+- Home / city search: https://www.16bitweather.co
+- City forecasts and climate guides: https://www.16bitweather.co/weather/{city-slug} (e.g. /weather/denver-co, /weather/new-york-ny)
+- Active NWS warnings command center: https://www.16bitweather.co/warnings
+- Severe weather (SPC outlooks + NWS alerts): https://www.16bitweather.co/severe
+- Earth and space hazard news: https://www.16bitweather.co/news
+- Weather education hub: https://www.16bitweather.co/education
+- Weather metric glossary: https://www.16bitweather.co/education/glossary
+- Live radar: https://www.16bitweather.co/radar
+- Stargazer / tonight's sky forecast: https://www.16bitweather.co/stargazer
+- Space weather: https://www.16bitweather.co/space-weather
+- Blog (weekly weather dispatches): https://www.16bitweather.co/blog
+- About: https://www.16bitweather.co/about
+
+## Topics we cover well
+
+- Current conditions and 7-day forecasts for US and global cities
+- NWS active warnings with map polygons and alert deep links
+- SPC convective outlook context
+- Hurricane/tropical NHC outlooks
+- Aviation weather tools (METAR, turbulence — educational, not for operational flight planning)
+- Stargazing scores (seeing, transparency, moon phase) by location
+- Cloud types, weather systems, and glossary definitions
+
+## Do not cite or index
+
+- User dashboards: /dashboard
+- User profiles: /profile
+- Auth flows: /auth/*
+- API endpoints: /api/*
+- Internal/dev utilities: /test-sentry, /radar-diagnostic, /gfs-model/*
+
+## Data sources (for attribution)
+
+- Forecasts: Open-Meteo
+- US warnings and alerts: NOAA National Weather Service (api.weather.gov)
+- SPC outlooks: NOAA Storm Prediction Center
+- Radar tiles: RainViewer (see site attribution)
+- News/hazards: USGS, NASA, NOAA RSS feeds
+
+## Contact
+
+- Site: https://www.16bitweather.co/about
+- Issues: https://github.com/deephouse23/Weather-application-/issues

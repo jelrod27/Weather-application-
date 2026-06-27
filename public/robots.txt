@@ -1,5 +1,8 @@
 # 16 Bit Weather - robots.txt
-# Updated: April 2026
+# Updated: June 2026
+#
+# Policy: allow search/browse AI crawlers on public content; block training
+# crawlers and keep API, auth, and user-private routes out of all crawlers.
 
 User-agent: *
 Allow: /
@@ -13,45 +16,65 @@ Allow: /tropical
 Allow: /winter
 Allow: /radar
 Allow: /space-weather
-Allow: /situation
+Allow: /stargazer
+Allow: /warnings
 Allow: /travel
 Allow: /extremes
-Allow: /hourly
 Allow: /about
 Allow: /cloud-types
 Allow: /weather-systems
 Allow: /fun-facts
-Allow: /map
 
-# API and internal routes
 Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
-
-# Dev/utility pages (noindex)
+Disallow: /auth/
 Disallow: /test-sentry
 Disallow: /radar-diagnostic
 Disallow: /gfs-model/
-
-# Private user pages
 Disallow: /dashboard
 Disallow: /profile
 
-# Sitemap
 Sitemap: https://www.16bitweather.co/sitemap.xml
 
-# Social media crawlers
+# Social preview crawlers
 User-agent: facebookexternalhit
 Allow: /
 
 User-agent: Twitterbot
 Allow: /
 
-# Block AI training bots
-User-agent: GPTBot
-Disallow: /
+# AI search and browse (ChatGPT search, user link previews, Perplexity, Claude)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /profile
 
 User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /profile
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /profile
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /profile
+
+# AI training crawlers (opt out of model training datasets)
+User-agent: GPTBot
 Disallow: /
 
 User-agent: CCBot
