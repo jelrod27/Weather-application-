@@ -4,21 +4,12 @@
  * NHC tropical outlooks, satellite imagery, and hurricane season info.
  * Pure server component — all data is static image references to NHC.
  */
-import type { Metadata } from 'next';
 import React from 'react';
 import PageWrapper from '@/components/page-wrapper';
 import { ExternalLink } from 'lucide-react';
 import { ShareButtons } from '@/components/share-buttons';
 
 const NHC_BASE = 'https://www.nhc.noaa.gov';
-const BASE_URL = 'https://www.16bitweather.co';
-
-export const metadata: Metadata = {
-  title: 'Tropical Tracker — NHC Outlooks & Atlantic Satellite | 16 Bit Weather',
-  description:
-    'Live NHC tropical weather outlooks, Atlantic basin satellite imagery, and sea surface temperatures — hurricane season tracking in a retro terminal UI.',
-  alternates: { canonical: `${BASE_URL}/tropical` },
-};
 
 const graphics = [
   {

@@ -589,6 +589,7 @@ function StargazerPageContent() {
           <button
             type="submit"
             disabled={isSearching || !searchQuery.trim()}
+            data-testid="stargazer-location-go"
             className="px-4 py-2 text-sm font-mono font-bold border border-subtle rounded hover:bg-white/10 disabled:opacity-40 transition-colors"
           >
             {isSearching ? '...' : 'Go'}

@@ -48,8 +48,8 @@ describe('SEO Indexing Fixes', () => {
     const { default: sitemap } = await import('../app/sitemap')
     const entries = await sitemap()
 
-    // Soft cap; newsletter pipeline adds ~2 posts/week so this needs headroom.
-    expect(entries.length).toBeLessThan(200)
+    // Includes ~100 cities, ~150 deep-sky object pages, blog posts, and static routes.
+    expect(entries.length).toBeLessThan(350)
   })
 
   it('city pages should use ISR revalidate instead of force-dynamic', () => {

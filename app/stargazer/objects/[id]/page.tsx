@@ -25,6 +25,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = obj.longDescription
     ? obj.longDescription.slice(0, 160)
     : obj.description;
+  const ogImage = `/api/og?title=${encodeURIComponent(obj.id)}&subtitle=${encodeURIComponent(obj.name)}`;
+  const pageUrl = `https://www.16bitweather.co/stargazer/objects/${obj.id}`;
 
   return {
     title,
@@ -32,12 +34,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${obj.id} - ${obj.name}`,
       description,
-      url: `https://www.16bitweather.co/stargazer/objects/${obj.id}`,
+      url: pageUrl,
       siteName: '16 Bit Weather',
       type: 'article',
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${obj.id} - ${obj.name}`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${obj.id} - ${obj.name}`,
+      description,
+      images: [ogImage],
     },
     alternates: {
-      canonical: `https://www.16bitweather.co/stargazer/objects/${obj.id}`,
+      canonical: pageUrl,
     },
   };
 }

@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Weather Blog - Weekly Dispatches | 16 Bit Weather',
-  description: 'Weekly weather intelligence from 16bitbot. Space weather reports, severe weather recaps, weather phenomena deep-dives, and climate records in retro terminal style.',
+  title: '16 Bit Weather Blog | Weekly Dispatches from 16bitbot',
+  description:
+    'Weekly dispatches from 16bitbot. Space weather, severe storms, weather phenomena, and climate records.',
   keywords: 'weather blog, space weather, severe weather, weather education, climate records, 16-bit weather',
   openGraph: {
-    title: 'Weather Blog - 16 Bit Weather',
-    description: 'Weekly weather intelligence from 16bitbot.',
+    title: '16 Bit Weather Blog | Weekly Dispatches from 16bitbot',
+    description:
+      'Weekly dispatches from 16bitbot. Space weather, severe storms, weather phenomena, and climate records.',
     url: 'https://www.16bitweather.co/blog',
     siteName: '16 Bit Weather',
     images: [
@@ -22,8 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Weather Blog - 16 Bit Weather',
-    description: 'Weekly weather intelligence from 16bitbot.',
+    title: '16 Bit Weather Blog | Weekly Dispatches from 16bitbot',
+    description:
+      'Weekly dispatches from 16bitbot. Space weather, severe storms, and climate records.',
     images: ['/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot'],
   },
   alternates: {

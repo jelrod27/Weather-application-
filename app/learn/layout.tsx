@@ -43,7 +43,7 @@ const learnSchema = {
   '@type': 'ItemList',
   name: 'Weather Education Topics',
   description: 'Comprehensive weather education resources',
-  url: 'https://www.16bitweather.co/learn',
+  url: 'https://www.16bitweather.co/education',
   numberOfItems: 7,
   itemListElement: [
     {

@@ -5,20 +5,10 @@
  * thunderstorm, tornado, wind, hail, and flood warnings. Server component
  * with a client leaf (SevereAlerts) for live alert polling.
  */
-import type { Metadata } from 'next';
 import PageWrapper from '@/components/page-wrapper';
 import SPCOutlookTabs from '@/components/severe/SPCOutlookTabs';
 import { ShareButtons } from '@/components/share-buttons';
 import SevereAlerts from './severe-alerts';
-
-const BASE_URL = 'https://www.16bitweather.co';
-
-export const metadata: Metadata = {
-  title: 'Severe Weather Outlook — SPC Maps & Active NWS Alerts | 16 Bit Weather',
-  description:
-    'Live NOAA SPC convective outlook maps and filtered NWS severe thunderstorm, tornado, hail, and flood warnings. Retro terminal UI, auto-refreshing every 5 minutes.',
-  alternates: { canonical: `${BASE_URL}/severe` },
-};
 
 export default function SeverePage() {
   return (
