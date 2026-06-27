@@ -16,6 +16,8 @@
 
 import { useCallback, useState, useEffect, useRef } from "react"
 import PageWrapper from "@/components/page-wrapper"
+import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import EducationBackLink from "@/components/education/education-back-link"
 import { TrendingUp, TrendingDown, MapPin, RefreshCw, Thermometer } from "lucide-react"
 import type { ExtremesData, LocationTemperature } from "@/lib/extremes/extremes-data"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -249,6 +251,13 @@ export default function ExtremesPage() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+        <EducationBreadcrumb
+          items={[
+            { label: 'Education', href: '/education' },
+            { label: 'Extremes' },
+          ]}
+        />
+        <EducationBackLink />
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-mono font-bold mb-2 text-weather-primary glow">

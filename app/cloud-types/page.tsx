@@ -18,6 +18,8 @@
 import React, { useState } from "react"
 import { useTheme } from "next-themes"
 import PageWrapper from "@/components/page-wrapper"
+import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import EducationBackLink from "@/components/education/education-back-link"
 import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
 
 // Shadcn UI components
@@ -113,6 +115,13 @@ export default function CloudTypesPage() {
   return (
     <PageWrapper>
       <div className="container mx-auto px-4 py-8">
+        <EducationBreadcrumb
+          items={[
+            { label: 'Education', href: '/education' },
+            { label: 'Cloud Atlas' },
+          ]}
+        />
+        <EducationBackLink />
         {/* Achievement Notification */}
         {achievementUnlocked && (
           <Card className={`fixed top-4 right-4 z-50 container-primary ${themeClasses.glow}`}>
