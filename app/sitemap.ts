@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { cityData as cityMetadata } from '@/lib/city-metadata'
 import { getAllPosts } from '@/lib/blog'
+import deepSkyCatalog from '@/data/deep-sky-catalog.json'
+import type { DeepSkyObject } from '@/lib/stargazer/types'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.16bitweather.co'
@@ -16,14 +18,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${baseUrl}/severe`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.9 },
       { url: `${baseUrl}/warnings`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.95 },
       { url: `${baseUrl}/space-weather`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.9 },
+      { url: `${baseUrl}/stargazer`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.85 },
       { url: `${baseUrl}/tropical`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
       { url: `${baseUrl}/aviation`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
       { url: `${baseUrl}/travel`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
       { url: `${baseUrl}/winter`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
       { url: `${baseUrl}/extremes`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
       { url: `${baseUrl}/earth-sciences`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
-      { url: `${baseUrl}/hourly`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.7 },
-      { url: `${baseUrl}/map`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
 
       // Content and education
       { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
@@ -42,6 +43,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'hourly' as const,
       priority: 0.9,
     }))
+
+    const stargazerObjectPages: MetadataRoute.Sitemap = (deepSkyCatalog as DeepSkyObject[]).map(
+      (obj) => ({
+        url: `${baseUrl}/stargazer/objects/${obj.id}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      }),
+    )
     
     // Dynamic blog posts
     let blogPosts: MetadataRoute.Sitemap = []
@@ -56,7 +66,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       console.error('[sitemap] Failed to load blog posts')
     }
 
-    return [...staticPages, ...cityPages, ...blogPosts]
+    return [...staticPages, ...cityPages, ...stargazerObjectPages, ...blogPosts]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return [

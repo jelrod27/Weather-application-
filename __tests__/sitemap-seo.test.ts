@@ -62,4 +62,26 @@ describe('Sitemap SEO', () => {
 
     expect(sitemapPaths).toContain('/education/glossary')
   })
+
+  it('sitemap should not include noindex or redirect-only URLs', async () => {
+    const { default: sitemap } = await import('../app/sitemap')
+    const entries = await sitemap()
+    const sitemapPaths = entries.map((e: { url: string }) => {
+      try { return new URL(e.url).pathname } catch { return e.url }
+    })
+
+    expect(sitemapPaths).not.toContain('/hourly')
+    expect(sitemapPaths).not.toContain('/map')
+  })
+
+  it('sitemap should include stargazer hub and deep-sky object pages', async () => {
+    const { default: sitemap } = await import('../app/sitemap')
+    const entries = await sitemap()
+    const sitemapPaths = entries.map((e: { url: string }) => {
+      try { return new URL(e.url).pathname } catch { return e.url }
+    })
+
+    expect(sitemapPaths).toContain('/stargazer')
+    expect(sitemapPaths.some((p) => p.startsWith('/stargazer/objects/'))).toBe(true)
+  })
 })
