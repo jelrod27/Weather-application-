@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ShareButtons } from '@/components/share-buttons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { findAlertByQueryParam } from '@/lib/home/hub-links'
 import type { NWSAlertDetail, WISScore } from '@/lib/services/nws-alerts-service'
 import type { SpcReport } from '@/lib/services/spc-storm-reports-service'
 import SPCDay1RiskStrip from '@/components/warnings/spc-day1-strip'
@@ -65,6 +67,9 @@ type CommunityReport = {
 }
 
 export default function WarningsClient() {
+  const searchParams = useSearchParams()
+  const alertFromUrl = searchParams.get('alert')
+  const detailRef = useRef<HTMLDivElement | null>(null)
   const [alerts, setAlerts] = useState<NWSAlertDetail[]>([])
   const [wis, setWis] = useState<WISScore | null>(null)
   const [geoJson, setGeoJson] = useState<AlertsFeatureCollection | null>(null)
@@ -211,6 +216,17 @@ export default function WarningsClient() {
     () => alerts.find((a) => a.id === selectedId) ?? null,
     [alerts, selectedId]
   )
+
+  useEffect(() => {
+    if (!alertFromUrl || alerts.length === 0) return
+    const matchedId = findAlertByQueryParam(alerts, alertFromUrl)
+    if (matchedId) setSelectedId(matchedId)
+  }, [alertFromUrl, alerts])
+
+  useEffect(() => {
+    if (!selected || !alertFromUrl) return
+    detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [selected, alertFromUrl])
 
   function requestBrowserLocation() {
     if (!navigator.geolocation) return
@@ -447,7 +463,11 @@ export default function WarningsClient() {
       </div>
 
       {selected && (
-        <div className="rounded-lg border border-border bg-card/60 p-4 space-y-3 font-mono text-sm">
+        <div
+          ref={detailRef}
+          id="warnings-alert-detail"
+          className="rounded-lg border border-border bg-card/60 p-4 space-y-3 font-mono text-sm scroll-mt-24"
+        >
           <div className="flex flex-wrap justify-between gap-2">
             <h3 className="font-bold text-lg">{selected.event}</h3>
             <span className="text-xs text-muted-foreground">{selected.severity} · {selected.urgency}</span>

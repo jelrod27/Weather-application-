@@ -53,6 +53,13 @@ test('displays main weather search component', async ({ page }) => {
   await expect(page.getByTestId('location-search-input').first()).toBeVisible({ timeout: 30000 });
 });
 
+test('displays home hub discovery cards', async ({ page }) => {
+  const hub = page.getByTestId('home-hub');
+  await expect(hub).toBeVisible({ timeout: 30000 });
+  await expect(hub.getByRole('heading', { name: /FOR YOUR AREA/i })).toBeVisible();
+  await expect(hub.getByTestId('home-hub-card').first()).toBeVisible();
+});
+
 test('can search for weather by city name', async ({ page }) => {
   await expect(page.getByTestId('temperature-value')).toBeVisible({ timeout: 15000 });
 });

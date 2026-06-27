@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Stargazer - Astrophotography Forecast | 16-Bit Weather',
@@ -19,5 +20,15 @@ export default function StargazerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8 text-center font-mono text-muted-foreground animate-pulse">
+          Loading stargazer…
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
 }

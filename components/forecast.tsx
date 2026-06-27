@@ -90,12 +90,13 @@ function ForecastCard({ day, index, onDayClick, isSelected }: {
 
   return (
     <Card
+      data-precip-tier={precip.tier}
       className={cn(
-        "forecast-day-card cursor-pointer transition-all duration-200 hover:-translate-y-0.5 card-interactive",
+        "forecast-day-card relative overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 card-interactive",
         "flex flex-col justify-between min-h-[120px] sm:min-h-[140px] lg:min-h-[160px]",
-        "backdrop-blur-sm bg-card/70 border border-[var(--border-invisible)] shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)]",
+        "backdrop-blur-sm border border-[var(--border-invisible)] shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)]",
         "hover:border-[var(--border-subtle)] hover:shadow-[0_14px_36px_-14px_rgba(0,0,0,0.55)]",
-        !isSelected && precip.borderClass,
+        precip.tier === 'none' ? "bg-card/70" : precip.cardClass,
         isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_22px_rgba(var(--theme-accent-rgb),0.32)]"
       )}
       onClick={handleClick}
@@ -105,6 +106,12 @@ function ForecastCard({ day, index, onDayClick, isSelected }: {
       aria-label={`Forecast for ${day.day}: High ${Math.round(day.highTemp)}${tempUnit}, Low ${Math.round(day.lowTemp)}${tempUnit}, ${day.description}`}
       aria-pressed={isSelected}
     >
+      {precip.tier !== 'none' ? (
+        <div
+          className={cn("absolute inset-x-0 top-0 rounded-t-lg pointer-events-none", precip.stripClass)}
+          aria-hidden
+        />
+      ) : null}
       <CardContent className="p-2 sm:p-3 flex flex-col items-center justify-between h-full">
         {/* Day - Mobile responsive */}
         <div className="text-xs sm:text-sm font-bold text-primary mb-1 uppercase tracking-wider glow text-center">
@@ -136,8 +143,14 @@ function ForecastCard({ day, index, onDayClick, isSelected }: {
 
         {/* Precipitation chance */}
         {(day.details?.precipitationChance ?? 0) > 0 && (
-          <div className={cn("text-xs font-medium tabular-nums mt-1", precip.chipClass)}>
-            <span aria-label="Precipitation chance">&#x1F4A7;</span> {day.details?.precipitationChance}%
+          <div
+            className={cn(
+              "mt-1 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] sm:text-xs font-medium tabular-nums",
+              precip.chipClass,
+            )}
+          >
+            <span aria-hidden>&#x1F4A7;</span>
+            <span>{day.details?.precipitationChance}%</span>
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import PageWrapper from '@/components/page-wrapper'
 import WarningsClient from './warnings-client'
 
@@ -14,7 +15,15 @@ export const metadata: Metadata = {
 export default function WarningsPage() {
   return (
     <PageWrapper>
-      <WarningsClient />
+      <Suspense
+        fallback={
+          <div className="max-w-7xl mx-auto px-4 py-8 text-center font-mono text-muted-foreground animate-pulse">
+            Loading warnings…
+          </div>
+        }
+      >
+        <WarningsClient />
+      </Suspense>
     </PageWrapper>
   )
 }

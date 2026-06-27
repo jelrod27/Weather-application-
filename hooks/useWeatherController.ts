@@ -69,8 +69,27 @@ export function useWeatherController() {
             const locationKey = `${userCacheService.getLocationKey(location)}_${unitSystemForKey}`
             const cachedWeather = userCacheService.getCachedWeatherData(locationKey)
 
+            const hasCoords =
+                typeof location.latitude === 'number' &&
+                Number.isFinite(location.latitude) &&
+                typeof location.longitude === 'number' &&
+                Number.isFinite(location.longitude)
+
             if (cachedWeather?.forecast && cachedWeather.forecast.length > 0) {
-                setWeather(cachedWeather)
+                const cachedHasCoords =
+                    cachedWeather.coordinates?.lat != null &&
+                    cachedWeather.coordinates?.lon != null
+                const weatherWithCoords =
+                    cachedHasCoords || !hasCoords
+                        ? cachedWeather
+                        : {
+                              ...cachedWeather,
+                              coordinates: {
+                                  lat: location.latitude,
+                                  lon: location.longitude,
+                              },
+                          }
+                setWeather(weatherWithCoords)
                 setLocationInput(location.displayName)
                 setCurrentLocation(location.displayName)
                 setHasSearched(true)
@@ -83,12 +102,6 @@ export function useWeatherController() {
 
             // Guard: some call sites can pass a "location" without coordinates
             // (e.g. privacy-stripped cached lastLocation). Avoid "undefined,undefined".
-            const hasCoords =
-                typeof (location as any).latitude === 'number' &&
-                Number.isFinite((location as any).latitude) &&
-                typeof (location as any).longitude === 'number' &&
-                Number.isFinite((location as any).longitude)
-
             if (!hasCoords) {
                 const fallbackQuery = location.displayName?.trim()
                 if (!fallbackQuery) {

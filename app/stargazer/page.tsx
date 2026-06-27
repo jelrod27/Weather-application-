@@ -8,12 +8,14 @@
  * tab navigation, and organized content sections.
  */
 
-import React, { useEffect, useState, useCallback, startTransition } from 'react';
+import React, { useEffect, useState, useCallback, startTransition, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import PageWrapper from '@/components/page-wrapper';
 import { ShareButtons } from '@/components/share-buttons';
+import { useLocationContext } from '@/components/location-context';
 import type { StargazerData } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
 import { formatTonightDate } from '@/lib/stargazer/bortle';
@@ -66,6 +68,27 @@ function getTabFromHash(): StargazerTabId {
   if (typeof window === 'undefined') return 'conditions';
   const hash = window.location.hash.replace('#', '') as StargazerTabId;
   return VALID_TABS.includes(hash) ? hash : 'conditions';
+}
+
+function parseCoord(value: string | null): number | null {
+  if (!value) return null;
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function geocodeLabel(label: string): Promise<{ lat: number; lon: number } | null> {
+  try {
+    const geoRes = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(label)}&limit=1`);
+    if (!geoRes.ok) return null;
+    const geoData = await geoRes.json();
+    const result = Array.isArray(geoData) ? geoData[0] : geoData;
+    if (result?.lat != null && result?.lon != null) {
+      return { lat: result.lat, lon: result.lon };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 // ============================================================================
@@ -357,14 +380,24 @@ function LaunchesPanel({ data }: { data: StargazerData }) {
 // ============================================================================
 
 export default function StargazerPage() {
+  const searchParams = useSearchParams();
+  const { currentLocation, locationInput } = useLocationContext();
+  const latParam = searchParams.get('lat');
+  const lonParam = searchParams.get('lon');
+  const qParam = searchParams.get('q')?.trim() ?? '';
   const { theme } = useTheme();
   const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
   const [data, setData] = useState<StargazerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<StargazerTabId>('conditions');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(qParam);
   const [isSearching, setIsSearching] = useState(false);
+  const lastLoadedKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (qParam) setSearchQuery(qParam);
+  }, [qParam]);
 
   // Read hash on mount
   useEffect(() => {
@@ -381,14 +414,14 @@ export default function StargazerPage() {
     window.location.hash = tab;
   }, []);
 
-  const fetchData = useCallback(async (customLat?: number, customLon?: number) => {
+  const fetchData = useCallback(async (customLat?: number, customLon?: number, options?: { usedFallback?: boolean }) => {
     try {
       setIsLoading(true);
       setError(null);
 
       let latitude: number;
       let longitude: number;
-      let usedFallback = false;
+      let usedFallback = options?.usedFallback ?? false;
 
       if (customLat != null && customLon != null) {
         latitude = customLat;
@@ -433,6 +466,38 @@ export default function StargazerPage() {
     }
   }, []);
 
+  const resolveAndLoad = useCallback(async () => {
+    const urlLat = parseCoord(latParam);
+    const urlLon = parseCoord(lonParam);
+    const loadKey = `${urlLat ?? ''},${urlLon ?? ''},${qParam},${locationInput},${currentLocation}`;
+
+    if (lastLoadedKeyRef.current === loadKey) return;
+    lastLoadedKeyRef.current = loadKey;
+
+    if (qParam) {
+      setSearchQuery(qParam);
+    } else {
+      const contextLabel = (locationInput || currentLocation)?.trim();
+      if (contextLabel) setSearchQuery(contextLabel);
+    }
+
+    if (urlLat != null && urlLon != null) {
+      await fetchData(urlLat, urlLon);
+      return;
+    }
+
+    const contextLabel = (locationInput || currentLocation)?.trim();
+    if (contextLabel) {
+      const coords = await geocodeLabel(contextLabel);
+      if (coords) {
+        await fetchData(coords.lat, coords.lon);
+        return;
+      }
+    }
+
+    await fetchData();
+  }, [latParam, lonParam, qParam, locationInput, currentLocation, fetchData]);
+
   const handleLocationSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -461,9 +526,9 @@ export default function StargazerPage() {
 
   useEffect(() => {
     startTransition(() => {
-      fetchData();
+      void resolveAndLoad();
     });
-  }, [fetchData]);
+  }, [resolveAndLoad]);
 
   return (
     <PageWrapper>
@@ -503,7 +568,8 @@ export default function StargazerPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search location"
+            aria-label="Stargazer location search"
+            data-testid="stargazer-location-search"
             placeholder="Search location (city, state)"
             className="flex-1 px-3 py-2 text-sm font-mono bg-black/20 border border-subtle rounded focus:outline-none focus:border-primary"
           />

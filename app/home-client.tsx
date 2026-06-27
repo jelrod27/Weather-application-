@@ -16,6 +16,7 @@
 
 
 import React, { memo } from "react"
+import { useRouter } from "next/navigation"
 import { LoadingSpinner } from "@/components/ui/loading-state"
 import { useTheme } from '@/components/theme-provider'
 import { type ThemeType } from '@/lib/theme-utils'
@@ -35,10 +36,17 @@ const WeatherDisplay = dynamic(() => import('@/components/weather-display').then
   loading: () => <div className="animate-pulse bg-gray-800/30 rounded-lg h-96" />
 })
 
+const HomeHub = dynamic(() => import('@/components/home/home-hub'), {
+  ssr: false,
+  loading: () => <div className="mt-4 h-16 animate-pulse rounded-md bg-gray-800/30" aria-hidden />,
+})
+
 import { ResponsiveContainer } from "@/components/responsive-container"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { WeatherSkeleton } from '@/components/weather-skeleton'
 import { useWeatherController } from "@/hooks/useWeatherController"
+import { locationInputToSlug } from "@/lib/city-slug"
+import { useHubLocation } from "@/hooks/use-hub-location"
 
 // Note: UV Index data is now only available in One Call API 3.0 (paid subscription required)
 // The main weather API handles UV index estimation for free accounts
@@ -47,6 +55,7 @@ import { useWeatherController } from "@/hooks/useWeatherController"
 
 function WeatherApp() {
   const { theme } = useTheme()
+  const router = useRouter()
 
   // Use the new controller hook
   const {
@@ -54,11 +63,12 @@ function WeatherApp() {
     loading,
     error,
     remainingSearches,
-    handleSearch,
     handleLocationSearch,
     isAutoDetecting,
     autoLocationAttempted
   } = useWeatherController()
+
+  const hubLocation = useHubLocation(weather)
 
   const [selectedDay, setSelectedDay] = React.useState<number | null>(null)
   const [precipitation, setPrecipitation] = React.useState<{rain24h: number; snow24h: number} | null>(null)
@@ -75,7 +85,12 @@ function WeatherApp() {
     }
   }, [autoLocationAttempted, loading, isAutoDetecting])
 
-  // Fetch 24h precipitation data when weather loads
+  // Manual searches use the same /weather/[city] experience as footer city links.
+  const handleSearchWrapper = (locationInput: string) => {
+    const trimmed = locationInput.trim()
+    if (trimmed.length < 3) return
+    router.push(`/weather/${locationInputToSlug(trimmed)}`)
+  }
   React.useEffect(() => {
     if (!weather?.coordinates) return
 
@@ -104,10 +119,6 @@ function WeatherApp() {
     return () => controller.abort()
   }, [weather?.coordinates?.lat, weather?.coordinates?.lon])
 
-  const handleSearchWrapper = (locationInput: string) => {
-    handleSearch(locationInput)
-  }
-
   return (
     <PageWrapper
       weatherLocation={weather?.location}
@@ -128,6 +139,7 @@ function WeatherApp() {
             />
           </ErrorBoundary>
 
+          <HomeHub userLocation={hubLocation} />
 
           {/* Welcome Message — START is a clickable affordance that triggers geolocation. */}
           {!weather && !loading && !error && !isAutoDetecting && (
@@ -182,14 +194,16 @@ function WeatherApp() {
 
           {weather && !loading && !error && (
             <ErrorBoundary componentName="Weather Display">
-              <WeatherDisplay
-                weather={weather}
-                theme={theme || 'nord'}
-                selectedDay={selectedDay}
-                onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
-                precipitation={precipitation}
-                showRadar={true}
-              />
+              <div id="live-weather" className="scroll-mt-24">
+                <WeatherDisplay
+                  weather={weather}
+                  theme={theme || 'nord'}
+                  selectedDay={selectedDay}
+                  onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
+                  precipitation={precipitation}
+                  showRadar={true}
+                />
+              </div>
             </ErrorBoundary>
           )}
 

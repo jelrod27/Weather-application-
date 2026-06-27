@@ -11,7 +11,7 @@
  */
 
 
-import type { JSX } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchWeatherData } from '@/lib/weather'
@@ -24,6 +24,14 @@ import { Loader2 } from 'lucide-react'
 import { ResponsiveContainer } from '@/components/responsive-container'
 import { useLocationContext } from '@/components/location-context'
 import { WeatherDisplay } from '@/components/weather-display'
+import { locationInputToSlug } from '@/lib/city-slug'
+import { useHubLocation } from '@/hooks/use-hub-location'
+import dynamic from 'next/dynamic'
+
+const HomeHub = dynamic(() => import('@/components/home/home-hub'), {
+  ssr: false,
+  loading: () => <div className="mt-4 h-16 animate-pulse rounded-md bg-gray-800/30" aria-hidden />,
+})
 
 interface CityWeatherClientProps {
   city: {
@@ -39,11 +47,10 @@ interface CityWeatherClientProps {
     }
   }
   citySlug: string
-  /** Kept for API compatibility with `page.tsx`. No longer used in rendering. */
-  isPredefinedCity?: boolean
+  climateGuide?: ReactNode
 }
 
-export default function CityWeatherClient({ city, citySlug }: CityWeatherClientProps): JSX.Element {
+export default function CityWeatherClient({ city, citySlug, climateGuide }: CityWeatherClientProps): JSX.Element {
   const router = useRouter()
   const { theme } = useTheme()
   const { preferences } = useAuth()
@@ -62,6 +69,7 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
   const weatherRequestRef = useRef(0)
   const weatherLatitude = weather?.coordinates?.lat
   const weatherLongitude = weather?.coordinates?.lon
+  const hubLocation = useHubLocation(weather)
 
   // Fetch 24h precipitation data when weather loads
   useEffect(() => {
@@ -92,14 +100,8 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
     return () => controller.abort()
   }, [weatherLatitude, weatherLongitude])
 
-  // Helper: normalize "San Ramon, CA" -> "san-ramon-ca"
-  const toSlug = (input: string) =>
-    input
-      .trim()
-      .toLowerCase()
-      .replace(/,/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
+  // Helper: normalize search input to /weather/[city] slug
+  const toSlug = locationInputToSlug
 
   // Load weather data for the specific city
   const loadCityWeather = useCallback(async () => {
@@ -143,18 +145,20 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
     setCurrentLocation(city.searchTerm)
   }, [city.searchTerm, citySlug, clearLocationState, setCurrentLocation, setLocationInput])
 
-  // Existing effect: load weather for this page's city (runs after reset above)
   useEffect(() => {
     setShouldClearOnRouteChange(false)
-
-    // Load city-specific weather data first (city pages should show city data, not user location)
-    loadCityWeather()
-
-    // Cleanup: enable route change clearing when leaving city pages
+    void loadCityWeather()
     return () => {
       setShouldClearOnRouteChange(true)
     }
   }, [loadCityWeather, setShouldClearOnRouteChange])
+
+  useEffect(() => {
+    if (!weather || loading) return
+    const anchor = document.getElementById('live-weather')
+    if (!anchor) return
+    anchor.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [citySlug, weather?.location, loading])
 
   // REPLACE handleSearch to navigate instead of only setting local weather
   const handleSearch = async (locationInput: string) => {
@@ -209,7 +213,7 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
       weatherUnit={weather?.unit}
     >
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
-        <ResponsiveContainer maxWidth="xl" padding="md">
+        <ResponsiveContainer maxWidth="2xl" padding="md">
 
           {/* Weather Search Component */}
           <WeatherSearch
@@ -222,6 +226,8 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
             isDisabled={false}
             hideLocationButton={true}
           />
+
+          <HomeHub userLocation={hubLocation} />
 
           {/* Loading State */}
           {loading && (
@@ -240,22 +246,19 @@ export default function CityWeatherClient({ city, citySlug }: CityWeatherClientP
 
           {/* Weather Display - Unified with homepage */}
           {weather && !loading && !error && (
-            <WeatherDisplay
-              weather={weather}
-              theme={theme || 'nord'}
-              selectedDay={selectedDay}
-              onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
-              precipitation={precipitation}
-              showRadar={true}
-            />
+            <div id="live-weather" className="scroll-mt-24">
+              <WeatherDisplay
+                weather={weather}
+                theme={theme || 'nord'}
+                selectedDay={selectedDay}
+                onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
+                precipitation={precipitation}
+                showRadar={true}
+              />
+            </div>
           )}
 
-          {/*
-            Note: SEO content (H1, climate overview, seasonal breakdown, FAQ,
-            nearby cities) is now server-rendered by `page.tsx` so it lands in
-            the initial HTML for Googlebot. This client component is purely
-            for the interactive weather widget.
-          */}
+          {climateGuide ? <div className="mt-8">{climateGuide}</div> : null}
         </ResponsiveContainer>
       </div>
     </PageWrapper>
