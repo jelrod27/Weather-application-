@@ -6,6 +6,17 @@ export const metadata: Metadata = {
   description: 'Sign in to access your saved locations and weather preferences.',
 }
 
-export default function LoginPage() {
-  return <AuthForm mode="signin" />
+interface LoginPageProps {
+  searchParams?: Promise<{ error?: string; next?: string }>
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = searchParams ? await searchParams : {}
+  const rawError = params.error
+  const initialError =
+    typeof rawError === 'string' && rawError.length > 0
+      ? decodeURIComponent(rawError.replace(/\+/g, ' '))
+      : undefined
+
+  return <AuthForm mode="signin" initialError={initialError} />
 }

@@ -62,7 +62,6 @@ test.describe('Profile Settings', () => {
     await fillProfileForm(page, {
       username: 'updateduser',
       fullName: 'Updated Name',
-      defaultLocation: 'Los Angeles, CA'
     });
     
     // Verify fields were filled
@@ -75,44 +74,36 @@ test.describe('Profile Settings', () => {
     await navigateToProfile(page);
     await page.waitForTimeout(2000);
     
-    // Enter edit mode
     const editButton = page.getByTestId('profile-edit-button');
     await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.click();
     
-    // Wait for edit mode
     await expect(page.locator('button').filter({ hasText: /save changes/i })).toBeVisible({ timeout: 5000 });
     
-    // Fill form fields
     await fillProfileForm(page, {
       username: 'saveduser'
     });
     
-    // Save
     await saveProfile(page);
     
-    // Verify success message appears
-    await expect(page.locator('body')).toContainText(/success|saved|updated|redirecting/i, { timeout: 10000 });
+    await expect(page.locator('body')).toContainText(/success|saved|updated/i, { timeout: 10000 });
   });
 
-  test('redirects to dashboard after saving', async ({ page }) => {
+  test('stays on profile after saving', async ({ page }) => {
     await navigateToProfile(page);
     await page.waitForTimeout(2000);
     
-    // Enter edit mode
     const editButton = page.getByTestId('profile-edit-button');
     await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.click();
     
-    // Wait for edit mode
     await expect(page.locator('button').filter({ hasText: /save changes/i })).toBeVisible({ timeout: 5000 });
     
-    // Fill and save
-    await fillProfileForm(page, { username: 'redirecttest' });
+    await fillProfileForm(page, { username: 'stayonprofile' });
     await saveProfile(page);
     
-    // Wait for redirect (with delay for success message - 1.5s + buffer)
-    await expect(page).toHaveURL('/dashboard', { timeout: 10000 });
+    await expect(page.locator('body')).toContainText(/success|saved|updated/i, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/profile/, { timeout: 5000 });
   });
 
   // Skipped: untestable as written. The mock auth session uses NULL_UUID,

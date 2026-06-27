@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isPlaywrightTestModeRequest } from '@/lib/playwright-test-mode'
+import { validateRedirectPath } from '@/lib/utils/redirect-validation'
+import { resolveAuthenticatedAuthRouteRedirect } from '@/lib/auth/middleware-redirects'
 
 /**
  * Build a Content-Security-Policy for this request.
@@ -50,6 +52,11 @@ export async function middleware(request: NextRequest) {
   })
   response.headers.set('Content-Security-Policy', csp)
 
+  // Legacy URL — redirect before Playwright test-mode bypass so E2E and prod behave the same
+  if (request.nextUrl.pathname.startsWith('/settings')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   // TEST MODE: Skip auth checks during E2E (same rules as API routes — see lib/playwright-test-mode.ts)
 
   if (isPlaywrightTestModeRequest(request)) {
@@ -83,7 +90,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const protectedRoutes = ['/dashboard', '/profile', '/settings', '/saved-locations']
+
+  const protectedRoutes = ['/dashboard', '/profile', '/saved-locations']
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -100,7 +108,8 @@ export async function middleware(request: NextRequest) {
   )
 
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/', request.url))
+    const next = resolveAuthenticatedAuthRouteRedirect(request.nextUrl.searchParams.get('next'))
+    return NextResponse.redirect(new URL(next, request.url))
   }
 
   return response

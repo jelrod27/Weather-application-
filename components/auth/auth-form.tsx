@@ -17,16 +17,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface AuthFormProps {
   mode: 'signin' | 'signup'
+  initialError?: string
 }
 
-export default function AuthForm({ mode }: AuthFormProps) {
+export default function AuthForm({ mode, initialError }: AuthFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError ?? '')
+  const [success, setSuccess] = useState('')
   const router = useRouter()
   const { theme } = useTheme()
 
@@ -36,6 +38,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
     try {
       if (mode === 'signin') {
@@ -57,8 +60,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         if (error) {
           setError(error.message)
         } else {
-          // Show success message for email verification
-          setError('Success! Check your email for a confirmation link.')
+          setSuccess('Check your email for a confirmation link to finish signing up.')
         }
       }
     } catch (err) {
@@ -103,9 +105,17 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Error Message */}
+          {success && (
+            <Alert
+              className="border-2 border-green-500/50 bg-green-950/30 text-green-400 font-mono"
+              data-testid="auth-success-alert"
+            >
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
           {error && (
-            <Alert variant="destructive" className="border-2 font-mono">
+            <Alert variant="destructive" className="border-2 font-mono" data-testid="auth-error-alert">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}

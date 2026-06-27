@@ -70,6 +70,30 @@ const envConfig: EnvConfig = {
       name: 'OPENSKY_PASSWORD',
       description: 'OpenSky Network password (optional - paired with OPENSKY_USERNAME).',
     },
+    SUPABASE_WEBHOOK_SECRET: {
+      name: 'SUPABASE_WEBHOOK_SECRET',
+      description: 'Shared secret for Supabase Database Webhook on profiles INSERT (optional - registration admin alerts).',
+    },
+    ADMIN_NOTIFICATION_EMAIL: {
+      name: 'ADMIN_NOTIFICATION_EMAIL',
+      description: 'Inbox for new-user registration admin emails (optional).',
+    },
+    RESEND_API_KEY: {
+      name: 'RESEND_API_KEY',
+      description: 'Resend API key for admin registration emails (optional).',
+    },
+    RESEND_FROM_EMAIL: {
+      name: 'RESEND_FROM_EMAIL',
+      description: 'Verified Resend sender address (optional).',
+    },
+    SLACK_WEBHOOK_URL: {
+      name: 'SLACK_WEBHOOK_URL',
+      description: 'Slack incoming webhook for new signup alerts (optional).',
+    },
+    DISCORD_WEBHOOK_URL: {
+      name: 'DISCORD_WEBHOOK_URL',
+      description: 'Discord webhook for new signup alerts (optional).',
+    },
   },
 };
 
