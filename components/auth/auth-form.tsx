@@ -47,7 +47,7 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
           setError(error.message)
         } else if (user) {
           // Redirect to dashboard for better UX (consistent with OAuth flow)
-          router.push('/dashboard')
+          router.push('/dashboard?welcome=1')
           router.refresh()
         }
       } else {
