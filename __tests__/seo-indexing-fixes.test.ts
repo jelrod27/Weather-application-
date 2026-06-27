@@ -28,10 +28,29 @@ describe('SEO Indexing Fixes', () => {
     const content = fs.readFileSync(wrapperPath, 'utf-8')
 
     expect(content).toContain('<footer')
-    const requiredLinks = ['/radar', '/severe', '/aviation', '/education', '/blog', '/news', '/about']
+    const requiredLinks = ['/radar', '/severe', '/aviation', '/education', '/education/glossary', '/blog', '/news', '/about']
     for (const link of requiredLinks) {
       expect(content).toContain(`href="${link}"`)
     }
+    expect(content).toContain('/education/glossary')
+    expect(content).toContain('getFeaturedCities')
+    expect(content).toContain('/weather/${city.slug}')
+  })
+
+  it('homepage should server-render featured city links for crawlers', () => {
+    const pagePath = path.join(process.cwd(), 'app', 'page.tsx')
+    const content = fs.readFileSync(pagePath, 'utf-8')
+
+    expect(content).toContain('FeaturedCityLinks')
+    expect(content).toContain('Weather by city')
+  })
+
+  it('glossary layout should include breadcrumb and featured city links', () => {
+    const layoutPath = path.join(process.cwd(), 'app', 'education', 'glossary', 'layout.tsx')
+    const content = fs.readFileSync(layoutPath, 'utf-8')
+
+    expect(content).toContain('BreadcrumbList')
+    expect(content).toContain('FeaturedCityLinks')
   })
 
   it('sitemap should not include /ai route', async () => {

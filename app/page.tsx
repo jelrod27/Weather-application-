@@ -13,6 +13,7 @@ import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { safeJsonLd } from '@/lib/utils'
 import { WeatherCardsSkeleton } from '@/components/home-shell'
+import FeaturedCityLinks from '@/components/featured-city-links'
 
 // PERFORMANCE: Use next/dynamic for proper SSR streaming with fallback
 // This enables the server-rendered shell to display immediately as LCP
@@ -171,6 +172,8 @@ export default function HomePage() {
       <Suspense fallback={<HomePageShell />}>
         <HomeClient />
       </Suspense>
+      {/* Crawlable city links — server-rendered (RandomCityLinks is client-only / ssr:false) */}
+      <FeaturedCityLinks title="Weather by city" />
     </>
   )
 }

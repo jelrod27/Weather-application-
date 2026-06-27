@@ -17,6 +17,7 @@
 
 import Navigation from "./navigation"
 import Link from "next/link"
+import { getFeaturedCities } from "@/lib/featured-city-links"
 
 interface PageWrapperProps {
   children: React.ReactNode
@@ -35,6 +36,8 @@ interface PageWrapperProps {
  * based on the data-theme attribute set by ThemeProvider.
  */
 export default function PageWrapper({ children, weatherLocation, weatherTemperature, weatherUnit }: PageWrapperProps) {
+  const featuredCities = getFeaturedCities().slice(0, 10)
+
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       <Navigation
@@ -47,7 +50,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
       </main>
       <footer className="border-t border-border/40 bg-black/30 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm font-mono">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm font-mono">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Weather</h3>
               <nav className="flex flex-col gap-1.5">
@@ -59,6 +62,20 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
                 <Link href="/tropical" className="text-muted-foreground hover:text-foreground transition-colors">Tropical</Link>
                 <Link href="/winter" className="text-muted-foreground hover:text-foreground transition-colors">Winter</Link>
                 <Link href="/earth-sciences" className="text-muted-foreground hover:text-foreground transition-colors">Earth Sciences</Link>
+              </nav>
+            </div>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Cities</h3>
+              <nav aria-label="Popular city weather forecasts" className="flex flex-col gap-1.5">
+                {featuredCities.map((city) => (
+                  <Link
+                    key={city.slug}
+                    href={`/weather/${city.slug}`}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {city.label}
+                  </Link>
+                ))}
               </nav>
             </div>
             <div>
@@ -75,6 +92,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Learn</h3>
               <nav className="flex flex-col gap-1.5">
                 <Link href="/education" className="text-muted-foreground hover:text-foreground transition-colors">Education</Link>
+                <Link href="/education/glossary" className="text-muted-foreground hover:text-foreground transition-colors">Weather Glossary</Link>
                 <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
                 <Link href="/news" className="text-muted-foreground hover:text-foreground transition-colors">News</Link>
                 <Link href="/cloud-types" className="text-muted-foreground hover:text-foreground transition-colors">Cloud Types</Link>
