@@ -3,6 +3,7 @@ import { cityData as cityMetadata } from '@/lib/city-metadata'
 import { getAllPosts } from '@/lib/blog'
 import deepSkyCatalog from '@/data/deep-sky-catalog.json'
 import type { DeepSkyObject } from '@/lib/stargazer/types'
+import { FEATURED_DETAIL_SLUGS, getEducationDetailHref } from '@/lib/education/entries'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.16bitweather.co'
@@ -36,6 +37,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${baseUrl}/education/glossary`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
       { url: `${baseUrl}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
     ]
+
+    const educationDetailPages: MetadataRoute.Sitemap = [
+      ...FEATURED_DETAIL_SLUGS['weather-system'].map((slug) => ({
+        url: `${baseUrl}${getEducationDetailHref('weather-system', slug)}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.75,
+      })),
+      ...FEATURED_DETAIL_SLUGS.cloud.map((slug) => ({
+        url: `${baseUrl}${getEducationDetailHref('cloud', slug)}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.75,
+      })),
+      ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => ({
+        url: `${baseUrl}${getEducationDetailHref('phenomenon', slug)}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.75,
+      })),
+    ]
   
     // Dynamic city pages
     const cityPages: MetadataRoute.Sitemap = Object.keys(cityMetadata || {}).map(citySlug => ({
@@ -67,7 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       console.error('[sitemap] Failed to load blog posts')
     }
 
-    return [...staticPages, ...cityPages, ...stargazerObjectPages, ...blogPosts]
+    return [...staticPages, ...educationDetailPages, ...cityPages, ...stargazerObjectPages, ...blogPosts]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return [

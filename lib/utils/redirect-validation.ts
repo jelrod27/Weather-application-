@@ -25,7 +25,8 @@ const ALLOWED_REDIRECT_PATHS = [
 const ALLOWED_REDIRECT_PATTERNS = [
   /^\/weather\/[^\/]+$/,           // /weather/[city]
   /^\/gfs-model\/[^\/]+\/[^\/]+$/, // /gfs-model/[region]/[run]
-  /^\/education\/[^\/]+$/,         // /education/[topic]
+  /^\/education\/[^\/]+$/,                    // /education/glossary
+  /^\/education\/[^\/]+\/[^\/]+$/,           // /education/weather-systems/[slug]
 ]
 
 /**
