@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tropical Weather - NHC Outlook & Satellite | 16 Bit Weather',
-  description: 'Tropical weather tracking with NHC outlooks, satellite imagery, and sea surface temperature analysis. Monitor Atlantic and Pacific hurricane activity.',
+  title: 'Tropical Tracker — NHC Outlooks & Atlantic Satellite | 16 Bit Weather',
+  description:
+    'Live NHC tropical weather outlooks, Atlantic basin satellite imagery, and sea surface temperatures — hurricane season tracking in a retro terminal UI.',
   keywords: 'tropical weather, NHC outlook, hurricane tracker, tropical storm, satellite imagery, sea surface temperature',
   openGraph: {
-    title: 'Tropical Weather',
-    description: 'NHC outlooks, satellite imagery, and hurricane tracking.',
+    title: 'Tropical Tracker | 16 Bit Weather',
+    description:
+      'Live NHC tropical outlooks, Atlantic satellite imagery, and sea surface temperature analysis.',
     url: 'https://www.16bitweather.co/tropical',
     siteName: '16 Bit Weather',
     images: [
@@ -22,8 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Tropical Weather',
-    description: 'NHC outlooks, satellite imagery, and hurricane tracking.',
+    title: 'Tropical Tracker | 16 Bit Weather',
+    description:
+      'Live NHC tropical outlooks, Atlantic satellite imagery, and sea surface temperatures.',
     images: ['/api/og?title=Tropical+Weather&subtitle=NHC+Outlook+%2B+Satellite'],
   },
   alternates: {

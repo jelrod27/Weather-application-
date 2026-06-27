@@ -30,6 +30,28 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   return {
     title: baseTitle,
     description: baseDescription,
+    openGraph: {
+      title: baseTitle,
+      description: baseDescription,
+      url: `${BASE_URL}/blog`,
+      siteName: '16 Bit Weather',
+      images: [
+        {
+          url: '/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot',
+          width: 1200,
+          height: 630,
+          alt: '16 Bit Weather Blog',
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: baseTitle,
+      description: baseDescription,
+      images: ['/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot'],
+    },
     alternates: { canonical: `${BASE_URL}/blog` },
   }
 }
