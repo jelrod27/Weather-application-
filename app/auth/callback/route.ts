@@ -30,11 +30,9 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description')
 
   if (error) {
-    console.error(
-      '[Auth Callback] OAuth error:',
-      sanitizeLogValue(error),
-      sanitizeLogValue(errorDescription),
-    )
+    const safeError = sanitizeLogValue(error)
+    const safeErrorDescription = sanitizeLogValue(errorDescription)
+    console.error('[Auth Callback] OAuth error:', safeError, safeErrorDescription)
     return NextResponse.redirect(
       `${origin}/auth/login?error=${encodeURIComponent(errorDescription || error)}`,
     )
@@ -71,7 +69,8 @@ export async function GET(request: NextRequest) {
   const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError) {
-    console.error('[Auth Callback] Exchange error:', sanitizeLogValue(exchangeError.message))
+    const safeExchangeErrorMessage = sanitizeLogValue(exchangeError.message)
+    console.error('[Auth Callback] Exchange error:', safeExchangeErrorMessage)
     return NextResponse.redirect(
       `${origin}/auth/login?error=${encodeURIComponent(exchangeError.message)}`,
     )
