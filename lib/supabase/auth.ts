@@ -62,7 +62,7 @@ export const signInWithProvider = async (
 
   // Default to dashboard for better UX (users expect to see their account after login)
   // Can be overridden by passing redirectTo option
-  const finalDestination = options?.redirectTo || '/dashboard'
+  const finalDestination = options?.redirectTo || '/dashboard?welcome=1'
   callbackUrl.searchParams.set('next', finalDestination)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
