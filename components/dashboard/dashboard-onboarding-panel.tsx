@@ -10,8 +10,6 @@ import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 import { LocationService } from '@/lib/location-service'
 import { dismissOnboarding } from '@/lib/dashboard/onboarding-state'
 import { saveUserLocation } from '@/lib/dashboard/save-user-location'
-import { AnalyticsEvents } from '@/lib/analytics/events'
-import { captureAnalyticsEvent } from '@/lib/analytics/posthog'
 
 interface DashboardOnboardingPanelProps {
   userId: string
@@ -34,7 +32,6 @@ export default function DashboardOnboardingPanel({
   const [geoError, setGeoError] = useState<string | null>(null)
 
   const handleDismiss = () => {
-    captureAnalyticsEvent(AnalyticsEvents.ONBOARDING_DISMISSED)
     dismissOnboarding(userId)
     onDismiss()
   }
@@ -66,7 +63,6 @@ export default function DashboardOnboardingPanel({
         is_favorite: true,
       })
 
-      captureAnalyticsEvent(AnalyticsEvents.FIRST_LOCATION_SAVED, { source: 'geolocation' })
       dismissOnboarding(userId)
       onDismiss()
       onLocationSaved()

@@ -6,12 +6,6 @@ import { supabase } from '@/lib/supabase/client'
 import type { Profile, UserPreferences } from '@/lib/supabase/types'
 import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
-import { AnalyticsEvents } from '@/lib/analytics/events'
-import {
-  captureAnalyticsEvent,
-  identifyAnalyticsUser,
-  resetAnalyticsUser,
-} from '@/lib/analytics/posthog'
 
 interface AuthContextType {
   user: User | null
@@ -138,14 +132,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(false)
     }
 
-    if (event === 'SIGNED_IN' && session?.user) {
-      const provider =
-        typeof session.user.app_metadata?.provider === 'string'
-          ? session.user.app_metadata.provider
-          : 'email'
-      captureAnalyticsEvent(AnalyticsEvents.USER_SIGNED_IN, { provider })
-    }
-
     if (session?.user) {
       // User signed in - fetch additional data in the background (non-blocking)
       // Profile and preferences load asynchronously after auth is confirmed
@@ -169,8 +155,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const handleSignOut = useCallback(async () => {
     try {
       setLoading(true)
-
-      resetAnalyticsUser()
 
       // 1. Clear local state immediately
       authStateRef.current = { user: null, session: null }
@@ -222,15 +206,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(false)
     }
   }, [])
-
-  useEffect(() => {
-    if (!user) return
-
-    identifyAnalyticsUser(user.id, {
-      email: user.email,
-      ...(profile?.username ? { username: profile.username } : {}),
-    })
-  }, [user, profile?.username])
 
   useEffect(() => {
     let isMounted = true

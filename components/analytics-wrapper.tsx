@@ -1,26 +1,26 @@
 'use client'
 
 /**
- * PERFORMANCE: Lazy load analytics to reduce initial bundle size.
- * PostHog handles product analytics; Speed Insights stays for Web Vitals.
+ * PERFORMANCE: Lazy load analytics to reduce initial bundle size
+ * Analytics are deferred until after the main content has loaded
  */
 
 import dynamic from 'next/dynamic'
 
-const SpeedInsights = dynamic(
-  () => import('@vercel/speed-insights/next').then((mod) => mod.SpeedInsights),
-  { ssr: false },
+const Analytics = dynamic(
+  () => import('@vercel/analytics/react').then(mod => mod.Analytics),
+  { ssr: false }
 )
 
-const PostHogPageView = dynamic(
-  () => import('@/components/posthog-pageview'),
-  { ssr: false },
+const SpeedInsights = dynamic(
+  () => import('@vercel/speed-insights/next').then(mod => mod.SpeedInsights),
+  { ssr: false }
 )
 
 export default function AnalyticsWrapper() {
   return (
     <>
-      <PostHogPageView />
+      <Analytics />
       <SpeedInsights />
     </>
   )

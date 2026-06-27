@@ -41,14 +41,6 @@ const envConfig: EnvConfig = {
       name: 'NEXT_PUBLIC_SENTRY_DSN',
       description: 'Sentry client DSN (optional - for error monitoring)',
     },
-    NEXT_PUBLIC_POSTHOG_KEY: {
-      name: 'NEXT_PUBLIC_POSTHOG_KEY',
-      description: 'PostHog project API key (optional - product analytics; safe to expose in browser)',
-    },
-    NEXT_PUBLIC_POSTHOG_HOST: {
-      name: 'NEXT_PUBLIC_POSTHOG_HOST',
-      description: 'PostHog ingest host (optional - default https://us.i.posthog.com; use https://eu.i.posthog.com for EU)',
-    },
     SENTRY_ORG: {
       name: 'SENTRY_ORG',
       description: 'Sentry organization (optional - defaults to "16bitweather")',
