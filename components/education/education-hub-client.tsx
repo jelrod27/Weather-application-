@@ -21,7 +21,8 @@ import LearningCard from '@/components/learn/LearningCard'
 import CloudAltitudeStack from '@/components/education/cloud-altitude-stack'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ShareButtons } from '@/components/share-buttons'
-import { countEncyclopediaEntries } from '@/lib/education/entries'
+import { countEncyclopediaEntries, countShareableGuidePages } from '@/lib/education/entries'
+import type { EducationEntryRef } from '@/lib/education/entries'
 import { cloudDatabase } from '@/data/cloud-types'
 import { weatherPhenomena } from '@/data/fun-facts'
 import { weatherSystemsDatabase } from '@/data/weather-systems'
@@ -39,6 +40,7 @@ export interface EducationHubPost {
 
 interface EducationHubClientProps {
   latestPosts: EducationHubPost[]
+  shareableGuides: EducationEntryRef[]
 }
 
 const START_HERE = [
@@ -119,9 +121,10 @@ function SectionHeading({ title, description }: { title: string; description?: s
   )
 }
 
-export default function EducationHubClient({ latestPosts }: EducationHubClientProps) {
+export default function EducationHubClient({ latestPosts, shareableGuides }: EducationHubClientProps) {
   const encyclopediaCount = countEncyclopediaEntries()
   const glossaryCount = getAllMetrics().length + getAllConcepts().length
+  const shareableGuideCount = countShareableGuidePages()
 
   const educationTopics = [
     {
@@ -199,7 +202,8 @@ export default function EducationHubClient({ latestPosts }: EducationHubClientPr
             <strong className="text-foreground font-mono">{glossaryCount}</strong> glossary terms
           </span>
           <span>
-            <strong className="text-foreground font-mono">20</strong> shareable guides
+            <strong className="text-foreground font-mono">{shareableGuideCount}</strong> shareable
+            guides
           </span>
         </div>
 
@@ -242,6 +246,25 @@ export default function EducationHubClient({ latestPosts }: EducationHubClientPr
               <LearningCard key={topic.href} {...topic} />
             ))}
           </div>
+        </section>
+
+        <section>
+          <SectionHeading
+            title="Shareable guides"
+            description="Direct links to reference pages — each has a canonical URL for search and sharing."
+          />
+          <nav aria-label="Shareable education guides" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {shareableGuides.map((guide) => (
+              <Link
+                key={guide.href}
+                href={guide.href}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors py-1 leading-snug"
+              >
+                {guide.title}
+                <span className="text-xs ml-2 opacity-60 capitalize">{guide.kind.replace('-', ' ')}</span>
+              </Link>
+            ))}
+          </nav>
         </section>
 
         {latestPosts.length > 0 && (
