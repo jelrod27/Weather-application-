@@ -6,6 +6,7 @@ import {
   type ImageEntry,
 } from '../../scripts/newsletter/images';
 import { TOPIC_SLUGS } from '../../scripts/newsletter/topics';
+import { allowedBlogUrl } from '../../lib/blog/allowed-hosts';
 
 describe('IMAGES catalog', () => {
   it('contains at least 50 entries', () => {
@@ -36,6 +37,16 @@ describe('IMAGES catalog', () => {
     for (const img of IMAGES) {
       expect(img.url.startsWith('https://')).toBe(true);
     }
+  });
+
+  it('every catalog image URL is on the blog allow-list', () => {
+    // validate-post.ts rejects body images whose host is not in
+    // lib/blog/allowed-hosts. A catalog entry on an un-allow-listed host fails
+    // the newsletter cron, so the two lists must stay in sync.
+    const offenders = IMAGES.filter((img) => allowedBlogUrl(img.url) === null).map(
+      (img) => `${img.id} (${img.url})`,
+    );
+    expect(offenders).toEqual([]);
   });
 
   it('every license is one of the allowed public-use values', () => {
