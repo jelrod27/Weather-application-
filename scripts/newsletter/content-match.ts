@@ -177,16 +177,18 @@ function renderImageMarkdown(img: ImageEntry): string {
 }
 
 /**
- * Removes image markdown the model emitted without a usable external URL:
- * `![alt]` not immediately followed by `(`, or `![alt](image1)`-style
- * relative placeholders. Real images use absolute URLs and are added by
- * embedImagesInDraft. Also collapses the horizontal-rule separators the
- * model tends to wrap such placeholders in, plus any blank-line runs left
- * behind.
+ * Removes ALL image markdown the model emitted. The generator is told not to
+ * embed images — real catalog images are spliced in afterward by
+ * embedImagesInDraft — so any `![...](...)` or bare `![...]` left in the draft
+ * is a hallucination: a placeholder (e.g. placehold.co), a relative `(image1)`
+ * ref, or a prompt-injected off-catalog/tracker URL. Stripping every one keeps
+ * the published post limited to allow-listed catalog imagery (the same defense
+ * as lib/blog/allowed-hosts). Also collapses the horizontal-rule separators the
+ * model tends to wrap such placeholders in, plus any blank-line runs left behind.
  */
 export function stripBareImageMarkdown(draft: string): string {
   let out = draft
-    .replace(/!\[[^\]]*\]\(\s*(?!https?:\/\/)[^)]+\)/gi, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/!\[[^\]]*\](?!\()/g, '');
   // Drop horizontal-rule separators that, after the placeholder removal, now
   // bracket only whitespace — i.e. two or more "---" lines in a row.

@@ -147,23 +147,29 @@ describe('embedImagesInDraft', () => {
 });
 
 describe('stripBareImageMarkdown', () => {
-  it('removes bare image tags but keeps URL-backed images', () => {
+  it('removes both bare and URL-backed model image markdown', () => {
+    // The model must not embed ANY image — catalog images are spliced in
+    // afterward — so a URL-backed image in the raw draft is still a hallucination.
     const input =
       'Intro.\n\n![A hallucinated figure description.]\n\n' +
-      '![Real caption.](https://example.com/real.png)\n*Credit*';
+      '![Real-looking caption.](https://example.com/real.png)\n*Credit*';
     const out = stripBareImageMarkdown(input);
     expect(out).not.toContain('hallucinated figure');
-    expect(out).toContain('![Real caption.](https://example.com/real.png)');
+    expect(out).not.toContain('https://example.com/real.png');
+    expect(out).not.toMatch(/!\[/);
   });
 
-  it('removes relative image placeholders but keeps absolute image URLs', () => {
+  it('removes relative AND absolute placeholder images (e.g. placehold.co)', () => {
     const input =
       'Intro.\n\n![A hallucinated analysis panel.](image2)\n\n' +
-      '![Real caption.](https://example.com/real.png)\n*Credit*';
+      '![Radar mosaic placeholder.](https://placehold.co/900x500?text=Radar+mosaic+placeholder)\n\n' +
+      'Outro.';
     const out = stripBareImageMarkdown(input);
     expect(out).not.toContain('hallucinated analysis panel');
     expect(out).not.toContain('(image2)');
-    expect(out).toContain('![Real caption.](https://example.com/real.png)');
+    expect(out).not.toContain('placehold.co');
+    expect(out).toContain('Intro.');
+    expect(out).toContain('Outro.');
   });
 
   it('collapses separator pairs left bracketing a removed placeholder', () => {

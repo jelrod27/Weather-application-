@@ -21,11 +21,13 @@ export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   'cdn.star.nesdis.noaa.gov',
   'droughtmonitor.unl.edu',
   'ocean.weather.gov',
+  'radar.weather.gov',
   'sdo.gsfc.nasa.gov',
   'services.swpc.noaa.gov',
   'soho.nascom.nasa.gov',
   'www.cpc.ncep.noaa.gov',
   'www.spc.noaa.gov',
+  'www.wpc.ncep.noaa.gov',
 
   // Self-references in posts (canonical links back to the site).
   '16bitweather.co',
