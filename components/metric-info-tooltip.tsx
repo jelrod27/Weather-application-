@@ -53,7 +53,7 @@ export function MetricInfoTooltip({ metricId }: MetricInfoTooltipProps): React.R
           {metric.brief}
         </p>
         <Link
-          href={`/learn/glossary#${metric.id}`}
+          href={`/education/glossary#${metric.id}`}
           className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
         >
           Learn more →

@@ -16,6 +16,8 @@
 
 import { useCallback, useState, useEffect, useRef } from "react"
 import PageWrapper from "@/components/page-wrapper"
+import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import EducationBackLink from "@/components/education/education-back-link"
 import { TrendingUp, TrendingDown, MapPin, RefreshCw, Thermometer } from "lucide-react"
 import type { ExtremesData, LocationTemperature } from "@/lib/extremes/extremes-data"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -63,6 +65,20 @@ function setCachedExtremesClient(cacheKey: string, data: ExtremesData): void {
   } catch (error) {
     console.error('Error setting cache:', error);
   }
+}
+
+function ExtremesEducationNav() {
+  return (
+    <>
+      <EducationBreadcrumb
+        items={[
+          { label: 'Education', href: '/education' },
+          { label: 'Extremes' },
+        ]}
+      />
+      <EducationBackLink />
+    </>
+  )
 }
 
 export default function ExtremesPage() {
@@ -209,6 +225,7 @@ export default function ExtremesPage() {
     return (
       <PageWrapper>
         <div className="min-h-screen p-4 sm:p-6 lg:p-8 space-y-8">
+          <ExtremesEducationNav />
           <div className="text-center mb-8 space-y-4">
             <Skeleton className="h-12 w-3/4 max-w-lg mx-auto" />
             <Skeleton className="h-4 w-1/2 max-w-md mx-auto" />
@@ -226,7 +243,9 @@ export default function ExtremesPage() {
   if (error) {
     return (
       <PageWrapper>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+          <ExtremesEducationNav />
+          <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center text-destructive">
             <div className="text-xl font-mono uppercase tracking-wider mb-4">
               ERROR: {error}
@@ -239,6 +258,7 @@ export default function ExtremesPage() {
               RETRY
             </Button>
           </div>
+          </div>
         </div>
       </PageWrapper>
     )
@@ -249,6 +269,7 @@ export default function ExtremesPage() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+        <ExtremesEducationNav />
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-mono font-bold mb-2 text-weather-primary glow">

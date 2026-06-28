@@ -18,6 +18,8 @@
 import { useState } from "react"
 import { useTheme } from "next-themes"
 import PageWrapper from "@/components/page-wrapper"
+import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import EducationBackLink from "@/components/education/education-back-link"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import type { ThemeType} from "@/lib/theme-utils";
 import { getComponentStyles } from "@/lib/theme-utils"
@@ -59,6 +61,13 @@ export default function FunFactsPage() {
   return (
     <PageWrapper>
       <div className="container mx-auto px-4 py-8">
+        <EducationBreadcrumb
+          items={[
+            { label: 'Education', href: '/education' },
+            { label: '16-Bit Takes' },
+          ]}
+        />
+        <EducationBackLink />
         <div className="text-center mb-12">
           <h1 className={`text-4xl md:text-6xl font-bold mb-4 font-mono uppercase tracking-wider ${themeClasses.headerText} ${themeClasses.glow}`}>
             16-BIT TAKES
