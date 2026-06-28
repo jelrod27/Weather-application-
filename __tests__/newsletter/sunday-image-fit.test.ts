@@ -71,12 +71,26 @@ describe('pickLaneImage narrative-fit gate', () => {
     expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, picked!)).toBe(true);
   });
 
-  it('honors the reuse window and used-ids while still passing narrative fit across all lanes', () => {
-    const lanes = ['severe', 'earthquake', 'forecast', 'space'] as const;
+  it('honors the reuse window and used-ids, returning a different safe image each time', () => {
+    // The lead lanes for a severe+seismic week. Each has enough narrative-fit-safe
+    // depth to prove the recentImageIds and usedIds branches actually exclude.
+    const lanes = ['severe', 'earthquake', 'forecast'] as const;
     for (const lane of lanes) {
-      const picked = pickLaneImage(lane, SEVERE_QUAKE_DRAFT, new Set(), new Set());
-      expect(picked).not.toBeNull();
-      expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, picked!)).toBe(true);
+      const firstPick = pickLaneImage(lane, SEVERE_QUAKE_DRAFT, new Set(), new Set());
+      expect(firstPick).not.toBeNull();
+
+      // Block the fresh-pool winner via the reuse window — must return a different image.
+      const recent = new Set([firstPick!.id]);
+      const secondPick = pickLaneImage(lane, SEVERE_QUAKE_DRAFT, recent, new Set());
+      expect(secondPick).not.toBeNull();
+      expect(secondPick!.id).not.toBe(firstPick!.id);
+
+      // Block that one via used-ids too — must avoid BOTH, still narrative-fit-safe.
+      const used = new Set([secondPick!.id]);
+      const thirdPick = pickLaneImage(lane, SEVERE_QUAKE_DRAFT, recent, used);
+      expect(thirdPick).not.toBeNull();
+      expect([firstPick!.id, secondPick!.id]).not.toContain(thirdPick!.id);
+      expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, thirdPick!)).toBe(true);
     }
   });
 
@@ -127,55 +141,70 @@ const byId = (id: string) => {
   return img;
 };
 
+// The fixture deterministically resolves three lead lanes: severe (primary, from
+// the tornado count) + forecast (always) + earthquake (secondary, from the M7.5).
+// On a fresh pool every lane has a narrative-fit-safe image, so the plan must
+// place exactly one image per lead lane.
+const LEAD_LANES = ['severe', 'forecast', 'earthquake'];
+const EXPECTED_PLACEMENTS = LEAD_LANES.length;
+
 describe('buildSundayImagePlan (hybrid lane + judge)', () => {
-  it('keeps an on-topic judge pick and preserves its anchor', async () => {
+  it('keeps an on-topic judge pick (with its anchor) and fills the remaining lanes', async () => {
     const judge: SundayImagePlanOpts['judge'] = async () => [
       { image: byId('mesocyclone-diagram'), insertAfter: 'long-track EF3 supercell' },
     ];
     const plan = await buildSundayImagePlan(makeOpts(SEVERE_QUAKE_DRAFT, judge));
-    const ids = plan.placements.map((p) => p.image.id);
-    expect(ids).toContain('mesocyclone-diagram');
+    expect(plan.placements).toHaveLength(EXPECTED_PLACEMENTS);
+    expect(plan.audit).toHaveLength(EXPECTED_PLACEMENTS);
     const meso = plan.placements.find((p) => p.image.id === 'mesocyclone-diagram');
     expect(meso?.insertAfter).toBe('long-track EF3 supercell');
+    // The judge covered 'severe'; the fallback fills the other two lead lanes.
+    expect(new Set(plan.audit.map((a) => a.lane))).toEqual(new Set(LEAD_LANES));
   });
 
-  it('drops a judge pick that fails narrative fit and backfills a safe image', async () => {
+  it('drops a judge pick that fails narrative fit and still fills every lead lane', async () => {
     // The judge wrongly returns tropical art under a severe/seismic lead.
     const judge: SundayImagePlanOpts['judge'] = async () => [
       { image: byId('hurricane-katrina-2005'), insertAfter: 'defining number is 216' },
     ];
     const plan = await buildSundayImagePlan(makeOpts(SEVERE_QUAKE_DRAFT, judge));
-    expect(plan.placements.length).toBeGreaterThan(0);
+    expect(plan.placements).toHaveLength(EXPECTED_PLACEMENTS);
     expect(plan.placements.map((p) => p.image.id)).not.toContain('hurricane-katrina-2005');
     for (const p of plan.placements) {
       expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, p.image)).toBe(true);
     }
   });
 
-  it('falls back to deterministic lane picks when the judge throws, and still always fills', async () => {
+  it('fills one image per lead lane when the judge throws (no duplicate lane, no gaps)', async () => {
     const judge: SundayImagePlanOpts['judge'] = async () => {
       throw new Error('simulated API failure');
     };
     const plan = await buildSundayImagePlan(makeOpts(SEVERE_QUAKE_DRAFT, judge));
-    expect(plan.placements.length).toBeGreaterThan(0);
+    expect(plan.placements).toHaveLength(EXPECTED_PLACEMENTS);
+    expect(plan.audit).toHaveLength(EXPECTED_PLACEMENTS);
+    // Every lead lane is covered exactly once — the fallback fills uncovered lanes
+    // rather than duplicating an early lane and starving a later one.
+    expect(new Set(plan.audit.map((a) => a.lane))).toEqual(new Set(LEAD_LANES));
     for (const p of plan.placements) {
       expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, p.image)).toBe(true);
     }
   });
 
-  it('never embeds a narrative-fit failure and emits a complete audit', async () => {
-    // Judge returns nothing usable; the narrative-fit backfill + lane fallback take over.
+  it('never embeds a narrative-fit failure or a synthetic anchor, and emits a complete audit', async () => {
+    // Judge returns nothing usable; the lane fallback takes over.
     const judge: SundayImagePlanOpts['judge'] = async () => [] as ImagePlacement[];
     const plan = await buildSundayImagePlan(makeOpts(SEVERE_QUAKE_DRAFT, judge));
-    expect(plan.placements.length).toBeGreaterThan(0);
+    expect(plan.placements).toHaveLength(EXPECTED_PLACEMENTS);
     const usedIds = new Set(plan.placements.map((p) => p.image.id));
-    // No duplicate placements.
-    expect(usedIds.size).toBe(plan.placements.length);
+    expect(usedIds.size).toBe(plan.placements.length); // no duplicate placements
+    expect(plan.audit).toHaveLength(plan.placements.length);
     for (const entry of plan.audit) {
       expect(entry.anchor.length).toBeGreaterThan(0);
+      expect(entry.anchor).not.toBe('##'); // no synthetic backfill anchor
       expect(usedIds.has(entry.id)).toBe(true);
     }
     for (const p of plan.placements) {
+      expect(p.insertAfter).not.toBe('##');
       expect(passesNarrativeFit(SEVERE_QUAKE_DRAFT, p.image)).toBe(true);
     }
   });

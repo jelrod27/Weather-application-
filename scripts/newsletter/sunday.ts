@@ -9,7 +9,6 @@
 import { getSpotlight } from '../blog-spotlight';
 import {
   embedImagesInDraft,
-  filterPlacementsByNarrativeFit,
   pickImagesForContent,
   type ImagePlacement,
 } from './content-match';
@@ -261,26 +260,53 @@ export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<S
   const targetCount = leadLanes.length;
   const pool = buildLaneCandidatePool(leadLanes, opts.recentImageIds);
 
-  let placements: ImagePlacement[] = [];
+  const placements: ImagePlacement[] = [];
+  const usedIds = new Set<string>();
   if (pool.length > 0) {
     try {
       const raw = await judge({ draft: opts.draft, pool, count: targetCount });
-      placements = filterPlacementsByNarrativeFit(opts.draft, raw, pool, targetCount);
+      // Keep only judge picks that match the prose, preserving their real
+      // (verbatim-snippet) anchors. We deliberately do not backfill from the pool
+      // here: that path stamps a synthetic '##' anchor that clumps images at the
+      // first heading and would let the count fill before the lane fallback below
+      // can place each image next to the relevant paragraph.
+      for (const p of raw) {
+        if (placements.length >= targetCount) break;
+        if (usedIds.has(p.image.id) || !passesNarrativeFit(opts.draft, p.image)) continue;
+        usedIds.add(p.image.id);
+        placements.push(p);
+      }
     } catch (err) {
       console.warn(`[sunday] content-match judge failed: ${(err as Error).message} — using lane fallback`);
     }
   }
 
-  // Deterministic lane fallback fills any slot the judge/filter left open (judge
-  // error, thin pool, or fewer fits than lanes). Guarantees we always place imagery.
+  // Fill each lead lane the judge did NOT already cover, with a content-located
+  // anchor — so a secondary story isn't starved while the lead lane gets a
+  // duplicate.
+  const filledLanes = new Set(placements.map((p) => laneForImage(p.image, leadLanes, primaryLane)));
+  for (const lane of leadLanes) {
+    if (placements.length >= targetCount) break;
+    if (filledLanes.has(lane)) continue;
+    const image = pickLaneImage(lane, opts.draft, opts.recentImageIds, usedIds);
+    if (!image) continue;
+    usedIds.add(image.id);
+    filledLanes.add(lane);
+    placements.push({ image, insertAfter: anchorForLane(opts.draft, lane) });
+  }
+
+  // Last resort (every lead lane starved): keep the product guarantee that a post
+  // always carries imagery by filling from the pool with the closest
+  // narrative-fit-safe image, still anchored to its lane's section.
   if (placements.length < targetCount) {
-    const usedIds = new Set(placements.map((p) => p.image.id));
-    for (const lane of leadLanes) {
+    for (const image of pool) {
       if (placements.length >= targetCount) break;
-      const image = pickLaneImage(lane, opts.draft, opts.recentImageIds, usedIds);
-      if (!image || usedIds.has(image.id)) continue;
+      if (usedIds.has(image.id) || !passesNarrativeFit(opts.draft, image)) continue;
       usedIds.add(image.id);
-      placements.push({ image, insertAfter: anchorForLane(opts.draft, lane) });
+      placements.push({
+        image,
+        insertAfter: anchorForLane(opts.draft, laneForImage(image, leadLanes, primaryLane)),
+      });
     }
   }
 
