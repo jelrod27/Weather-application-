@@ -53,7 +53,7 @@ export default function LearningCard({
             <Icon className="w-8 h-8 text-black" />
           </div>
           <CardTitle className={cn(
-            'text-xl font-bold font-mono uppercase mb-2 transition-colors',
+            'text-lg font-bold font-mono uppercase mb-2 transition-colors',
             'group-hover:' + themeClasses.accentText,
             themeClasses.headerText
           )}>
@@ -61,10 +61,7 @@ export default function LearningCard({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 text-center">
-          <p className={cn(
-            'text-sm font-mono mb-4',
-            themeClasses.text
-          )}>
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
             {description}
           </p>
 
