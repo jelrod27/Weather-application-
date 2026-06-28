@@ -6,48 +6,47 @@ Retro-styled weather education platform that pairs live environmental data with 
 
 ## Version 1.589 highlights
 
-Weekly blog posts with NOAA public domain imagery, precipitation history accuracy improvements, and continued SEO refinements for city pages.
+Recent shipping focused on education, search discoverability, and auth onboarding.
 
-- **Weekly blog**: Super El Nino coverage and severe weather outlook with inline NOAA CPC and NSSL imagery.
-- **Precipitation accuracy**: Reworked 24-hour precipitation history endpoint for more reliable readings.
-- **SEO city pages**: Enriched metadata and restored missing H1 spacing on city weather pages.
-- **Stargazer**: Night sky observing score, education pages, and launch link integration.
-- **Space weather redesign**: Tabbed dashboard with interactive Kp index, solar wind, and X-ray flux charts. ENLIL model viewer, CME tracker, and aurora forecast maps.
-- **Social sharing**: Fixed blank OG previews. Share buttons on all major pages with dynamic OG images.
-- **SPC outlooks and travel corridors**: Day 1-3 convective outlook maps on the severe weather page. Interstate corridor driving condition scores with hazard maps.
-- **Education hub**: Consolidated learning pages with expanded cloud types, weather systems, fun facts, extremes, and glossary content.
-- **Supabase hardening**: RLS policies on user_ai_memory, initplan performance fixes, duplicate policy cleanup, and missing foreign key indexes.
+- **Education hub**: Rebuilt `/education` with encyclopedia links, live labs, cloud altitude quiz, glossary, and **29 shareable reference guides** under `/education/*`.
+- **Weather systems**: 16 encyclopedia entries with expanded cards plus canonical guide pages for Google Search (`/education/weather-systems/[slug]`).
+- **Glossary**: Meteorology concepts (supercell, CAPE, mesocyclone, wind shear, and more) with blog anchor support.
+- **SEO / GSC**: Sitemap coverage for all guide URLs, internal linking from the indexed education hub, Article JSON-LD, and `llms.txt` patterns for AI citation.
+- **Auth onboarding**: Post-signup dashboard welcome flow and improved registration UX.
+- **Weekly blog**: NOAA public-domain imagery and severe weather deep dives.
+- **Stargazer & space weather**: Observing scores, tabbed space-weather dashboard, Kp/solar wind/X-ray charts, aurora and ENLIL tools.
+- **Severe & travel**: SPC Day 1–3 outlook maps, NWS warnings hub, interstate corridor scores.
+- **Social sharing**: Dynamic OG images and share buttons on major pages.
 
 ## About
 
-The site targets learners and hobbyists who want accurate data without a generic weather app layout. Content mixes forecasts, education, games, and optional sign-in for saved locations and preferences.
+The site targets learners, hobbyists, and weather enthusiasts who want accurate data without a generic app layout. Content mixes forecasts, structured education, live hazard tools, and optional sign-in for saved locations and theme preferences.
 
 ## Features
 
-- **Real-time weather**: Current conditions, forecasts, air quality, pollen, and related environmental metrics
-- **Space weather**: Solar activity monitoring with Kp index, solar wind, aurora forecast, flare tracking, and ENLIL model visualization
-- **Severe weather**: SPC convective outlook maps (Day 1-3) and active NWS alerts filtered by tornado, thunderstorm, wind, hail, and flood
-- **Travel weather**: Interstate corridor driving conditions with hazard scoring and WPC daily outlook maps
-- **Tropical tracker**: NHC 2-day and 7-day outlooks, Atlantic satellite imagery, and sea surface temperature analysis
-- **Aviation weather**: SIGMETs, AIRMETs, turbulence maps, and real-time flight conditions in a terminal-style interface
-- **Learn Hub**: Cloud types, weather systems, extreme phenomena, fun facts, and a weather glossary
-- **Interactive radar**: North America radar with NOAA/Iowa NEXRAD, MSC GeoMet, RainViewer fallback, and severe weather overlays
-- **Global extremes**: Hot and cold location tracking with live data
-- **Custom themes**: Twelve themes with persistence for signed-in users
-- **Weather Arcade**: Educational games with score tracking
+- **Real-time weather**: Current conditions and forecasts via **Open-Meteo** (primary), with legacy OpenWeatherMap endpoints where still required
+- **Space weather**: Kp index, solar wind, aurora forecast, flare tracking, ENLIL model visualization
+- **Severe weather**: SPC convective outlook maps (Day 1–3) and active NWS alerts
+- **Travel weather**: Interstate corridor driving conditions with hazard scoring
+- **Tropical tracker**: NHC outlooks and Atlantic satellite context
+- **Aviation weather**: SIGMETs, AIRMETs, turbulence maps, and flight conditions terminal
+- **Education**: Hub at `/education` — cloud atlas, weather systems, phenomena, extremes, glossary, and shareable detail guides
+- **Interactive radar**: Global RainViewer tiles with severe overlays and shareable URL state
+- **Global extremes**: Hot and cold location tracking
+- **Custom themes**: **Six** retro themes with persistence for signed-in users
 - **User accounts**: Saved locations and preferences via Supabase
 - **News and feeds**: Multi-source RSS including earth science and space categories
-- **Social sharing**: Share buttons on every major page with dynamic OG preview images
+- **Social sharing**: Share buttons with dynamic OG preview images
 
 ## Tech stack
 
 - **Framework**: Next.js 16 (App Router), React 19
 - **Styling**: Tailwind CSS v4, shadcn-style UI primitives
-- **Language**: TypeScript
+- **Language**: TypeScript (strict)
 - **Database**: Supabase (PostgreSQL, Auth, RLS)
-- **APIs**: OpenWeatherMap, NOAA SWPC, USGS, NASA, NHC, SPC, and other providers behind server routes
-- **Monitoring**: Sentry error tracking
-- **Testing**: Jest (unit), Playwright (E2E), Lighthouse CI (performance gate)
+- **Weather data**: Open-Meteo (primary), OpenWeatherMap (legacy/fallback), NOAA, USGS, NASA, NHC, SPC
+- **Monitoring**: Sentry
+- **Testing**: Jest (unit), Playwright (E2E), Lighthouse CI
 - **Deployment**: Vercel
 
 ## Getting started
@@ -55,8 +54,8 @@ The site targets learners and hobbyists who want accurate data without a generic
 ### Prerequisites
 
 - Node.js 20.9 or newer (required by Next.js 16)
-- npm or pnpm
-- API keys for OpenWeatherMap and Supabase, plus any optional keys you enable locally
+- npm
+- Supabase and OpenWeatherMap keys for full local functionality
 
 ### Installation
 
@@ -71,12 +70,11 @@ The site targets learners and hobbyists who want accurate data without a generic
    npm install
    ```
 
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with:
+3. Set up environment variables — copy `.env.example` to `.env.local` and fill in:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   OPENWEATHER_API_KEY=your_openweather_key
+   NEXT_PUBLIC_SUPABASE_URL=
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=
+   OPENWEATHER_API_KEY=
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
    ```
 
@@ -92,16 +90,22 @@ The site targets learners and hobbyists who want accurate data without a generic
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server |
-| `npm run build` | Build for production |
+| `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm test` | Run Jest unit tests |
 | `npm run test:ci` | Jest in CI mode |
 | `npx playwright test` | Run end-to-end tests |
 | `npm run validate:pr` | Build, Playwright, and Lighthouse gate |
+| `npm run knip` | Dead code and unused dependency scan |
 
 ## Documentation
 
-The `docs` folder contains deeper references when present (API notes, architecture, deployment, testing).
+Contributor and agent docs live in the repo root:
+
+- **`CODING.md`** — engineering handbook (architecture, tests, security, PR workflow)
+- **`CLAUDE.md`** / **`AGENTS.md`** — agent and IDE context
+- **`planning/prds/`** — product specs for in-flight features
+- **`CHANGELOG.md`** — release history
 
 ## License
 

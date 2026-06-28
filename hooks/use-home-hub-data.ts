@@ -13,7 +13,7 @@ import {
 } from '@/lib/home/hub-utils';
 import { isSpcOutlookRegion } from '@/lib/home/hub-location';
 
-export interface HomeHubCoordinates {
+interface HomeHubCoordinates {
   lat: number;
   lon: number;
 }

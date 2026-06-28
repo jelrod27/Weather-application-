@@ -45,12 +45,8 @@ export const RAINVIEWER_PROVIDER: RadarProvider = {
   ],
 }
 
-export const RADAR_PROVIDERS: Record<RadarProviderId, RadarProvider> = {
+const RADAR_PROVIDERS: Record<RadarProviderId, RadarProvider> = {
   rainviewer: RAINVIEWER_PROVIDER,
-}
-
-export function getRadarProvider(id: RadarProviderId): RadarProvider {
-  return RADAR_PROVIDERS[id]
 }
 
 export function selectRadarProvider(latitude: number, longitude: number): RadarProviderSelection {

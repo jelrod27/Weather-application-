@@ -26,7 +26,3 @@ const DISPLAY_FILTERS: Record<RainViewerDisplaySchemeId, string> = {
 export function getRainViewerDisplayFilter(schemeId: number): string {
   return DISPLAY_FILTERS[schemeId as RainViewerDisplaySchemeId] ?? DISPLAY_FILTERS[2]
 }
-
-export function isRainViewerDisplaySchemeId(schemeId: number): schemeId is RainViewerDisplaySchemeId {
-  return RAINVIEWER_DISPLAY_SCHEMES.some((scheme) => scheme.id === schemeId)
-}

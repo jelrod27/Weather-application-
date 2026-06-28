@@ -6,7 +6,9 @@ Before making code changes, read and follow `./CODING.md`. Treat `CODING.md` as 
 
 ## Project Snapshot
 
-16-Bit Weather is a retro-styled weather education platform built with Next.js 16 App Router and React 19. It includes real-time weather data, educational content, interactive games, global weather tracking, tool-backed AI assistance, and Supabase-backed user AI memory.
+16-Bit Weather is a retro-styled weather education platform built with Next.js 16 App Router and React 19. It combines Open-Meteo forecasts, structured education (cloud atlas, weather systems, glossary, shareable guides), live hazard tools (severe, warnings, radar, space weather, aviation, stargazer), and Supabase auth for saved locations and theme preferences.
+
+The AI chat subsystem and weather arcade/games were removed; if either returns, re-audit that surface first.
 
 Product specs live in `planning/prds/`. Start with `planning/prds/README.md` for product-level changes.
 
@@ -17,7 +19,7 @@ Product specs live in `planning/prds/`. Start with `planning/prds/README.md` for
 - TypeScript strict mode
 - Tailwind CSS v4
 - Supabase
-- Open-Meteo weather data
+- Open-Meteo weather data (primary)
 - Jest unit tests
 - Playwright E2E tests
 - Lighthouse CI performance validation
@@ -49,7 +51,7 @@ Use targeted commands first, then broaden validation when changing shared behavi
 - Use `gh` for GitHub workflow tasks when requested.
 - Before opening a PR, summarize what changed, why it changed, tests run, and known risks.
 - Do not push, open PRs, bypass hooks, delete files, or reset git state unless explicitly asked.
-- The pre-push hook runs Playwright, production build, and Lighthouse CI.
+- The pre-push hook runs gitleaks on unpushed commits; E2E and Lighthouse run in GitHub Actions.
 
 ## Agent Operating Rules
 

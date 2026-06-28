@@ -16,8 +16,6 @@ export const FEATURED_CITY_SLUGS = [
   'miami-fl',
 ] as const
 
-export type FeaturedCitySlug = (typeof FEATURED_CITY_SLUGS)[number]
-
 export function getFeaturedCities() {
   return FEATURED_CITY_SLUGS.map((slug) => {
     const city = cityData[slug]

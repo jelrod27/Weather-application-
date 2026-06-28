@@ -143,7 +143,3 @@ async function mapWithConcurrency<T>(
   });
   await Promise.all(workers);
 }
-
-export function clearEnrichmentCaches(): void {
-  USGS_DETAIL_CACHE.clear();
-}
