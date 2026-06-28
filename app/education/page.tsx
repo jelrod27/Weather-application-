@@ -1,5 +1,6 @@
 import { getAllPosts } from '@/lib/blog'
 import EducationHubClient from '@/components/education/education-hub-client'
+import { getShareableGuideEntries } from '@/lib/education/entries'
 import { decodeHtmlEntities } from '@/lib/services/rss/html-utils'
 
 function formatPostDate(date: string): string {
@@ -22,5 +23,5 @@ export default function EducationPage() {
       href: `/blog/${encodeURIComponent(post.slug)}`,
     }))
 
-  return <EducationHubClient latestPosts={latestPosts} />
+  return <EducationHubClient latestPosts={latestPosts} shareableGuides={getShareableGuideEntries()} />
 }

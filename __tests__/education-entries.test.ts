@@ -1,6 +1,8 @@
 import {
   FEATURED_DETAIL_SLUGS,
   countEncyclopediaEntries,
+  countShareableGuidePages,
+  getAllWeatherSystemSlugs,
   getCloudBySlug,
   getEducationDetailHref,
   getPhenomenonBySlug,
@@ -22,6 +24,20 @@ describe('education entries', () => {
     expect(getWeatherSystemBySlug('jet-streams')?.name).toBe('JET STREAMS')
   })
 
+  it('generates slugs for every weather system encyclopedia entry', () => {
+    const slugs = getAllWeatherSystemSlugs()
+    expect(slugs).toHaveLength(weatherSystemsDatabase.length)
+    expect(slugs.every((slug) => getWeatherSystemBySlug(slug))).toBe(true)
+  })
+
+  it('counts shareable guide pages', () => {
+    expect(countShareableGuidePages()).toBe(
+      weatherSystemsDatabase.length +
+        FEATURED_DETAIL_SLUGS.cloud.length +
+        FEATURED_DETAIL_SLUGS.phenomenon.length,
+    )
+  })
+
   it('resolves featured cloud slugs', () => {
     expect(getCloudBySlug('cumulonimbus')?.name).toBe('CUMULONIMBUS')
     expect(getCloudBySlug('lenticular')?.name).toBe('LENTICULAR')
@@ -40,11 +56,11 @@ describe('education entries', () => {
     expect(getEducationDetailHref('phenomenon', 'haboob')).toBe('/education/phenomena/haboob')
   })
 
-  it('defines exactly 20 featured detail pages', () => {
-    const total =
+  it('defines featured spotlight pages for hub highlights', () => {
+    const spotlightTotal =
       FEATURED_DETAIL_SLUGS['weather-system'].length +
       FEATURED_DETAIL_SLUGS.cloud.length +
       FEATURED_DETAIL_SLUGS.phenomenon.length
-    expect(total).toBe(20)
+    expect(spotlightTotal).toBe(20)
   })
 })

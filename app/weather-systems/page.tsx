@@ -16,6 +16,7 @@
 
 
 import React, { useState } from "react"
+import Link from "next/link"
 import { useTheme } from "next-themes"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
@@ -25,6 +26,7 @@ import { getComponentStyles } from "@/lib/theme-utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { weatherSystemsDatabase } from "@/data/weather-systems"
+import { getEducationDetailHref, systemSlug } from "@/lib/education/entries"
 
 
 export default function WeatherSystemsPage() {
@@ -341,6 +343,15 @@ export default function WeatherSystemsPage() {
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="mt-6 text-center">
+                        <Link
+                          href={getEducationDetailHref('weather-system', systemSlug(system))}
+                          className={`text-sm font-mono font-bold uppercase ${themeClasses.accentText} hover:underline`}
+                        >
+                          Open shareable guide →
+                        </Link>
                       </div>
 
                       {/* Close Button */}

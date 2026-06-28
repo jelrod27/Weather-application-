@@ -3,7 +3,7 @@ import { cityData as cityMetadata } from '@/lib/city-metadata'
 import { getAllPosts } from '@/lib/blog'
 import deepSkyCatalog from '@/data/deep-sky-catalog.json'
 import type { DeepSkyObject } from '@/lib/stargazer/types'
-import { FEATURED_DETAIL_SLUGS, getEducationDetailHref } from '@/lib/education/entries'
+import { FEATURED_DETAIL_SLUGS, getAllWeatherSystemSlugs, getEducationDetailHref } from '@/lib/education/entries'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.16bitweather.co'
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]
 
     const educationDetailPages: MetadataRoute.Sitemap = [
-      ...FEATURED_DETAIL_SLUGS['weather-system'].map((slug) => ({
+      ...getAllWeatherSystemSlugs().map((slug) => ({
         url: `${baseUrl}${getEducationDetailHref('weather-system', slug)}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,

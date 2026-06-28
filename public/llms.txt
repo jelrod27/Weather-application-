@@ -18,6 +18,11 @@
 - Earth and space hazard news: https://www.16bitweather.co/news
 - Weather education hub: https://www.16bitweather.co/education
 - Weather metric glossary: https://www.16bitweather.co/education/glossary
+- Weather systems reference: https://www.16bitweather.co/weather-systems
+- Cloud atlas: https://www.16bitweather.co/cloud-types
+- Shareable weather system guides: https://www.16bitweather.co/education/weather-systems/{slug} (e.g. /education/weather-systems/cyclones, /education/weather-systems/jet-streams)
+- Shareable cloud guides: https://www.16bitweather.co/education/cloud-types/{slug} (e.g. /education/cloud-types/cumulonimbus)
+- Shareable phenomenon guides: https://www.16bitweather.co/education/phenomena/{slug} (e.g. /education/phenomena/thundersnow)
 - Live radar: https://www.16bitweather.co/radar
 - Stargazer / tonight's sky forecast: https://www.16bitweather.co/stargazer
 - Space weather: https://www.16bitweather.co/space-weather
@@ -32,7 +37,7 @@
 - Hurricane/tropical NHC outlooks
 - Aviation weather tools (METAR, turbulence — educational, not for operational flight planning)
 - Stargazing scores (seeing, transparency, moon phase) by location
-- Cloud types, weather systems, and glossary definitions
+- Cloud types, weather systems, glossary definitions, and shareable reference guides
 
 ## Do not cite or index
 
@@ -41,6 +46,7 @@
 - Auth flows: /auth/*
 - API endpoints: /api/*
 - Internal/dev utilities: /test-sentry, /radar-diagnostic, /gfs-model/*
+- Legacy routes (redirect to /education): /learn, /learn/glossary
 
 ## Data sources (for attribution)
 

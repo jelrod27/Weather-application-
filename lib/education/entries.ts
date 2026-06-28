@@ -122,8 +122,41 @@ export function getFeaturedDetailEntries(): EducationEntryRef[] {
   return [...systems, ...clouds, ...phenomena]
 }
 
+/** All statically published shareable guide pages (for sitemap parity and internal linking). */
+export function getShareableGuideEntries(): EducationEntryRef[] {
+  const systems = getAllWeatherSystemSlugs()
+    .map((slug) => {
+      const entry = getWeatherSystemBySlug(slug)
+      if (!entry) return null
+      return {
+        kind: 'weather-system' as const,
+        slug,
+        title: entry.name,
+        summary: entry.description16bit,
+        href: getEducationDetailHref('weather-system', slug),
+      }
+    })
+    .filter(Boolean) as EducationEntryRef[]
+
+  return [...systems, ...getFeaturedDetailEntries().filter((e) => e.kind !== 'weather-system')]
+}
+
 export function countEncyclopediaEntries(): number {
   return weatherSystemsDatabase.length + cloudDatabase.length + weatherPhenomena.length
+}
+
+/** Slugs for every weather system encyclopedia entry (shareable detail pages). */
+export function getAllWeatherSystemSlugs(): string[] {
+  return weatherSystemsDatabase.map((system) => systemSlug(system))
+}
+
+/** Total shareable /education/* detail guide URLs we statically publish. */
+export function countShareableGuidePages(): number {
+  return (
+    getAllWeatherSystemSlugs().length +
+    FEATURED_DETAIL_SLUGS.cloud.length +
+    FEATURED_DETAIL_SLUGS.phenomenon.length
+  )
 }
 
 export { systemSlug, cloudSlug }
