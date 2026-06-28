@@ -68,11 +68,3 @@ function getUSRegion(latitude: number, longitude: number): string | null {
 
   return 'Continental US'
 }
-
-/**
- * Check if location is in MRMS coverage area
- * MRMS covers CONUS, Alaska, Caribbean (PR/USVI), Guam, and Hawaii
- */
-export function isInMRMSCoverage(latitude: number, longitude: number): boolean {
-  return isUSLocation(latitude, longitude)
-}

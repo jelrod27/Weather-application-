@@ -11,7 +11,6 @@ import type {
   RadarLegendBand,
   RadarMetadata,
   RadarProvider,
-  RadarProviderId,
   RadarProviderSelection,
 } from '@/lib/radar/providers/types'
 
@@ -43,14 +42,6 @@ export const RAINVIEWER_PROVIDER: RadarProvider = {
     'Global composite radar tiles from the RainViewer Weather Maps API.',
     'Frame list and tile host come from weather-maps.json.',
   ],
-}
-
-export const RADAR_PROVIDERS: Record<RadarProviderId, RadarProvider> = {
-  rainviewer: RAINVIEWER_PROVIDER,
-}
-
-export function getRadarProvider(id: RadarProviderId): RadarProvider {
-  return RADAR_PROVIDERS[id]
 }
 
 export function selectRadarProvider(latitude: number, longitude: number): RadarProviderSelection {

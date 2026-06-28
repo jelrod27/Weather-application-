@@ -124,7 +124,3 @@ function isGenericSiteLogo(url: string): boolean {
     lower.includes('/wp-content/uploads/2022/02/nasa_meatball')
   );
 }
-
-export function clearOgImageCache(): void {
-  OG_CACHE.clear();
-}

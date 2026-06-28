@@ -130,7 +130,7 @@ function getRadarTileFetchKey(preferences: RadarTilePreferences, tileSize: numbe
   return `${tileSize}:${preferences.smooth}:${preferences.snow}`
 }
 
-export function RadarShell({
+function RadarShell({
   latitude,
   longitude,
   locationName,
