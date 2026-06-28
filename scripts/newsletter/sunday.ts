@@ -7,7 +7,13 @@
  */
 
 import { getSpotlight } from '../blog-spotlight';
-import { embedImagesInDraft, type ImagePlacement } from './content-match';
+import {
+  embedImagesInDraft,
+  filterPlacementsByNarrativeFit,
+  pickImagesForContent,
+  type ImagePlacement,
+} from './content-match';
+import { passesNarrativeFit } from './narrative-fit';
 import { fetchPastWeekQuakes } from './data/earthquakes';
 import { fetchForecastOutlook } from './data/forecast';
 import { fetchPastWeekWarnings, MesonetEmptyError } from './data/mesonet';
@@ -180,7 +186,7 @@ export async function runSunday(): Promise<SundayResult> {
     }
   }
 
-  const imagePlan = buildSundayImagePlan({
+  const imagePlan = await buildSundayImagePlan({
     draft,
     recentImageIds,
     spcSummary,
@@ -219,58 +225,130 @@ interface SundayImagePlan {
   audit: ImageAuditEntry[];
 }
 
-interface SundayImagePlanOpts {
+export interface SundayImagePlanOpts {
   draft: string;
   recentImageIds: Set<string>;
   spcSummary: Awaited<ReturnType<typeof fetchPastWeekReports>>;
   spaceSummary: Awaited<ReturnType<typeof fetchSpaceWeatherSummary>>;
   quakeSummary: Awaited<ReturnType<typeof fetchPastWeekQuakes>>;
+  /** Test seam: stub the content-aware judge so the plan is exercisable offline. */
+  judge?: typeof pickImagesForContent;
 }
 
-function buildSundayImagePlan(opts: SundayImagePlanOpts): SundayImagePlan {
+/**
+ * Hybrid image selection: lane scoring (from the week's data) locks which
+ * STORIES lead, so a weak side topic can never outrank the lead. Within those
+ * lead lanes, the content-aware judge — the same one that powers Wednesday —
+ * reads the FINAL prose and picks the image that best matches the emphasis,
+ * returning a real insertion anchor. `filterPlacementsByNarrativeFit` then drops
+ * any mismatch and backfills the closest narrative-fit-safe image, and a
+ * deterministic lane fallback fills any slot the judge couldn't, so we always
+ * place imagery and never embed something validate-post.ts would reject.
+ */
+export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<SundayImagePlan> {
   const primaryLane = choosePrimaryLane(opts);
   const heroImage = heroImageForLane(primaryLane);
-  const usedIds = new Set<string>();
-  const placements: ImagePlacement[] = [];
-  const audit: ImageAuditEntry[] = [];
-
-  const add = (lane: SundayStoryLane, image: ImageEntry | null, anchor: string) => {
-    if (!image || usedIds.has(image.id)) return;
-    usedIds.add(image.id);
-    placements.push({ image, insertAfter: anchor });
-    audit.push({
-      id: image.id,
-      caption: image.caption,
-      topic_tags: image.topic_tags,
-      anchor,
-      lane,
-    });
-  };
-
-  if (primaryLane !== 'forecast') {
-    add(
-      primaryLane,
-      pickLaneImage(primaryLane, opts.recentImageIds, usedIds),
-      anchorForLane(opts.draft, primaryLane),
-    );
-  }
-
-  add('forecast', pickLaneImage('forecast', opts.recentImageIds, usedIds), anchorForLane(opts.draft, 'forecast'));
-
   const secondaryLane = chooseSecondaryLane(opts, primaryLane);
-  if (secondaryLane) {
-    add(
-      secondaryLane,
-      pickLaneImage(secondaryLane, opts.recentImageIds, usedIds),
-      anchorForLane(opts.draft, secondaryLane),
-    );
+  const judge = opts.judge ?? pickImagesForContent;
+
+  // Lead lanes only — the candidate pool is scoped to the dominant stories so the
+  // judge can match the prose without a side topic sneaking in.
+  const leadLanes: SundayStoryLane[] = [];
+  if (primaryLane !== 'forecast') leadLanes.push(primaryLane);
+  leadLanes.push('forecast');
+  if (secondaryLane && !leadLanes.includes(secondaryLane)) leadLanes.push(secondaryLane);
+
+  const targetCount = leadLanes.length;
+  const pool = buildLaneCandidatePool(leadLanes, opts.recentImageIds);
+
+  let placements: ImagePlacement[] = [];
+  if (pool.length > 0) {
+    try {
+      const raw = await judge({ draft: opts.draft, pool, count: targetCount });
+      placements = filterPlacementsByNarrativeFit(opts.draft, raw, pool, targetCount);
+    } catch (err) {
+      console.warn(`[sunday] content-match judge failed: ${(err as Error).message} — using lane fallback`);
+    }
   }
 
-  if (placements.length === 0) {
-    add('forecast', pickLaneImage('forecast', new Set(), usedIds), '## Roadmap');
+  // Deterministic lane fallback fills any slot the judge/filter left open (judge
+  // error, thin pool, or fewer fits than lanes). Guarantees we always place imagery.
+  if (placements.length < targetCount) {
+    const usedIds = new Set(placements.map((p) => p.image.id));
+    for (const lane of leadLanes) {
+      if (placements.length >= targetCount) break;
+      const image = pickLaneImage(lane, opts.draft, opts.recentImageIds, usedIds);
+      if (!image || usedIds.has(image.id)) continue;
+      usedIds.add(image.id);
+      placements.push({ image, insertAfter: anchorForLane(opts.draft, lane) });
+    }
   }
+
+  const audit: ImageAuditEntry[] = placements.map((p) => ({
+    id: p.image.id,
+    caption: p.image.caption,
+    topic_tags: p.image.topic_tags,
+    anchor: p.insertAfter,
+    lane: laneForImage(p.image, leadLanes, primaryLane),
+  }));
 
   return { primaryLane, heroImage, placements, audit };
+}
+
+/**
+ * Builds the judge's candidate pool from the lead lanes only: each lane's
+ * curated `preferredIds` first, then its broader topic pool, excluding the
+ * 8-week reuse window. If reuse exclusions starve the pool, the window is
+ * relaxed so the judge always has something to rank.
+ */
+export function buildLaneCandidatePool(
+  lanes: SundayStoryLane[],
+  recentImageIds: Set<string>,
+): ImageEntry[] {
+  const pool: ImageEntry[] = [];
+  const seen = new Set<string>();
+  const push = (img: ImageEntry | undefined): void => {
+    if (img && !seen.has(img.id)) {
+      seen.add(img.id);
+      pool.push(img);
+    }
+  };
+
+  const collect = (exclude: Set<string>): void => {
+    for (const lane of lanes) {
+      const config = IMAGE_LANES[lane];
+      for (const id of config.preferredIds) {
+        const img = IMAGES.find((i) => i.id === id);
+        if (img && !exclude.has(img.id)) push(img);
+      }
+      const topicImgs = selectImages({
+        topic: config.topic,
+        count: 6,
+        excludeIds: new Set([...exclude, ...seen]),
+        allowPartial: true,
+        rng: () => 0,
+      });
+      for (const img of topicImgs) push(img);
+    }
+  };
+
+  collect(recentImageIds);
+  // Relax the reuse window only if a starved pool can't give the judge a real choice.
+  if (pool.length <= lanes.length) collect(new Set());
+
+  return pool;
+}
+
+/** Attributes a chosen image to the lead lane whose topic it best matches (for the audit). */
+function laneForImage(
+  image: ImageEntry,
+  leadLanes: SundayStoryLane[],
+  primaryLane: SundayStoryLane,
+): SundayStoryLane {
+  for (const lane of leadLanes) {
+    if (image.topic_tags.includes(IMAGE_LANES[lane].topic)) return lane;
+  }
+  return primaryLane;
 }
 
 function choosePrimaryLane(opts: SundayImagePlanOpts): SundayStoryLane {
@@ -313,39 +391,53 @@ function chooseSecondaryLane(opts: SundayImagePlanOpts, primaryLane: SundayStory
   return null;
 }
 
-function pickLaneImage(
+export function pickLaneImage(
   lane: SundayStoryLane,
+  draft: string,
   recentImageIds: Set<string>,
   usedIds: Set<string>,
 ): ImageEntry | null {
   const config = IMAGE_LANES[lane];
-  const blocked = new Set([...recentImageIds, ...usedIds]);
   const preferred = config.preferredIds
     .map((id) => IMAGES.find((img) => img.id === id))
-    .find((img): img is ImageEntry => Boolean(img && !blocked.has(img.id)));
-  if (preferred) return preferred;
+    .filter((img): img is ImageEntry => Boolean(img));
 
-  const [fresh] = selectImages({
-    topic: config.topic,
-    count: 1,
-    excludeIds: blocked,
-    allowPartial: true,
-    rng: () => 0,
-  });
-  if (fresh) return fresh;
+  // Full eligible pool for the lane's topic (primary tag first, then neighbor
+  // tags), already minus `exclude`. count is unbounded so we can walk past any
+  // candidate that fails the narrative-fit gate instead of stopping at the first.
+  const topicPool = (exclude: Set<string>): ImageEntry[] =>
+    selectImages({
+      topic: config.topic,
+      count: IMAGES.length,
+      excludeIds: exclude,
+      allowPartial: true,
+      rng: () => 0,
+    });
 
-  const relaxed = config.preferredIds
-    .map((id) => IMAGES.find((img) => img.id === id))
-    .find((img): img is ImageEntry => Boolean(img && !usedIds.has(img.id)));
-  if (relaxed) return relaxed;
+  // validate-post.ts rejects any embedded image that fails getNarrativeFitErrors,
+  // so the lane picker MUST honor the same gate. Without it, a lane starved by the
+  // 8-week reuse window falls back to off-topic neighbor imagery (drought, tropical,
+  // or solar art under a severe/seismic lead) that then fails validation and kills
+  // the Sunday cron before it can open the PR.
+  const fits = (img: ImageEntry): boolean => passesNarrativeFit(draft, img);
 
-  return selectImages({
-    topic: config.topic,
-    count: 1,
-    excludeIds: usedIds,
-    allowPartial: true,
-    rng: () => 0,
-  })[0] ?? null;
+  // Tier 1: respect the reuse window, prefer curated ids, require narrative fit.
+  const blocked = new Set([...recentImageIds, ...usedIds]);
+  const tier1 = [...preferred, ...topicPool(blocked)].find(
+    (img) => !blocked.has(img.id) && fits(img),
+  );
+  if (tier1) return tier1;
+
+  // Tier 2: relax the reuse window (still skip images already used in this post),
+  // but keep the narrative-fit gate.
+  const tier2 = [...preferred, ...topicPool(usedIds)].find(
+    (img) => !usedIds.has(img.id) && fits(img),
+  );
+  if (tier2) return tier2;
+
+  // No narrative-fit-safe image for this lane — leave the slot empty rather than
+  // embed a mismatch the validator will reject.
+  return null;
 }
 
 const IMAGE_LANES: Record<SundayStoryLane, { topic: TopicSlug; preferredIds: string[] }> = {

@@ -11,7 +11,9 @@ export function getNarrativeFitErrors(content: string, image: ImageEntry): strin
   const hasSevereOrQuakeLead = /tornado|supercell|severe convective|spc storm|earthquake|seismic|aftershock|subduction/.test(body);
   const hasMeaningfulSpace = /geomagnetic storm|aurora|x-class|m-class|\bkp\s*[4-9]\b|kp index maxed at [4-9]/.test(body);
 
-  if (hasSevereOrQuakeLead && !hasMeaningfulSpace && /solar|sun|sdo|aurora|corona|magnetogram/.test(imageText)) {
+  // \bsun\b (not bare `sun`) so this doesn't fire on "tsunami", "sunset", etc. —
+  // a tsunami photo is seismic/marine imagery, not solar.
+  if (hasSevereOrQuakeLead && !hasMeaningfulSpace && /solar|\bsun\b|sdo|aurora|corona|magnetogram/.test(imageText)) {
     errors.push(`Image "${image.id}" is solar/space imagery, but the post lead is severe or seismic.`);
   }
 
@@ -23,7 +25,9 @@ export function getNarrativeFitErrors(content: string, image: ImageEntry): strin
     errors.push(`Image "${image.id}" is modeling hardware without a matching modeling story.`);
   }
 
-  if (!/hurricane|tropical|enso|sea surface|ocean current|pacific surface/.test(body) && /hurricane|enso|ocean current/.test(imageText)) {
+  // \benso\b (not bare `enso`) so this doesn't fire on "tensor" (e.g. a seismic
+  // "moment tensor" solution) or "sensor".
+  if (!/hurricane|tropical|\benso\b|sea surface|ocean current|pacific surface/.test(body) && /hurricane|\benso\b|ocean current/.test(imageText)) {
     errors.push(`Image "${image.id}" is tropical/ocean imagery without a matching tropical or ocean story.`);
   }
 
