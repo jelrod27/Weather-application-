@@ -21,6 +21,7 @@ import {
   createPreferencesSchema,
   formatValidationErrors,
 } from '@/lib/validations/preferences'
+import { trySyncSevereAlertSubscriptions } from '@/lib/services/severe-alert-subscription-sync'
 
 // GET /api/user/preferences - Fetch user preferences
 export async function GET(request: NextRequest) {
@@ -114,6 +115,10 @@ export async function PUT(request: NextRequest) {
         { error: 'Failed to update preferences' },
         { status: 500 }
       )
+    }
+
+    if (typeof validatedData.notifications_enabled === 'boolean') {
+      await trySyncSevereAlertSubscriptions(user.id, validatedData.notifications_enabled)
     }
 
     return NextResponse.json({ preferences: updatedPreferences })
