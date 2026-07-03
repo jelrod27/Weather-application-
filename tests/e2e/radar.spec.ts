@@ -21,7 +21,9 @@ test.describe('Radar Map', () => {
     
     const radarContainer = page.locator('[data-radar-container]').first();
     await expect(radarContainer).toBeVisible();
-    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test('radar visible in synthwave theme', async ({ page }) => {
@@ -59,17 +61,17 @@ test.describe('Radar Map', () => {
     
     await expect(page.getByRole('button', { name: /^(Play|Pause)$/i })).toBeVisible();
     await page.getByRole('button', { name: /LAYERS/i }).click();
-    await expect(page.getByText(/NWS Alerts/i)).toBeVisible();
-    await expect(page.getByText(/SPC Outlook/i)).toBeVisible();
-    await expect(page.getByText(/Storm Reports/i)).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /NWS Alerts/i })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /SPC Outlook/i })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /Storm Reports/i })).toBeVisible();
   });
 
   test('radar map displays provider status badge and source attribution', async ({ page }) => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
     
-    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible();
-    await expect(page.getByText(/Source:\s*RainViewer/i)).toBeVisible();
+    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible();
+    await expect(page.getByTestId('radar-player-dock').getByText(/Source:\s*RainViewer/i)).toBeVisible();
   });
 
   test('international location uses RainViewer provider', async ({ page }) => {
@@ -83,7 +85,9 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page, 'Edmonton, CA');
     await waitForRadarToLoad(page);
 
-    await expect(page.getByText(/RAINVIEWER RADAR/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test('radar map fills the viewport below the page header', async ({ page }) => {

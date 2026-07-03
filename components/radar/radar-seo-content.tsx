@@ -46,6 +46,7 @@ export default function RadarSeoContent() {
     <article
       className="mx-auto max-w-3xl px-4 py-8 text-sm leading-relaxed text-zinc-300"
       aria-label="About the live weather radar"
+      data-testid="radar-seo-content"
     >
       <h1 className="mb-4 text-2xl font-bold font-mono text-cyan-300">
         Live Weather Radar Map — Global Precipitation &amp; Severe Overlays
