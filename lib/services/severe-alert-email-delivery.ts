@@ -4,9 +4,9 @@ import {
   fetchUserEmailForAlert,
   markSevereAlertEmailSent,
 } from '@/lib/services/severe-alert-email-db'
-import { sendSevereAlertEmail } from '@/lib/services/severe-alert-email-service'
+import { sendSevereAlertAllClearEmail, sendSevereAlertEmail } from '@/lib/services/severe-alert-email-service'
 import { shouldEmailSevereAlertTier } from '@/lib/services/severe-alert-classifier'
-import type { MonitorNewAlert } from '@/lib/services/severe-alert-types'
+import type { MonitorClearedLocation, MonitorNewAlert } from '@/lib/services/severe-alert-types'
 
 export async function deliverSevereAlertEmail(
   supabase: SupabaseClient<Database>,
@@ -23,6 +23,23 @@ export async function deliverSevereAlertEmail(
   }
 
   const result = await sendSevereAlertEmail({ email, payload: item.payload })
+  if (result.sent) {
+    await markSevereAlertEmailSent(supabase, item.userAlertId)
+  }
+
+  return result
+}
+
+export async function deliverSevereAlertAllClearEmail(
+  supabase: SupabaseClient<Database>,
+  item: MonitorClearedLocation,
+): Promise<{ sent: boolean; reason?: string }> {
+  const email = await fetchUserEmailForAlert(supabase, item.subscription.user_id)
+  if (!email) {
+    return { sent: false, reason: 'User email not found' }
+  }
+
+  const result = await sendSevereAlertAllClearEmail({ email, payload: item.payload })
   if (result.sent) {
     await markSevereAlertEmailSent(supabase, item.userAlertId)
   }

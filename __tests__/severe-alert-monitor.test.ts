@@ -104,6 +104,33 @@ describe('runSevereAlertMonitor', () => {
     expect(state['sub-1']).toEqual(['alert-1'])
   })
 
+  it('creates all-clear alerts when severe products expire for a location', async () => {
+    fetchEnabledSevereSubscriptions.mockResolvedValue([
+      {
+        id: 'sub-1',
+        user_id: 'user-1',
+        saved_location_id: 'loc-1',
+        latitude: 39.74,
+        longitude: -104.99,
+        locationLabel: 'Denver, CO',
+      },
+    ])
+
+    mockFetchAlerts.mockResolvedValue([])
+
+    const state: Record<string, string[]> = { 'sub-1': ['alert-1'] }
+    const inserts: unknown[] = []
+    const supabase = makeSupabaseMock(state, inserts)
+    const onAllClear = jest.fn()
+
+    const result = await runSevereAlertMonitor(supabase as never, { onAllClear })
+
+    expect(result.allClears).toBe(1)
+    expect(inserts[0]).toMatchObject({ kind: 'severe_weather_all_clear' })
+    expect(onAllClear).toHaveBeenCalledTimes(1)
+    expect(state['sub-1']).toEqual([])
+  })
+
   it('skips duplicate alerts already tracked in monitor state', async () => {
     fetchEnabledSevereSubscriptions.mockResolvedValue([
       {

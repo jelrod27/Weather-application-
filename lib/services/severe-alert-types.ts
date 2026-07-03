@@ -44,6 +44,8 @@ export type MonitorNewAlert = {
 export type MonitorClearedLocation = {
   subscription: MonitorSubscription
   clearedAlertIds: string[]
+  userAlertId: string
+  payload: SevereWeatherAllClearPayload
 }
 
 export type SevereMonitorRunResult = {

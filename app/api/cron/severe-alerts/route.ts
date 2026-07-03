@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
-import { deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
+import { deliverSevereAlertAllClearEmail, deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 
@@ -24,12 +24,18 @@ export async function GET(request: NextRequest) {
     let emailsFailed = 0
     let emailsSkipped = 0
 
+    let allClearEmailsSent = 0
+
     const result = await runSevereAlertMonitor(supabase, {
       onNewAlert: async (item) => {
         const emailResult = await deliverSevereAlertEmail(supabase, item)
         if (emailResult.sent) emailsSent += 1
         else if (emailResult.skipped) emailsSkipped += 1
         else emailsFailed += 1
+      },
+      onAllClear: async (item) => {
+        const emailResult = await deliverSevereAlertAllClearEmail(supabase, item)
+        if (emailResult.sent) allClearEmailsSent += 1
       },
     })
 
@@ -39,6 +45,7 @@ export async function GET(request: NextRequest) {
       emailsSent,
       emailsSkipped,
       emailsFailed,
+      allClearEmailsSent,
       ...result,
     })
   } catch (error) {

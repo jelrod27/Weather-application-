@@ -6,11 +6,16 @@ import { filterSevereMonitorAlerts } from '@/lib/services/severe-alert-filter'
 import { classifySevereAlertTier } from '@/lib/services/severe-alert-classifier'
 import { fetchEnabledSevereSubscriptions } from '@/lib/services/severe-alert-subscriptions'
 import type {
+  MonitorClearedLocation,
   MonitorNewAlert,
   MonitorSubscription,
   SevereMonitorRunResult,
   SevereWeatherAlertPayload,
+  SevereWeatherAllClearPayload,
 } from '@/lib/services/severe-alert-types'
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.16bitweather.co'
 
 function pointKey(lat: number, lon: number): string {
   return `${lat.toFixed(4)},${lon.toFixed(4)}`
@@ -33,6 +38,18 @@ function buildWarningPayload(
     savedLocationId: subscription.saved_location_id,
     warningsHref: getHubAlertsHref(alert.id),
     tier,
+  }
+}
+
+function buildAllClearPayload(
+  subscription: MonitorSubscription,
+  clearedAlertIds: string[],
+): SevereWeatherAllClearPayload {
+  return {
+    locationName: subscription.locationLabel,
+    savedLocationId: subscription.saved_location_id,
+    clearedAlertIds,
+    warningsHref: `${BASE_URL}/warnings`,
   }
 }
 
@@ -78,8 +95,8 @@ async function insertUserAlert(
   input: {
     userId: string
     subscriptionId: string
-    kind: 'severe_weather'
-    payload: SevereWeatherAlertPayload
+    kind: 'severe_weather' | 'severe_weather_all_clear'
+    payload: SevereWeatherAlertPayload | SevereWeatherAllClearPayload
   },
 ): Promise<string> {
   const { data, error } = await supabase
@@ -102,6 +119,7 @@ async function insertUserAlert(
 
 export type SevereMonitorHooks = {
   onNewAlert?: (item: MonitorNewAlert) => Promise<void>
+  onAllClear?: (item: MonitorClearedLocation) => Promise<void>
 }
 
 /**
@@ -155,8 +173,10 @@ export async function runSevereAlertMonitor(
     try {
       const previousIds = await loadMonitorState(supabase, subscription.id)
       const previousSet = new Set(previousIds)
+      const currentSet = new Set(currentIds)
 
       const newAlerts = currentAlerts.filter((a) => !previousSet.has(a.id))
+      const clearedIds = previousIds.filter((id) => !currentSet.has(id))
 
       for (const alert of newAlerts) {
         const payload = buildWarningPayload(subscription, alert)
@@ -168,6 +188,23 @@ export async function runSevereAlertMonitor(
         })
         result.newAlerts += 1
         await hooks.onNewAlert?.({ subscription, alert, userAlertId, payload })
+      }
+
+      if (clearedIds.length > 0 && previousIds.length > 0 && currentIds.length === 0) {
+        const payload = buildAllClearPayload(subscription, clearedIds)
+        const userAlertId = await insertUserAlert(supabase, {
+          userId: subscription.user_id,
+          subscriptionId: subscription.id,
+          kind: 'severe_weather_all_clear',
+          payload,
+        })
+        result.allClears += 1
+        await hooks.onAllClear?.({
+          subscription,
+          clearedAlertIds: clearedIds,
+          userAlertId,
+          payload,
+        })
       }
 
       await saveMonitorState(supabase, subscription.id, currentIds)
