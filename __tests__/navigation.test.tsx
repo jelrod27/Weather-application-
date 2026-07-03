@@ -12,6 +12,7 @@ jest.mock('@/components/theme-provider', () => ({ useTheme: () => ({ theme: 'dar
 jest.mock('@/lib/theme-utils', () => ({ getComponentStyles: () => ({}) }));
 jest.mock('@/components/auth/auth-button', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/components/wis-badge', () => ({ __esModule: true, default: () => null }));
+jest.mock('@/components/alerts/alert-bell', () => ({ __esModule: true, default: () => null }));
 
 import Navigation from '@/components/navigation';
 

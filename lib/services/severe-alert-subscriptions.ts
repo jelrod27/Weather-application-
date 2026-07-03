@@ -24,9 +24,10 @@ export async function syncSevereAlertSubscriptions(
   notificationsEnabled: boolean,
 ): Promise<{ upserted: number; disabled: number }> {
   if (!notificationsEnabled) {
-    const { data, error } = await supabase
-      .from('alert_subscriptions')
-      .update({ enabled: false, updated_at: new Date().toISOString() })
+  const { data, error } = await supabase
+    .from('alert_subscriptions')
+    // @ts-expect-error - supabase-js Database generic mismatch
+    .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('kind', SEVERE_KIND)
       .select('id')
@@ -56,7 +57,7 @@ export async function syncSevereAlertSubscriptions(
   const now = new Date().toISOString()
   const rows = locations.map((loc) => ({
     user_id: userId,
-    saved_location_id: loc.id,
+    saved_location_id: (loc as { id: string }).id,
     kind: SEVERE_KIND,
     enabled: true,
     updated_at: now,
@@ -64,6 +65,7 @@ export async function syncSevereAlertSubscriptions(
 
   const { data: upserted, error: upsertError } = await supabase
     .from('alert_subscriptions')
+    // @ts-expect-error - supabase-js Database generic mismatch
     .upsert(rows, { onConflict: 'user_id,saved_location_id,kind' })
     .select('id')
 
@@ -121,21 +123,26 @@ export async function fetchEnabledSevereSubscriptions(
   }> = []
 
   for (const row of data ?? []) {
-    const loc = row.saved_locations as {
-      latitude: number
-      longitude: number
-      location_name: string
-      custom_name: string | null
-      city: string
-      state: string | null
-    } | null
+    const loc = (row as {
+      id: string
+      user_id: string
+      saved_location_id: string
+      saved_locations: {
+        latitude: number
+        longitude: number
+        location_name: string
+        custom_name: string | null
+        city: string
+        state: string | null
+      } | null
+    }).saved_locations
 
     if (!loc) continue
 
     rows.push({
-      id: row.id,
-      user_id: row.user_id,
-      saved_location_id: row.saved_location_id,
+      id: (row as { id: string }).id,
+      user_id: (row as { user_id: string }).user_id,
+      saved_location_id: (row as { saved_location_id: string }).saved_location_id,
       latitude: loc.latitude,
       longitude: loc.longitude,
       locationLabel: locationLabel(loc),

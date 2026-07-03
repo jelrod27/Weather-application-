@@ -67,7 +67,7 @@ async function loadMonitorState(
     throw new Error(`Monitor state read failed: ${error.message}`)
   }
 
-  return data?.active_alert_ids ?? []
+  return (data as { active_alert_ids?: string[] } | null)?.active_alert_ids ?? []
 }
 
 async function saveMonitorState(
@@ -81,7 +81,7 @@ async function saveMonitorState(
       subscription_id: subscriptionId,
       active_alert_ids: activeAlertIds,
       updated_at: now,
-    },
+    } as never,
     { onConflict: 'subscription_id' },
   )
 
@@ -106,15 +106,15 @@ async function insertUserAlert(
       subscription_id: input.subscriptionId,
       kind: input.kind,
       payload: input.payload,
-    })
+    } as never)
     .select('id')
     .single()
 
-  if (error || !data?.id) {
+  if (error || !(data as { id?: string } | null)?.id) {
     throw new Error(`user_alerts insert failed: ${error?.message ?? 'missing id'}`)
   }
 
-  return data.id
+  return (data as { id: string }).id
 }
 
 export type SevereMonitorHooks = {

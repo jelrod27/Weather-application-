@@ -37,7 +37,7 @@ export async function tryEnableSevereAlertsForUser(userId: string): Promise<void
     return
   }
 
-  if (!prefs?.notifications_enabled) return
+  if (!prefs || !(prefs as { notifications_enabled: boolean }).notifications_enabled) return
 
   await trySyncSevereAlertSubscriptions(userId, true)
 }

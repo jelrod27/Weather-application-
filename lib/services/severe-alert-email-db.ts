@@ -16,7 +16,7 @@ export async function fetchUserEmailForAlert(
     return null
   }
 
-  const email = data?.email?.trim()
+  const email = (data as { email?: string } | null)?.email?.trim()
   return email || null
 }
 
@@ -26,6 +26,7 @@ export async function markSevereAlertEmailSent(
 ): Promise<void> {
   const { error } = await supabase
     .from('user_alerts')
+    // @ts-expect-error - supabase-js Database generic mismatch
     .update({ email_sent_at: new Date().toISOString() })
     .eq('id', userAlertId)
 

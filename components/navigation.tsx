@@ -26,6 +26,7 @@ import AuthButton from "@/components/auth/auth-button"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import WISBadge from "@/components/wis-badge"
+import AlertBell from "@/components/alerts/alert-bell"
 
 interface NavigationProps {
   weatherLocation?: string;
@@ -176,6 +177,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
           {/* Auth Button + WIS Badge - TOP RIGHT */}
           <div className="flex items-center space-x-3">
             <WISBadge />
+            <AlertBell />
             <AuthButton />
           </div>
         </div>
@@ -194,10 +196,10 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
             </h1>
           </div>
 
-          <WISBadge />
-
-
-          {/* Mobile Menu Button */}
+          <div className="flex items-center gap-2">
+            <WISBadge />
+            <AlertBell />
+          </div>
           <Button
             variant="outline"
             size="icon"
