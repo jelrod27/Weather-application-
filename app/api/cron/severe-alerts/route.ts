@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
 import { deliverSevereAlertAllClearEmail, deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
+import { backfillSevereAlertSubscriptions } from '@/lib/services/severe-alert-subscriptions'
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 
@@ -26,6 +27,8 @@ export async function GET(request: NextRequest) {
 
     let allClearEmailsSent = 0
 
+    const backfill = await backfillSevereAlertSubscriptions(supabase)
+
     const result = await runSevereAlertMonitor(supabase, {
       onNewAlert: async (item) => {
         const emailResult = await deliverSevereAlertEmail(supabase, item)
@@ -46,6 +49,7 @@ export async function GET(request: NextRequest) {
       emailsSkipped,
       emailsFailed,
       allClearEmailsSent,
+      usersSynced: backfill.usersSynced,
       ...result,
     })
   } catch (error) {
