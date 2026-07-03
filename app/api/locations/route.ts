@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { captureError, captureDbError } from '@/lib/error-utils'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
+import { tryEnableSevereAlertsForUser } from '@/lib/services/severe-alert-subscription-sync'
 
 // Reject blank/whitespace coordinates instead of coercing them to 0. Plain
 // z.coerce.number() runs Number(...), which turns '', '   ', null, and false
@@ -153,6 +154,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    await tryEnableSevereAlertsForUser(verifiedUserId)
 
     return NextResponse.json(data)
 

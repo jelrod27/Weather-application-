@@ -1,8 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { cityData as cityMetadata } from '@/lib/city-metadata'
 import { getAllPosts } from '@/lib/blog'
-import deepSkyCatalog from '@/data/deep-sky-catalog.json'
-import type { DeepSkyObject } from '@/lib/stargazer/types'
 import { FEATURED_DETAIL_SLUGS, getAllWeatherSystemSlugs, getEducationDetailHref } from '@/lib/education/entries'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -67,16 +65,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     }))
 
-    const stargazerObjectPages: MetadataRoute.Sitemap = (deepSkyCatalog as DeepSkyObject[]).map(
-      (obj) => ({
-        url: `${baseUrl}/stargazer/objects/${obj.id}`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.6,
-      }),
-    )
-    
-    // Dynamic blog posts
+    // Deep-sky object pages stay indexable via internal links but are omitted
+    // from the sitemap to focus crawl budget on city, education, and tool pages.
+
     let blogPosts: MetadataRoute.Sitemap = []
     try {
       blogPosts = getAllPosts().map(post => ({
@@ -89,7 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       console.error('[sitemap] Failed to load blog posts')
     }
 
-    return [...staticPages, ...educationDetailPages, ...cityPages, ...stargazerObjectPages, ...blogPosts]
+    return [...staticPages, ...educationDetailPages, ...cityPages, ...blogPosts]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return [

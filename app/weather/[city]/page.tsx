@@ -16,6 +16,7 @@ import {
   getNearbyCities,
 } from '@/lib/city-metadata'
 import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
+import { buildCityPageMetadata } from '@/lib/seo/city-page-seo'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -37,39 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
     }
   }
 
-  const pageTitle = `${city.name}, ${city.state} Weather Forecast & Climate Guide | 16 Bit Weather`
-  const description = `${city.name}, ${city.state} weather forecast, climate guide, monthly averages, and best time to visit. Real-time conditions, 7-day outlook, and deep local climate data in retro terminal style.`
-
-  return {
-    title: pageTitle,
-    description,
-    keywords: `${city.name} weather, ${city.name} ${city.state} weather, ${city.name} climate, ${city.name} forecast, ${city.name} temperature, best time to visit ${city.name}, ${city.name} monthly weather, 16 bit weather`,
-    openGraph: {
-      title: pageTitle,
-      description,
-      url: `${BASE_URL}/weather/${citySlug}`,
-      siteName: '16 Bit Weather',
-      images: [
-        {
-          url: `/api/og?title=${encodeURIComponent(city.name + ', ' + city.state)}&subtitle=Weather+Forecast`,
-          width: 1200,
-          height: 630,
-          alt: `${city.name} Weather - 16 Bit Weather Terminal`,
-        },
-      ],
-      locale: 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description,
-      images: [`/api/og?title=${encodeURIComponent(city.name + ', ' + city.state)}&subtitle=Weather+Forecast`],
-    },
-    alternates: {
-      canonical: `${BASE_URL}/weather/${citySlug}`,
-    },
-  }
+  return buildCityPageMetadata(city, citySlug)
 }
 
 interface PageParams {
@@ -101,8 +70,8 @@ export default async function CityWeatherPage({ params }: PageParams) {
   const webPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    name: `${fullLocation} Weather Forecast & Climate Guide`,
-    description: `${fullLocation} weather forecast, climate data, monthly averages, and best time to visit.`,
+    name: `${fullLocation} Climate & Year-Round Weather Guide`,
+    description: `${fullLocation} climate averages, monthly weather patterns, and best time to visit.`,
     url: `${BASE_URL}/weather/${citySlug}`,
     about: {
       '@type': 'Place',

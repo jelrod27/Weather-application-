@@ -230,7 +230,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
               Weather Notifications
             </Label>
             <p className={`text-xs font-mono ${themeClasses.mutedText}`}>
-              Saved for future alert delivery — no emails or push yet
+              Email + in-app alerts for NWS warnings at your saved locations
             </p>
           </div>
           <Switch
