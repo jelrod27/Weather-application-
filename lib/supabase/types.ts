@@ -203,6 +203,84 @@ export interface Database {
           updated_at?: string
         }
       }
+      alert_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          saved_location_id: string
+          kind: 'severe_weather'
+          enabled: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          saved_location_id: string
+          kind: 'severe_weather'
+          enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          saved_location_id?: string
+          kind?: 'severe_weather'
+          enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      alert_monitor_state: {
+        Row: {
+          subscription_id: string
+          active_alert_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          subscription_id: string
+          active_alert_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          subscription_id?: string
+          active_alert_ids?: string[]
+          updated_at?: string
+        }
+      }
+      user_alerts: {
+        Row: {
+          id: string
+          user_id: string
+          subscription_id: string | null
+          kind: 'severe_weather' | 'severe_weather_all_clear'
+          payload: Json
+          email_sent_at: string | null
+          created_at: string
+          read_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription_id?: string | null
+          kind: 'severe_weather' | 'severe_weather_all_clear'
+          payload?: Json
+          email_sent_at?: string | null
+          created_at?: string
+          read_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription_id?: string | null
+          kind?: 'severe_weather' | 'severe_weather_all_clear'
+          payload?: Json
+          email_sent_at?: string | null
+          created_at?: string
+          read_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -238,5 +316,8 @@ export type SavedLocationUpdate = Database['public']['Tables']['saved_locations'
 export type UserPreferences = Database['public']['Tables']['user_preferences']['Row']
 type UserPreferencesInsert = Database['public']['Tables']['user_preferences']['Insert']
 export type UserPreferencesUpdate = Database['public']['Tables']['user_preferences']['Update']
+
+export type AlertSubscription = Database['public']['Tables']['alert_subscriptions']['Row']
+export type UserAlert = Database['public']['Tables']['user_alerts']['Row']
 
 type UserAIMemoryRow = Database['public']['Tables']['user_ai_memory']['Row']
