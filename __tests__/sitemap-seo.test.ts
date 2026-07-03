@@ -75,7 +75,7 @@ describe('Sitemap SEO', () => {
     expect(sitemapPaths).not.toContain('/map')
   })
 
-  it('sitemap should include stargazer hub and deep-sky object pages', async () => {
+  it('sitemap should include stargazer hub but not deep-sky object pages', async () => {
     const { default: sitemap } = await import('../app/sitemap')
     const entries = await sitemap()
     const sitemapPaths = entries.map((e: { url: string }) => {
@@ -83,7 +83,7 @@ describe('Sitemap SEO', () => {
     })
 
     expect(sitemapPaths).toContain('/stargazer')
-    expect(sitemapPaths.some((p) => p.startsWith('/stargazer/objects/'))).toBe(true)
+    expect(sitemapPaths.some((p) => p.startsWith('/stargazer/objects/'))).toBe(false)
   })
 
   it('sitemap should include all shareable education detail guide pages', async () => {
