@@ -66,12 +66,17 @@ export default function AlertBell() {
   }, [open])
 
   async function markRead(ids: string[]) {
-    await fetch('/api/user/alerts', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    })
-    await fetchAlerts()
+    try {
+      await fetch('/api/user/alerts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+    } catch (error) {
+      console.error('[alert-bell] mark read failed', error)
+    } finally {
+      await fetchAlerts()
+    }
   }
 
   if (!isInitialized || !user) return null

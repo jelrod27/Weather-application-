@@ -24,16 +24,16 @@ export async function syncSevereAlertSubscriptions(
   notificationsEnabled: boolean,
 ): Promise<{ upserted: number; disabled: number }> {
   if (!notificationsEnabled) {
-  const { data, error } = await supabase
-    .from('alert_subscriptions')
-    // @ts-expect-error - supabase-js Database generic mismatch
-    .update({ enabled: false, updated_at: new Date().toISOString() })
+    const { data, error } = await supabase
+      .from('alert_subscriptions')
+      // @ts-expect-error - supabase-js Database generic mismatch
+      .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('kind', SEVERE_KIND)
       .select('id')
 
     if (error) {
-      console.error('[severe-alert-subscriptions] disable failed', error.message)
+      console.error('[severe-alert-subscriptions] disable failed', error)
       throw error
     }
 
@@ -46,7 +46,7 @@ export async function syncSevereAlertSubscriptions(
     .eq('user_id', userId)
 
   if (locError) {
-    console.error('[severe-alert-subscriptions] locations fetch failed', locError.message)
+    console.error('[severe-alert-subscriptions] locations fetch failed', locError)
     throw locError
   }
 
@@ -70,7 +70,7 @@ export async function syncSevereAlertSubscriptions(
     .select('id')
 
   if (upsertError) {
-    console.error('[severe-alert-subscriptions] upsert failed', upsertError.message)
+    console.error('[severe-alert-subscriptions] upsert failed', upsertError)
     throw upsertError
   }
 
@@ -110,7 +110,8 @@ export async function fetchEnabledSevereSubscriptions(
     .eq('enabled', true)
 
   if (error) {
-    throw new Error(`Failed to load subscriptions: ${error.message}`)
+    console.error('[severe-alert-subscriptions] fetch enabled failed', error)
+    return []
   }
 
   const rows: Array<{

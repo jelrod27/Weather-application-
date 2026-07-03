@@ -27,4 +27,24 @@ describe('severe-alert-email-service', () => {
     expect(text).toContain('/warnings?alert=')
     expect(html).toContain('Open warnings command center')
   })
+
+  it('escapes HTML in email body fields', () => {
+    const { html } = buildSevereAlertEmailContent({
+      alertId: 'urn:oid:1',
+      event: 'Tornado Warning <script>',
+      headline: 'Headline & "quotes"',
+      severity: 'Extreme',
+      urgency: 'Immediate',
+      expires: '2026-07-04T01:00:00Z',
+      areaDesc: 'Denver <b>CO</b>',
+      locationName: 'Denver, CO',
+      savedLocationId: 'loc-1',
+      warningsHref: '/warnings',
+    })
+
+    expect(html).not.toContain('<script>')
+    expect(html).toContain('&lt;script&gt;')
+    expect(html).toContain('&amp;')
+    expect(html).toContain('&quot;quotes&quot;')
+  })
 })

@@ -178,6 +178,8 @@ export async function runSevereAlertMonitor(
       const newAlerts = currentAlerts.filter((a) => !previousSet.has(a.id))
       const clearedIds = previousIds.filter((id) => !currentSet.has(id))
 
+      let syncedIds = [...previousIds]
+
       for (const alert of newAlerts) {
         const payload = buildWarningPayload(subscription, alert)
         const userAlertId = await insertUserAlert(supabase, {
@@ -187,6 +189,8 @@ export async function runSevereAlertMonitor(
           payload,
         })
         result.newAlerts += 1
+        syncedIds.push(alert.id)
+        await saveMonitorState(supabase, subscription.id, syncedIds)
         await hooks.onNewAlert?.({ subscription, alert, userAlertId, payload })
       }
 

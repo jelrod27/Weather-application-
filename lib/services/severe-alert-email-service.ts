@@ -10,6 +10,15 @@ function absoluteWarningsHref(href: string): string {
   return `${BASE_URL}${href.startsWith('/') ? href : `/${href}`}`
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload): {
   subject: string
   text: string
@@ -36,13 +45,13 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   ].join('\n')
 
   const html = `
-    <p><strong>${severeAlertTierLabel(tier)}</strong> — <strong>${payload.event}</strong> for ${payload.locationName}</p>
-    <p>${payload.headline}</p>
+    <p><strong>${escapeHtml(severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
+    <p>${escapeHtml(payload.headline)}</p>
     <ul>
-      <li><strong>Area:</strong> ${payload.areaDesc}</li>
-      <li><strong>Severity:</strong> ${payload.severity}</li>
-      <li><strong>Urgency:</strong> ${payload.urgency}</li>
-      <li><strong>Expires:</strong> ${payload.expires}</li>
+      <li><strong>Area:</strong> ${escapeHtml(payload.areaDesc)}</li>
+      <li><strong>Severity:</strong> ${escapeHtml(payload.severity)}</li>
+      <li><strong>Urgency:</strong> ${escapeHtml(payload.urgency)}</li>
+      <li><strong>Expires:</strong> ${escapeHtml(payload.expires)}</li>
     </ul>
     <p><a href="${warningsUrl}">Open warnings command center</a></p>
     <p style="color:#666;font-size:12px;">
@@ -73,7 +82,7 @@ export function buildSevereAlertAllClearEmailContent(payload: SevereWeatherAllCl
   ].join('\n')
 
   const html = `
-    <p><strong>All clear</strong> for ${payload.locationName}</p>
+    <p><strong>All clear</strong> for ${escapeHtml(payload.locationName)}</p>
     <p>No severe weather alerts are active for this saved location right now.</p>
     <p><a href="${warningsUrl}">Open warnings command center</a></p>
     <p style="color:#666;font-size:12px;">

@@ -31,6 +31,7 @@ export async function markSevereAlertEmailSent(
     .eq('id', userAlertId)
 
   if (error) {
-    console.error('[severe-alert-email] failed to mark sent', userAlertId, error.message)
+    console.error('[severe-alert-email] failed to mark sent', userAlertId, error)
+    throw new Error(`Failed to mark email sent: ${error.message}`)
   }
 }

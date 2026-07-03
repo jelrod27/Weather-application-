@@ -23,11 +23,20 @@ export async function deliverSevereAlertEmail(
   }
 
   const result = await sendSevereAlertEmail({ email, payload: item.payload })
-  if (result.sent) {
-    await markSevereAlertEmailSent(supabase, item.userAlertId)
+  if (!result.sent) {
+    return result
   }
 
-  return result
+  try {
+    await markSevereAlertEmailSent(supabase, item.userAlertId)
+  } catch (error) {
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'Failed to persist email_sent_at',
+    }
+  }
+
+  return { sent: true }
 }
 
 export async function deliverSevereAlertAllClearEmail(
@@ -40,9 +49,18 @@ export async function deliverSevereAlertAllClearEmail(
   }
 
   const result = await sendSevereAlertAllClearEmail({ email, payload: item.payload })
-  if (result.sent) {
-    await markSevereAlertEmailSent(supabase, item.userAlertId)
+  if (!result.sent) {
+    return result
   }
 
-  return result
+  try {
+    await markSevereAlertEmailSent(supabase, item.userAlertId)
+  } catch (error) {
+    return {
+      sent: false,
+      reason: error instanceof Error ? error.message : 'Failed to persist email_sent_at',
+    }
+  }
+
+  return { sent: true }
 }
