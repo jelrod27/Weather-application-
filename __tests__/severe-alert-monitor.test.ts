@@ -40,10 +40,14 @@ function makeSupabaseMock(state: Record<string, string[]>, inserts: unknown[]) {
 
       if (table === 'user_alerts') {
         return {
-          insert: async (row: unknown) => {
-            inserts.push(row)
-            return { error: null }
-          },
+          insert: (row: unknown) => ({
+            select: () => ({
+              single: async () => {
+                inserts.push(row)
+                return { data: { id: `alert-row-${inserts.length}` }, error: null }
+              },
+            }),
+          }),
         }
       }
 

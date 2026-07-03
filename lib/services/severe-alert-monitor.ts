@@ -78,17 +78,23 @@ async function insertUserAlert(
     kind: 'severe_weather'
     payload: SevereWeatherAlertPayload
   },
-): Promise<void> {
-  const { error } = await supabase.from('user_alerts').insert({
-    user_id: input.userId,
-    subscription_id: input.subscriptionId,
-    kind: input.kind,
-    payload: input.payload,
-  })
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('user_alerts')
+    .insert({
+      user_id: input.userId,
+      subscription_id: input.subscriptionId,
+      kind: input.kind,
+      payload: input.payload,
+    })
+    .select('id')
+    .single()
 
-  if (error) {
-    throw new Error(`user_alerts insert failed: ${error.message}`)
+  if (error || !data?.id) {
+    throw new Error(`user_alerts insert failed: ${error?.message ?? 'missing id'}`)
   }
+
+  return data.id
 }
 
 export type SevereMonitorHooks = {
@@ -151,14 +157,14 @@ export async function runSevereAlertMonitor(
 
       for (const alert of newAlerts) {
         const payload = buildWarningPayload(subscription, alert)
-        await insertUserAlert(supabase, {
+        const userAlertId = await insertUserAlert(supabase, {
           userId: subscription.user_id,
           subscriptionId: subscription.id,
           kind: 'severe_weather',
           payload,
         })
         result.newAlerts += 1
-        await hooks.onNewAlert?.({ subscription, alert })
+        await hooks.onNewAlert?.({ subscription, alert, userAlertId, payload })
       }
 
       await saveMonitorState(supabase, subscription.id, currentIds)

@@ -37,6 +37,8 @@ export type MonitorSubscription = {
 export type MonitorNewAlert = {
   subscription: MonitorSubscription
   alert: NWSAlertDetail
+  userAlertId: string
+  payload: SevereWeatherAlertPayload
 }
 
 export type MonitorClearedLocation = {
