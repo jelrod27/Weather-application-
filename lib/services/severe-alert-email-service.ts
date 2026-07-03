@@ -1,5 +1,6 @@
 import { getResendFromConfig } from '@/lib/services/resend-client'
-import type { SevereWeatherAlertPayload } from '@/lib/services/severe-alert-types'
+import type { SevereAlertTier, SevereWeatherAlertPayload } from '@/lib/services/severe-alert-types'
+import { severeAlertTierLabel } from '@/lib/services/severe-alert-classifier'
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.16bitweather.co'
@@ -15,10 +16,12 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   html: string
 } {
   const warningsUrl = absoluteWarningsHref(payload.warningsHref)
-  const subject = `${payload.event} — ${payload.locationName}`
+  const tier: SevereAlertTier = payload.tier ?? 'standard'
+  const tierPrefix = tier === 'critical' ? '[CRITICAL] ' : tier === 'high' ? '[WARNING] ' : ''
+  const subject = `${tierPrefix}${payload.event} — ${payload.locationName}`
 
   const text = [
-    `${payload.event} for ${payload.locationName}`,
+    `${severeAlertTierLabel(tier)} — ${payload.event} for ${payload.locationName}`,
     '',
     payload.headline,
     '',
@@ -33,7 +36,7 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   ].join('\n')
 
   const html = `
-    <p><strong>${payload.event}</strong> for ${payload.locationName}</p>
+    <p><strong>${severeAlertTierLabel(tier)}</strong> — <strong>${payload.event}</strong> for ${payload.locationName}</p>
     <p>${payload.headline}</p>
     <ul>
       <li><strong>Area:</strong> ${payload.areaDesc}</li>

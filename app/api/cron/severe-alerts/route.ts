@@ -22,11 +22,13 @@ export async function GET(request: NextRequest) {
   try {
     let emailsSent = 0
     let emailsFailed = 0
+    let emailsSkipped = 0
 
     const result = await runSevereAlertMonitor(supabase, {
       onNewAlert: async (item) => {
         const emailResult = await deliverSevereAlertEmail(supabase, item)
         if (emailResult.sent) emailsSent += 1
+        else if (emailResult.skipped) emailsSkipped += 1
         else emailsFailed += 1
       },
     })
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
       success: true,
       timestamp: new Date().toISOString(),
       emailsSent,
+      emailsSkipped,
       emailsFailed,
       ...result,
     })

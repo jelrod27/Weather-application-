@@ -5,12 +5,18 @@ import {
   markSevereAlertEmailSent,
 } from '@/lib/services/severe-alert-email-db'
 import { sendSevereAlertEmail } from '@/lib/services/severe-alert-email-service'
+import { shouldEmailSevereAlertTier } from '@/lib/services/severe-alert-classifier'
 import type { MonitorNewAlert } from '@/lib/services/severe-alert-types'
 
 export async function deliverSevereAlertEmail(
   supabase: SupabaseClient<Database>,
   item: MonitorNewAlert,
-): Promise<{ sent: boolean; reason?: string }> {
+): Promise<{ sent: boolean; skipped?: boolean; reason?: string }> {
+  const tier = item.payload.tier ?? 'standard'
+  if (!shouldEmailSevereAlertTier(tier)) {
+    return { sent: false, skipped: true, reason: 'In-app only for standard tier' }
+  }
+
   const email = await fetchUserEmailForAlert(supabase, item.subscription.user_id)
   if (!email) {
     return { sent: false, reason: 'User email not found' }

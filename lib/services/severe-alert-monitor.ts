@@ -3,6 +3,7 @@ import { getHubAlertsHref } from '@/lib/home/hub-links'
 import type { Database } from '@/lib/supabase/types'
 import { fetchActiveAlertsDetail, type NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { filterSevereMonitorAlerts } from '@/lib/services/severe-alert-filter'
+import { classifySevereAlertTier } from '@/lib/services/severe-alert-classifier'
 import { fetchEnabledSevereSubscriptions } from '@/lib/services/severe-alert-subscriptions'
 import type {
   MonitorNewAlert,
@@ -19,6 +20,7 @@ function buildWarningPayload(
   subscription: MonitorSubscription,
   alert: NWSAlertDetail,
 ): SevereWeatherAlertPayload {
+  const tier = classifySevereAlertTier(alert)
   return {
     alertId: alert.id,
     event: alert.event,
@@ -30,6 +32,7 @@ function buildWarningPayload(
     locationName: subscription.locationLabel,
     savedLocationId: subscription.saved_location_id,
     warningsHref: getHubAlertsHref(alert.id),
+    tier,
   }
 }
 
