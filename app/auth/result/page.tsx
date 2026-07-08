@@ -35,7 +35,7 @@ function AuthResultContent() {
         } else if (error) {
             // Redirect to login after showing error
             const timer = setTimeout(() => {
-                router.push(`/auth/login?error=${encodeURIComponent(error)}`)
+                router.push(`/auth?error=${encodeURIComponent(error)}`)
             }, 3000)
 
             return () => clearTimeout(timer)

@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
   redirectTo?: string
 }
 
-export function ProtectedRoute({ children, redirectTo = '/auth/login' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, redirectTo = '/auth' }: ProtectedRouteProps) {
   // Hooks must be called unconditionally at the top
   const { user, loading } = useAuth()
   const router = useRouter()

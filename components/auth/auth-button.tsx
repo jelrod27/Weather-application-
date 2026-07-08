@@ -45,7 +45,7 @@ export default function AuthButton() {
   if (!user) {
     return (
       <Link
-        href="/auth/login"
+        href="/auth"
         className={cn(
           buttonVariants({ variant: "default", size: "default" }),
           "min-w-[80px] font-bold shadow-md shadow-glow-subtle border border-primary/25"

@@ -58,6 +58,28 @@ export const signIn = async ({ email, password, captchaToken }: SignInData): Pro
   }
 }
 
+// Passwordless sign-in: emails a magic link that signs the user in (and
+// creates the account on first use — one flow for sign-in and sign-up).
+// The link goes through /auth/callback (PKCE code exchange) like OAuth does.
+export const signInWithMagicLink = async (
+  email: string,
+  options?: { redirectTo?: string; captchaToken?: string }
+) => {
+  const finalDestination = options?.redirectTo || '/dashboard?welcome=1'
+  const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalDestination)}`
+
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo,
+      shouldCreateUser: true,
+      captchaToken: options?.captchaToken,
+    },
+  })
+
+  return { data, error }
+}
+
 // Sign in with OAuth providers
 export const signInWithProvider = async (
   provider: 'google' | 'github' | 'discord',

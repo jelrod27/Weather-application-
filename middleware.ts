@@ -106,15 +106,19 @@ export async function middleware(request: NextRequest) {
   )
 
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL('/auth/login', request.url)
+    const redirectUrl = new URL('/auth', request.url)
     redirectUrl.searchParams.set('next', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Exact match for the unified /auth page; prefix match for the legacy
+  // login/signup aliases. Deliberately NOT a bare startsWith('/auth') —
+  // that would swallow /auth/callback, /auth/signout, /auth/reset-password,
+  // and /auth/update-password.
   const authRoutes = ['/auth/login', '/auth/signup']
-  const isAuthRoute = authRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  )
+  const isAuthRoute =
+    request.nextUrl.pathname === '/auth' ||
+    authRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
   if (isAuthRoute && user) {
     const next = resolveAuthenticatedAuthRouteRedirect(request.nextUrl.searchParams.get('next'))

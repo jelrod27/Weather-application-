@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
     const safeErrorDescription = sanitizeLogValue(errorDescription)
     console.error('[Auth Callback] OAuth error:', safeError, safeErrorDescription)
     return NextResponse.redirect(
-      `${origin}/auth/login?error=${encodeURIComponent(errorDescription || error)}`,
+      `${origin}/auth?error=${encodeURIComponent(errorDescription || error)}`,
     )
   }
 
   if (!code) {
     console.error('[Auth Callback] No code provided')
-    return NextResponse.redirect(`${origin}/auth/login?error=no_code`)
+    return NextResponse.redirect(`${origin}/auth?error=no_code`)
   }
 
   const cookieStore = await cookies()
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const safeExchangeErrorMessage = sanitizeLogValue(exchangeError.message)
     console.error('[Auth Callback] Exchange error:', safeExchangeErrorMessage)
     return NextResponse.redirect(
-      `${origin}/auth/login?error=${encodeURIComponent(exchangeError.message)}`,
+      `${origin}/auth?error=${encodeURIComponent(exchangeError.message)}`,
     )
   }
 

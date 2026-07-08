@@ -172,7 +172,7 @@ export default function UpdatePasswordPage() {
         {/* Back to Login */}
         <div className="mt-6 text-center">
           <Link
-            href="/auth/login"
+            href="/auth"
             className={`inline-flex items-center space-x-2 text-sm font-mono hover:underline ${themeClasses.accentText}`}
           >
             <ArrowLeft className="w-4 h-4" />

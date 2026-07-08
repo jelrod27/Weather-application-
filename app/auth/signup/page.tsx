@@ -1,11 +1,10 @@
-import AuthForm from '@/components/auth/auth-form'
+import { redirect } from 'next/navigation'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Sign Up | 16-Bit Weather',
-  description: 'Create an account to save locations and customize your weather experience.',
-}
+/**
+ * Legacy route — auth is unified at /auth. Kept as a redirect so old links,
+ * bookmarks, and ?next= params keep working.
+ */
 
 interface SignupPageProps {
   searchParams?: Promise<{ next?: string }>
@@ -13,10 +12,12 @@ interface SignupPageProps {
 
 export default async function SignupPage({ searchParams }: SignupPageProps) {
   const params = searchParams ? await searchParams : {}
-  const next =
-    typeof params.next === 'string' && params.next.length > 0
-      ? validateRedirectPath(params.next)
-      : undefined
+  const query = new URLSearchParams()
+  query.set('mode', 'signup')
 
-  return <AuthForm mode="signup" next={next} />
+  if (typeof params.next === 'string' && params.next.length > 0) {
+    query.set('next', validateRedirectPath(params.next))
+  }
+
+  redirect(`/auth?${query.toString()}`)
 }
