@@ -42,7 +42,12 @@ export const getServerUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error) {
-    console.error('Error getting server user:', error)
+    // "Auth session missing" is the normal state for anonymous visitors —
+    // logging it as an error floods Vercel/Sentry (it was the top runtime
+    // error cluster in production). Only log unexpected auth failures.
+    if (error.name !== 'AuthSessionMissingError') {
+      console.error('[supabase] Error getting server user:', error)
+    }
     return null
   }
 

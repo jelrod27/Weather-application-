@@ -56,6 +56,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  // API routes authenticate themselves (cookie session or Bearer token) and
+  // are never in `protectedRoutes`/`authRoutes` below. Skip the per-request
+  // `getUser()` network round-trip for them — it added latency to every
+  // public API call and logged AuthSessionMissingError noise for anonymous
+  // traffic. Session cookie refresh for browser clients still happens on
+  // page navigations, which always pass through the block below.
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return response
+  }
+
   // TEST MODE: Skip auth checks during E2E (same rules as API routes — see lib/playwright-test-mode.ts)
 
   if (isPlaywrightTestModeRequest(request)) {
