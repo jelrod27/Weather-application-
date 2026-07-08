@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Mail, Lock, User, Globe, Code } from 'lucide-react'
 import { signIn, signUp, signInWithProvider } from '@/lib/supabase/auth'
+import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 
@@ -18,9 +19,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 interface AuthFormProps {
   mode: 'signin' | 'signup'
   initialError?: string
+  /** Validated internal path to return to after auth (from ?next=). */
+  next?: string
 }
 
-export default function AuthForm({ mode, initialError }: AuthFormProps) {
+export default function AuthForm({ mode, initialError, next }: AuthFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -46,8 +49,9 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
         if (error) {
           setError(error.message)
         } else if (user) {
-          // Redirect to dashboard for better UX (consistent with OAuth flow)
-          router.push('/dashboard?welcome=1')
+          // Return the user to where they were (?next=), falling back to the
+          // dashboard — consistent with the OAuth callback flow.
+          router.push(next ? validateRedirectPath(next) : '/dashboard?welcome=1')
           router.refresh()
         }
       } else {
@@ -75,7 +79,10 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
       setLoading(true)
       setError('')
       setSuccess('')
-      const { error } = await signInWithProvider(provider)
+      const { error } = await signInWithProvider(
+        provider,
+        next ? { redirectTo: validateRedirectPath(next) } : undefined
+      )
       if (error) {
         setError(error.message)
       }
@@ -264,7 +271,7 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
           <p className={`text-sm font-mono ${themeClasses.mutedText}`}>
             {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
             <Link
-              href={mode === 'signin' ? '/auth/signup' : '/auth/login'}
+              href={`${mode === 'signin' ? '/auth/signup' : '/auth/login'}${next ? `?next=${encodeURIComponent(next)}` : ''}`}
               className={`font-bold hover:underline ${themeClasses.accentText}`}
             >
               {mode === 'signin' ? 'Sign Up' : 'Sign In'}

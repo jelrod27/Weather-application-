@@ -1,4 +1,5 @@
 import AuthForm from '@/components/auth/auth-form'
+import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,6 +16,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const rawError = params.error
   const initialError =
     typeof rawError === 'string' && rawError.length > 0 ? rawError : undefined
+  const next =
+    typeof params.next === 'string' && params.next.length > 0
+      ? validateRedirectPath(params.next)
+      : undefined
 
-  return <AuthForm mode="signin" initialError={initialError} />
+  return <AuthForm mode="signin" initialError={initialError} next={next} />
 }
