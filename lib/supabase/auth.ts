@@ -13,15 +13,17 @@ export interface SignUpData {
   password: string
   username?: string
   full_name?: string
+  captchaToken?: string
 }
 
 export interface SignInData {
   email: string
   password: string
+  captchaToken?: string
 }
 
 // Sign up new user
-export const signUp = async ({ email, password, username, full_name }: SignUpData): Promise<AuthResponse> => {
+export const signUp = async ({ email, password, username, full_name, captchaToken }: SignUpData): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -29,7 +31,8 @@ export const signUp = async ({ email, password, username, full_name }: SignUpDat
       data: {
         username,
         full_name,
-      }
+      },
+      captchaToken,
     }
   })
 
@@ -40,10 +43,13 @@ export const signUp = async ({ email, password, username, full_name }: SignUpDat
 }
 
 // Sign in existing user
-export const signIn = async ({ email, password }: SignInData): Promise<AuthResponse> => {
+export const signIn = async ({ email, password, captchaToken }: SignInData): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
+    options: {
+      captchaToken,
+    }
   })
 
   return {
@@ -81,9 +87,10 @@ export const signInWithProvider = async (
 // Reset password (used by app/auth/reset-password/page.tsx)
 // The recovery link goes through /auth/callback (PKCE code exchange) and then
 // lands on /auth/update-password, where the user actually sets the new password.
-export const resetPassword = async (email: string) => {
+export const resetPassword = async (email: string, captchaToken?: string) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`
+    redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`,
+    captchaToken,
   })
 
   return { data, error }

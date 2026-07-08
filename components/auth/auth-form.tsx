@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, Mail, Lock, User, Globe, Code } from 'lucide-react'
 import { signIn, signUp, signInWithProvider } from '@/lib/supabase/auth'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
+import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 
@@ -32,6 +33,8 @@ export default function AuthForm({ mode, initialError, next }: AuthFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError ?? '')
   const [success, setSuccess] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const router = useRouter()
   const { theme } = useTheme()
 
@@ -43,9 +46,16 @@ export default function AuthForm({ mode, initialError, next }: AuthFormProps) {
     setError('')
     setSuccess('')
 
+    // Turnstile tokens are single-use — force a fresh challenge for any retry
+    const submittedCaptchaToken = captchaToken ?? undefined
+    if (isTurnstileEnabled()) {
+      setCaptchaToken(null)
+      setCaptchaResetKey((key) => key + 1)
+    }
+
     try {
       if (mode === 'signin') {
-        const { user, error } = await signIn({ email, password })
+        const { user, error } = await signIn({ email, password, captchaToken: submittedCaptchaToken })
         if (error) {
           setError(error.message)
         } else if (user) {
@@ -59,7 +69,8 @@ export default function AuthForm({ mode, initialError, next }: AuthFormProps) {
           email,
           password,
           username: username || undefined,
-          full_name: fullName || undefined
+          full_name: fullName || undefined,
+          captchaToken: submittedCaptchaToken
         })
         if (error) {
           setError(error.message)
@@ -257,9 +268,11 @@ export default function AuthForm({ mode, initialError, next }: AuthFormProps) {
               </div>
             )}
 
+            <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaResetKey} />
+
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isTurnstileEnabled() && !captchaToken)}
               className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
             >
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}

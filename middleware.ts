@@ -14,8 +14,8 @@ import { resolveAuthenticatedAuthRouteRedirect } from '@/lib/auth/middleware-red
  */
 function buildCspHeader(isProd: boolean): string {
   const scriptSrc = isProd
-    ? `script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com https://va.vercel-scripts.com`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://vercel.com https://va.vercel-scripts.com`
+    ? `script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com https://va.vercel-scripts.com https://challenges.cloudflare.com`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://vercel.com https://va.vercel-scripts.com https://challenges.cloudflare.com`
 
   return [
     "default-src 'self'",
@@ -29,7 +29,7 @@ function buildCspHeader(isProd: boolean): string {
     // skeleton never resolves.
     "connect-src 'self' https://api.openweathermap.org https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io https://api.ipgeolocation.io",
     "worker-src 'self' blob:",
-    "frame-src 'self' https://vercel.live",
+    "frame-src 'self' https://vercel.live https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
