@@ -79,10 +79,20 @@ export const signInWithProvider = async (
 
 
 // Reset password (used by app/auth/reset-password/page.tsx)
+// The recovery link goes through /auth/callback (PKCE code exchange) and then
+// lands on /auth/update-password, where the user actually sets the new password.
 export const resetPassword = async (email: string) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`
+    redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`
   })
 
   return { data, error }
+}
+
+// Complete the password-recovery flow (used by app/auth/update-password/page.tsx).
+// Requires an active session, which the recovery-link callback establishes.
+export const updatePassword = async (password: string) => {
+  const { data, error } = await supabase.auth.updateUser({ password })
+
+  return { user: data.user, error }
 }

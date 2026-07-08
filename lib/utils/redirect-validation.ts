@@ -18,6 +18,7 @@ const ALLOWED_REDIRECT_PATHS = [
   '/news',
   '/radar',
   '/education',
+  '/auth/update-password',
   '/',
 ] as const
 
