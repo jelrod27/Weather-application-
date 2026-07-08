@@ -100,7 +100,10 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
 
-  const protectedRoutes = ['/dashboard', '/profile', '/saved-locations']
+  // /dashboard is intentionally NOT protected: anonymous visitors get a
+  // preview state with a sign-in CTA (app/dashboard/page.tsx) instead of a
+  // redirect. Authenticated-only data stays safe behind RLS + API auth.
+  const protectedRoutes = ['/profile', '/saved-locations']
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
