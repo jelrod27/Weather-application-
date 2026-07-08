@@ -24,6 +24,7 @@ import { Loader2 } from 'lucide-react'
 import { ResponsiveContainer } from '@/components/responsive-container'
 import { useLocationContext } from '@/components/location-context'
 import { WeatherDisplay } from '@/components/weather-display'
+import SaveLocationButton from '@/components/weather/save-location-button'
 import { locationInputToSlug } from '@/lib/city-slug'
 import { useHubLocation } from '@/hooks/use-hub-location'
 import dynamic from 'next/dynamic'
@@ -247,6 +248,13 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
           {/* Weather Display - Unified with homepage */}
           {weather && !loading && !error && (
             <div id="live-weather" className="scroll-mt-24">
+              <div className="flex justify-end mb-2">
+                <SaveLocationButton
+                  weather={weather}
+                  cityName={city.name}
+                  state={city.state}
+                />
+              </div>
               <WeatherDisplay
                 weather={weather}
                 theme={theme || 'nord'}
