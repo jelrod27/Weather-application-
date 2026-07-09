@@ -20,8 +20,10 @@ test.describe('Auth flow', () => {
   test('legacy signup route redirects and password form is reachable via more options', async ({ page }) => {
     await page.goto('/auth/signup', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/auth\?mode=signup/, { timeout: 15000 });
-    await page.getByTestId('auth-more-options-toggle').click();
-    await expect(page.getByRole('button', { name: /^sign up$/i })).toBeVisible({ timeout: 15000 });
+    // ?mode=signup opens the password form so Sign Up is immediately available
+    await expect(page.getByTestId('password-form')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: /^sign up$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /continue with github/i })).toBeVisible();
   });
 
   test('auth page displays OAuth callback errors from query string', async ({ page }) => {

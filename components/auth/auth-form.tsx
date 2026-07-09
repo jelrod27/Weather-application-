@@ -28,8 +28,10 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
   // Google (75%+ of sign-ins) and magic link are the primary paths; the
   // password form and GitHub live behind "More options". Magic link handles
   // both sign-in and sign-up, so mode only matters for the password form.
+  // Deep links to ?mode=signup (and legacy /auth/signup) open the password
+  // form so the Sign Up CTA is immediately reachable.
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(initialMode === 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

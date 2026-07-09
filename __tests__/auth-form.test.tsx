@@ -75,8 +75,8 @@ describe('AuthForm', () => {
 
     render(<AuthForm mode="signup" />)
 
-    // Password form lives behind the "More options" toggle now
-    fireEvent.click(screen.getByTestId('auth-more-options-toggle'))
+    // ?mode=signup opens the password form immediately
+    expect(screen.getByTestId('password-form')).toBeInTheDocument()
 
     fireEvent.change(screen.getByPlaceholderText(/enter your email/i), {
       target: { value: 'new@example.com' },
