@@ -11,8 +11,6 @@ export interface AuthResponse {
 export interface SignUpData {
   email: string
   password: string
-  username?: string
-  full_name?: string
   captchaToken?: string
 }
 
@@ -22,16 +20,13 @@ export interface SignInData {
   captchaToken?: string
 }
 
-// Sign up new user
-export const signUp = async ({ email, password, username, full_name, captchaToken }: SignUpData): Promise<AuthResponse> => {
+// Sign up new user. Profile fields (username / full name) are collected later
+// on /profile — keep the first-run form to email + password only.
+export const signUp = async ({ email, password, captchaToken }: SignUpData): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        username,
-        full_name,
-      },
       captchaToken,
     }
   })
@@ -82,7 +77,7 @@ export const signInWithMagicLink = async (
 
 // Sign in with OAuth providers
 export const signInWithProvider = async (
-  provider: 'google' | 'github' | 'discord',
+  provider: 'google' | 'github',
   options?: { redirectTo?: string }
 ) => {
   // Build callback URL with optional next parameter

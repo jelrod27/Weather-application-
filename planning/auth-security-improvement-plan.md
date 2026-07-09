@@ -83,15 +83,16 @@ GitHub OAuth has zero sign-ups in your data. Fold it under "More options" or rem
 4. Thread `next` end-to-end: login page → `AuthForm` → email sign-in redirect + `signInWithProvider({ redirectTo })`; make `ProtectedRoute` preserve the attempted path (F6).
 5. Origin check on `/auth/signout` (F8). De-duplicate headers in `vercel.json` (F9).
 
-### Phase 2 — Auth UX overhaul (one PR, ~1-2 days)
+### Phase 2 — Auth UX overhaul (shipped on `auth/security-and-ux-overhaul`)
 1. **Reorder the form:** Google button alone above the fold; "Continue with email" (magic link via `signInWithOtp`) below; password + GitHub under "More options."
-2. **Unify `/auth`** — login/signup already share `AuthForm` via a `mode` prop; collapse to one route.
+2. **Unify `/auth`** — login/signup redirect to one route.
 3. **Consolidate `useAuth`** on `lib/auth/auth-context.tsx`; retire the `lib/supabase/hooks.ts` variant (F7).
+4. **Slim password signup** — email + password only; username/full name stay on `/profile`.
 
-### Phase 3 — Conversion features (after Phase 2)
-1. Add "Save to dashboard" buttons on public weather pages (none exist today — the auth-gate modal from the earlier plan has nothing to gate until this ships).
-2. Auth-gate modal using the consolidated `useAuth` + `next` plumbing.
-3. Dashboard preview for logged-out users (requires relaxing both `middleware.ts` protectedRoutes and `<ProtectedRoute>`).
+### Phase 3 — Conversion features (shipped on `auth/security-and-ux-overhaul`)
+1. "Save to dashboard" on public weather pages.
+2. Auth-gate modal using consolidated `useAuth` + `next` plumbing.
+3. Dashboard preview for logged-out users (middleware + `<ProtectedRoute>` relaxed).
 
 ### Phase 4 — Later / watchlist
 - Passkeys when Supabase support goes GA.

@@ -87,12 +87,18 @@ describe('AuthForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /^sign up$/i }))
 
     await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalled()
+      expect(mockSignUp).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        password: 'longenough123',
+        captchaToken: undefined,
+      })
     })
 
     expect(screen.getByTestId('auth-success-alert')).toBeInTheDocument()
     expect(screen.queryByTestId('auth-error-alert')).not.toBeInTheDocument()
     expect(screen.getByTestId('auth-success-alert')).toHaveTextContent(/check your email/i)
+    expect(screen.queryByPlaceholderText(/full name/i)).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/username/i)).not.toBeInTheDocument()
   })
 
   it('shows a destructive alert for sign-in errors', async () => {

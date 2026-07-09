@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Mail, Lock, User, Globe, Code, ChevronDown, ChevronUp } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, Globe, Code, ChevronDown, ChevronUp } from 'lucide-react'
 import { signIn, signUp, signInWithProvider, signInWithMagicLink } from '@/lib/supabase/auth'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
@@ -32,8 +32,6 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError ?? '')
@@ -103,12 +101,10 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
           router.refresh()
         }
       } else {
-        const { user, error } = await signUp({
+        const { error } = await signUp({
           email,
           password,
-          username: username || undefined,
-          full_name: fullName || undefined,
-          captchaToken: submittedCaptchaToken
+          captchaToken: submittedCaptchaToken,
         })
         if (error) {
           setError(error.message)
@@ -238,42 +234,6 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
           ) : (
             /* More options: password form */
             <form onSubmit={handlePasswordSubmit} className="space-y-4" data-testid="password-form">
-              {mode === 'signup' && (
-                <>
-                  <div className="space-y-2">
-                    <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                      Full Name (Optional)
-                    </Label>
-                    <div className="relative">
-                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                      <Input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                      Username (Optional)
-                    </Label>
-                    <div className="relative">
-                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                      <Input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                        placeholder="Choose a username"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
               {emailInput}
 
               <div className="space-y-2">
