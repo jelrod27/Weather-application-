@@ -114,7 +114,7 @@ export function useThemePreview() {
   // Upgrade to premium (redirect to signup)
   const upgradeAccount = () => {
     clearTimers()
-    router.push('/auth/signup')
+    router.push('/auth?mode=signup')
   }
 
   // Cleanup on unmount

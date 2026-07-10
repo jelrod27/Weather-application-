@@ -1,8 +1,9 @@
 import { test, expect } from './fixtures';
-import { stubWeatherApis } from '../fixtures/utils';
+import { stubHomeHubApis, stubWeatherApis } from '../fixtures/utils';
 
 test.beforeEach(async ({ page }) => {
   await stubWeatherApis(page);
+  await stubHomeHubApis(page);
   await page.goto('/');
 
   // Force a deterministic baseline: seeded cache + no rate limit.

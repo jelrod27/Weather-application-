@@ -14,8 +14,8 @@ import { resolveAuthenticatedAuthRouteRedirect } from '@/lib/auth/middleware-red
  */
 function buildCspHeader(isProd: boolean): string {
   const scriptSrc = isProd
-    ? `script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com https://va.vercel-scripts.com`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://vercel.com https://va.vercel-scripts.com`
+    ? `script-src 'self' 'unsafe-inline' https://vercel.live https://vercel.com https://va.vercel-scripts.com https://challenges.cloudflare.com`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://vercel.com https://va.vercel-scripts.com https://challenges.cloudflare.com`
 
   return [
     "default-src 'self'",
@@ -29,7 +29,7 @@ function buildCspHeader(isProd: boolean): string {
     // skeleton never resolves.
     "connect-src 'self' https://api.openweathermap.org https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io https://api.ipgeolocation.io",
     "worker-src 'self' blob:",
-    "frame-src 'self' https://vercel.live",
+    "frame-src 'self' https://vercel.live https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -54,6 +54,16 @@ export async function middleware(request: NextRequest) {
   // Legacy URL — redirect before Playwright test-mode bypass so E2E and prod behave the same
   if (request.nextUrl.pathname.startsWith('/settings')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // API routes authenticate themselves (cookie session or Bearer token) and
+  // are never in `protectedRoutes`/`authRoutes` below. Skip the per-request
+  // `getUser()` network round-trip for them — it added latency to every
+  // public API call and logged AuthSessionMissingError noise for anonymous
+  // traffic. Session cookie refresh for browser clients still happens on
+  // page navigations, which always pass through the block below.
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return response
   }
 
   // TEST MODE: Skip auth checks during E2E (same rules as API routes — see lib/playwright-test-mode.ts)
@@ -90,22 +100,32 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
 
-  const protectedRoutes = ['/dashboard', '/profile', '/saved-locations']
+  // /dashboard is intentionally NOT protected: anonymous visitors get a
+  // preview state with a sign-in CTA (app/dashboard/page.tsx) instead of a
+  // redirect. Authenticated-only data stays safe behind RLS + API auth.
+  const protectedRoutes = ['/profile', '/saved-locations']
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
 
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL('/auth/login', request.url)
+    const redirectUrl = new URL('/auth', request.url)
     redirectUrl.searchParams.set('next', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Exact match for the unified /auth page; prefix match for the legacy
+  // login/signup aliases. Deliberately NOT a bare startsWith('/auth') —
+  // that would swallow /auth/callback, /auth/signout, /auth/reset-password,
+  // and /auth/update-password.
   const authRoutes = ['/auth/login', '/auth/signup']
-  const isAuthRoute = authRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  )
+  const isAuthRoute =
+    request.nextUrl.pathname === '/auth' ||
+    authRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
+  // Auth-route redirect is UX (skip login when already signed in), not an
+  // authorization gate. Destination is allowlisted via validateRedirectPath.
+  // codeql[js/user-controlled-bypass]: pathname selects auth UX routes only; redirect target is allowlisted
   if (isAuthRoute && user) {
     const next = resolveAuthenticatedAuthRouteRedirect(request.nextUrl.searchParams.get('next'))
     return NextResponse.redirect(new URL(next, request.url))

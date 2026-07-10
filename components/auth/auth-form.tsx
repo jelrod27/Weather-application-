@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Mail, Lock, User, Globe, Code } from 'lucide-react'
-import { signIn, signUp, signInWithProvider } from '@/lib/supabase/auth'
+import { Eye, EyeOff, Mail, Lock, Globe, Code, ChevronDown, ChevronUp } from 'lucide-react'
+import { signIn, signUp, signInWithProvider, signInWithMagicLink } from '@/lib/supabase/auth'
+import { validateRedirectPath } from '@/lib/utils/redirect-validation'
+import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 
@@ -18,44 +20,93 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 interface AuthFormProps {
   mode: 'signin' | 'signup'
   initialError?: string
+  /** Validated internal path to return to after auth (from ?next=). */
+  next?: string
 }
 
-export default function AuthForm({ mode, initialError }: AuthFormProps) {
+export default function AuthForm({ mode: initialMode, initialError, next }: AuthFormProps) {
+  // Google (75%+ of sign-ins) and magic link are the primary paths; the
+  // password form and GitHub live behind "More options". Magic link handles
+  // both sign-in and sign-up, so mode only matters for the password form.
+  // Deep links to ?mode=signup (and legacy /auth/signup) open the password
+  // form so the Sign Up CTA is immediately reachable.
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
+  const [showPasswordForm, setShowPasswordForm] = useState(initialMode === 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError ?? '')
   const [success, setSuccess] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const router = useRouter()
   const { theme } = useTheme()
 
   const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validatedNext = next ? validateRedirectPath(next) : undefined
+
+  // Turnstile tokens are single-use — grab the current token and force a
+  // fresh challenge so retries don't submit a consumed token.
+  const consumeCaptchaToken = (): string | undefined => {
+    const token = captchaToken ?? undefined
+    if (isTurnstileEnabled()) {
+      setCaptchaToken(null)
+      setCaptchaResetKey((key) => key + 1)
+    }
+    return token
+  }
+
+  const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     setSuccess('')
 
+    const submittedCaptchaToken = consumeCaptchaToken()
+
+    try {
+      const { error } = await signInWithMagicLink(email, {
+        redirectTo: validatedNext,
+        captchaToken: submittedCaptchaToken,
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess('Check your email for a sign-in link. It signs you in on this device and creates your account if you are new.')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    const submittedCaptchaToken = consumeCaptchaToken()
+
     try {
       if (mode === 'signin') {
-        const { user, error } = await signIn({ email, password })
+        const { user, error } = await signIn({ email, password, captchaToken: submittedCaptchaToken })
         if (error) {
           setError(error.message)
         } else if (user) {
-          // Redirect to dashboard for better UX (consistent with OAuth flow)
-          router.push('/dashboard?welcome=1')
+          // Return the user to where they were (?next=), falling back to the
+          // dashboard — consistent with the OAuth callback flow.
+          router.push(validatedNext ?? '/dashboard?welcome=1')
           router.refresh()
         }
       } else {
-        const { user, error } = await signUp({
+        const { error } = await signUp({
           email,
           password,
-          username: username || undefined,
-          full_name: fullName || undefined
+          captchaToken: submittedCaptchaToken,
         })
         if (error) {
           setError(error.message)
@@ -75,7 +126,10 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
       setLoading(true)
       setError('')
       setSuccess('')
-      const { error } = await signInWithProvider(provider)
+      const { error } = await signInWithProvider(
+        provider,
+        validatedNext ? { redirectTo: validatedNext } : undefined
+      )
       if (error) {
         setError(error.message)
       }
@@ -86,6 +140,25 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
     }
   }
 
+  const emailInput = (
+    <div className="space-y-2">
+      <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
+        Email Address
+      </Label>
+      <div className="relative">
+        <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
+        <Input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
+          placeholder="Enter your email"
+        />
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className={`w-full max-w-md container-primary ${themeClasses.background}`}>
@@ -95,13 +168,10 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
           </div>
           <div>
             <CardTitle className={`text-2xl font-bold uppercase tracking-wider font-mono ${themeClasses.text}`}>
-              {mode === 'signin' ? 'Sign In' : 'Sign Up'}
+              Sign In
             </CardTitle>
             <CardDescription className={`font-mono mt-2 ${themeClasses.mutedText}`}>
-              {mode === 'signin'
-                ? 'Access your weather preferences and saved locations'
-                : 'Create your account to save locations and customize your experience'
-              }
+              Save locations and customize your weather experience. New here? Same buttons — your account is created automatically.
             </CardDescription>
           </div>
         </CardHeader>
@@ -122,28 +192,16 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
             </Alert>
           )}
 
-          {/* OAuth Buttons */}
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={() => handleOAuthSignIn('google')}
-              disabled={loading}
-              className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Continue with Google
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => handleOAuthSignIn('github')}
-              disabled={loading}
-              className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
-            >
-              <Code className="w-4 h-4 mr-2" />
-              Continue with GitHub
-            </Button>
-          </div>
+          {/* Primary: Google OAuth */}
+          <Button
+            onClick={() => handleOAuthSignIn('google')}
+            disabled={loading}
+            data-testid="auth-google-button"
+            className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            Continue with Google
+          </Button>
 
           {/* Divider */}
           <div className="relative">
@@ -157,118 +215,128 @@ export default function AuthForm({ mode, initialError }: AuthFormProps) {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <>
-                <div className="space-y-2">
-                  <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                    Full Name (Optional)
-                  </Label>
-                  <div className="relative">
-                    <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                    <Input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                </div>
+          {!showPasswordForm ? (
+            /* Default email path: passwordless magic link */
+            <form onSubmit={handleMagicLink} className="space-y-4" data-testid="magic-link-form">
+              {emailInput}
 
-                <div className="space-y-2">
-                  <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                    Username (Optional)
-                  </Label>
-                  <div className="relative">
-                    <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                    <Input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                      placeholder="Choose a username"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+              <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaResetKey} />
 
-            <div className="space-y-2">
-              <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                Email Address
-              </Label>
-              <div className="relative">
-                <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                <Input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                  placeholder="Enter your email"
-                />
+              <Button
+                type="submit"
+                disabled={loading || (isTurnstileEnabled() && !captchaToken)}
+                data-testid="magic-link-submit"
+                variant="outline"
+                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {loading ? 'Loading...' : 'Email Me a Sign-In Link'}
+              </Button>
+            </form>
+          ) : (
+            /* More options: password form */
+            <form onSubmit={handlePasswordSubmit} className="space-y-4" data-testid="password-form">
+              {emailInput}
+
+              <div className="space-y-2">
+                <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`pl-10 pr-12 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
+                    placeholder="Enter your password"
+                    minLength={mode === 'signup' ? 10 : undefined}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute right-0 top-0 h-full px-3 hover:bg-transparent`}
+                  >
+                    {showPassword ? <EyeOff className={`w-4 h-4 ${themeClasses.mutedText}`} /> : <Eye className={`w-4 h-4 ${themeClasses.mutedText}`} />}
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`pl-10 pr-12 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
-                  placeholder="Enter your password"
-                  minLength={6}
-                />
-                <Button
+              {mode === 'signin' && (
+                <div className="text-right">
+                  <Link
+                    href="/auth/reset-password"
+                    className={`text-xs font-mono hover:underline ${themeClasses.accentText}`}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
+
+              <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaResetKey} />
+
+              <Button
+                type="submit"
+                disabled={loading || (isTurnstileEnabled() && !captchaToken)}
+                className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
+              >
+                {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
+              </Button>
+
+              <p className={`text-sm font-mono text-center ${themeClasses.mutedText}`}>
+                {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-0 top-0 h-full px-3 hover:bg-transparent`}
+                  onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                  className={`font-bold hover:underline ${themeClasses.accentText}`}
                 >
-                  {showPassword ? <EyeOff className={`w-4 h-4 ${themeClasses.mutedText}`} /> : <Eye className={`w-4 h-4 ${themeClasses.mutedText}`} />}
-                </Button>
-              </div>
-            </div>
+                  {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
+            </form>
+          )}
 
-            {mode === 'signin' && (
-              <div className="text-right">
-                <Link
-                  href="/auth/reset-password"
-                  className={`text-xs font-mono hover:underline ${themeClasses.accentText}`}
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
+          {/* More options toggle: GitHub + password */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setShowPasswordForm(!showPasswordForm)}
+              data-testid="auth-more-options-toggle"
+              className={`w-full inline-flex items-center justify-center gap-1 text-xs font-mono uppercase tracking-wider hover:underline ${themeClasses.mutedText}`}
             >
-              {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
-            </Button>
-          </form>
+              {showPasswordForm ? (
+                <>
+                  <ChevronUp className="w-3 h-3" />
+                  Back to sign-in link
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  More options (password, GitHub)
+                </>
+              )}
+            </button>
+
+            {showPasswordForm && (
+              <Button
+                variant="outline"
+                onClick={() => handleOAuthSignIn('github')}
+                disabled={loading}
+                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
+              >
+                <Code className="w-4 h-4 mr-2" />
+                Continue with GitHub
+              </Button>
+            )}
+          </div>
         </CardContent>
 
         <CardFooter className="justify-center">
-          <p className={`text-sm font-mono ${themeClasses.mutedText}`}>
-            {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
-            <Link
-              href={mode === 'signin' ? '/auth/signup' : '/auth/login'}
-              className={`font-bold hover:underline ${themeClasses.accentText}`}
-            >
-              {mode === 'signin' ? 'Sign Up' : 'Sign In'}
-            </Link>
+          <p className={`text-xs font-mono text-center ${themeClasses.mutedText}`}>
+            One account for saved locations, themes, and severe weather alerts.
           </p>
         </CardFooter>
       </Card>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './auth-context'
 
 interface ProtectedRouteProps {
@@ -9,10 +9,11 @@ interface ProtectedRouteProps {
   redirectTo?: string
 }
 
-export function ProtectedRoute({ children, redirectTo = '/auth/login' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, redirectTo = '/auth' }: ProtectedRouteProps) {
   // Hooks must be called unconditionally at the top
   const { user, loading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   // The previous Playwright test-mode bypass that rendered children
   // unconditionally lived here. Removed in Phase 4 cleanup (Phase 1 M2):
@@ -22,9 +23,15 @@ export function ProtectedRoute({ children, redirectTo = '/auth/login' }: Protect
   // sessions seeded by Playwright fixtures, not a render-layer bypass.
   useEffect(() => {
     if (!loading && !user) {
-      router.push(redirectTo)
+      // Preserve the attempted path so auth returns the user here afterwards
+      // (mirrors the ?next= behavior of the middleware redirect).
+      const target =
+        pathname && pathname !== '/'
+          ? `${redirectTo}?next=${encodeURIComponent(pathname)}`
+          : redirectTo
+      router.push(target)
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading, router, redirectTo, pathname])
 
   if (loading) {
     return (

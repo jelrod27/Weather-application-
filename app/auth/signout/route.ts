@@ -3,6 +3,20 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
+    // CSRF guard: this route is cookie-authenticated, so reject cross-site
+    // POSTs (logout CSRF). Browsers send an Origin header on cross-origin
+    // form/fetch POSTs; same-origin requests either match or omit it.
+    const origin = request.headers.get('origin')
+    if (origin) {
+        try {
+            if (new URL(origin).host !== new URL(request.url).host) {
+                return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
+            }
+        } catch {
+            return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
+        }
+    }
+
     const cookieStore = await cookies()
 
     const supabase = createServerClient(

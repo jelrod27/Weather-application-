@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ProtectedRoute, useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth'
+import DashboardPreview from '@/components/dashboard/dashboard-preview'
 import { useSavedLocations } from '@/lib/supabase/hooks'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
@@ -17,18 +18,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { isOnboardingDismissed, getWelcomeModalSessionKey } from '@/lib/dashboard/onboarding-state'
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  // Logged-out visitors see a preview with a sign-in CTA instead of being
+  // redirected away (the old ProtectedRoute behavior).
+  if (!user) {
+    return <DashboardPreview />
+  }
+
   return (
-    <ProtectedRoute>
-      <Suspense
-        fallback={
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        }
-      >
-        <DashboardContent />
-      </Suspense>
-    </ProtectedRoute>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   )
 }
 

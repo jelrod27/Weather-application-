@@ -11,25 +11,23 @@ export interface AuthResponse {
 export interface SignUpData {
   email: string
   password: string
-  username?: string
-  full_name?: string
+  captchaToken?: string
 }
 
 export interface SignInData {
   email: string
   password: string
+  captchaToken?: string
 }
 
-// Sign up new user
-export const signUp = async ({ email, password, username, full_name }: SignUpData): Promise<AuthResponse> => {
+// Sign up new user. Profile fields (username / full name) are collected later
+// on /profile — keep the first-run form to email + password only.
+export const signUp = async ({ email, password, captchaToken }: SignUpData): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        username,
-        full_name,
-      }
+      captchaToken,
     }
   })
 
@@ -40,10 +38,13 @@ export const signUp = async ({ email, password, username, full_name }: SignUpDat
 }
 
 // Sign in existing user
-export const signIn = async ({ email, password }: SignInData): Promise<AuthResponse> => {
+export const signIn = async ({ email, password, captchaToken }: SignInData): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
+    options: {
+      captchaToken,
+    }
   })
 
   return {
@@ -52,9 +53,31 @@ export const signIn = async ({ email, password }: SignInData): Promise<AuthRespo
   }
 }
 
+// Passwordless sign-in: emails a magic link that signs the user in (and
+// creates the account on first use — one flow for sign-in and sign-up).
+// The link goes through /auth/callback (PKCE code exchange) like OAuth does.
+export const signInWithMagicLink = async (
+  email: string,
+  options?: { redirectTo?: string; captchaToken?: string }
+) => {
+  const finalDestination = options?.redirectTo || '/dashboard?welcome=1'
+  const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalDestination)}`
+
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo,
+      shouldCreateUser: true,
+      captchaToken: options?.captchaToken,
+    },
+  })
+
+  return { data, error }
+}
+
 // Sign in with OAuth providers
 export const signInWithProvider = async (
-  provider: 'google' | 'github' | 'discord',
+  provider: 'google' | 'github',
   options?: { redirectTo?: string }
 ) => {
   // Build callback URL with optional next parameter
@@ -79,10 +102,21 @@ export const signInWithProvider = async (
 
 
 // Reset password (used by app/auth/reset-password/page.tsx)
-export const resetPassword = async (email: string) => {
+// The recovery link goes through /auth/callback (PKCE code exchange) and then
+// lands on /auth/update-password, where the user actually sets the new password.
+export const resetPassword = async (email: string, captchaToken?: string) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`
+    redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`,
+    captchaToken,
   })
 
   return { data, error }
+}
+
+// Complete the password-recovery flow (used by app/auth/update-password/page.tsx).
+// Requires an active session, which the recovery-link callback establishes.
+export const updatePassword = async (password: string): Promise<AuthResponse> => {
+  const { data, error } = await supabase.auth.updateUser({ password })
+
+  return { user: data.user, error }
 }

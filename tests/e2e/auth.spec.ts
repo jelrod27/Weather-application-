@@ -10,18 +10,23 @@ test.describe('Auth flow', () => {
     await setupStableApp(page);
   });
 
-  test('login page loads and shows sign-in form', async ({ page }) => {
+  test('legacy login route redirects to unified auth page with Google and magic link', async ({ page }) => {
     await page.goto('/auth/login', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('button', { name: /sign in/i }).first()).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(/continue with google/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/auth(\?|$)/, { timeout: 15000 });
+    await expect(page.getByText(/continue with google/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('magic-link-submit')).toBeVisible();
   });
 
-  test('signup page loads', async ({ page }) => {
+  test('legacy signup route redirects and password form is reachable via more options', async ({ page }) => {
     await page.goto('/auth/signup', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('button', { name: /sign up/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth\?mode=signup/, { timeout: 15000 });
+    // ?mode=signup opens the password form so Sign Up is immediately available
+    await expect(page.getByTestId('password-form')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: /^sign up$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /continue with github/i })).toBeVisible();
   });
 
-  test('login page displays OAuth callback errors from query string', async ({ page }) => {
+  test('auth page displays OAuth callback errors from query string', async ({ page }) => {
     await page.goto('/auth/login?error=access_denied', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('auth-error-alert')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('auth-error-alert')).toContainText(/access_denied/i);

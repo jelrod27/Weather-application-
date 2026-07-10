@@ -6,12 +6,15 @@ import { Mail, ArrowLeft } from 'lucide-react'
 import { resetPassword } from '@/lib/supabase/auth'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const { theme } = useTheme()
 
   const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
@@ -22,8 +25,15 @@ export default function ResetPasswordPage() {
     setError('')
     setMessage('')
 
+    // Turnstile tokens are single-use — force a fresh challenge for any retry
+    const submittedCaptchaToken = captchaToken ?? undefined
+    if (isTurnstileEnabled()) {
+      setCaptchaToken(null)
+      setCaptchaResetKey((key) => key + 1)
+    }
+
     try {
-      const { error } = await resetPassword(email)
+      const { error } = await resetPassword(email, submittedCaptchaToken)
       if (error) {
         setError(error.message)
       } else {
@@ -84,9 +94,11 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
+          <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaResetKey} />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (isTurnstileEnabled() && !captchaToken)}
             className={`w-full px-4 py-3 border-2 text-sm font-mono font-bold uppercase tracking-wider transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.accentBg} ${themeClasses.borderColor} text-black ${themeClasses.glow}`}
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
@@ -96,7 +108,7 @@ export default function ResetPasswordPage() {
         {/* Back to Login */}
         <div className="mt-6 text-center">
           <Link
-            href="/auth/login"
+            href="/auth"
             className={`inline-flex items-center space-x-2 text-sm font-mono hover:underline ${themeClasses.accentText}`}
           >
             <ArrowLeft className="w-4 h-4" />

@@ -88,7 +88,7 @@ export default function StormReportForm({
       <div className={cn('rounded-lg border border-border bg-card/50 p-4 font-mono text-sm', className)}>
         <p className="text-muted-foreground mb-2">Sign in to submit a ground-truth observation.</p>
         <Button asChild size="sm" variant="secondary">
-          <Link href="/auth/login">Log in</Link>
+          <Link href="/auth">Log in</Link>
         </Button>
       </div>
     )
