@@ -6,7 +6,7 @@ import { MapPin, Palette, Siren, Settings } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import AuthGateModal from '@/components/auth/auth-gate-modal'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTheme } from '@/components/theme-provider'
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 

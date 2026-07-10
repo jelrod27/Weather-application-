@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * Cloudflare Turnstile CAPTCHA widget.
@@ -22,6 +22,7 @@ declare global {
 }
 
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+const SCRIPT_LOAD_TIMEOUT_MS = 10_000
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
@@ -36,37 +37,67 @@ interface TurnstileWidgetProps {
   resetKey?: number
 }
 
+function ensureScript(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Turnstile requires a browser environment'))
+  }
+  if (window.turnstile) {
+    return Promise.resolve()
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    let settled = false
+    const settle = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeoutId)
+      fn()
+    }
+
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`)
+    if (!script) {
+      script = document.createElement('script')
+      script.src = SCRIPT_SRC
+      script.async = true
+      document.head.appendChild(script)
+    }
+
+    const onLoad = () => settle(() => resolve())
+    const onError = () =>
+      settle(() => {
+        script?.remove()
+        reject(new Error('Failed to load Turnstile script'))
+      })
+
+    script.addEventListener('load', onLoad, { once: true })
+    script.addEventListener('error', onError, { once: true })
+
+    const timeoutId = window.setTimeout(() => {
+      settle(() => {
+        script?.remove()
+        reject(new Error('Timed out loading Turnstile script'))
+      })
+    }, SCRIPT_LOAD_TIMEOUT_MS)
+
+    // Script may already be loaded (or failed) before listeners attached.
+    if (window.turnstile) {
+      settle(() => resolve())
+    }
+  })
+}
+
 export default function TurnstileWidget({ onToken, resetKey = 0 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const onTokenRef = useRef(onToken)
   onTokenRef.current = onToken
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isTurnstileEnabled() || !containerRef.current) return
 
     let cancelled = false
-
-    const ensureScript = () =>
-      new Promise<void>((resolve, reject) => {
-        if (window.turnstile) {
-          resolve()
-          return
-        }
-        let script = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`)
-        if (!script) {
-          script = document.createElement('script')
-          script.src = SCRIPT_SRC
-          script.async = true
-          document.head.appendChild(script)
-        }
-        script.addEventListener('load', () => resolve(), { once: true })
-        script.addEventListener(
-          'error',
-          () => reject(new Error('Failed to load Turnstile script')),
-          { once: true },
-        )
-      })
+    setLoadError(null)
 
     ensureScript()
       .then(() => {
@@ -82,6 +113,11 @@ export default function TurnstileWidget({ onToken, resetKey = 0 }: TurnstileWidg
       .catch((err) => {
         console.error('[turnstile]', err)
         onTokenRef.current(null)
+        if (!cancelled) {
+          setLoadError(
+            'Security check failed to load. Disable ad blockers for this site, or refresh and try again.',
+          )
+        }
       })
 
     return () => {
@@ -97,5 +133,14 @@ export default function TurnstileWidget({ onToken, resetKey = 0 }: TurnstileWidg
     return null
   }
 
-  return <div ref={containerRef} className="flex justify-center" data-testid="turnstile-widget" />
+  return (
+    <div className="space-y-2">
+      <div ref={containerRef} className="flex justify-center" data-testid="turnstile-widget" />
+      {loadError && (
+        <p className="text-center text-xs font-mono text-red-500" data-testid="turnstile-load-error" role="alert">
+          {loadError}
+        </p>
+      )}
+    </div>
+  )
 }

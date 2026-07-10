@@ -123,6 +123,9 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === '/auth' ||
     authRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
+  // Auth-route redirect is UX (skip login when already signed in), not an
+  // authorization gate. Destination is allowlisted via validateRedirectPath.
+  // codeql[js/user-controlled-bypass]: pathname selects auth UX routes only; redirect target is allowlisted
   if (isAuthRoute && user) {
     const next = resolveAuthenticatedAuthRouteRedirect(request.nextUrl.searchParams.get('next'))
     return NextResponse.redirect(new URL(next, request.url))

@@ -28,9 +28,16 @@ export default function UpdatePasswordPage() {
     let cancelled = false
 
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!cancelled) {
-        setHasSession(!!session)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!cancelled) {
+          setHasSession(!!session)
+        }
+      } catch (err) {
+        console.error('[update-password]', err)
+        if (!cancelled) {
+          setHasSession(false)
+        }
       }
     }
 
@@ -70,6 +77,7 @@ export default function UpdatePasswordPage() {
         }, 1500)
       }
     } catch (err) {
+      console.error('[update-password]', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)

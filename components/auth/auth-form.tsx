@@ -251,7 +251,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
                     onChange={(e) => setPassword(e.target.value)}
                     className={`pl-10 pr-12 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
                     placeholder="Enter your password"
-                    minLength={10}
+                    minLength={mode === 'signup' ? 10 : undefined}
                   />
                   <Button
                     type="button"

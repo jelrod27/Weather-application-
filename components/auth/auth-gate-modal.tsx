@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Globe, Mail } from 'lucide-react'
 import { signInWithProvider, signInWithMagicLink } from '@/lib/supabase/auth'
@@ -45,6 +45,17 @@ export default function AuthGateModal({
   const [success, setSuccess] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaResetKey, setCaptchaResetKey] = useState(0)
+
+  useEffect(() => {
+    if (!open) {
+      setEmail('')
+      setError('')
+      setSuccess('')
+      setLoading(false)
+      setCaptchaToken(null)
+      setCaptchaResetKey((key) => key + 1)
+    }
+  }, [open])
 
   const validatedNext = next ? validateRedirectPath(next) : undefined
 

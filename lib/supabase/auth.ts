@@ -115,7 +115,7 @@ export const resetPassword = async (email: string, captchaToken?: string) => {
 
 // Complete the password-recovery flow (used by app/auth/update-password/page.tsx).
 // Requires an active session, which the recovery-link callback establishes.
-export const updatePassword = async (password: string) => {
+export const updatePassword = async (password: string): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.updateUser({ password })
 
   return { user: data.user, error }
