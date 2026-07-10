@@ -10,7 +10,7 @@ tags:
   - science
   - ocean-currents
   - marine
-heroImage: https://www.nhc.noaa.gov/xgtwo/two_atl_7d0.png
+heroImage: https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/figure01.gif
 readTime: 5
 cadence: wednesday_topic
 opener_hash: 3a60fb23
@@ -30,12 +30,8 @@ similarity_judge: claude-sonnet-4-6
 model_used: claude-sonnet-4-6
 images_used:
   - enso-sst-anomaly
-  - nhc-atlantic-tropical-outlook
-  - nhc-epacific-tropical-outlook
 image_audit:
   - "id=enso-sst-anomaly; lane=tropical; anchor=without effectively undercutting its own fuel supply.; tags=ocean_currents,tropical; caption=NOAA Climate Prediction Center sea surface temperature anomaly map."
-  - "id=nhc-atlantic-tropical-outlook; lane=tropical; anchor=keeping the basin subdued.; tags=tropical,marine; caption=National Hurricane Center 7-day Tropical Weather Outlook for the Atlantic basin."
-  - "id=nhc-epacific-tropical-outlook; lane=tropical; anchor=what the wind speed alone would imply.; tags=tropical,marine; caption=National Hurricane Center 7-day Tropical Weather Outlook for the eastern Pacific basin."
 spotlight_active: null
 generation_retries: 0
 word_count: 946
@@ -66,17 +62,11 @@ Sitting behind all three of this year's western Pacific Category 5 storms is a s
 
 The MJO has been locked in an anomalously persistent active phase over the western Pacific since late July. That persistence is unusual; the oscillation typically propagates through a full cycle in four to eight weeks. When it stalls, the favorable window for storm development extends well beyond what seasonal forecasters predicted. Bavi formed inside that window. So did the two storms that preceded it.
 
-The Atlantic and eastern Pacific have been comparatively quiet, but the NHC is tracking disturbances in both basins that could develop if the MJO's active envelope eventually shifts eastward — which current model guidance suggests may happen in September. That shift would not guarantee Atlantic activity, but it would remove one of the primary suppressants currently keeping the basin subdued.
-
-![National Hurricane Center 7-day Tropical Weather Outlook for the Atlantic basin.](https://www.nhc.noaa.gov/xgtwo/two_atl_7d0.png)
-*NOAA / National Hurricane Center*
+The Atlantic has been comparatively quiet — a contrast that underscores how basin-asymmetric this season has been. If the MJO's active envelope eventually shifts eastward, which current model guidance suggests may happen in September, that would remove one of the primary suppressants currently keeping the Atlantic subdued.
 
 ## Storm Surge Over Flat Reef Platforms
 
 One detail specific to Guam and the CNMI that gets less attention than wind speed: the island platforms are fringed by shallow reef shelves that can amplify storm surge in ways that open-ocean bathymetry does not. When a typhoon's onshore flow pushes water across a broad, nearly flat reef shelf, the surge can stack faster and higher than the same wind speed would produce against a steeply sloping seafloor. Bavi's track brought its northeast eyewall — statistically the most intense quadrant for a westward-moving system in the northern hemisphere — directly over Tinian and the southern tip of Saipan. Post-storm surveys will likely show surge values that exceed what the wind speed alone would imply.
-
-![National Hurricane Center 7-day Tropical Weather Outlook for the eastern Pacific basin.](https://www.nhc.noaa.gov/xgtwo/two_pac_7d0.png)
-*NOAA / National Hurricane Center*
 
 That physics applies anywhere a major cyclone crosses a shallow coastal shelf at close to a right angle, including parts of the Gulf Coast, the Bay of Bengal, and the South China Sea. The storm's wind speed is the headline number, but the seafloor geometry is often what determines whether a surge is survivable.
 
