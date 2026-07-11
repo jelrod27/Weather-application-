@@ -136,7 +136,9 @@ function buildHeader(input: PublishInput, datePrefix: string): { title: string; 
     // Keyword-led slug: topic + date (not first-sentence theme prose).
     const slug = slugify(`${input.topicSlug}-${datePrefix}`);
     const themeSnippet = input.theme.slice(0, 50).replace(/[.!?]+$/, '');
-    const title = `${input.topicTitle}: ${themeSnippet}`.slice(0, 70);
+    const title = input.theme.length > 0
+      ? `${input.topicTitle}: ${themeSnippet}`.slice(0, 70)
+      : input.topicTitle.slice(0, 70);
     const summary = input.theme.length > 0 ? input.theme.slice(0, 155) : input.topicTitle;
     return { title, summary, slug };
   }

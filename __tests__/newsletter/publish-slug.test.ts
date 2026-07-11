@@ -35,6 +35,21 @@ describe('newsletter publish slug/title SEO', () => {
     expect(header.title.length).toBeLessThanOrEqual(70)
   })
 
+  it('falls back to topic title when Wednesday theme is empty', () => {
+    const input: PublishWednesdayInput = {
+      ...baseWednesday,
+      topicSlug: 'volcanoes',
+      topicTitle: 'Volcanoes & Atmospheric Impact',
+      theme: '',
+    }
+
+    const header = buildPublishHeaderForTest(input, '2026-06-06')
+
+    expect(header.slug).toBe('volcanoes-2026-06-06')
+    expect(header.title).toBe('Volcanoes & Atmospheric Impact')
+    expect(header.summary).toBe('Volcanoes & Atmospheric Impact')
+  })
+
   it('dates Sunday weekly titles for clearer SERP snippets', () => {
     const input: PublishSundayInput = {
       cadence: 'sunday_rearview',

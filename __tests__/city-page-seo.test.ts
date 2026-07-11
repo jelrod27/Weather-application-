@@ -28,7 +28,7 @@ describe('city-page-seo', () => {
     expect(JSON.stringify(metadata.openGraph?.images)).toContain('/api/og?')
     expect(metadata.keywords).toContain('Boston climate')
     expect(metadata.keywords).toContain('climate in Boston')
-    expect(metadata.description).toContain('nor')
+    expect(metadata.description).toContain("nor'easter")
   })
 
   it('lists ten priority city slugs from GSC traffic', () => {

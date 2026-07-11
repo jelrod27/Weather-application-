@@ -117,7 +117,7 @@ export default function SpaceWeatherClient() {
       });
       setError(null);
     } catch (err) {
-      console.error('Error fetching space weather data:', err);
+      console.error('[SpaceWeatherClient]', err);
       setError('Unable to load space weather data. Please try again later.');
     } finally {
       setIsLoading(false);
