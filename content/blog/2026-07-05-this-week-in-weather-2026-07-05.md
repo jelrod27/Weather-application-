@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-07-05
-title: This Week in Weather
+title: "This Week in Weather — July 5, 2026: Wind Event & X1.3 Flare"
 date: 2026-07-05T20:42:29.853Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "2,576 wind reports, July 4–5 tornado warnings, an X1.3 solar flare, and the southern heat ridge for the week ahead."
 tags:
   - weekly-recap
   - forecast

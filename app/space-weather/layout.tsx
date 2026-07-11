@@ -1,23 +1,34 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Space Weather Monitor - Solar Activity & Aurora | 16 Bit Weather',
-  description: 'Real-time space weather monitoring. Track solar activity, Kp index, aurora forecast, solar wind conditions, and geomagnetic storm alerts.',
-  keywords: 'space weather, solar activity, aurora forecast, Kp index, solar wind, geomagnetic storm, solar flares',
+  title: 'Space Weather Monitor — Solar Flare Tracker & Live Kp Index | 16 Bit Weather',
+  description:
+    'Free space weather monitor and solar flare tracker. Live Kp index, solar wind, geomagnetic storm alerts, sunspots, X-ray flux, and aurora forecast from NOAA SWPC.',
+  keywords:
+    'space weather monitor, solar flare monitor, space weather tracker, solar flare tracker, Kp index live, solar activity today, solar wind, geomagnetic storm tracker, aurora forecast, solar storm monitor',
   openGraph: {
-    title: 'Space Weather Monitor',
-    description: 'Real-time solar activity, Kp index, and aurora forecast.',
+    title: 'Space Weather Monitor — Solar Flare Tracker & Kp Index',
+    description:
+      'Live solar flare monitor with Kp index, solar wind, geomagnetic storm alerts, and aurora forecast.',
     url: 'https://www.16bitweather.co/space-weather',
     siteName: '16 Bit Weather',
-    images: [{ url: '/api/og?title=Space+Weather+Monitor&subtitle=Solar+Activity+%2B+Aurora+Forecast', width: 1200, height: 630, alt: 'Space Weather Monitor' }],
+    images: [
+      {
+        url: '/api/og?title=Space+Weather+Monitor&subtitle=Solar+Flare+Tracker+%2B+Live+Kp',
+        width: 1200,
+        height: 630,
+        alt: 'Space Weather Monitor',
+      },
+    ],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Space Weather Monitor',
-    description: 'Real-time solar activity, Kp index, and aurora forecast.',
-    images: ['/api/og?title=Space+Weather+Monitor&subtitle=Solar+Activity+%2B+Aurora+Forecast'],
+    title: 'Space Weather Monitor — Solar Flare Tracker & Kp Index',
+    description:
+      'Live solar flare monitor with Kp index, solar wind, and aurora forecast.',
+    images: ['/api/og?title=Space+Weather+Monitor&subtitle=Solar+Flare+Tracker+%2B+Live+Kp'],
   },
   alternates: { canonical: 'https://www.16bitweather.co/space-weather' },
 }

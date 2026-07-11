@@ -155,13 +155,17 @@ export const cityData: { [key: string]: {
     name: 'Atlanta',
     state: 'GA',
     searchTerm: 'Atlanta, GA',
-    title: 'Atlanta Weather Forecast - 16 Bit Weather',
-    description: 'Current weather conditions and 5-day forecast for Atlanta, GA. Real-time weather data for the Southeast hub with severe storm tracking.',
+    title: 'Atlanta Georgia Climate & Summer Weather Guide - 16 Bit Weather',
+    description:
+      'Atlanta climate and summer weather: humid subtropical seasons, monthly averages, severe storm risk, and the best time to visit.',
     content: {
-      intro: 'Atlanta has a humid subtropical climate with hot summers and mild winters. Located in the Piedmont region of Georgia, the city experiences four seasons with occasional severe weather.',
-      climate: 'Summer highs reach the upper 80s-90s°F (31-33°C) with high humidity. Winters are mild with occasional cold snaps. The city receives about 50 inches of rain annually.',
-      patterns: 'Atlanta experiences severe thunderstorms and occasional tornadoes in spring. Ice storms can impact the city in winter. Summer brings frequent afternoon thunderstorms.'
-    }
+      intro:
+        'Atlanta has a humid subtropical climate with hot, stormy summers and mild winters. Sitting about 1,050 feet above sea level in Georgia\'s Piedmont, the city gets four seasons — and frequent severe thunderstorms in spring.',
+      climate:
+        'Summer highs reach the upper 80s–90s°F with high humidity and near-daily afternoon storms. Winters are mild (lows often in the 30s°F) but ice storms can shut the city down. Annual rainfall is about 50 inches — more than Seattle.',
+      patterns:
+        'Dixie Alley severe weather peaks in spring. Fall is the most comfortable season. Snow is rare (~2 inches/year), but even light ice events paralyze roads. Hurricane remnants occasionally bring heavy rain in late summer and fall.',
+    },
   },
   'denver-co': {
     name: 'Denver',
@@ -203,13 +207,17 @@ export const cityData: { [key: string]: {
     name: 'Boston',
     state: 'MA',
     searchTerm: 'Boston, MA',
-    title: 'Boston Weather Forecast - 16 Bit Weather',
-    description: 'Current weather conditions and 5-day forecast for Boston, MA. Real-time New England weather with nor\'easter and snowstorm tracking.',
+    title: 'Boston MA Climate & Year-Round Weather Guide - 16 Bit Weather',
+    description:
+      'Boston climate and year-round weather: monthly averages, nor\'easter winters, humid summers, and the best time to visit New England.',
     content: {
-      intro: 'Boston has a humid continental climate with cold winters and warm summers. The city\'s coastal location influences its weather, bringing ocean breezes and nor\'easters.',
-      climate: 'Summers are warm with highs in the 80s°F (27-29°C). Winters are cold with temperatures often below freezing and significant snowfall. Annual precipitation is about 44 inches.',
-      patterns: 'Boston experiences nor\'easters bringing heavy snow in winter and occasional hurricanes in fall. The city sees rapid weather changes due to its New England location.'
-    }
+      intro:
+        'Boston has a humid continental climate with cold, snowy winters and warm, humid summers. The Atlantic shoreline shapes the city\'s weather — ocean moderation, sea breezes, and powerful nor\'easters that define New England winters.',
+      climate:
+        'Year-round, Boston averages about 44 inches of precipitation. Summer highs typically sit in the upper 70s to low 80s°F with sticky humidity; winter highs hover in the upper 30s°F with frequent freezes. Snow averages near 48 inches per year, but individual winters swing from under a foot to more than 100 inches.',
+      patterns:
+        'Nor\'easters are the signature winter hazard, often tracking just offshore and dumping heavy snow on the metro. Spring arrives late; fall foliage peaks in mid-to-late October. Rapid air-mass changes are common when Canadian cold meets Atlantic moisture.',
+    },
   },
   'las-vegas-nv': {
     name: 'Las Vegas',
@@ -901,6 +909,8 @@ export const cityEnrichments: Record<string, CitySeoEnrichment> = {
       'Atlanta averages about 50 inches of rain per year, more than Seattle.',
     ],
     faqs: [
+      { question: 'What is Atlanta Georgia climate like?', answer: 'Atlanta has a humid subtropical climate (Köppen Cfa): hot humid summers, mild winters, about 50 inches of rain per year, and a lively severe-weather season in spring.' },
+      { question: 'What is Atlanta summer weather like?', answer: 'Summers are hot and humid with highs in the upper 80s°F, dewpoints often in the low 70s°F, and frequent afternoon thunderstorms from June through August.' },
       { question: 'When is the best time to visit Atlanta?', answer: 'Mid-September through early November offers the best weather — mild, dry, sunny days in the 70s°F with spectacular fall color in the nearby mountains. Spring (March-May) is also beautiful with blooming trees.' },
       { question: 'Does Atlanta get tornadoes?', answer: 'Yes. Atlanta sits in "Dixie Alley" and sees several tornado warnings each spring and occasionally in fall. The 2008 Atlanta tornado caused damage to downtown — rare for a major city.' },
       { question: 'How much snow does Atlanta get?', answer: 'Very little — about 2 inches per year on average. The city is poorly equipped for snow and ice, and even small amounts can shut down highways. January and February are the most likely months.' },
@@ -973,10 +983,13 @@ export const cityEnrichments: Record<string, CitySeoEnrichment> = {
       'The 2015 winter broke Boston\'s all-time snowfall record with 110.6 inches, including 94 inches in February alone.',
     ],
     faqs: [
+      { question: 'What is the climate in Boston Massachusetts?', answer: 'Boston has a humid continental climate (Köppen Dfa): cold snowy winters, warm humid summers, and about 44 inches of precipitation a year. The Atlantic coast moderates extremes but fuels nor\'easters.' },
+      { question: 'What is Boston weather like year round?', answer: 'Winters average highs in the upper 30s°F with frequent snow; springs are cool and late; summers reach the 80s°F with humidity; fall is crisp with peak foliage in mid-to-late October. Expect rapid day-to-day changes.' },
+      { question: 'How cold does Boston get in winter?', answer: 'Average winter highs are in the upper 30s°F with lows in the 20s°F. Arctic outbreaks can push temperatures below zero, and coastal wind chills feel much colder during nor\'easters.' },
+      { question: 'How cold is Boston compared with inland New England?', answer: 'Boston is usually a few degrees milder than inland Massachusetts because of the ocean, but wind and coastal flooding can make storms feel harsher along the shore.' },
       { question: 'When is the best time to visit Boston?', answer: 'Late September through mid-October delivers Boston\'s best weather — mild days in the 60s-70s°F, cool nights, sunshine, and peak fall foliage. Late spring (May-June) is also beautiful.' },
-      { question: 'How cold does Boston get in winter?', answer: 'Average winter highs are in the upper 30s°F with lows in the 20s°F. Arctic outbreaks can push temperatures below zero, and wind chills along the coast can feel much colder.' },
-      { question: 'What is a nor\'easter?', answer: 'A powerful storm that tracks up the US East Coast, pulling moisture from the Atlantic and slamming New England with heavy snow, high winds, and coastal flooding. Boston can get multiple nor\'easters per winter.' },
       { question: 'How much snow does Boston get?', answer: 'About 48 inches per year on average, but variability is extreme — some winters see 15 inches, others over 100. The historic 2014-15 winter dropped 110 inches in three months.' },
+      { question: 'What is a nor\'easter?', answer: 'A powerful storm that tracks up the US East Coast, pulling moisture from the Atlantic and slamming New England with heavy snow, high winds, and coastal flooding. Boston can get multiple nor\'easters per winter.' },
     ],
   },
   'las-vegas-nv': {

@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-06-14
-title: This Week in Weather
+title: "This Week in Weather — June 14, 2026: 205 Tornado Warnings"
 date: 2026-06-14T20:48:00.887Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "Rearview of 205 tornado warnings, Plains-to-Ohio Valley severe weather, and the western ridge shaping the week ahead."
 tags:
   - weekly-recap
   - forecast

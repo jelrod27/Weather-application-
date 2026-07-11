@@ -25,7 +25,7 @@
 - Shareable phenomenon guides: https://www.16bitweather.co/education/phenomena/{slug} (e.g. /education/phenomena/thundersnow)
 - Live radar: https://www.16bitweather.co/radar
 - Stargazer / tonight's sky forecast: https://www.16bitweather.co/stargazer
-- Space weather: https://www.16bitweather.co/space-weather
+- Space weather monitor / solar flare tracker: https://www.16bitweather.co/space-weather
 - Blog (weekly weather dispatches): https://www.16bitweather.co/blog
 - About: https://www.16bitweather.co/about
 

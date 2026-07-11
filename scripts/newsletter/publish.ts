@@ -133,16 +133,50 @@ function formatImageAuditEntry(entry: ImageAuditEntry): string {
 
 function buildHeader(input: PublishInput, datePrefix: string): { title: string; summary: string; slug: string } {
   if (input.cadence === 'wednesday_topic') {
-    const themeSnippet = input.theme.slice(0, 60).replace(/[.!?]+$/, '');
-    const slug = slugify(`${input.topicSlug}-${themeSnippet}`);
-    const title = `${input.topicTitle}: ${input.theme}`.slice(0, 110);
-    const summary = input.theme.length > 0 ? input.theme : input.topicTitle;
+    // Keyword-led slug: topic + date (not first-sentence theme prose).
+    const slug = slugify(`${input.topicSlug}-${datePrefix}`);
+    const themeSnippet = input.theme.slice(0, 50).replace(/[.!?]+$/, '');
+    const title = input.theme.length > 0
+      ? `${input.topicTitle}: ${themeSnippet}`.slice(0, 70)
+      : input.topicTitle.slice(0, 70);
+    const summary = input.theme.length > 0 ? input.theme.slice(0, 155) : input.topicTitle;
     return { title, summary, slug };
   }
+  const dateLabel = formatDateLabel(datePrefix);
   const slug = `this-week-in-weather-${datePrefix}`;
-  const title = `This Week in Weather`;
-  const summary = `Rearview of the past 7 days and the pattern shaping the week ahead.`;
+  const title = `This Week in Weather — ${dateLabel}`;
+  const summary = `Severe weather rearview, storm reports, and the forecast pattern for the week of ${dateLabel}.`;
   return { title, summary, slug };
+}
+
+/** Exported for unit tests — keep slug generation stable and SEO-safe. */
+export function buildPublishHeaderForTest(
+  input: PublishInput,
+  datePrefix: string,
+): { title: string; summary: string; slug: string } {
+  return buildHeader(input, datePrefix);
+}
+
+function formatDateLabel(datePrefix: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePrefix);
+  if (!match) return datePrefix;
+  const [, y, m, d] = match;
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  const monthName = months[Number(m) - 1] ?? m;
+  return `${monthName} ${Number(d)}, ${y}`;
 }
 
 function buildTags(input: PublishInput): string[] {
