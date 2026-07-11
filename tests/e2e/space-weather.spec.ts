@@ -22,6 +22,7 @@ test.beforeEach(async ({ page }) => {
 test('renders the Space Weather shell', async ({ page }) => {
   await expect(page).toHaveTitle(/Space Weather/i);
   await expect(
-    page.getByRole('heading', { level: 1, name: /SPACE WEATHER/i }).first()
+    page.getByRole('heading', { level: 1, name: /Space Weather Monitor/i }).first()
   ).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId('space-weather-seo-content')).toBeVisible();
 });

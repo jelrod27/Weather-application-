@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-06-07
-title: This Week in Weather
+title: "This Week in Weather — June 7, 2026: Alabama Leads Storm Reports"
 date: 2026-06-07T19:58:42.901Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "Alabama-led severe week, multi-state tornado sequence, M9.7 solar flare, and the Rockies ridge shaping the forecast."
 tags:
   - weekly-recap
   - forecast

@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-06-28
-title: This Week in Weather
+title: "This Week in Weather — June 28, 2026: Heat Ridge & 169 Tornado Warnings"
 date: 2026-06-28T23:39:00.839Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "169 tornado warnings, Northern Plains supercells, and a locked southern heat ridge heading into early July."
 tags:
   - weekly-recap
   - forecast

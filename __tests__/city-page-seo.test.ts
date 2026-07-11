@@ -16,9 +16,9 @@ describe('city-page-seo', () => {
   })
 
   it('includes climate and year-round language in descriptions', () => {
-    const description = buildCityPageDescription(boston)
-    expect(description).toContain('climate averages')
-    expect(description).toContain('monthly weather')
+    const description = buildCityPageDescription(boston, 'boston-ma')
+    expect(description).toContain('Boston MA climate')
+    expect(description).toContain('year-round')
     expect(description).toContain('best time to visit')
   })
 
@@ -27,6 +27,8 @@ describe('city-page-seo', () => {
     expect(metadata.alternates?.canonical).toBe('https://www.16bitweather.co/weather/boston-ma')
     expect(JSON.stringify(metadata.openGraph?.images)).toContain('/api/og?')
     expect(metadata.keywords).toContain('Boston climate')
+    expect(metadata.keywords).toContain('climate in Boston')
+    expect(metadata.description).toContain('nor')
   })
 
   it('lists ten priority city slugs from GSC traffic', () => {
