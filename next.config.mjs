@@ -148,6 +148,11 @@ const nextConfig = {
         destination: '/warnings',
         permanent: true,
       },
+      {
+        source: '/extremes',
+        destination: '/education',
+        permanent: true,
+      },
     ]
   },
 

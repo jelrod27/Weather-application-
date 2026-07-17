@@ -10,7 +10,7 @@
 'use client';
 
 import React from 'react';
-import { Cloud, Zap, BookOpen, BookMarked, Thermometer, Satellite } from 'lucide-react';
+import { Cloud, Zap, BookOpen, BookMarked, Satellite } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
@@ -36,13 +36,6 @@ export default function LearnPage() {
       title: 'Weather Systems',
       description: 'Analyze the atmospheric dynamics of 16 major storm types, complete with historical case studies and threat levels.',
       itemCount: 16
-    },
-    {
-      href: '/extremes',
-      icon: Thermometer,
-      title: 'Global Extremes',
-      description: 'Live monitoring of the hottest and coldest places on Earth. Track real-time temperature champions.',
-      itemCount: undefined
     },
     {
       href: '/fun-facts',

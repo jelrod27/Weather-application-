@@ -1,4 +1,4 @@
-import { parseOptionalLatLonQuery } from '@/lib/extremes/parse-query-coords'
+import { parseOptionalLatLonQuery } from '@/lib/parse-query-coords'
 
 describe('parseOptionalLatLonQuery', () => {
   it('returns null when either param is null', () => {

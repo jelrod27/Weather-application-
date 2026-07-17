@@ -30,9 +30,8 @@ The site targets learners, hobbyists, and weather enthusiasts who want accurate 
 - **Travel weather**: Interstate corridor driving conditions with hazard scoring
 - **Tropical tracker**: NHC outlooks and Atlantic satellite context
 - **Aviation weather**: SIGMETs, AIRMETs, turbulence maps, and flight conditions terminal
-- **Education**: Hub at `/education` — cloud atlas, weather systems, phenomena, extremes, glossary, and shareable detail guides
+- **Education**: Hub at `/education` — cloud atlas, weather systems, phenomena, glossary, and shareable detail guides
 - **Interactive radar**: Global RainViewer tiles with severe overlays and shareable URL state
-- **Global extremes**: Hot and cold location tracking
 - **Custom themes**: **Six** retro themes with persistence for signed-in users
 - **User accounts**: Saved locations and preferences via Supabase
 - **News and feeds**: Multi-source RSS including earth science and space categories

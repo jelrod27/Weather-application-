@@ -68,7 +68,7 @@ E2E (Playwright) and Lighthouse CI run in GitHub Actions
 - **Space Weather**: `api/space-weather/{kp-index,aurora,coronagraph,enlil,flares,alerts,solar-wind,magnetometer,plasma,proton-flux,sdo-image,xray-flux,sunspots,scales}`
 - **News**: `api/news/rss` (keyless RSS/Atom aggregation)
 - **Radar**: `api/weather/{noaa-wms,iowa-nexrad,iowa-nexrad-tiles,radar}`
-- **Other**: `api/{stargazer,travel,extremes,gfs-image,earth-sciences,storm-reports,locations,user,dashboard-weather,og,cron}`
+- **Other**: `api/{stargazer,travel,gfs-image,earth-sciences,storm-reports,locations,user,dashboard-weather,og,cron}`
 
 ### Key Directories
 
@@ -108,7 +108,7 @@ E2E (Playwright) and Lighthouse CI run in GitHub Actions
 ### External Services
 
 - **Open-Meteo** - Primary weather data, forecasts, air quality (keyless)
-- **OpenWeatherMap** - Legacy/fallback endpoints (pollen, UV, precipitation history, extremes)
+- **OpenWeatherMap** - Legacy/fallback endpoints (UV, precipitation history)
 - **Supabase** - PostgreSQL database, authentication
 - **NOAA MRMS** - High-resolution US radar via WMS (nowcoast.noaa.gov)
 - **USGS** - Earthquake data

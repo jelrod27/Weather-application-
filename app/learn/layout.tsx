@@ -65,7 +65,7 @@ const learnSchema = {
       position: 3,
       name: 'Global Extremes',
       description: 'Track hottest and coldest places on Earth',
-      url: 'https://www.16bitweather.co/extremes',
+      url: 'https://www.16bitweather.co/education',
     },
     {
       '@type': 'ListItem',
