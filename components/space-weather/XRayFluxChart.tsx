@@ -18,19 +18,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface XRayFluxData {
   current: {
-    shortWave: number; // 0.05-0.4 nm (W/m²)
-    longWave: number; // 0.1-0.8 nm (W/m²)
-    classification: string; // A, B, C, M, X
-    subClass: number; // 1.0-9.9
-    timestamp: string;
+    shortWave?: number; // 0.05-0.4 nm (W/m²)
+    longWave?: number; // 0.1-0.8 nm (W/m²)
+    classification?: string; // A, B, C, M, X
+    subClass?: number; // 1.0-9.9
+    timestamp?: string;
+    /** Fields from /api/space-weather/xray-flux */
+    flux?: number;
+    flareClass?: string;
+    classNumber?: string;
   };
-  peak24h: {
+  peak24h?: {
     classification: string;
     subClass: number;
     timestamp: string;
   } | null;
-  background: string;
-  trend: 'increasing' | 'decreasing' | 'stable';
+  peakLast24h?: {
+    flux: number;
+    flareClass: string;
+    timeTag: string;
+  } | null;
+  background?: string;
+  trend?: 'increasing' | 'decreasing' | 'stable';
 }
 
 interface XRayFluxChartProps {

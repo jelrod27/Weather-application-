@@ -76,8 +76,14 @@ export default function CurrentConditions({
   const windSpeed = solarWind?.current?.speed ?? 0;
   const bz = solarWind?.current?.bz ?? 0;
   const bzColor = getBzColor(bz);
-  const classification = xrayFlux?.current?.classification ?? 'A';
-  const subClass = xrayFlux?.current?.subClass ?? 0;
+  const classification =
+    xrayFlux?.current?.flareClass
+    ?? xrayFlux?.current?.classification
+    ?? 'A';
+  const subClass = xrayFlux?.current?.subClass
+    ?? (xrayFlux?.current?.classNumber
+      ? parseFloat(xrayFlux.current.classNumber.replace(/^[A-Z]/i, '')) || 0
+      : 0);
   const sunspotCount = sunspots?.current?.sunspotNumber ?? 0;
   const cyclePhase = sunspots?.solarCycle?.phase ?? 'unknown';
   const viewLatitude = auroraForecast?.viewline?.latitude;

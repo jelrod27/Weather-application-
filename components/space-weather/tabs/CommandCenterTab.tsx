@@ -136,7 +136,10 @@ export default function CommandCenterTab({
               </div>
               <div className={cn('text-center p-3 container-nested')}>
                 <div className="text-2xl font-bold font-mono text-purple-500">
-                  {xrayFlux?.current?.classification ?? '--'}
+                  {xrayFlux?.current?.classNumber
+                    ?? xrayFlux?.current?.flareClass
+                    ?? xrayFlux?.current?.classification
+                    ?? '--'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
                   X-Ray Flux
