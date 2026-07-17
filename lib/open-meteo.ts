@@ -143,6 +143,19 @@ export async function fetchOpenMeteoAirQuality(
       'uv_index',
     ].join(',')
   );
+  // CAMS European pollen (grains/m³). Null outside Europe / off-season.
+  url.searchParams.set(
+    'hourly',
+    [
+      'alder_pollen',
+      'birch_pollen',
+      'grass_pollen',
+      'mugwort_pollen',
+      'olive_pollen',
+      'ragweed_pollen',
+    ].join(','),
+  );
+  url.searchParams.set('forecast_days', '1');
   url.searchParams.set('timezone', 'auto');
 
   const response = await fetchWithTimeout(url.toString(), {

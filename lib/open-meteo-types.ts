@@ -93,6 +93,16 @@ export interface OpenMeteoAirQualityCurrent {
   uv_index: number;
 }
 
+export interface OpenMeteoAirQualityHourly {
+  time: string[];
+  alder_pollen?: (number | null)[];
+  birch_pollen?: (number | null)[];
+  grass_pollen?: (number | null)[];
+  mugwort_pollen?: (number | null)[];
+  olive_pollen?: (number | null)[];
+  ragweed_pollen?: (number | null)[];
+}
+
 export interface OpenMeteoAirQualityResponse {
   latitude: number;
   longitude: number;
@@ -102,4 +112,6 @@ export interface OpenMeteoAirQualityResponse {
   timezone_abbreviation: string;
   current: OpenMeteoAirQualityCurrent;
   current_units: Record<string, string>;
+  hourly?: OpenMeteoAirQualityHourly;
+  hourly_units?: Record<string, string>;
 }

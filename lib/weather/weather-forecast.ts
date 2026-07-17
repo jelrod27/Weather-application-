@@ -45,9 +45,9 @@ export const fetchPollenData = async (
   lon: number
 ): Promise<{ tree: Record<string, string>; grass: Record<string, string>; weed: Record<string, string> }> => {
   const noData = {
-    tree: { 'Tree': 'No Data' },
-    grass: { 'Grass': 'No Data' },
-    weed: { 'Weed': 'No Data' }
+    tree: { Tree: 'Unavailable' },
+    grass: { Grass: 'Unavailable' },
+    weed: { Weed: 'Unavailable' },
   };
 
   try {
@@ -59,9 +59,9 @@ export const fetchPollenData = async (
 
     const data = await response.json();
     return {
-      tree: data.tree || { 'Tree': 'No Data' },
-      grass: data.grass || { 'Grass': 'No Data' },
-      weed: data.weed || { 'Weed': 'No Data' }
+      tree: data.tree || { Tree: 'Unavailable' },
+      grass: data.grass || { Grass: 'Unavailable' },
+      weed: data.weed || { Weed: 'Unavailable' },
     };
   } catch {
     return noData;
