@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64" fill="none">
+  <!-- Top-down jet, nose = north, for MapLibre icon-rotate by track -->
+  <g stroke="#0f172a" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round">
+    <!-- shadow / outline body -->
+    <path
+      fill="#0f172a"
+      d="M32 5.5
+         C33.8 5.5 35 8.5 35.2 14
+         L36.2 28.5
+         L54 36.5
+         L54 40.2
+         L36.5 37.2
+         L37.2 46.5
+         L44.5 51.5
+         L44.5 54.2
+         L32 50.2
+         L19.5 54.2
+         L19.5 51.5
+         L26.8 46.5
+         L27.5 37.2
+         L10 40.2
+         L10 36.5
+         L27.8 28.5
+         L28.8 14
+         C29 8.5 30.2 5.5 32 5.5 Z"
+    />
+    <!-- yellow fill inset -->
+    <path
+      fill="#eab308"
+      stroke="none"
+      d="M32 7.2
+         C33.4 7.2 34.2 9.6 34.4 14.2
+         L35.3 28.8
+         L52.2 36.4
+         L52.2 38.8
+         L35.5 36
+         L36.2 46.2
+         L42.8 50.8
+         L42.8 52.6
+         L32 49
+         L21.2 52.6
+         L21.2 50.8
+         L27.8 46.2
+         L28.5 36
+         L11.8 38.8
+         L11.8 36.4
+         L28.7 28.8
+         L29.6 14.2
+         C29.8 9.6 30.6 7.2 32 7.2 Z"
+    />
+    <!-- cockpit highlight -->
+    <ellipse cx="32" cy="16.5" rx="2.1" ry="3.2" fill="#fde68a" stroke="none" />
+    <!-- wing root seam -->
+    <path d="M28.8 30.5 H35.2" stroke="#b45309" stroke-width="1.25" opacity="0.55" />
+  </g>
+</svg>
