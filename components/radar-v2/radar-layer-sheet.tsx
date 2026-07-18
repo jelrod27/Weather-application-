@@ -55,7 +55,6 @@ export function RadarLayerSheet({
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-labelledby={titleId}
       className="pointer-events-auto absolute inset-x-0 bottom-0 z-[3000] max-h-[80vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-zinc-950/98 p-4 shadow-2xl backdrop-blur-md"
     >
