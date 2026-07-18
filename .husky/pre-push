@@ -8,8 +8,8 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   echo "  - macOS:        brew install gitleaks"
   echo "  - Debian/Ubuntu: sudo apt-get install gitleaks"
   echo "  - Other:        https://github.com/gitleaks/gitleaks#installing"
-  echo "[pre-push] skipping secret scan (NOT recommended)"
-  exit 0
+  echo "[pre-push] refusing to push without a secret scan"
+  exit 1
 fi
 
 # Limit the scan to commits that haven't been pushed yet. If the branch

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ShareButtons } from '@/components/share-buttons'
@@ -11,8 +12,20 @@ import { findAlertByQueryParam } from '@/lib/home/hub-links'
 import type { NWSAlertDetail, WISScore } from '@/lib/services/nws-alerts-service'
 import type { SpcReport } from '@/lib/services/spc-storm-reports-service'
 import SPCDay1RiskStrip from '@/components/warnings/spc-day1-strip'
-import WarningsAlertMap, { type AlertsFeatureCollection, type MapPoint } from '@/components/warnings/warnings-alert-map'
+import type { AlertsFeatureCollection, MapPoint } from '@/components/warnings/warnings-alert-map'
 import StormReportForm from '@/components/warnings/storm-report-form'
+
+const WarningsAlertMap = dynamic(
+  () => import('@/components/warnings/warnings-alert-map'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[320px] items-center justify-center rounded-lg border border-[var(--border,currentColor)] text-sm opacity-70">
+        Loading map…
+      </div>
+    ),
+  },
+)
 
 const SEVERITY_ORDER: Record<string, number> = {
   Extreme: 0,

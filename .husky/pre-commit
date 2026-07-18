@@ -8,8 +8,8 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   echo "  - macOS:        brew install gitleaks"
   echo "  - Debian/Ubuntu: sudo apt-get install gitleaks"
   echo "  - Other:        https://github.com/gitleaks/gitleaks#installing"
-  echo "[pre-commit] skipping secret scan (NOT recommended)"
-  exit 0
+  echo "[pre-commit] refusing to commit without a secret scan"
+  exit 1
 fi
 
 gitleaks git --pre-commit --staged --redact -v --no-banner
