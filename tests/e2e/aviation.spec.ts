@@ -1,12 +1,5 @@
 /**
- * E2E spec for /aviation.
- *
- * Stubs the upstream NOAA endpoints so the test runs deterministically and
- * doesn't depend on aviationweather.gov uptime. Verifies:
- *   - Page loads with header + alerts feed
- *   - Demo data badge appears for the mock flight provider
- *   - Turbulence map mounts (OL canvas present)
- *   - Theme switching cascades to aviation surface
+ * E2E spec for /aviation live tracker + demoted detail console.
  */
 
 import { test, expect } from './fixtures';
@@ -97,6 +90,31 @@ const SAMPLE_TURBULENCE = {
   },
 };
 
+const SAMPLE_AIRCRAFT = {
+  aircraft: [
+    {
+      icao24: 'a12a7b',
+      callsign: 'UAL2096',
+      registration: 'N17401',
+      typeCode: 'B39M',
+      lat: 34.25,
+      lon: -118.89,
+      altitudeFt: 14000,
+      groundSpeedKt: 340,
+      trackDeg: 140,
+      verticalRateFpm: -2000,
+      squawk: '3276',
+      seenSec: 0.2,
+      source: 'adsb.lol',
+    },
+  ],
+  source: 'adsb.lol',
+  degraded: false,
+  count: 1,
+  fetchedAt: Date.now(),
+  radiusNm: 100,
+};
+
 test.describe('/aviation', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/aviation/alerts**', (route) =>
@@ -108,33 +126,70 @@ test.describe('/aviation', () => {
     await page.route('**/api/aviation/turbulence**', (route) =>
       route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_TURBULENCE) }),
     );
+    await page.route('**/api/aviation/aircraft?**', (route) =>
+      route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_AIRCRAFT) }),
+    );
+    await page.route('**/api/aviation/aircraft/callsign**', (route) =>
+      route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_AIRCRAFT) }),
+    );
+    await page.route('**/api/aviation/aircraft/route**', (route) =>
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({ callsign: 'UAL2096', origin: 'KLAX', destination: 'KDEN', raw: {} }),
+      }),
+    );
+    await page.route('**/api/aviation/aircraft/photo**', (route) =>
+      route.fulfill({ status: 200, body: JSON.stringify({ photos: [] }) }),
+    );
+    await page.route('**/api/aviation/flight-brief**', (route) =>
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          level: 'low',
+          summary: 'Low weather concern for this route based on current METAR and advisories.',
+          score: 0,
+          origin: { iata: 'LAX', icao: 'KLAX', category: 'VFR', metar: null },
+          destination: { iata: 'DEN', icao: 'KDEN', category: 'VFR', metar: null },
+          drivers: [{ id: 'clear', title: 'No major weather drivers flagged', detail: 'VFR' }],
+          hazards: [],
+          validUntil: new Date().toISOString(),
+          disclaimer: 'Educational weather context only',
+        }),
+      }),
+    );
+    // OpenFreeMap tiles / MapLibre style — don't fail the page if tiles are slow
+    await page.route('**/tiles.openfreemap.org/**', (route) => route.abort());
   });
 
-  test('renders header and alerts statistics', async ({ page }) => {
+  test('renders live tracker hero, map, and search', async ({ page }) => {
     await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { name: /AVIATION WEATHER/i })).toBeVisible();
-    // Status grid shows the SIGMET count
-    await expect(page.getByText(/SIGMETs/i).first()).toBeVisible();
-    await expect(page.getByText(/AIRMETs/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /LIVE FLIGHT TRACKER/i })).toBeVisible();
+    await expect(page.getByTestId('aircraft-search')).toBeVisible();
+    await expect(page.getByTestId('live-aircraft-map')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('aircraft-count-chip')).toBeVisible();
+    await expect(page.getByTestId('flight-weather-brief')).toBeVisible();
   });
 
-  test('flight lookup surfaces Demo data badge for mock provider', async ({ page }) => {
+  test('callsign search opens selection panel', async ({ page }) => {
     await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
 
-    // Wait for the lazy-loaded terminal to finish hydrating before
-    // interacting. The route section sits inside three nested
-    // dynamic()/lazy() boundaries, so the route button only appears once
-    // FlightConditionsTerminal has resolved.
+    await page.getByTestId('aircraft-search-input').fill('UAL2096');
+    await page.getByTestId('aircraft-search-submit').click();
+
+    await expect(page.getByTestId('aircraft-selection-panel')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('UAL2096')).toBeVisible();
+  });
+
+  test('detail console reveals flight lookup demo badge', async ({ page }) => {
+    await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('button', { name: /detail console/i }).click();
+
     const routeButton = page.getByRole('button', { name: /Flight Route Lookup/i });
     await routeButton.waitFor({ state: 'visible', timeout: 30000 });
     await routeButton.click();
 
-    // Confirms the React state actually flipped before we look for the
-    // child input. On `next dev`, the click can race hydration — the
-    // button is visible but onClick hasn't attached, so expandedSection
-    // never advances and FlightRouteLookup never mounts. Re-click once
-    // if the first one was a no-op.
     try {
       await expect(routeButton).toHaveAttribute('aria-expanded', 'true', { timeout: 5000 });
     } catch {
@@ -142,26 +197,21 @@ test.describe('/aviation', () => {
       await expect(routeButton).toHaveAttribute('aria-expanded', 'true', { timeout: 10000 });
     }
 
-    // FlightRouteLookup → FlightNumberInput is a second dynamic boundary.
     const flightInput = page.getByTestId('flight-number-input');
     await expect(flightInput).toBeVisible({ timeout: 30000 });
-
     await flightInput.fill('AA123');
     await page.getByTestId('flight-search-button').click();
-
-    // Without an AviationStack key configured, the route handler answers
-    // from the mock provider and the UI surfaces the Demo data badge.
     await expect(page.getByText(/Demo data/i)).toBeVisible({ timeout: 15000 });
   });
 
-  test('turbulence map mounts with OpenLayers viewport', async ({ page }) => {
+  test('detail console turbulence map mounts with OpenLayers viewport', async ({ page }) => {
     await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
-    // Map section is expanded by default
+    await page.getByRole('button', { name: /detail console/i }).click();
+
     const mapRegion = page.getByRole('region', {
       name: /Turbulence pilot reports map/i,
     });
     await expect(mapRegion).toBeVisible({ timeout: 15000 });
-    // OpenLayers always renders an .ol-viewport canvas wrapper
     await expect(mapRegion.locator('.ol-viewport')).toBeVisible({ timeout: 15000 });
   });
 
@@ -169,11 +219,9 @@ test.describe('/aviation', () => {
     await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
     await setTheme(page, 'nord');
 
-    // Theme attribute reaches the document
     const dataTheme = await page.locator('html').getAttribute('data-theme');
     expect(dataTheme).toBe('nord');
 
-    // The severity token is defined and resolves to a non-empty value
     const severityValue = await page.evaluate(() => {
       return getComputedStyle(document.documentElement)
         .getPropertyValue('--severity-extreme')
