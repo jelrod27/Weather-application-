@@ -52,7 +52,12 @@ function AviationPageInner() {
 
   const [selected, setSelected] = useState<Aircraft | null>(null);
   const [trail, setTrail] = useState<TrailPoint[]>([]);
-  const [flyTo, setFlyTo] = useState<{ lat: number; lon: number; zoom?: number } | null>(null);
+  const [flyTo, setFlyTo] = useState<{
+    lat: number;
+    lon: number;
+    zoom?: number;
+    token?: string;
+  } | null>(null);
   const [count, setCount] = useState(0);
   const [sourceLabel, setSourceLabel] = useState('adsb.lol');
   const [degraded, setDegraded] = useState(false);
@@ -122,12 +127,29 @@ function AviationPageInner() {
       return;
     }
     setTrail([{ lat: aircraft.lat, lon: aircraft.lon, at: Date.now() }]);
-    setFlyTo({ lat: aircraft.lat, lon: aircraft.lon, zoom: 8 });
+    // Token is icao-only so poll position updates never re-trigger camera moves.
+    setFlyTo({
+      lat: aircraft.lat,
+      lon: aircraft.lon,
+      zoom: 8,
+      token: `select:${aircraft.icao24}`,
+    });
   }, []);
 
   const updateSelectedAircraft = useCallback((aircraft: Aircraft) => {
     setSelected((prev) => {
       if (!prev || prev.icao24 !== aircraft.icao24) return prev;
+      // Avoid parent re-renders (and map effect churn) when position is unchanged.
+      if (
+        prev.lat === aircraft.lat
+        && prev.lon === aircraft.lon
+        && prev.altitudeFt === aircraft.altitudeFt
+        && prev.groundSpeedKt === aircraft.groundSpeedKt
+        && prev.trackDeg === aircraft.trackDeg
+        && prev.callsign === aircraft.callsign
+      ) {
+        return prev;
+      }
       return aircraft;
     });
     setTrail((prev) => {

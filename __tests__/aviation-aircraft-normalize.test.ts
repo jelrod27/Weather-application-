@@ -56,13 +56,26 @@ describe('normalizeAircraft', () => {
     expect(isActiveFlight(a!)).toBe(false);
   });
 
-  it('keeps takeoff-roll ground traffic as active', () => {
+  it('keeps runway takeoff-roll ground traffic as active', () => {
     const a = normalizeAircraft(
       { ...SAMPLE_RAW, alt_baro: 'ground', gs: 85 },
       'adsb.lol',
     );
     expect(a?.onGround).toBe(true);
     expect(isActiveFlight(a!)).toBe(true);
+  });
+
+  it('drops slow taxi and low-speed airborne targets', () => {
+    const taxi = normalizeAircraft(
+      { ...SAMPLE_RAW, alt_baro: 'ground', gs: 20 },
+      'adsb.lol',
+    );
+    const slowAir = normalizeAircraft(
+      { ...SAMPLE_RAW, alt_baro: 3000, gs: 25 },
+      'adsb.lol',
+    );
+    expect(isActiveFlight(taxi!)).toBe(false);
+    expect(isActiveFlight(slowAir!)).toBe(false);
   });
 
   it('drops aircraft without hex or coordinates', () => {

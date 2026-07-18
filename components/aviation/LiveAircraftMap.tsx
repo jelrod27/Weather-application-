@@ -1,7 +1,9 @@
 'use client';
 
 /**
- * MapLibre live ADS-B sky map. Polls /api/aviation/aircraft for the map center.
+ * MapLibre live ADS-B sky map.
+ * Camera is user-controlled (FlightAware-style): polls update markers in place
+ * and never auto-recenter except once on explicit search/select or new route OD.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -41,9 +43,10 @@ const CARTO_VOYAGER_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
-const POLL_MS = 3_000;
+const POLL_MS = 5_000;
+const MOVE_FETCH_DEBOUNCE_MS = 400;
 const DEFAULT_CENTER: [number, number] = [-98.35, 39.5];
-const DEFAULT_ZOOM = 4.2;
+const DEFAULT_ZOOM = 5;
 
 export type RouteMapEndpoints = {
   origin: { lat: number; lon: number; label?: string };
@@ -54,7 +57,7 @@ export type LiveAircraftMapProps = {
   className?: string;
   selectedIcao24?: string | null;
   onSelectAircraft?: (aircraft: Aircraft | null) => void;
-  flyTo?: { lat: number; lon: number; zoom?: number } | null;
+  flyTo?: { lat: number; lon: number; zoom?: number; token?: string } | null;
   onCountChange?: (count: number, meta: { source: string; degraded: boolean }) => void;
   onDegradedChange?: (degraded: boolean, source: string | null) => void;
   /** Soft-update selected aircraft from poll without resetting trail. */
@@ -68,11 +71,11 @@ export type LiveAircraftMapProps = {
 };
 
 function altitudeColor(alt: number | null): string {
-  if (alt == null || alt <= 0) return '#94a3b8';
-  if (alt < 5000) return '#22c55e';
-  if (alt < 15000) return '#eab308';
-  if (alt < 30000) return '#f97316';
-  return '#ef4444';
+  if (alt == null || alt <= 0) return '#64748b';
+  if (alt < 5000) return '#16a34a';
+  if (alt < 15000) return '#ca8a04';
+  if (alt < 30000) return '#ea580c';
+  return '#2563eb';
 }
 
 function toFeatureCollection(aircraft: Aircraft[]): GeoJSON.FeatureCollection {
@@ -177,6 +180,11 @@ function trailLineCollection(
   };
 }
 
+function routeKey(endpoints: RouteMapEndpoints | null | undefined): string | null {
+  if (!endpoints) return null;
+  return `${endpoints.origin.lat},${endpoints.origin.lon}->${endpoints.destination.lat},${endpoints.destination.lon}`;
+}
+
 export default function LiveAircraftMap({
   className,
   selectedIcao24,
@@ -193,11 +201,24 @@ export default function LiveAircraftMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const aircraftByIdRef = useRef<Map<string, Aircraft>>(new Map());
   const selectedRef = useRef<string | null>(null);
+  const highlightRef = useRef<Aircraft | null>(null);
   const visibleRef = useRef(true);
+  const fetchingRef = useRef(false);
+  const lastFlyTokenRef = useRef<string | null>(null);
+  const lastFittedRouteRef = useRef<string | null>(null);
+  const onSelectRef = useRef(onSelectAircraft);
+  const onCountRef = useRef(onCountChange);
+  const onDegradedRef = useRef(onDegradedChange);
+  const onSelectedUpdateRef = useRef(onSelectedAircraftUpdate);
   const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   selectedRef.current = selectedIcao24 ?? null;
+  highlightRef.current = highlightAircraft ?? null;
+  onSelectRef.current = onSelectAircraft;
+  onCountRef.current = onCountChange;
+  onDegradedRef.current = onDegradedChange;
+  onSelectedUpdateRef.current = onSelectedAircraftUpdate;
 
   const syncSelectionStyle = useCallback(() => {
     const map = mapRef.current;
@@ -217,24 +238,26 @@ export default function LiveAircraftMap({
       if (!map) return;
       const byId = new Map<string, Aircraft>();
       for (const a of list) byId.set(a.icao24, a);
-      if (highlightAircraft) byId.set(highlightAircraft.icao24, highlightAircraft);
+      const highlight = highlightRef.current;
+      if (highlight) byId.set(highlight.icao24, highlight);
       aircraftByIdRef.current = byId;
       const source = map.getSource('aircraft') as GeoJSONSource | undefined;
       source?.setData(toFeatureCollection([...byId.values()]));
       syncSelectionStyle();
 
       const selectedId = selectedRef.current;
-      if (selectedId && onSelectedAircraftUpdate) {
+      if (selectedId && onSelectedUpdateRef.current) {
         const updated = byId.get(selectedId);
-        if (updated) onSelectedAircraftUpdate(updated);
+        if (updated) onSelectedUpdateRef.current(updated);
       }
     },
-    [highlightAircraft, onSelectedAircraftUpdate, syncSelectionStyle],
+    [syncSelectionStyle],
   );
 
   const fetchAircraft = useCallback(async () => {
     const map = mapRef.current;
-    if (!map || !visibleRef.current) return;
+    if (!map || !visibleRef.current || fetchingRef.current) return;
+    fetchingRef.current = true;
     const center = map.getCenter();
     const radius = radiusForZoom(map.getZoom());
     try {
@@ -252,23 +275,25 @@ export default function LiveAircraftMap({
       };
       if (!res.ok) {
         setError(data.error ?? 'Live aircraft feed unavailable');
-        onDegradedChange?.(true, data.source ?? null);
+        onDegradedRef.current?.(true, data.source ?? null);
         return;
       }
       setError(null);
       const list = data.aircraft ?? [];
       applyAircraft(list);
-      onCountChange?.(list.length, {
+      onCountRef.current?.(list.length, {
         source: data.source ?? 'adsb.lol',
         degraded: Boolean(data.degraded),
       });
-      onDegradedChange?.(Boolean(data.degraded), data.source ?? null);
+      onDegradedRef.current?.(Boolean(data.degraded), data.source ?? null);
     } catch (err) {
       console.error('[LiveAircraftMap]', err);
       setError('Live aircraft feed unavailable');
-      onDegradedChange?.(true, null);
+      onDegradedRef.current?.(true, null);
+    } finally {
+      fetchingRef.current = false;
     }
-  }, [applyAircraft, onCountChange, onDegradedChange]);
+  }, [applyAircraft]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -279,6 +304,8 @@ export default function LiveAircraftMap({
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },
+      dragRotate: false,
+      pitchWithRotate: false,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(
@@ -305,6 +332,7 @@ export default function LiveAircraftMap({
       map.addSource('aircraft', {
         type: 'geojson',
         data: toFeatureCollection([]),
+        promoteId: 'icao24',
       });
 
       map.addLayer({
@@ -312,7 +340,7 @@ export default function LiveAircraftMap({
         type: 'line',
         source: 'route-line',
         paint: {
-          'line-color': '#38bdf8',
+          'line-color': '#0284c7',
           'line-width': 3,
           'line-opacity': 0.85,
           'line-dasharray': [2, 1],
@@ -323,7 +351,7 @@ export default function LiveAircraftMap({
         type: 'line',
         source: 'trail-line',
         paint: {
-          'line-color': '#fbbf24',
+          'line-color': '#ca8a04',
           'line-width': 2,
           'line-opacity': 0.9,
         },
@@ -338,10 +366,10 @@ export default function LiveAircraftMap({
             'match',
             ['get', 'role'],
             'origin',
-            '#22c55e',
+            '#16a34a',
             'destination',
-            '#ef4444',
-            '#94a3b8',
+            '#dc2626',
+            '#64748b',
           ],
           'circle-stroke-color': '#0f172a',
           'circle-stroke-width': 2,
@@ -368,11 +396,11 @@ export default function LiveAircraftMap({
         type: 'circle',
         source: 'aircraft',
         paint: {
-          'circle-radius': 6,
+          'circle-radius': 5,
           'circle-color': ['get', 'color'],
           'circle-stroke-color': '#0f172a',
           'circle-stroke-width': 1,
-          'circle-opacity': 0.95,
+          'circle-opacity': 0.92,
         },
       });
       map.addLayer({
@@ -391,7 +419,7 @@ export default function LiveAircraftMap({
           'text-halo-color': '#f8fafc',
           'text-halo-width': 1.25,
         },
-        minzoom: 6,
+        minzoom: 7,
       });
       setMapReady(true);
     });
@@ -401,12 +429,12 @@ export default function LiveAircraftMap({
       const icao = feature?.properties?.icao24 as string | undefined;
       if (!icao) return;
       const aircraft = aircraftByIdRef.current.get(icao) ?? null;
-      onSelectAircraft?.(aircraft);
+      onSelectRef.current?.(aircraft);
     });
 
     map.on('click', (e) => {
       const hits = map.queryRenderedFeatures(e.point, { layers: ['aircraft-circle'] });
-      if (hits.length === 0) onSelectAircraft?.(null);
+      if (hits.length === 0) onSelectRef.current?.(null);
     });
 
     map.on('mouseenter', 'aircraft-circle', () => {
@@ -421,15 +449,33 @@ export default function LiveAircraftMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [onSelectAircraft]);
+  }, []);
 
+  // Stable poll + fetch-on-pan (no camera moves).
   useEffect(() => {
     if (!mapReady) return;
+    const map = mapRef.current;
+    if (!map) return;
+
     void fetchAircraft();
-    const id = window.setInterval(() => {
+    const pollId = window.setInterval(() => {
       void fetchAircraft();
     }, POLL_MS);
-    return () => window.clearInterval(id);
+
+    let moveTimer: number | null = null;
+    const onMoveEnd = () => {
+      if (moveTimer != null) window.clearTimeout(moveTimer);
+      moveTimer = window.setTimeout(() => {
+        void fetchAircraft();
+      }, MOVE_FETCH_DEBOUNCE_MS);
+    };
+    map.on('moveend', onMoveEnd);
+
+    return () => {
+      window.clearInterval(pollId);
+      if (moveTimer != null) window.clearTimeout(moveTimer);
+      map.off('moveend', onMoveEnd);
+    };
   }, [mapReady, fetchAircraft]);
 
   useEffect(() => {
@@ -445,19 +491,27 @@ export default function LiveAircraftMap({
     syncSelectionStyle();
   }, [selectedIcao24, syncSelectionStyle]);
 
+  // One-shot camera move on explicit search/select token — never on poll updates.
   useEffect(() => {
     if (!flyTo || !mapRef.current || routeEndpoints) return;
-    mapRef.current.flyTo({
+    const token = flyTo.token ?? `${flyTo.lat},${flyTo.lon},${flyTo.zoom ?? 8}`;
+    if (lastFlyTokenRef.current === token) return;
+    lastFlyTokenRef.current = token;
+    mapRef.current.easeTo({
       center: [flyTo.lon, flyTo.lat],
       zoom: flyTo.zoom ?? 8,
+      duration: 700,
       essential: true,
     });
   }, [flyTo, routeEndpoints]);
 
+  // Keep selected highlight marker without rebuilding the poll loop.
   useEffect(() => {
-    if (highlightAircraft) applyAircraft([...aircraftByIdRef.current.values()]);
-  }, [highlightAircraft, applyAircraft]);
+    if (!mapReady) return;
+    applyAircraft([...aircraftByIdRef.current.values()]);
+  }, [highlightAircraft?.icao24, mapReady, applyAircraft]);
 
+  // Draw route line; fit bounds only when OD pair changes (not on every poll).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -466,16 +520,19 @@ export default function LiveAircraftMap({
     routeSource?.setData(routeLineCollection(routeEndpoints));
     airportSource?.setData(airportPointsCollection(routeEndpoints));
 
-    if (routeEndpoints) {
-      const bounds = new maplibregl.LngLatBounds();
-      bounds.extend([routeEndpoints.origin.lon, routeEndpoints.origin.lat]);
-      bounds.extend([routeEndpoints.destination.lon, routeEndpoints.destination.lat]);
-      if (highlightAircraft) {
-        bounds.extend([highlightAircraft.lon, highlightAircraft.lat]);
-      }
-      map.fitBounds(bounds, { padding: 72, maxZoom: 7, duration: 900 });
+    const key = routeKey(routeEndpoints);
+    if (!key) {
+      lastFittedRouteRef.current = null;
+      return;
     }
-  }, [routeEndpoints, mapReady, highlightAircraft]);
+    if (lastFittedRouteRef.current === key) return;
+    lastFittedRouteRef.current = key;
+
+    const bounds = new maplibregl.LngLatBounds();
+    bounds.extend([routeEndpoints!.origin.lon, routeEndpoints!.origin.lat]);
+    bounds.extend([routeEndpoints!.destination.lon, routeEndpoints!.destination.lat]);
+    map.fitBounds(bounds, { padding: 72, maxZoom: 7, duration: 700 });
+  }, [routeEndpoints, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
