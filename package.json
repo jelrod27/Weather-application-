@@ -79,6 +79,7 @@
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.62.1",
     "critters": "^0.0.25",
     "cross-env": "^10.1.0",
