@@ -326,7 +326,7 @@ export const calculateMoonPhase = (currentDate?: Date | number): MoonPhaseInfo =
 // ============================================================================
 
 /**
- * Map OpenWeatherMap conditions to custom condition names
+ * Map free-text weather conditions to custom condition names
  */
 export const mapWeatherCondition = (condition: string): string => {
   const conditionLower = condition.toLowerCase();

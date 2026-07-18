@@ -74,10 +74,16 @@ export default function CurrentConditions({
   const kp = kpIndex?.current?.value ?? 0;
   const kpStatus = getKpLabel(kp);
   const windSpeed = solarWind?.current?.speed ?? 0;
-  const bz = solarWind?.current?.bz ?? 0;
-  const bzColor = getBzColor(bz);
-  const classification = xrayFlux?.current?.classification ?? 'A';
-  const subClass = xrayFlux?.current?.subClass ?? 0;
+  const bz = solarWind?.current?.bz ?? null;
+  const bzColor = bz == null ? 'text-gray-400' : getBzColor(bz);
+  const classification =
+    xrayFlux?.current?.flareClass
+    ?? xrayFlux?.current?.classification
+    ?? 'A';
+  const subClass = xrayFlux?.current?.subClass
+    ?? (xrayFlux?.current?.classNumber
+      ? parseFloat(xrayFlux.current.classNumber.replace(/^[A-Z]/i, '')) || 0
+      : 0);
   const sunspotCount = sunspots?.current?.sunspotNumber ?? 0;
   const cyclePhase = sunspots?.solarCycle?.phase ?? 'unknown';
   const viewLatitude = auroraForecast?.viewline?.latitude;
@@ -128,11 +134,11 @@ export default function CurrentConditions({
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono', bzColor)}>
-            {bz > 0 ? '+' : ''}{bz.toFixed(1)}
+            {bz == null ? '--' : `${bz > 0 ? '+' : ''}${bz.toFixed(1)}`}
           </span>
           <span className={cn('text-xs font-mono', themeClasses.text)}>nT</span>
           <span className={cn('text-xs font-mono', bzColor)}>
-            {bz > 0 ? 'NORTH' : 'SOUTH'}
+            {bz == null ? 'N/A' : bz > 0 ? 'NORTH' : 'SOUTH'}
           </span>
         </div>
       </div>

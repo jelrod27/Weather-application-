@@ -153,7 +153,7 @@ export default function AboutPage() {
                 {[
                   { icon: Zap, label: "THE ENGINE", value: "Next.js 16 (App Router) + React 19" },
                   { icon: Database, label: "DATA LAYER", value: "Supabase PostgreSQL + Row-Level Security" },
-                  { icon: CloudLightning, label: "WEATHER DATA", value: "OpenWeatherMap + NOAA + NWS + USGS + NASA" },
+                  { icon: CloudLightning, label: "WEATHER DATA", value: "Open-Meteo + NOAA + NWS + USGS + NASA" },
                   { icon: Sparkles, label: "AI ENGINE", value: "Vercel AI SDK + Claude (Anthropic)" },
                   { icon: Globe, label: "RADAR", value: "RainViewer global composite + NWS/SPC overlays" },
                   { icon: Gauge, label: "MONITORING", value: "Sentry + Lighthouse CI (score >= 85)" },

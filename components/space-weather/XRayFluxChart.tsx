@@ -18,19 +18,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface XRayFluxData {
   current: {
-    shortWave: number; // 0.05-0.4 nm (W/m²)
-    longWave: number; // 0.1-0.8 nm (W/m²)
-    classification: string; // A, B, C, M, X
-    subClass: number; // 1.0-9.9
-    timestamp: string;
+    shortWave?: number; // 0.05-0.4 nm (W/m²)
+    longWave?: number; // 0.1-0.8 nm (W/m²)
+    classification?: string; // A, B, C, M, X
+    subClass?: number; // 1.0-9.9
+    timestamp?: string;
+    /** Fields from /api/space-weather/xray-flux */
+    flux?: number;
+    flareClass?: string;
+    classNumber?: string;
   };
-  peak24h: {
+  peak24h?: {
     classification: string;
     subClass: number;
     timestamp: string;
   } | null;
-  background: string;
-  trend: 'increasing' | 'decreasing' | 'stable';
+  peakLast24h?: {
+    flux: number;
+    flareClass: string;
+    timeTag: string;
+  } | null;
+  background?: string;
+  trend?: 'increasing' | 'decreasing' | 'stable';
 }
 
 interface XRayFluxChartProps {
@@ -128,8 +137,24 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
     );
   }
 
-  const classification = data?.current?.classification ?? 'A';
-  const subClass = data?.current?.subClass ?? 0;
+  const classification =
+    data?.current?.flareClass
+    ?? data?.current?.classification
+    ?? 'A';
+  const subClass = data?.current?.subClass
+    ?? (data?.current?.classNumber
+      ? parseFloat(String(data.current.classNumber).replace(/^[A-Z]/i, '')) || 0
+      : 0);
+  const peak24h = data?.peak24h ?? (
+    data?.peakLast24h
+      ? {
+          classification: (data.peakLast24h.flareClass || 'A').charAt(0).toUpperCase() || 'A',
+          subClass:
+            parseFloat(String(data.peakLast24h.flareClass).replace(/^[A-Z]/i, '')) || 0,
+          timestamp: data.peakLast24h.timeTag,
+        }
+      : null
+  );
   const classColor = getClassificationColor(classification);
   const impact = getImpactLevel(classification);
   const description = getClassificationDescription(classification);
@@ -214,7 +239,11 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
               Long Wave (1-8Å)
             </div>
             <div className={cn('text-sm font-bold font-mono', themeClasses.accentText)}>
-              {data?.current?.longWave ? formatFlux(data.current.longWave) : '—'} W/m²
+              {data?.current?.longWave
+                ? formatFlux(data.current.longWave)
+                : data?.current?.flux
+                  ? formatFlux(data.current.flux)
+                  : '—'} W/m²
             </div>
           </div>
           <div className={'p-3 card-inner rounded'}>
@@ -228,7 +257,7 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
         </div>
 
         {/* 24h Peak */}
-        {data?.peak24h && (
+        {peak24h && (
           <div className={'p-3 card-inner rounded'}>
             <div className="flex items-center justify-between">
               <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
@@ -237,10 +266,10 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
               <div className="flex items-center gap-2">
                 <span className={cn(
                   'px-2 py-0.5 font-bold font-mono text-sm rounded',
-                  getClassificationBg(data.peak24h.classification),
+                  getClassificationBg(peak24h.classification),
                   'text-white'
                 )}>
-                  {data.peak24h.classification}{data.peak24h.subClass.toFixed(1)}
+                  {peak24h.classification}{peak24h.subClass.toFixed(1)}
                 </span>
               </div>
             </div>

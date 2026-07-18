@@ -14,10 +14,10 @@ This project requires the following secrets to be configured in your GitHub repo
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for server-side operations)
 
-### Weather API
-- `OPENWEATHER_API_KEY` - Your OpenWeatherMap API key (required for weather data)
-- `GOOGLE_POLLEN_API_KEY` - Google Pollen API key (optional, for enhanced pollen data)
-- `GOOGLE_AIR_QUALITY_API_KEY` - Google Air Quality API key (optional, for enhanced air quality data)
+### Optional Weather APIs
+- `GOOGLE_POLLEN_API_KEY` - Google Pollen API key (recommended for US pollen coverage; Open-Meteo CAMS is the fallback)
+
+Primary weather, forecast, UV, air quality, and precipitation data use Open-Meteo and do not require an API key.
 
 ## How to Add Secrets
 
@@ -46,8 +46,6 @@ For Playwright tests to work correctly against Vercel preview deployments, you n
 
 ## Important Notes
 
-- The `OPENWEATHER_API_KEY` is **required** for the application to function properly
-- Without this key, all weather API endpoints will return error responses
+- Weather endpoints do not require OpenWeatherMap keys
 - Make sure to use the same API keys in your GitHub secrets as in your local `.env.local` file
-- The Playwright tests will fail if the weather API endpoints cannot return valid data
 - For Vercel preview deployments, ensure `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=true` is set in Vercel's environment variables

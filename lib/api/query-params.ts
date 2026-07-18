@@ -1,17 +1,17 @@
 import type { FeedCategory } from '@/lib/services/rss/feedSources'
 
 const VALID_UNITS = ['standard', 'metric', 'imperial'] as const
-export type OwmUnits = (typeof VALID_UNITS)[number]
+export type WeatherUnits = (typeof VALID_UNITS)[number]
 
 /**
- * Normalize a client-supplied `units` query param to a known OpenWeatherMap
- * value. Unknown/absent values fall back to 'imperial' (the historical
- * default), so this never 400s — it only prevents the raw string from being
- * interpolated into an upstream URL.
+ * Normalize a client-supplied `units` query param to a known value.
+ * Unknown/absent values fall back to 'imperial' (the historical default),
+ * so this never 400s — it only prevents the raw string from being passed
+ * through unchecked.
  */
-export function normalizeUnits(raw: string | null): OwmUnits {
+export function normalizeUnits(raw: string | null): WeatherUnits {
   return (VALID_UNITS as readonly string[]).includes(raw ?? '')
-    ? (raw as OwmUnits)
+    ? (raw as WeatherUnits)
     : 'imperial'
 }
 

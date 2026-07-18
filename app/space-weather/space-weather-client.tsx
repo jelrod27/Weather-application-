@@ -112,7 +112,9 @@ export default function SpaceWeatherClient() {
         xrayFlux: xrayWrapper?.data ?? null,
         auroraForecast: auroraWrapper?.data ? {
           ...auroraWrapper.data,
-          currentKp: auroraWrapper.kpIndex ?? 3,
+          // Prefer live Kp from the aurora payload; fall back to the Kp
+          // endpoint value. Never invent a numeric default (was hard-coded 3).
+          currentKp: auroraWrapper.kpIndex ?? kpWrapper?.data?.current?.value ?? null,
         } : null,
       });
       setError(null);

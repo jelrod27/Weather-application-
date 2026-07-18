@@ -21,8 +21,8 @@ export interface SolarWindData {
     speed: number; // km/s
     density: number; // particles/cm³
     temperature: number; // K
-    bz: number; // nT
-    bt: number; // nT
+    bz: number | null; // nT; null when mag feed unavailable
+    bt: number | null; // nT
   };
   trend: 'increasing' | 'decreasing' | 'stable';
 }
@@ -95,11 +95,14 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
 
   const speed = data?.current?.speed ?? 0;
   const density = data?.current?.density ?? 0;
-  const bz = data?.current?.bz ?? 0;
-  const bt = data?.current?.bt ?? 0;
+  const bz = data?.current?.bz ?? null;
+  const bt = data?.current?.bt ?? null;
 
   const speedStatus = getSpeedStatus(speed);
-  const bzStatus = getBzStatus(bz);
+  const bzStatus =
+    bz == null
+      ? { text: 'UNAVAILABLE', color: 'text-gray-400', isWarning: false }
+      : getBzStatus(bz);
   const densityStatus = getDensityStatus(density);
 
   return (
@@ -169,7 +172,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
             </div>
             <div className="flex items-baseline gap-2">
               <span className={cn('text-2xl font-bold font-mono', bzStatus.color)}>
-                {bz > 0 ? '+' : ''}{bz.toFixed(1)}
+                {bz == null ? '--' : `${bz > 0 ? '+' : ''}${bz.toFixed(1)}`}
               </span>
               <span className={cn('text-xs font-mono', themeClasses.text)}>nT</span>
             </div>
@@ -187,7 +190,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
             </div>
             <div className="flex items-baseline gap-2">
               <span className={cn('text-lg font-bold font-mono', themeClasses.accentText)}>
-                {bt.toFixed(1)}
+                {bt == null ? '--' : bt.toFixed(1)}
               </span>
               <span className={cn('text-xs font-mono', themeClasses.text)}>nT</span>
             </div>

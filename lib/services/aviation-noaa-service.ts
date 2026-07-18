@@ -32,13 +32,17 @@ export interface NoaaAlert {
 }
 
 interface AWCAlert {
-  airsigmetId: number;
+  /** Present on some AWC shapes; often missing — prefer seriesId. */
+  airsigmetId?: number | string;
+  seriesId?: string;
+  alphaChar?: string;
   icaoId: string;
-  validTimeFrom: string;
-  validTimeTo: string;
+  /** Unix seconds (number) on current AWC JSON; historically ISO strings. */
+  validTimeFrom: number | string;
+  validTimeTo: number | string;
   rawAirSigmet: string;
   hazard: string;
-  severity: string;
+  severity: string | number;
   airsigmetType: string;
   altitudeLow1: number;
   altitudeHi1: number;
@@ -240,13 +244,37 @@ function formatHazard(hazard: string): string {
   return HAZARD_MAP[upper] ?? hazard.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function formatTime(iso: string | undefined): string {
-  if (!iso) return '';
+/**
+ * AWC returns validTimeFrom/To as unix **seconds**. `new Date(seconds)` treats
+ * the value as milliseconds and collapses to 1970 — multiply seconds by 1000.
+ * Also accept ISO strings for older fixtures.
+ */
+export function formatAwcTime(value: number | string | undefined | null): string {
+  if (value == null || value === '') return '';
   try {
-    return new Date(iso).toISOString().slice(0, 16).replace('T', ' ') + 'Z';
+    let ms: number;
+    if (typeof value === 'number') {
+      ms = value < 1e12 ? value * 1000 : value;
+    } else if (/^\d+(\.\d+)?$/.test(value.trim())) {
+      const n = Number(value);
+      ms = n < 1e12 ? n * 1000 : n;
+    } else {
+      ms = Date.parse(value);
+    }
+    if (Number.isNaN(ms)) return String(value);
+    return new Date(ms).toISOString().slice(0, 16).replace('T', ' ') + 'Z';
   } catch {
-    return iso;
+    return String(value);
   }
+}
+
+export function awcAlertId(type: 'SIGMET' | 'AIRMET', alert: AWCAlert): string {
+  const series = alert.seriesId || alert.airsigmetId || alert.alphaChar;
+  if (series != null && String(series).length > 0) {
+    return `${type.toLowerCase()}-${series}`;
+  }
+  const from = alert.validTimeFrom ?? 'unknown';
+  return `${type.toLowerCase()}-${alert.icaoId || 'na'}-${from}`;
 }
 
 /**
@@ -290,15 +318,18 @@ export async function fetchAviationAlertsFromNOAA(): Promise<NoaaAlert[]> {
       const data = (await settled.value.json()) as AWCAlert[];
       if (!Array.isArray(data)) return;
       for (const alert of data.slice(0, 10)) {
+        // AWC has returned non-string hazard values; coerce before formatHazard.
+        const safeHazard = String(alert.hazard ?? 'Unknown');
+        const formattedHazard = formatHazard(safeHazard);
         alerts.push({
-          id: `${type.toLowerCase()}-${alert.airsigmetId}`,
+          id: awcAlertId(type, alert),
           type,
-          severity: mapSeverity(alert.hazard ?? '', alert.severity ?? ''),
-          hazard: formatHazard(alert.hazard ?? 'Unknown'),
+          severity: mapSeverity(safeHazard, String(alert.severity ?? '')),
+          hazard: formattedHazard,
           region: alert.icaoId ?? 'CONUS',
-          validFrom: formatTime(alert.validTimeFrom),
-          validTo: formatTime(alert.validTimeTo),
-          text: `${formatHazard(alert.hazard ?? 'Unknown')} from FL${alert.altitudeLow1 || 0} to FL${alert.altitudeHi1 || fallbackHi}`,
+          validFrom: formatAwcTime(alert.validTimeFrom),
+          validTo: formatAwcTime(alert.validTimeTo),
+          text: `${formattedHazard} from FL${alert.altitudeLow1 || 0} to FL${alert.altitudeHi1 || fallbackHi}`,
           rawText: alert.rawAirSigmet ?? '',
         });
       }

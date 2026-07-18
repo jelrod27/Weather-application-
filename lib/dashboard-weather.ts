@@ -19,7 +19,6 @@ export async function getDashboardWeather(
   units: 'metric' | 'imperial' = 'imperial'
 ): Promise<DashboardWeatherData | null> {
   try {
-    // Use our API route instead of calling OpenWeather directly
     const response = await fetch(
       `/api/dashboard-weather?lat=${latitude}&lon=${longitude}&units=${units}`,
       {

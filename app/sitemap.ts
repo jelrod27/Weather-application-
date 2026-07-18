@@ -22,7 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${baseUrl}/aviation`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
       { url: `${baseUrl}/travel`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
       { url: `${baseUrl}/winter`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
-      { url: `${baseUrl}/extremes`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
       { url: `${baseUrl}/earth-sciences`, lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
 
       // Content and education

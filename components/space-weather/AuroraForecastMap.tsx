@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export interface AuroraForecastData {
-  currentKp: number;
+  currentKp: number | null;
   viewline: {
     latitude: number;
     description: string;
@@ -88,9 +88,14 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
     requestAnimationFrame(() => setMounted(true));
   }, []);
 
-  const currentKp = data?.currentKp ?? 3;
-  const viewlineLatitude = data?.viewline?.latitude ?? getViewlineLatitude(currentKp);
-  const viewlineDescription = data?.viewline?.description ?? getViewlineDescription(currentKp);
+  const currentKp = data?.currentKp;
+  const currentKpDisplay = currentKp ?? null;
+  const viewlineLatitude =
+    data?.viewline?.latitude
+    ?? (currentKp != null ? getViewlineLatitude(currentKp) : null);
+  const viewlineDescription =
+    data?.viewline?.description
+    ?? (currentKp != null ? getViewlineDescription(currentKp) : 'Kp unavailable');
 
   // Reset image state when hemisphere changes
   useEffect(() => {
@@ -127,8 +132,11 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
             <Sparkles className="w-5 h-5 text-green-400" />
             AURORA FORECAST
-            <span className={cn('text-xs px-2 py-0.5 border', getKpColor(currentKp), 'border-current bg-current/10')}>
-              Kp {currentKp}
+            <span className={cn(
+              'text-xs px-2 py-0.5 border border-current bg-current/10',
+              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-gray-400',
+            )}>
+              {currentKpDisplay != null ? `Kp ${currentKpDisplay}` : 'Kp --'}
             </span>
           </CardTitle>
           <Button
@@ -234,8 +242,13 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
             <span className={cn('text-xs font-mono', themeClasses.text)}>
               Visible down to:
             </span>
-            <span className={cn('text-lg font-bold font-mono', getKpColor(currentKp))}>
-              {viewlineLatitude}°{hemisphere === 'north' ? 'N' : 'S'}
+            <span className={cn(
+              'text-lg font-bold font-mono',
+              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-gray-400',
+            )}>
+              {viewlineLatitude == null
+                ? '--'
+                : `${viewlineLatitude}°${hemisphere === 'north' ? 'N' : 'S'}`}
             </span>
           </div>
           <div className={cn('text-xs font-mono', themeClasses.text, 'opacity-80')}>

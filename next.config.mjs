@@ -21,16 +21,7 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'api.openweathermap.org',
-      },
-      {
-        protocol: 'https',
-        hostname: 'openweathermap.org',
-      },
-    ],
+    remotePatterns: [],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },
@@ -146,6 +137,11 @@ const nextConfig = {
       {
         source: '/situation',
         destination: '/warnings',
+        permanent: true,
+      },
+      {
+        source: '/extremes',
+        destination: '/education',
         permanent: true,
       },
     ]

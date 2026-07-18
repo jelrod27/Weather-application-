@@ -5,7 +5,6 @@ import {
   Cloud,
   Zap,
   BookOpen,
-  Thermometer,
   BookMarked,
   CloudLightning,
   Sun,
@@ -150,13 +149,6 @@ export default function EducationHubClient({ latestPosts, shareableGuides }: Edu
       description:
         'Rare phenomena from ball lightning to thundersnow — science with retro flavor.',
       itemCount: weatherPhenomena.length,
-    },
-    {
-      href: '/extremes',
-      icon: Thermometer,
-      title: 'Extremes',
-      description: 'Live hottest and coldest places on Earth with climate context.',
-      itemCount: undefined,
     },
     {
       href: '/education/glossary',

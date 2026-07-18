@@ -141,7 +141,6 @@ export default function RootLayout({
     <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning>
       <head>
         {/* PERFORMANCE: Preconnect to critical origins for faster resource loading */}
-        <link rel="preconnect" href="https://api.openweathermap.org" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Map tile sources - preconnect for faster map loading */}

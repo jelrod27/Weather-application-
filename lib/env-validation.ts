@@ -21,10 +21,6 @@ interface EnvConfig {
 const envConfig: EnvConfig = {
   required: {},
   optional: {
-    OPENWEATHER_API_KEY: {
-      name: 'OPENWEATHER_API_KEY',
-      description: 'OpenWeatherMap API key. Optional after the Open-Meteo migration — only used by legacy fallback endpoints (pollen, UV onecall v3, precipitation history, extremes). Routes that need it check at request time.',
-    },
     NEXT_PUBLIC_SUPABASE_URL: {
       name: 'NEXT_PUBLIC_SUPABASE_URL',
       description: 'Supabase project URL (optional - for authentication)',

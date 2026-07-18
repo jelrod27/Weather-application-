@@ -1,6 +1,6 @@
 /**
- * CORS headers for the tile-proxy routes (NOAA WMS, Iowa NEXRAD, OpenWeather
- * radar). Phase 2 audit flagged that these proxies returned
+ * CORS headers for the tile-proxy routes (NOAA WMS, Iowa NEXRAD).
+ * Phase 2 audit flagged that these proxies returned
  * `Access-Control-Allow-Origin: *` with no rate limit, letting any third-party
  * site use them as a free fetch proxy.
  *

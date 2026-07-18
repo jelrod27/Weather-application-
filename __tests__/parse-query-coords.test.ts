@@ -1,4 +1,4 @@
-import { parseOptionalLatLonQuery } from '@/lib/extremes/parse-query-coords'
+import { parseOptionalLatLonQuery } from '@/lib/parse-query-coords'
 
 describe('parseOptionalLatLonQuery', () => {
   it('returns null when either param is null', () => {
@@ -17,6 +17,8 @@ describe('parseOptionalLatLonQuery', () => {
     expect(parseOptionalLatLonQuery('abc', '-74')).toBeNull()
     expect(parseOptionalLatLonQuery('91', '0')).toBeNull()
     expect(parseOptionalLatLonQuery('0', '181')).toBeNull()
+    expect(parseOptionalLatLonQuery('40.7abc', '-74')).toBeNull()
+    expect(parseOptionalLatLonQuery('40.7', '-74x')).toBeNull()
   })
 
   it('returns coords for valid pairs', () => {

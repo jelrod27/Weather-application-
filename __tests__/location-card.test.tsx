@@ -1,17 +1,15 @@
 /**
- * Unit tests for LocationCard component — parallel fetch behaviour.
+ * Unit tests for LocationCard component — detailed-weather fetch behaviour.
  */
 
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SavedLocation } from '@/lib/supabase/types'
 
-// Mock the theme provider (same pattern as current-conditions.test.tsx)
 jest.mock('@/components/theme-provider', () => ({
   useTheme: () => ({ theme: 'dark' }),
 }))
 
-// Mock theme-utils
 jest.mock('@/lib/theme-utils', () => ({
   getComponentStyles: () => ({
     background: '',
@@ -28,19 +26,16 @@ jest.mock('@/lib/theme-utils', () => ({
   }),
 }))
 
-// Mock auth
 jest.mock('@/lib/auth', () => ({
   useAuth: () => ({ user: { id: 'u1' } }),
 }))
 
-// Mock supabase database helpers
 jest.mock('@/lib/supabase/database', () => ({
   toggleLocationFavorite: jest.fn(),
   deleteSavedLocation: jest.fn(),
   getUserPreferences: jest.fn().mockResolvedValue(null),
 }))
 
-// Mock dashboard-weather
 jest.mock('@/lib/dashboard-weather', () => ({
   getDashboardWeather: jest.fn().mockResolvedValue(null),
   getWeatherIcon: () => '☀',
@@ -65,58 +60,57 @@ const loc: SavedLocation = {
   updated_at: '2024-01-01T00:00:00Z',
 }
 
+const detailPayload = {
+  current: {
+    temperature: 72,
+    feelsLike: 70,
+    humidity: 50,
+    windSpeed: 5,
+    pressure: 1013,
+    visibility: 10,
+    description: 'clear sky',
+    icon: '01d',
+  },
+  forecast: [],
+  uvIndex: 7,
+}
+
 afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('LocationCard — parallel detailed-weather fetches', () => {
-  it('starts all four detailed-weather fetches concurrently', async () => {
+describe('LocationCard — detailed-weather fetches', () => {
+  it('starts detail and air-quality fetches concurrently', async () => {
     const pending: Array<(v: unknown) => void> = []
     global.fetch = jest.fn(
-      () => new Promise(r => { pending.push(r) })
+      () => new Promise((r) => {
+        pending.push(r)
+      }),
     ) as jest.Mock
 
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
-    // All four calls must be in-flight before any resolves
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(4))
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2))
 
-    const urls = (global.fetch as jest.Mock).mock.calls.map(c => String(c[0]))
-    expect(urls.some(u => u.includes('/api/weather/current'))).toBe(true)
-    expect(urls.some(u => u.includes('/api/weather/forecast'))).toBe(true)
-    expect(urls.some(u => u.includes('/api/weather/uv'))).toBe(true)
-    expect(urls.some(u => u.includes('/api/weather/air-quality'))).toBe(true)
+    const urls = (global.fetch as jest.Mock).mock.calls.map((c) => String(c[0]))
+    expect(urls.some((u) => u.includes('/api/dashboard-weather') && u.includes('detail=1'))).toBe(
+      true,
+    )
+    expect(urls.some((u) => u.includes('/api/weather/air-quality'))).toBe(true)
   })
 
-  it('degrades gracefully when optional fetches fail', async () => {
+  it('degrades gracefully when air-quality fails', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
     global.fetch = jest.fn((url: unknown) => {
       const u = String(url)
-      if (u.includes('/api/weather/current')) {
+      if (u.includes('/api/dashboard-weather')) {
         return Promise.resolve({
           ok: true,
-          json: () =>
-            Promise.resolve({
-              main: { temp: 72, feels_like: 70, humidity: 50, pressure: 1013 },
-              wind: { speed: 5 },
-              weather: [{ description: 'clear sky', icon: '01d' }],
-              visibility: 10000,
-            }),
+          json: () => Promise.resolve({ ...detailPayload, uvIndex: 0 }),
         })
       }
-      if (u.includes('/api/weather/forecast')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ list: [] }),
-        })
-      }
-      // UV: network rejection (optional)
-      if (u.includes('/api/weather/uv')) {
-        return Promise.reject(new Error('network error'))
-      }
-      // AQI: non-ok response (optional)
       if (u.includes('/api/weather/air-quality')) {
         return Promise.resolve({ ok: false })
       }
@@ -126,36 +120,22 @@ describe('LocationCard — parallel detailed-weather fetches', () => {
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
-    // Detailed view should render — UV and AQI both default to 0 / 'No Data'
     await waitFor(() => expect(screen.getByText(/UV Index: 0/i)).toBeDefined())
     await waitFor(() => expect(screen.getByText(/AQI: 0/i)).toBeDefined())
 
-    // Required-fetch failures do NOT fire console.error when optional fetches fail
     expect(consoleError).not.toHaveBeenCalledWith(
       'Error fetching detailed weather:',
-      expect.anything()
+      expect.anything(),
     )
   })
 
-  it('renders UV index from uvi field on successful fetch', async () => {
+  it('renders UV index from detail payload on successful fetch', async () => {
     global.fetch = jest.fn((url: unknown) => {
       const u = String(url)
-      if (u.includes('/api/weather/current')) {
+      if (u.includes('/api/dashboard-weather')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ main: { temp: 60 }, weather: [{}] }),
-        })
-      }
-      if (u.includes('/api/weather/forecast')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ list: [] }),
-        })
-      }
-      if (u.includes('/api/weather/uv')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ uvi: 7, source: 'test' }),
+          json: () => Promise.resolve(detailPayload),
         })
       }
       if (u.includes('/api/weather/air-quality')) {
@@ -170,18 +150,17 @@ describe('LocationCard — parallel detailed-weather fetches', () => {
     await waitFor(() => expect(screen.getByText(/UV Index: 7/i)).toBeDefined())
   })
 
-  it('aborts and logs when a required fetch fails', async () => {
+  it('aborts and logs when detail fetch fails', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
     global.fetch = jest.fn((url: unknown) => {
       const u = String(url)
-      // current: non-ok — required fetch failure
-      if (u.includes('/api/weather/current')) {
+      if (u.includes('/api/dashboard-weather')) {
         return Promise.resolve({ ok: false })
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ list: [] }),
+        json: () => Promise.resolve({ aqi: 1, category: 'Good' }),
       })
     }) as jest.Mock
 
@@ -191,11 +170,10 @@ describe('LocationCard — parallel detailed-weather fetches', () => {
     await waitFor(() =>
       expect(consoleError).toHaveBeenCalledWith(
         'Error fetching detailed weather:',
-        expect.anything()
-      )
+        expect.anything(),
+      ),
     )
 
-    // No detailed weather data should be rendered
     expect(screen.queryByText(/UV Index/i)).toBeNull()
   })
 })

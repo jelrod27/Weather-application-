@@ -10,8 +10,9 @@ export function parseOptionalLatLonQuery(
   const tLat = latRaw.trim()
   const tLon = lonRaw.trim()
   if (tLat === '' || tLon === '') return null
-  const lat = Number.parseFloat(tLat)
-  const lon = Number.parseFloat(tLon)
+  // Number() rejects partially numeric strings that parseFloat would accept (e.g. "40.7abc").
+  const lat = Number(tLat)
+  const lon = Number(tLon)
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
   if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null
   return { lat, lon }
