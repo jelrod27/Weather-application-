@@ -192,9 +192,10 @@ test.describe('/aviation', () => {
   test('renders live tracker hero, map, and search', async ({ page }) => {
     await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { name: /LIVE FLIGHT TRACKER/i })).toBeVisible();
-    await expect(page.getByTestId('aircraft-search')).toBeVisible();
-    await expect(page.getByTestId('live-aircraft-map')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: /LIVE FLIGHT TRACKER/i }).first()).toBeVisible();
+    // Scope to first match — hydration/strict-mode can briefly expose duplicate nodes locally.
+    await expect(page.getByTestId('aircraft-search').first()).toBeVisible();
+    await expect(page.getByTestId('live-aircraft-map').first()).toBeVisible({ timeout: 30000 });
     // CSP must allow Carto Voyager tiles (same host family as radar basemap).
     await expect
       .poll(async () => {
@@ -211,8 +212,8 @@ test.describe('/aviation', () => {
         });
       }, { timeout: 15000 })
       .toBe(true);
-    await expect(page.getByTestId('aircraft-count-chip')).toBeVisible();
-    await expect(page.getByTestId('flight-weather-brief')).toBeVisible();
+    await expect(page.getByTestId('aircraft-count-chip').first()).toBeVisible();
+    await expect(page.getByTestId('flight-weather-brief').first()).toBeVisible();
   });
 
   test('deep link ?flight= selects aircraft and opens panel', async ({ page }) => {
