@@ -211,12 +211,22 @@ export default function LiveAircraftMap({
   const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  selectedRef.current = selectedIcao24 ?? null;
-  highlightRef.current = highlightAircraft ?? null;
-  onSelectRef.current = onSelectAircraft;
-  onCountRef.current = onCountChange;
-  onDegradedRef.current = onDegradedChange;
-  onSelectedUpdateRef.current = onSelectedAircraftUpdate;
+  // Keep MapLibre click/poll handlers on committed props (avoid render-time ref writes).
+  useEffect(() => {
+    selectedRef.current = selectedIcao24 ?? null;
+    highlightRef.current = highlightAircraft ?? null;
+    onSelectRef.current = onSelectAircraft;
+    onCountRef.current = onCountChange;
+    onDegradedRef.current = onDegradedChange;
+    onSelectedUpdateRef.current = onSelectedAircraftUpdate;
+  }, [
+    selectedIcao24,
+    highlightAircraft,
+    onSelectAircraft,
+    onCountChange,
+    onDegradedChange,
+    onSelectedAircraftUpdate,
+  ]);
 
   const syncSelectionStyle = useCallback(() => {
     const map = mapRef.current;
