@@ -18,7 +18,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, Home, Map, GraduationCap, Newspaper, Sun, ChevronDown, Cloud, AlertTriangle, CloudLightning, Snowflake, CloudRain, Route, Info, FileText, Star, Activity, BellRing } from "lucide-react"
+import { Menu, X, Home, Map, GraduationCap, Newspaper, Sun, ChevronDown, Cloud, CloudLightning, Snowflake, CloudRain, Route, Info, FileText, Star, Activity, BellRing, Plane } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
 import { formatHeaderLocation } from "@/lib/format-header-location"
@@ -61,6 +61,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
     { href: "/winter", label: "WINTER", icon: Snowflake },
     { href: "/tropical", label: "TROPICAL", icon: CloudRain },
     { href: "/travel", label: "TRAVEL", icon: Route },
+    { href: "/aviation", label: "AVIATION", icon: Plane },
     { href: "/space-weather", label: "SPACE", icon: Sun },
     { href: "/stargazer", label: "STARGAZER", icon: Star },
     { href: "/earth-sciences", label: "EARTH SCI", icon: Activity },

@@ -1,7 +1,9 @@
 # Aviation: Flighty / FlightAware-direction vision
 
-**Status:** Parked after P0 SIGMET repair (2026-07-17)  
-**Goal:** Evolve `/aviation` from a misery board + SIGMET terminal into a flight-aware experience closer to Flighty / FlightAware — still educational, never for operational dispatch.
+**Status:** Active — design approved 2026-07-18  
+**Spec:** [`planning/aviation-live-tracker-design.md`](./aviation-live-tracker-design.md)  
+**Branch:** `feat/aviation-live-tracker`  
+**Goal:** Evolve `/aviation` from a misery board + SIGMET terminal into a FlightAware-style live tracker + weather brief (ADS-B-first) — still educational, never for operational dispatch.
 
 ## North star
 

@@ -1,25 +1,25 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Aviation Weather SIGMETs, Turbulence & Flight Conditions | 16 Bit Weather',
+  title: 'Live Flight Tracker & Aviation Weather | 16 Bit Weather',
   description:
-    'Aviation weather briefing with SIGMETs, AIRMETs, turbulence maps, and real-time flight conditions. Educational terminal-style weather for pilots and enthusiasts.',
+    'ADS-B live flight tracker with callsign search, route weather briefs, SIGMETs, AIRMETs, and turbulence maps. Educational only — not for operational dispatch.',
   keywords:
-    'aviation weather, aviation weather SIGMET, SIGMET, AIRMET, turbulence, flight conditions, pilot weather, aviation alerts',
+    'live flight tracker, ADS-B, aviation weather, SIGMET, AIRMET, turbulence, flight conditions, callsign search',
   openGraph: {
-    title: 'Aviation Weather — SIGMETs & Flight Conditions',
-    description: 'SIGMETs, turbulence maps, and real-time flight conditions.',
+    title: 'Live Flight Tracker & Aviation Weather',
+    description: 'ADS-B sky map, callsign search, and NOAA route weather briefs.',
     url: 'https://www.16bitweather.co/aviation',
     siteName: '16 Bit Weather',
-    images: [{ url: '/api/og?title=Aviation+Weather&subtitle=SIGMETs+%2B+Flight+Conditions', width: 1200, height: 630, alt: 'Aviation Weather' }],
+    images: [{ url: '/api/og?title=Live+Flight+Tracker&subtitle=ADS-B+%2B+Aviation+Weather', width: 1200, height: 630, alt: 'Live Flight Tracker' }],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aviation Weather — SIGMETs & Flight Conditions',
-    description: 'SIGMETs, turbulence maps, and real-time flight conditions.',
-    images: ['/api/og?title=Aviation+Weather&subtitle=SIGMETs+%2B+Flight+Conditions'],
+    title: 'Live Flight Tracker & Aviation Weather',
+    description: 'ADS-B sky map, callsign search, and NOAA route weather briefs.',
+    images: ['/api/og?title=Live+Flight+Tracker&subtitle=ADS-B+%2B+Aviation+Weather'],
   },
   alternates: { canonical: 'https://www.16bitweather.co/aviation' },
 }
