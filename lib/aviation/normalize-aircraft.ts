@@ -15,7 +15,14 @@ function asTrimmedString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function isOnGround(raw: AircraftRaw): boolean {
+  if (raw.alt_baro === 'ground') return true;
+  if (raw.alt_baro === 0) return true;
+  return false;
+}
+
 function altitudeFt(raw: AircraftRaw): number | null {
+  if (isOnGround(raw)) return 0;
   const baro = asFiniteNumber(raw.alt_baro);
   if (baro != null) return Math.round(baro);
   const geom = asFiniteNumber(raw.alt_geom);
@@ -34,6 +41,7 @@ export function normalizeAircraft(
   if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
 
   const seen = asFiniteNumber(raw.seen) ?? asFiniteNumber(raw.seen_pos);
+  const onGround = isOnGround(raw);
 
   return {
     icao24,
@@ -43,6 +51,7 @@ export function normalizeAircraft(
     lat,
     lon,
     altitudeFt: altitudeFt(raw),
+    onGround,
     groundSpeedKt: asFiniteNumber(raw.gs),
     trackDeg: asFiniteNumber(raw.track),
     verticalRateFpm: asFiniteNumber(raw.baro_rate),

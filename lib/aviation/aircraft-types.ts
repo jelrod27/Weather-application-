@@ -12,6 +12,8 @@ export type Aircraft = {
   lat: number;
   lon: number;
   altitudeFt: number | null;
+  /** True when ADS-B reports alt_baro as "ground" (or 0). */
+  onGround: boolean;
   groundSpeedKt: number | null;
   trackDeg: number | null;
   verticalRateFpm: number | null;

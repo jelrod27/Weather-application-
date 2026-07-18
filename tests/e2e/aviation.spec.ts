@@ -100,6 +100,7 @@ const SAMPLE_AIRCRAFT = {
       lat: 34.25,
       lon: -118.89,
       altitudeFt: 14000,
+      onGround: false,
       groundSpeedKt: 340,
       trackDeg: 140,
       verticalRateFpm: -2000,
@@ -177,11 +178,10 @@ test.describe('/aviation', () => {
         }),
       }),
     );
-    // Soften tile latency: fulfill style JSON, abort heavy tile payloads.
-    // Do NOT abort the style URL itself — that hides CSP/ basemap regressions.
-    await page.route('**/tiles.openfreemap.org/**', async (route) => {
-      const url = route.request().url();
-      if (url.includes('/styles/')) {
+    // Soften glyph latency; keep a single Carto tile path open for the CSP probe.
+    await page.route('**/tiles.openfreemap.org/**', (route) => route.abort());
+    await page.route('**/basemaps.cartocdn.com/**', async (route) => {
+      if (route.request().url().includes('/rastertiles/voyager/1/0/0.png')) {
         await route.continue();
         return;
       }
@@ -195,15 +195,15 @@ test.describe('/aviation', () => {
     await expect(page.getByRole('heading', { name: /LIVE FLIGHT TRACKER/i })).toBeVisible();
     await expect(page.getByTestId('aircraft-search')).toBeVisible();
     await expect(page.getByTestId('live-aircraft-map')).toBeVisible({ timeout: 30000 });
-    // CSP must allow OpenFreeMap style fetch; blocking it leaves a blank navy canvas.
+    // CSP must allow Carto Voyager tiles (same host family as radar basemap).
     await expect
       .poll(async () => {
         return page.evaluate(async () => {
           try {
-            const res = await fetch('https://tiles.openfreemap.org/styles/dark', {
-              method: 'GET',
-              cache: 'no-store',
-            });
+            const res = await fetch(
+              'https://a.basemaps.cartocdn.com/rastertiles/voyager/1/0/0.png',
+              { method: 'GET', cache: 'no-store' },
+            );
             return res.ok;
           } catch {
             return false;

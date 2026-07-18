@@ -1,3 +1,4 @@
+import { isActiveFlight } from '@/lib/aviation/active-aircraft';
 import { normalizeAircraft, normalizeAircraftList } from '@/lib/aviation/normalize-aircraft';
 import {
   clampRadiusNm,
@@ -35,6 +36,7 @@ describe('normalizeAircraft', () => {
       lat: 34.253677,
       lon: -118.892193,
       altitudeFt: 14275,
+      onGround: false,
       groundSpeedKt: 341.4,
       trackDeg: 143.1,
       verticalRateFpm: -2496,
@@ -42,6 +44,25 @@ describe('normalizeAircraft', () => {
       seenSec: 0.2,
       source: 'adsb.lol',
     });
+  });
+
+  it('marks alt_baro "ground" as onGround with altitude 0', () => {
+    const a = normalizeAircraft(
+      { ...SAMPLE_RAW, alt_baro: 'ground', gs: 0 },
+      'adsb.lol',
+    );
+    expect(a?.onGround).toBe(true);
+    expect(a?.altitudeFt).toBe(0);
+    expect(isActiveFlight(a!)).toBe(false);
+  });
+
+  it('keeps takeoff-roll ground traffic as active', () => {
+    const a = normalizeAircraft(
+      { ...SAMPLE_RAW, alt_baro: 'ground', gs: 85 },
+      'adsb.lol',
+    );
+    expect(a?.onGround).toBe(true);
+    expect(isActiveFlight(a!)).toBe(true);
   });
 
   it('drops aircraft without hex or coordinates', () => {
@@ -81,6 +102,7 @@ describe('aircraft near cache + failover', () => {
         lat: 1,
         lon: 2,
         altitudeFt: 1000,
+        onGround: false,
         groundSpeedKt: 100,
         trackDeg: 90,
         verticalRateFpm: 0,
@@ -110,6 +132,55 @@ describe('aircraft near cache + failover', () => {
     expect(result.source).toBe('airplanes.live');
     expect(result.degraded).toBe(true);
     expect(result.count).toBe(1);
+  });
+
+  it('filters parked ground aircraft from near feed', async () => {
+    const providers: AircraftProvider[] = [
+      {
+        name: 'adsb.lol',
+        getAircraftNear: async () => [
+          {
+            icao24: 'park',
+            callsign: 'N123AB',
+            registration: null,
+            typeCode: null,
+            lat: 1,
+            lon: 2,
+            altitudeFt: 0,
+            onGround: true,
+            groundSpeedKt: 0,
+            trackDeg: 0,
+            verticalRateFpm: 0,
+            squawk: null,
+            seenSec: 0,
+            source: 'adsb.lol',
+          },
+          {
+            icao24: 'fly1',
+            callsign: 'UAL1',
+            registration: null,
+            typeCode: null,
+            lat: 1.1,
+            lon: 2.1,
+            altitudeFt: 12000,
+            onGround: false,
+            groundSpeedKt: 400,
+            trackDeg: 90,
+            verticalRateFpm: 0,
+            squawk: null,
+            seenSec: 0,
+            source: 'adsb.lol',
+          },
+        ],
+      },
+    ];
+
+    const result = await getAircraftNear(34, -118, 50, {
+      providers,
+      skipCache: true,
+    });
+    expect(result.count).toBe(1);
+    expect(result.aircraft[0]?.icao24).toBe('fly1');
   });
 
   it('serves cache within TTL', async () => {

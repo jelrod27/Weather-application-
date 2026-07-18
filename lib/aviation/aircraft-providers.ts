@@ -9,6 +9,7 @@ import {
   type AircraftNearResponse,
   type AircraftSource,
 } from './aircraft-types';
+import { filterActiveFlights } from './active-aircraft';
 import {
   aviationUrl,
   fetchAviationUpstream,
@@ -150,7 +151,9 @@ export async function getAircraftNear(
   for (let i = 0; i < providers.length; i++) {
     const provider = providers[i]!;
     try {
-      const aircraft = await provider.getAircraftNear(lat, lon, radius);
+      const aircraft = filterActiveFlights(
+        await provider.getAircraftNear(lat, lon, radius),
+      );
       const value: AircraftNearResponse = {
         aircraft,
         source: provider.name,

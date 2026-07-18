@@ -25,9 +25,12 @@ describe('Fix 5: CSP unsafe-eval removed', () => {
   });
 });
 
-describe('CSP connect-src allows OpenFreeMap for aviation MapLibre', () => {
+describe('CSP connect-src allows aviation MapLibre basemap hosts', () => {
   const src = readFileSync(join(__dirname, '..', 'middleware.ts'), 'utf-8');
-  it('allowlists tiles.openfreemap.org (style, vector tiles, glyphs, sprites)', () => {
+  it('allowlists Carto Voyager tiles (radar-matching basemap)', () => {
+    expect(src).toContain('https://*.basemaps.cartocdn.com');
+  });
+  it('allowlists OpenFreeMap glyphs for MapLibre labels', () => {
     expect(src).toContain('https://tiles.openfreemap.org');
   });
 });

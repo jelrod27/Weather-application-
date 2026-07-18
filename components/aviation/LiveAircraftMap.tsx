@@ -11,9 +11,36 @@ import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 import { sampleGreatCircle } from '@/lib/aviation/route-corridor';
 
-// Dark basemap (OpenFreeMap) — FR24-like contrast for altitude-colored aircraft.
-// Requires CSP connect-src allowlist for tiles.openfreemap.org (middleware.ts).
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/dark';
+/**
+ * Same light Carto Voyager basemap as radar (components/radar-v2/radar-constants.ts).
+ * Glyphs still come from OpenFreeMap for callsign / airport labels.
+ * CSP: connect-src must allow *.basemaps.cartocdn.com + tiles.openfreemap.org.
+ */
+const CARTO_VOYAGER_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    carto: {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '© CARTO © OpenStreetMap contributors',
+    },
+  },
+  glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+  layers: [
+    {
+      id: 'carto-basemap',
+      type: 'raster',
+      source: 'carto',
+    },
+  ],
+};
+
 const POLL_MS = 3_000;
 const DEFAULT_CENTER: [number, number] = [-98.35, 39.5];
 const DEFAULT_ZOOM = 4.2;
@@ -248,7 +275,7 @@ export default function LiveAircraftMap({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: CARTO_VOYAGER_STYLE,
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },
@@ -331,8 +358,8 @@ export default function LiveAircraftMap({
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         },
         paint: {
-          'text-color': '#f8fafc',
-          'text-halo-color': '#0f172a',
+          'text-color': '#0f172a',
+          'text-halo-color': '#f8fafc',
           'text-halo-width': 1.5,
         },
       });
@@ -345,7 +372,7 @@ export default function LiveAircraftMap({
           'circle-color': ['get', 'color'],
           'circle-stroke-color': '#0f172a',
           'circle-stroke-width': 1,
-          'circle-opacity': 0.9,
+          'circle-opacity': 0.95,
         },
       });
       map.addLayer({
@@ -360,9 +387,9 @@ export default function LiveAircraftMap({
           'text-allow-overlap': false,
         },
         paint: {
-          'text-color': '#e2e8f0',
-          'text-halo-color': '#0f172a',
-          'text-halo-width': 1,
+          'text-color': '#0f172a',
+          'text-halo-color': '#f8fafc',
+          'text-halo-width': 1.25,
         },
         minzoom: 6,
       });
@@ -459,7 +486,11 @@ export default function LiveAircraftMap({
 
   return (
     <div className={cn('relative w-full overflow-hidden rounded-lg border border-border', className)}>
-      <div ref={containerRef} className="h-[min(70vh,640px)] w-full bg-slate-900" data-testid="live-aircraft-map" />
+      <div
+        ref={containerRef}
+        className="h-[min(70vh,640px)] w-full bg-[#e8e4dc]"
+        data-testid="live-aircraft-map"
+      />
       {error && (
         <div
           className="absolute bottom-3 left-3 right-3 rounded border border-orange-500/50 bg-black/70 px-3 py-2 font-mono text-xs text-orange-300"
