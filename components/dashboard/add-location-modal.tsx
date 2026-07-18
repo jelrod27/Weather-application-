@@ -219,15 +219,21 @@ export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: A
             <div className="flex items-center space-x-3 pt-2">
               <button
                 type="button"
+                id="add-location-favorite"
                 onClick={() => setIsFavorite(!isFavorite)}
+                aria-pressed={isFavorite}
+                aria-label="Add to favorites"
                 className={`w-5 h-5 border-0 flex items-center justify-center transition-all duration-200 ${isFavorite
                     ? `${themeClasses.accentBg}`
                     : `${themeClasses.background} bg-white/10`
                   }`}
               >
-                {isFavorite && <Star className="w-3 h-3 text-black fill-current" />}
+                {isFavorite && <Star className="w-3 h-3 text-black fill-current" aria-hidden="true" />}
               </button>
-              <Label className={`text-sm font-mono font-bold uppercase ${themeClasses.text} cursor-pointer`} onClick={() => setIsFavorite(!isFavorite)}>
+              <Label
+                htmlFor="add-location-favorite"
+                className={`text-sm font-mono font-bold uppercase ${themeClasses.text} cursor-pointer`}
+              >
                 Add to Favorites
               </Label>
             </div>

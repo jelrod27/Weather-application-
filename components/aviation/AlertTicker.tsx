@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useEffect, useState, type CSSProperties } from 'react';
+import React, { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { AlertTriangle, Info, Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
@@ -44,6 +44,7 @@ export default function AlertTicker({ alerts, isLoading = false }: AlertTickerPr
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getAlertIcon = (type: AviationAlert['type']) => {
     switch (type) {
@@ -77,13 +78,19 @@ export default function AlertTicker({ alerts, isLoading = false }: AlertTickerPr
         clearInterval(typeInterval);
 
         // Move to next alert after a pause
-        setTimeout(() => {
+        advanceTimeoutRef.current = setTimeout(() => {
           setCurrentIndex((prev) => (prev + 1) % alerts.length);
         }, 4000);
       }
     }, 50);
 
-    return () => clearInterval(typeInterval);
+    return () => {
+      clearInterval(typeInterval);
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current);
+        advanceTimeoutRef.current = null;
+      }
+    };
   }, [currentIndex, alerts, isLoading]);
 
   if (isLoading) {

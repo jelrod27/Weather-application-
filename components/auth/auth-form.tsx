@@ -142,14 +142,16 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
 
   const emailInput = (
     <div className="space-y-2">
-      <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
+      <Label htmlFor="auth-email" className={`font-mono font-bold uppercase ${themeClasses.text}`}>
         Email Address
       </Label>
       <div className="relative">
-        <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
+        <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} aria-hidden="true" />
         <Input
+          id="auth-email"
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={`pl-10 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
@@ -239,14 +241,16 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
               {emailInput}
 
               <div className="space-y-2">
-                <Label className={`font-mono font-bold uppercase ${themeClasses.text}`}>
+                <Label htmlFor="auth-password" className={`font-mono font-bold uppercase ${themeClasses.text}`}>
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} />
+                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.mutedText}`} aria-hidden="true" />
                   <Input
+                    id="auth-password"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={`pl-10 pr-12 font-mono border-2 ${themeClasses.borderColor} ${themeClasses.text} ${themeClasses.background}`}
@@ -258,9 +262,15 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
                     className={`absolute right-0 top-0 h-full px-3 hover:bg-transparent`}
                   >
-                    {showPassword ? <EyeOff className={`w-4 h-4 ${themeClasses.mutedText}`} /> : <Eye className={`w-4 h-4 ${themeClasses.mutedText}`} />}
+                    {showPassword ? (
+                      <EyeOff className={`w-4 h-4 ${themeClasses.mutedText}`} aria-hidden="true" />
+                    ) : (
+                      <Eye className={`w-4 h-4 ${themeClasses.mutedText}`} aria-hidden="true" />
+                    )}
                   </Button>
                 </div>
               </div>

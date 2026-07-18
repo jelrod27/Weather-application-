@@ -33,6 +33,9 @@ describe('CSP connect-src allows aviation MapLibre basemap hosts', () => {
   it('allowlists OpenFreeMap glyphs for MapLibre labels', () => {
     expect(src).toContain('https://tiles.openfreemap.org');
   });
+  it('does not allowlist the removed ipgeolocation provider', () => {
+    expect(src).not.toContain('api.ipgeolocation.io');
+  });
 });
 
 // Fix 6 covered the games scores route, also removed with the games feature.
@@ -68,7 +71,11 @@ describe('Fix 9: Test auth bypass gated to non-prod', () => {
   });
 });
 
-// "Fix 10: Rate limit IP source" was removed with the news-overhaul: it audited
-// the NewsAPI proxy at app/api/news/route.ts, which was deleted as dead code
-// (orphaned subsystem). The live keyless /api/news/rss has no rate limiter to
-// protect, so there is nothing to assert here.
+describe('Fix 10: RSS news route is rate-limited', () => {
+  const src = readFileSync(join(__dirname, '..', 'app', 'api', 'news', 'rss', 'route.ts'), 'utf-8');
+  it('calls rateLimitRequest before aggregating feeds', () => {
+    expect(src).toContain("import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'");
+    expect(src).toContain('rateLimitRequest(request)');
+    expect(src).toMatch(/if\s*\(\s*!rateLimit\.allowed\s*\)\s*return\s*rateLimit\.response/);
+  });
+});

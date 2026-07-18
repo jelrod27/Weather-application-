@@ -34,3 +34,29 @@ export function parseFeedCategories(raw: string | null): FeedCategory[] | undefi
     .map((c) => c.trim())
     .filter((c): c is FeedCategory => VALID_CATEGORIES.has(c))
 }
+
+export type ParsedCoordinates =
+  | { ok: true; latitude: number; longitude: number }
+  | { ok: false; error: string }
+
+/**
+ * Parse lat/lon query params with finite-number and geographic range checks.
+ */
+export function parseCoordinates(lat: string | null, lon: string | null): ParsedCoordinates {
+  if (!lat || !lon) {
+    return { ok: false, error: 'Latitude and longitude are required' }
+  }
+
+  const latitude = parseFloat(lat)
+  const longitude = parseFloat(lon)
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return { ok: false, error: 'Invalid coordinates' }
+  }
+
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    return { ok: false, error: 'Coordinates out of valid range' }
+  }
+
+  return { ok: true, latitude, longitude }
+}

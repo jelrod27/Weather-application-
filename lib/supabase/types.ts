@@ -317,7 +317,6 @@ export type UserPreferences = Database['public']['Tables']['user_preferences']['
 type UserPreferencesInsert = Database['public']['Tables']['user_preferences']['Insert']
 export type UserPreferencesUpdate = Database['public']['Tables']['user_preferences']['Update']
 
-export type AlertSubscription = Database['public']['Tables']['alert_subscriptions']['Row']
 export type UserAlert = Database['public']['Tables']['user_alerts']['Row']
 
 type UserAIMemoryRow = Database['public']['Tables']['user_ai_memory']['Row']

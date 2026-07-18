@@ -9,12 +9,16 @@ import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { aggregateFeeds, getFeaturedItem, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
 import { parseFeedCategories } from '@/lib/api/query-params';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const rateLimit = await rateLimitRequest(request);
+    if (!rateLimit.allowed) return rateLimit.response;
+
     const searchParams = request.nextUrl.searchParams;
 
     // Parse query parameters

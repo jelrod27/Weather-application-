@@ -79,8 +79,8 @@ const nextConfig = {
         ],
       },
       {
-        // Cache static assets
-        source: '/static/:path*',
+        // Cache hashed Next.js static assets
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -151,7 +151,8 @@ const nextConfig = {
   experimental: {
     optimizeCss: false, // CSS optimization disabled - not helping performance
     scrollRestoration: true,
-    // instrumentationHook removed - now available by default in Next.js 15
+    // Tree-shake heavy icon/chart/map barrel imports into per-symbol chunks.
+    optimizePackageImports: ['lucide-react', 'recharts', 'ol'],
   },
 
   // PERFORMANCE: Enable compiler optimizations
@@ -175,6 +176,18 @@ const nextConfig = {
             name: 'openlayers',
             chunks: 'all',
             priority: 30,
+          },
+          maplibre: {
+            test: /[\\/]node_modules[\\/](maplibre-gl)[\\/]/,
+            name: 'maplibre',
+            chunks: 'all',
+            priority: 28,
+          },
+          recharts: {
+            test: /[\\/]node_modules[\\/](recharts)[\\/]/,
+            name: 'recharts',
+            chunks: 'all',
+            priority: 25,
           },
           // Separate Sentry into its own chunk (~200KB)
           sentry: {

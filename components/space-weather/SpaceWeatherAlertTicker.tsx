@@ -72,6 +72,20 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearResumeTimeout = () => {
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+  };
+
+  const pauseAutoScrollTemporarily = () => {
+    setIsAutoScrolling(false);
+    clearResumeTimeout();
+    resumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 10000);
+  };
 
   // Initialize time on client mount and update every minute for "time ago" display
   useEffect(() => {
@@ -102,17 +116,18 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
     };
   }, [isAutoScrolling, alerts.length]);
 
+  useEffect(() => {
+    return () => clearResumeTimeout();
+  }, []);
+
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % alerts.length);
-    setIsAutoScrolling(false);
-    // Resume auto-scroll after 10 seconds
-    setTimeout(() => setIsAutoScrolling(true), 10000);
+    pauseAutoScrollTemporarily();
   };
 
   const goToPrev = () => {
     setCurrentIndex((prev) => (prev - 1 + alerts.length) % alerts.length);
-    setIsAutoScrolling(false);
-    setTimeout(() => setIsAutoScrolling(true), 10000);
+    pauseAutoScrollTemporarily();
   };
 
   if (isLoading) {

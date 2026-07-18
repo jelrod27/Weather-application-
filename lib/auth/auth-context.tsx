@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import type { Profile, UserPreferences } from '@/lib/supabase/types'
 import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
+import { AuthUserDataLoadGate } from '@/lib/auth/auth-load-generation'
 
 interface AuthContextType {
   user: User | null
@@ -43,9 +44,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profileLoading, setProfileLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Use refs to prevent race conditions and track loading states
-  const isLoadingProfile = useRef(false)
-  const isLoadingPreferences = useRef(false)
+  // Generation tokens ignore stale in-flight profile/prefs responses after
+  // fast account switches (A→B) instead of a boolean mutex that can skip B.
+  const profileGenRef = useRef(0)
+  const preferencesGenRef = useRef(0)
+  // Auth-transition loading gate — independent of refresh bumps so
+  // refreshProfile/refreshPreferences cannot leave profileLoading stuck true.
+  const authLoadGateRef = useRef(new AuthUserDataLoadGate())
   const hasInitializedRef = useRef(false) // Track if auth has initialized (for timeout closure)
   const authStateRef = useRef<{ user: User | null; session: Session | null }>({
     user: null,
@@ -54,47 +59,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Fetch user profile with race condition protection
   const fetchProfile = useCallback(async (userId: string) => {
-    if (isLoadingProfile.current) {
-      return
-    }
-
-    isLoadingProfile.current = true
+    const gen = ++profileGenRef.current
     try {
       const profileData = await getProfile(userId)
-      // Only update if the user hasn't changed during fetch
-      if (authStateRef.current.user?.id === userId) {
-        setProfile(profileData)
+      if (gen !== profileGenRef.current || authStateRef.current.user?.id !== userId) {
+        return
       }
+      setProfile(profileData)
     } catch (error) {
       console.error('Error fetching profile:', error)
-      if (authStateRef.current.user?.id === userId) {
+      if (gen === profileGenRef.current && authStateRef.current.user?.id === userId) {
         setProfile(null)
       }
-    } finally {
-      isLoadingProfile.current = false
     }
   }, [])
 
   // Fetch user preferences with race condition protection
-  const fetchPreferences = useCallback(async () => {
-    if (isLoadingPreferences.current) {
-      return
-    }
-
-    isLoadingPreferences.current = true
+  const fetchPreferences = useCallback(async (userId: string) => {
+    const gen = ++preferencesGenRef.current
     try {
       const preferencesData = await fetchUserPreferences()
-      // Only update if user is still authenticated
-      if (authStateRef.current.user) {
-        setPreferences(preferencesData)
+      if (gen !== preferencesGenRef.current || authStateRef.current.user?.id !== userId) {
+        return
       }
+      setPreferences(preferencesData)
     } catch (error) {
       console.error('Error fetching preferences:', error)
-      if (authStateRef.current.user) {
+      if (gen === preferencesGenRef.current && authStateRef.current.user?.id === userId) {
         setPreferences(null)
       }
-    } finally {
-      isLoadingPreferences.current = false
     }
   }, [])
 
@@ -108,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Refresh preferences data
   const refreshPreferences = useCallback(async () => {
     if (user) {
-      await fetchPreferences()
+      await fetchPreferences(user.id)
     }
   }, [user, fetchPreferences])
 
@@ -135,19 +128,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (session?.user) {
       // User signed in - fetch additional data in the background (non-blocking)
       // Profile and preferences load asynchronously after auth is confirmed
+      const userId = session.user.id
+      const authLoadGen = authLoadGateRef.current.begin()
       setProfileLoading(true)
-      Promise.all([
-        fetchProfile(session.user.id),
-        fetchPreferences()
-      ]).catch(error => {
-        console.error('Error loading user data:', error)
-      }).finally(() => {
-        setProfileLoading(false)
-      })
+      Promise.all([fetchProfile(userId), fetchPreferences(userId)])
+        .catch((error) => {
+          console.error('Error loading user data:', error)
+        })
+        .finally(() => {
+          // Clear only for this auth transition — refresh bumps must not block this
+          if (authLoadGateRef.current.shouldClear(authLoadGen)) {
+            setProfileLoading(false)
+          }
+        })
     } else {
-      // User signed out - clear data immediately
+      // Invalidate in-flight fetches and clear data immediately
+      authLoadGateRef.current.invalidate()
+      profileGenRef.current += 1
+      preferencesGenRef.current += 1
       setProfile(null)
       setPreferences(null)
+      setProfileLoading(false)
     }
   }, [fetchProfile, fetchPreferences])
 

@@ -292,7 +292,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
             {/* Current Weather */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
-                <div className="text-3xl">
+                <div className="text-3xl" aria-hidden="true">
                   {getWeatherIcon(weather.icon)}
                 </div>
                 <div>

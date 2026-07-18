@@ -607,7 +607,11 @@ export default function LiveAircraftMap({
   }, [trail, mapReady]);
 
   return (
-    <div className={cn('relative w-full overflow-hidden rounded-lg border border-border', className)}>
+    <div
+      className={cn('relative w-full overflow-hidden rounded-lg border border-border', className)}
+      role="region"
+      aria-label="Live aircraft map"
+    >
       <div
         ref={containerRef}
         className="h-[min(70vh,640px)] w-full bg-[#e8e4dc]"

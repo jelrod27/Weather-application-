@@ -1,7 +1,5 @@
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
-export type SevereAlertKind = 'severe_weather' | 'severe_weather_all_clear'
-
 export type SevereAlertTier = 'critical' | 'high' | 'standard'
 
 export type SevereWeatherAlertPayload = {
