@@ -107,11 +107,6 @@
     "next": {
       "postcss": "8.5.10"
     },
-    "lighthouse": {
-      "ws": "7.5.13"
-    },
-    "webpack-bundle-analyzer": {
-      "ws": "7.5.13"
-    }
+    "ws@7": "7.5.13"
   }
 }

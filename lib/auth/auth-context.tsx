@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import type { Profile, UserPreferences } from '@/lib/supabase/types'
 import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
+import { AuthUserDataLoadGate } from '@/lib/auth/auth-load-generation'
 
 interface AuthContextType {
   user: User | null
@@ -47,6 +48,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // fast account switches (A→B) instead of a boolean mutex that can skip B.
   const profileGenRef = useRef(0)
   const preferencesGenRef = useRef(0)
+  // Auth-transition loading gate — independent of refresh bumps so
+  // refreshProfile/refreshPreferences cannot leave profileLoading stuck true.
+  const authLoadGateRef = useRef(new AuthUserDataLoadGate())
   const hasInitializedRef = useRef(false) // Track if auth has initialized (for timeout closure)
   const authStateRef = useRef<{ user: User | null; session: Session | null }>({
     user: null,
@@ -125,26 +129,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // User signed in - fetch additional data in the background (non-blocking)
       // Profile and preferences load asynchronously after auth is confirmed
       const userId = session.user.id
+      const authLoadGen = authLoadGateRef.current.begin()
       setProfileLoading(true)
-      const profilePromise = fetchProfile(userId)
-      const preferencesPromise = fetchPreferences(userId)
-      const expectedProfileGen = profileGenRef.current
-      const expectedPreferencesGen = preferencesGenRef.current
-      Promise.all([profilePromise, preferencesPromise])
+      Promise.all([fetchProfile(userId), fetchPreferences(userId)])
         .catch((error) => {
           console.error('Error loading user data:', error)
         })
         .finally(() => {
-          // Only clear loading for the latest auth transition
-          if (
-            profileGenRef.current === expectedProfileGen &&
-            preferencesGenRef.current === expectedPreferencesGen
-          ) {
+          // Clear only for this auth transition — refresh bumps must not block this
+          if (authLoadGateRef.current.shouldClear(authLoadGen)) {
             setProfileLoading(false)
           }
         })
     } else {
       // Invalidate in-flight fetches and clear data immediately
+      authLoadGateRef.current.invalidate()
       profileGenRef.current += 1
       preferencesGenRef.current += 1
       setProfile(null)

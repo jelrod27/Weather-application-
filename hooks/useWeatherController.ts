@@ -59,9 +59,13 @@ export function useWeatherController() {
         setRemainingSearches(checkRateLimit().remaining)
     }, [isClient])
 
-    // Weather handling
-    const handleLocationDetected = useCallback(async (location: LocationData) => {
-        const loadId = ++latestLoadId.current
+    // Weather handling. Optional existingLoadId lets callers (e.g. "use my
+    // location") share one generation so post-detect work is not treated as stale.
+    const handleLocationDetected = useCallback(async (
+        location: LocationData,
+        existingLoadId?: number,
+    ) => {
+        const loadId = existingLoadId ?? ++latestLoadId.current
         try {
             userCacheService.saveLastLocation(location)
             const unitSystemForKey: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
@@ -248,7 +252,7 @@ export function useWeatherController() {
         try {
             const location = await locationService.getCurrentLocation()
             if (loadId !== latestLoadId.current) return
-            await handleLocationDetected(location)
+            await handleLocationDetected(location, loadId)
             if (loadId !== latestLoadId.current) return
             setRemainingSearches(recordRateLimitedRequest().remaining)
         } catch (error: any) {
