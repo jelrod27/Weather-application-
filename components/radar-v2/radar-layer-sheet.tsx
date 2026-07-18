@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useId, useRef } from 'react'
 import type { RadarShareLayerState, RadarTilePreferences } from '@/lib/radar/radar-url-state'
 import { RAINVIEWER_COLOR_SCHEMES, RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
 
@@ -30,13 +31,38 @@ export function RadarLayerSheet({
   onTilePreferencesChange,
   onOpacityChange,
 }: RadarLayerSheetProps) {
+  const titleId = useId()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    closeButtonRef.current?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
-    <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-[3000] max-h-[80vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-zinc-950/98 p-4 shadow-2xl backdrop-blur-md">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className="pointer-events-auto absolute inset-x-0 bottom-0 z-[3000] max-h-[80vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-zinc-950/98 p-4 shadow-2xl backdrop-blur-md"
+    >
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-white">Layers</h2>
+        <h2 id={titleId} className="text-base font-semibold text-white">Layers</h2>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           className="rounded-md px-3 py-1 text-sm text-zinc-300 hover:bg-white/10"
