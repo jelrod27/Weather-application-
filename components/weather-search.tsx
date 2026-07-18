@@ -364,12 +364,6 @@ export default function WeatherSearch({
             </div>
           )}
 
-          {error?.includes('API key') && (
-            <div className={`text-xs ${themeClasses.secondaryText} normal-case mt-2 break-words`}>
-              Please configure your OpenWeatherMap API key in the environment variables.
-            </div>
-          )}
-
           {error?.includes('location') && error?.includes('denied') && (
             <div className={`text-xs ${themeClasses.secondaryText} normal-case mt-2 break-words`}>
               Location access was denied. Try searching manually or enable location permissions.

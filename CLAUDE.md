@@ -107,8 +107,7 @@ E2E (Playwright) and Lighthouse CI run in GitHub Actions
 
 ### External Services
 
-- **Open-Meteo** - Primary weather data, forecasts, air quality (keyless)
-- **OpenWeatherMap** - Legacy/fallback endpoints (UV, precipitation history)
+- **Open-Meteo** - Primary weather data, forecasts, air quality, UV (keyless)
 - **Supabase** - PostgreSQL database, authentication
 - **NOAA MRMS** - High-resolution US radar via WMS (nowcoast.noaa.gov)
 - **USGS** - Earthquake data
@@ -148,7 +147,6 @@ Required in `.env.local`:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-OPENWEATHER_API_KEY=
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 

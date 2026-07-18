@@ -27,7 +27,7 @@ function buildCspHeader(isProd: boolean): string {
     // directly from the client when the user blocks or denies navigator
     // geolocation. Without the allowlist the weather widget's loading
     // skeleton never resolves.
-    "connect-src 'self' https://api.openweathermap.org https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io https://api.ipgeolocation.io",
+    "connect-src 'self' https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io https://api.ipgeolocation.io",
     "worker-src 'self' blob:",
     "frame-src 'self' https://vercel.live https://challenges.cloudflare.com",
     "object-src 'none'",

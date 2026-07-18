@@ -21,7 +21,7 @@ const tempUnitLabel = (u: UserPreferences['temperature_unit'] | undefined) =>
   u === 'celsius' ? '°C' : '°F'
 const windUnitLabel = (u: UserPreferences['wind_unit'] | undefined) =>
   u === 'kmh' ? 'km/h' : u === 'ms' ? 'm/s' : 'mph'
-const owmUnits = (u: UserPreferences['temperature_unit'] | undefined) =>
+const apiTempUnits = (u: UserPreferences['temperature_unit'] | undefined) =>
   u === 'celsius' ? 'metric' : 'imperial'
 
 interface BasicWeatherData {
@@ -73,7 +73,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
 
   const tempUnit = tempUnitLabel(preferences?.temperature_unit)
   const windUnit = windUnitLabel(preferences?.wind_unit)
-  const apiUnits = owmUnits(preferences?.temperature_unit)
+  const apiUnits = apiTempUnits(preferences?.temperature_unit)
 
   const fetchWeather = async () => {
     setLoading(true)
@@ -145,50 +145,16 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
 
     try {
       const base = `lat=${location.latitude}&lon=${location.longitude}`
-      const [currentSettled, forecastSettled, uvSettled, aqiSettled] =
-        await Promise.allSettled([
-          fetch(`/api/weather/current?${base}&units=${apiUnits}`),
-          fetch(`/api/weather/forecast?${base}&units=${apiUnits}`),
-          fetch(`/api/weather/uv?${base}`),
-          fetch(`/api/weather/air-quality?${base}`),
-        ])
+      const [detailSettled, aqiSettled] = await Promise.allSettled([
+        fetch(`/api/dashboard-weather?${base}&units=${apiUnits}&detail=1`),
+        fetch(`/api/weather/air-quality?${base}`),
+      ])
 
-      // Current weather: required — failure aborts like before
-      if (currentSettled.status === 'rejected' || !currentSettled.value.ok) {
-        throw new Error('Failed to fetch current weather')
+      if (detailSettled.status === 'rejected' || !detailSettled.value.ok) {
+        throw new Error('Failed to fetch detailed weather')
       }
-      const currentRaw = await currentSettled.value.json()
+      const detail = await detailSettled.value.json()
 
-      // OWM /weather response shape — map to BasicWeatherData
-      const currentData: BasicWeatherData = {
-        temperature: Math.round(currentRaw?.main?.temp ?? 0),
-        feelsLike: Math.round(currentRaw?.main?.feels_like ?? 0),
-        humidity: currentRaw?.main?.humidity ?? 0,
-        windSpeed: currentRaw?.wind?.speed ?? 0,
-        pressure: currentRaw?.main?.pressure ?? 0,
-        visibility: currentRaw?.visibility != null ? Math.round(currentRaw.visibility / 1000) : 0,
-        description: currentRaw?.weather?.[0]?.description ?? '',
-        icon: currentRaw?.weather?.[0]?.icon ?? '',
-      }
-
-      // Forecast: required
-      if (forecastSettled.status === 'rejected' || !forecastSettled.value.ok) {
-        throw new Error('Failed to fetch forecast')
-      }
-      const forecastData = await forecastSettled.value.json()
-
-      // UV index: optional — default 0 on any failure
-      let uvIndex = 0
-      try {
-        if (uvSettled.status === 'fulfilled' && uvSettled.value.ok) {
-          const uvData = await uvSettled.value.json()
-          uvIndex = uvData.uvi ?? 0
-        }
-      } catch (err) {
-        console.warn('UV index fetch failed:', err)
-      }
-
-      // Air quality: optional — defaults on any failure
       let aqi = 0
       let aqiCategory = 'No Data'
       try {
@@ -201,71 +167,21 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
         console.warn('Air quality fetch failed:', err)
       }
 
-      // OWM /forecast returns 3-hour intervals (40 entries over 5 days). Group
-      // by calendar date and aggregate min/max so each forecast tile maps to a
-      // real day instead of a 3-hour slice.
-      type OwmListEntry = {
-        dt: number
-        dt_txt?: string
-        main?: { temp_max?: number; temp_min?: number }
-        weather?: Array<{ main?: string; description?: string }>
-      }
-      const list: OwmListEntry[] = forecastData.list ?? []
-      const byDate = new Map<
-        string,
-        { highTemp: number; lowTemp: number; entries: OwmListEntry[] }
-      >()
-      for (const item of list) {
-        const date = new Date((item.dt ?? 0) * 1000)
-        const key = date.toISOString().slice(0, 10)
-        const max = item.main?.temp_max ?? -Infinity
-        const min = item.main?.temp_min ?? Infinity
-        const existing = byDate.get(key)
-        if (existing) {
-          existing.highTemp = Math.max(existing.highTemp, max)
-          existing.lowTemp = Math.min(existing.lowTemp, min)
-          existing.entries.push(item)
-        } else {
-          byDate.set(key, { highTemp: max, lowTemp: min, entries: [item] })
-        }
-      }
-      const processedForecast = Array.from(byDate.entries())
-        .slice(0, 5)
-        .map(([dateKey, agg]) => {
-          // Pick the entry closest to local noon as the day's representative weather.
-          // Uses viewer-local time (getHours) rather than UTC so a sunny afternoon
-          // in US Eastern doesn't get represented by 7am UTC-noon overcast skies.
-          const noon = agg.entries.reduce((best, e) => {
-            const eHour = new Date((e.dt ?? 0) * 1000).getHours()
-            const bestHour = new Date((best.dt ?? 0) * 1000).getHours()
-            return Math.abs(eHour - 12) < Math.abs(bestHour - 12) ? e : best
-          }, agg.entries[0])
-          const date = new Date(`${dateKey}T12:00:00Z`)
-          return {
-            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            highTemp: Math.round(agg.highTemp),
-            lowTemp: Math.round(agg.lowTemp),
-            condition: noon.weather?.[0]?.main ?? '',
-            description: noon.weather?.[0]?.description ?? '',
-          }
-        })
-
-      // Combine all data
       const fullWeatherData: DetailedWeatherData = {
-        current: currentData,
-        forecast: processedForecast,
-        uvIndex: uvIndex,
+        current: detail.current,
+        forecast: detail.forecast ?? [],
+        uvIndex: detail.uvIndex ?? 0,
         airQuality: {
-          aqi: aqi,
+          aqi,
           category: aqiCategory,
           pm25: 0,
           pm10: 0,
           o3: 0,
           no2: 0,
           so2: 0,
-          co: 0
+          co: 0,
         },
-        alerts: []
+        alerts: [],
       }
 
       setDetailedWeatherData(fullWeatherData)

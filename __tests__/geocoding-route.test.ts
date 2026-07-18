@@ -364,37 +364,24 @@ describe('GET /api/weather/geocoding', () => {
     });
   });
 
-  it('does not require OPENWEATHER_API_KEY to be set', async () => {
-    const prev = process.env.OPENWEATHER_API_KEY;
-    delete process.env.OPENWEATHER_API_KEY;
+  it('resolves place search without any third-party weather API key', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        results: [
+          {
+            id: 10,
+            name: 'Paris',
+            latitude: 48.85,
+            longitude: 2.35,
+            country_code: 'FR',
+            admin1: 'Île-de-France',
+          },
+        ],
+      })
+    );
 
-    try {
-      mockFetch.mockResolvedValueOnce(
-        jsonResponse({
-          results: [
-            {
-              id: 10,
-              name: 'Paris',
-              latitude: 48.85,
-              longitude: 2.35,
-              country_code: 'FR',
-              admin1: 'Île-de-France',
-            },
-          ],
-        })
-      );
-
-      const req = new NextRequest('http://localhost/api/weather/geocoding?q=Paris');
-      const res = await GET(req);
-      expect(res.status).toBe(200);
-    } finally {
-      // Always restore the original env value, even if the assertion above
-      // throws — otherwise this mutation leaks to subsequent tests.
-      if (prev !== undefined) {
-        process.env.OPENWEATHER_API_KEY = prev;
-      } else {
-        delete process.env.OPENWEATHER_API_KEY;
-      }
-    }
+    const req = new NextRequest('http://localhost/api/weather/geocoding?q=Paris');
+    const res = await GET(req);
+    expect(res.status).toBe(200);
   });
 });

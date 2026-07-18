@@ -24,7 +24,7 @@ The site targets learners, hobbyists, and weather enthusiasts who want accurate 
 
 ## Features
 
-- **Real-time weather**: Current conditions and forecasts via **Open-Meteo** (primary), with legacy OpenWeatherMap endpoints where still required
+- **Real-time weather**: Current conditions and forecasts via **Open-Meteo**
 - **Space weather**: Kp index, solar wind, aurora forecast, flare tracking, ENLIL model visualization
 - **Severe weather**: SPC convective outlook maps (Day 1–3) and active NWS alerts
 - **Travel weather**: Interstate corridor driving conditions with hazard scoring
@@ -43,7 +43,7 @@ The site targets learners, hobbyists, and weather enthusiasts who want accurate 
 - **Styling**: Tailwind CSS v4, shadcn-style UI primitives
 - **Language**: TypeScript (strict)
 - **Database**: Supabase (PostgreSQL, Auth, RLS)
-- **Weather data**: Open-Meteo (primary), OpenWeatherMap (legacy/fallback), NOAA, USGS, NASA, NHC, SPC
+- **Weather data**: Open-Meteo, NOAA, USGS, NASA, NHC, SPC
 - **Monitoring**: Sentry
 - **Testing**: Jest (unit), Playwright (E2E), Lighthouse CI
 - **Deployment**: Vercel
@@ -54,7 +54,7 @@ The site targets learners, hobbyists, and weather enthusiasts who want accurate 
 
 - Node.js 20.9 or newer (required by Next.js 16)
 - npm
-- Supabase and OpenWeatherMap keys for full local functionality
+- Supabase keys for auth/saved locations (optional for anonymous browsing)
 
 ### Installation
 
@@ -73,8 +73,8 @@ The site targets learners, hobbyists, and weather enthusiasts who want accurate 
    ```
    NEXT_PUBLIC_SUPABASE_URL=
    NEXT_PUBLIC_SUPABASE_ANON_KEY=
-   OPENWEATHER_API_KEY=
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+   # Optional: GOOGLE_POLLEN_API_KEY= (recommended for US pollen)
    ```
 
 4. Run the development server:

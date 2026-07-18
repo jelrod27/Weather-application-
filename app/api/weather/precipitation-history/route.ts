@@ -218,8 +218,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-// [OWM ROLLBACK] Previous OpenWeatherMap implementation used:
-// - https://api.openweathermap.org/data/2.5/weather (current precip rate)
-// - https://api.openweathermap.org/data/3.0/onecall/day_summary (daily totals)
-// See git history for full original implementation.

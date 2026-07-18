@@ -75,53 +75,46 @@ export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promi
     });
   });
 
-  // Current weather
-  await page.route('**/api/weather/current**', async (route) => {
+  // Dashboard weather (Open-Meteo-backed summary + optional detail expand)
+  await page.route('**/api/dashboard-weather**', async (route) => {
+    const url = new URL(route.request().url())
+    const detail = url.searchParams.get('detail') === '1' || url.searchParams.get('detail') === 'true'
+    const current = {
+      temperature: o.tempF,
+      description: o.conditionDescription,
+      humidity: o.humidity,
+      windSpeed: 5,
+      icon: '01d',
+      feelsLike: o.tempF - 2,
+      pressure: o.pressure,
+      visibility: 10,
+      units: 'imperial' as const,
+    }
+    if (!detail) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(current),
+      })
+    }
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        name: o.cityName,
-        sys: { country: o.country, sunrise: 1710000000, sunset: 1710040000 },
-        timezone: -14400,
-        main: { temp: o.tempF, humidity: o.humidity, pressure: o.pressure },
-        weather: [{ main: o.conditionMain, description: o.conditionDescription }],
-        wind: { speed: 5, deg: 45 },
-      })
-    });
+        current,
+        forecast: [
+          {
+            day: 'Mon',
+            highTemp: o.tempF + 5,
+            lowTemp: o.tempF - 5,
+            condition: 'sunny',
+            description: o.conditionDescription,
+          },
+        ],
+        uvIndex: 5,
+      }),
+    })
   });
-
-  // Forecast: Provide several 3h slices so processDailyForecast can build days
-  await page.route('**/api/weather/forecast**', async (route) => {
-    const now = Math.floor(Date.now() / 1000);
-    const list = Array.from({ length: 8 }, (_, i) => ({
-      dt: now + i * 3 * 3600,
-      main: {
-        temp: o.tempF,
-        temp_min: o.tempF - 5,
-        temp_max: o.tempF + 5,
-        humidity: o.humidity,
-        pressure: o.pressure,
-      },
-      weather: [{ main: o.conditionMain, description: o.conditionDescription }],
-      wind: { speed: 5, deg: 45 },
-      clouds: { all: 10 },
-      pop: 0,
-    }));
-
-    return route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ list })
-    });
-  });
-
-  // UV
-  await page.route('**/api/weather/uv**', (route) => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ uvi: 5 })
-  }));
 
   // Pollen
   await page.route('**/api/weather/pollen**', (route) => route.fulfill({
