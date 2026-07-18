@@ -45,9 +45,11 @@ function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCa
   // Theme-aware text styles using CSS variables
   const textStyles = minimal ? 'text-white/80' : 'text-foreground'
 
-  // Filter out empty / unavailable entries
+  // Filter out unavailable entries; None and numeric levels are valid readings
   const validData = Object.entries(categoryData).filter(
-    ([_, category]) => category !== 'No Data' && category !== 'Unavailable',
+    ([_, category]) =>
+      category !== 'No Data'
+      && category !== 'Unavailable',
   )
 
   const renderPollenData = () => {
