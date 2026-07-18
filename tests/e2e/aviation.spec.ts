@@ -177,8 +177,16 @@ test.describe('/aviation', () => {
         }),
       }),
     );
-    // OpenFreeMap tiles / MapLibre style — don't fail the page if tiles are slow
-    await page.route('**/tiles.openfreemap.org/**', (route) => route.abort());
+    // Soften tile latency: fulfill style JSON, abort heavy tile payloads.
+    // Do NOT abort the style URL itself — that hides CSP/ basemap regressions.
+    await page.route('**/tiles.openfreemap.org/**', async (route) => {
+      const url = route.request().url();
+      if (url.includes('/styles/')) {
+        await route.continue();
+        return;
+      }
+      await route.abort();
+    });
   });
 
   test('renders live tracker hero, map, and search', async ({ page }) => {
@@ -187,6 +195,22 @@ test.describe('/aviation', () => {
     await expect(page.getByRole('heading', { name: /LIVE FLIGHT TRACKER/i })).toBeVisible();
     await expect(page.getByTestId('aircraft-search')).toBeVisible();
     await expect(page.getByTestId('live-aircraft-map')).toBeVisible({ timeout: 30000 });
+    // CSP must allow OpenFreeMap style fetch; blocking it leaves a blank navy canvas.
+    await expect
+      .poll(async () => {
+        return page.evaluate(async () => {
+          try {
+            const res = await fetch('https://tiles.openfreemap.org/styles/dark', {
+              method: 'GET',
+              cache: 'no-store',
+            });
+            return res.ok;
+          } catch {
+            return false;
+          }
+        });
+      }, { timeout: 15000 })
+      .toBe(true);
     await expect(page.getByTestId('aircraft-count-chip')).toBeVisible();
     await expect(page.getByTestId('flight-weather-brief')).toBeVisible();
   });

@@ -25,6 +25,13 @@ describe('Fix 5: CSP unsafe-eval removed', () => {
   });
 });
 
+describe('CSP connect-src allows OpenFreeMap for aviation MapLibre', () => {
+  const src = readFileSync(join(__dirname, '..', 'middleware.ts'), 'utf-8');
+  it('allowlists tiles.openfreemap.org (style, vector tiles, glyphs, sprites)', () => {
+    expect(src).toContain('https://tiles.openfreemap.org');
+  });
+});
+
 // Fix 6 covered the games scores route, also removed with the games feature.
 
 describe('Fix 7: Info disclosure on cron endpoint', () => {

@@ -11,7 +11,9 @@ import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 import { sampleGreatCircle } from '@/lib/aviation/route-corridor';
 
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+// Dark basemap (OpenFreeMap) — FR24-like contrast for altitude-colored aircraft.
+// Requires CSP connect-src allowlist for tiles.openfreemap.org (middleware.ts).
+const STYLE_URL = 'https://tiles.openfreemap.org/styles/dark';
 const POLL_MS = 3_000;
 const DEFAULT_CENTER: [number, number] = [-98.35, 39.5];
 const DEFAULT_ZOOM = 4.2;
