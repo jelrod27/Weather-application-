@@ -37,8 +37,6 @@ export function RadarLayerSheet({
   useEffect(() => {
     if (!open) return
 
-    closeButtonRef.current?.focus()
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -49,6 +47,12 @@ export function RadarLayerSheet({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (open) {
+      closeButtonRef.current?.focus()
+    }
+  }, [open])
 
   if (!open) return null
 
