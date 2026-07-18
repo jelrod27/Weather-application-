@@ -9,7 +9,6 @@ import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibr
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
-import { DEFAULT_AIRCRAFT_RADIUS_NM } from '@/lib/aviation/aircraft-types';
 import { sampleGreatCircle } from '@/lib/aviation/route-corridor';
 
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
@@ -29,6 +28,8 @@ export type LiveAircraftMapProps = {
   flyTo?: { lat: number; lon: number; zoom?: number } | null;
   onCountChange?: (count: number, meta: { source: string; degraded: boolean }) => void;
   onDegradedChange?: (degraded: boolean, source: string | null) => void;
+  /** Soft-update selected aircraft from poll without resetting trail. */
+  onSelectedAircraftUpdate?: (aircraft: Aircraft) => void;
   /** External aircraft override (e.g. callsign search result highlight). */
   highlightAircraft?: Aircraft | null;
   /** Planned OD great-circle path for the selected flight. */
@@ -154,6 +155,7 @@ export default function LiveAircraftMap({
   flyTo,
   onCountChange,
   onDegradedChange,
+  onSelectedAircraftUpdate,
   highlightAircraft,
   routeEndpoints,
   trail,
@@ -191,15 +193,21 @@ export default function LiveAircraftMap({
       const source = map.getSource('aircraft') as GeoJSONSource | undefined;
       source?.setData(toFeatureCollection([...byId.values()]));
       syncSelectionStyle();
+
+      const selectedId = selectedRef.current;
+      if (selectedId && onSelectedAircraftUpdate) {
+        const updated = byId.get(selectedId);
+        if (updated) onSelectedAircraftUpdate(updated);
+      }
     },
-    [highlightAircraft, syncSelectionStyle],
+    [highlightAircraft, onSelectedAircraftUpdate, syncSelectionStyle],
   );
 
   const fetchAircraft = useCallback(async () => {
     const map = mapRef.current;
     if (!map || !visibleRef.current) return;
     const center = map.getCenter();
-    const radius = radiusForZoom(map.getZoom()) || DEFAULT_AIRCRAFT_RADIUS_NM;
+    const radius = radiusForZoom(map.getZoom());
     try {
       const params = new URLSearchParams({
         lat: String(center.lat),

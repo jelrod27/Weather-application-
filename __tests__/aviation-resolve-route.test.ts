@@ -5,12 +5,16 @@ import {
 
 describe('standingDataRouteUrl', () => {
   it('builds airline-folder path from callsign', () => {
-    expect(standingDataRouteUrl('SWA2200')).toBe(
+    expect(standingDataRouteUrl('SWA2200').href).toBe(
       'https://vrs-standing-data.adsb.lol/routes/SW/SWA2200.json',
     );
-    expect(standingDataRouteUrl('ual2096')).toBe(
+    expect(standingDataRouteUrl('ual2096').href).toBe(
       'https://vrs-standing-data.adsb.lol/routes/UA/UAL2096.json',
     );
+  });
+
+  it('rejects path-injection callsigns', () => {
+    expect(standingDataRouteUrl('../evil').pathname).toBe('/routes//.json');
   });
 });
 

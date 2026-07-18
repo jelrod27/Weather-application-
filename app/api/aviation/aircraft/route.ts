@@ -42,9 +42,17 @@ export async function GET(request: NextRequest) {
     }
 
     const radiusRaw = searchParams.get('radius');
-    const radiusNm = clampRadiusNm(
-      radiusRaw != null ? Number(radiusRaw) : DEFAULT_AIRCRAFT_RADIUS_NM,
-    );
+    const parsedRadius =
+      radiusRaw == null || radiusRaw.trim() === ''
+        ? DEFAULT_AIRCRAFT_RADIUS_NM
+        : Number(radiusRaw);
+    if (!Number.isFinite(parsedRadius) || parsedRadius <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid radius' },
+        { status: 400, headers: rateLimit.headers },
+      );
+    }
+    const radiusNm = clampRadiusNm(parsedRadius);
 
     const result = await getAircraftNear(lat, lon, radiusNm);
 

@@ -101,7 +101,7 @@ function AviationPageInner() {
         setAlertsFetchedAt(Date.now());
         setError(null);
       } catch (err) {
-        console.error('Error fetching aviation alerts:', err);
+        console.error('[AviationPage] Error fetching aviation alerts:', err);
         setError('Unable to load aviation alerts. Please try again later.');
         setAlerts([]);
       } finally {
@@ -125,17 +125,19 @@ function AviationPageInner() {
     setFlyTo({ lat: aircraft.lat, lon: aircraft.lon, zoom: 8 });
   }, []);
 
-  // Append trail while selected aircraft is updated via poll (approx via re-select)
-  useEffect(() => {
-    if (!selected) return;
+  const updateSelectedAircraft = useCallback((aircraft: Aircraft) => {
+    setSelected((prev) => {
+      if (!prev || prev.icao24 !== aircraft.icao24) return prev;
+      return aircraft;
+    });
     setTrail((prev) => {
       const last = prev[prev.length - 1];
-      if (last && Math.abs(last.lat - selected.lat) < 1e-5 && Math.abs(last.lon - selected.lon) < 1e-5) {
+      if (last && Math.abs(last.lat - aircraft.lat) < 1e-5 && Math.abs(last.lon - aircraft.lon) < 1e-5) {
         return prev;
       }
-      return [...prev.slice(-200), { lat: selected.lat, lon: selected.lon, at: Date.now() }];
+      return [...prev.slice(-200), { lat: aircraft.lat, lon: aircraft.lon, at: Date.now() }];
     });
-  }, [selected]);
+  }, []);
 
   useEffect(() => {
     if (!flightParam) return;
@@ -248,6 +250,7 @@ function AviationPageInner() {
             routeEndpoints={routeEndpoints}
             trail={trail.map(({ lat, lon }) => ({ lat, lon }))}
             onSelectAircraft={selectAircraft}
+            onSelectedAircraftUpdate={updateSelectedAircraft}
             onCountChange={(n, meta) => {
               setCount(n);
               setSourceLabel(meta.source);

@@ -6,7 +6,11 @@
  * so we do not rely on it as the primary source.
  */
 
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import {
+  aviationUrl,
+  fetchAviationUpstream,
+  sanitizeCallsign,
+} from './fetch-aviation-upstream';
 
 export type ResolvedAirport = {
   icao: string;
@@ -76,10 +80,13 @@ export function fromStandingPayload(callsign: string, raw: unknown): ResolvedRou
 }
 
 /** Standing-data path uses airline prefix folder (first 2 chars of callsign). */
-export function standingDataRouteUrl(callsign: string): string {
-  const cs = callsign.trim().toUpperCase();
+export function standingDataRouteUrl(callsign: string): URL {
+  const cs = sanitizeCallsign(callsign) ?? '';
   const folder = cs.slice(0, 2);
-  return `https://vrs-standing-data.adsb.lol/routes/${folder}/${cs}.json`;
+  return aviationUrl(
+    'https://vrs-standing-data.adsb.lol',
+    `/routes/${folder}/${cs}.json`,
+  );
 }
 
 export async function resolveRouteForCallsign(
@@ -87,9 +94,9 @@ export async function resolveRouteForCallsign(
   lat?: number,
   lng?: number,
 ): Promise<ResolvedRoute> {
-  const cs = callsign.trim().toUpperCase();
+  const cs = sanitizeCallsign(callsign) ?? '';
   const empty: ResolvedRoute = {
-    callsign: cs,
+    callsign: cs || callsign.trim().toUpperCase(),
     origin: null,
     destination: null,
     originAirport: null,
@@ -100,7 +107,7 @@ export async function resolveRouteForCallsign(
   if (!cs) return empty;
 
   try {
-    const res = await fetchWithTimeout(standingDataRouteUrl(cs), {
+    const res = await fetchAviationUpstream(standingDataRouteUrl(cs), {
       timeoutMs: 6_000,
       maxRetries: 1,
       headers: { Accept: 'application/json' },
@@ -116,8 +123,11 @@ export async function resolveRouteForCallsign(
   // Fallback: GET /api/0/route/{callsign}/{lat}/{lng}
   if (Number.isFinite(lat) && Number.isFinite(lng)) {
     try {
-      const url = `https://api.adsb.lol/api/0/route/${encodeURIComponent(cs)}/${lat}/${lng}`;
-      const res = await fetchWithTimeout(url, {
+      const url = aviationUrl(
+        'https://api.adsb.lol',
+        `/api/0/route/${cs}/${lat}/${lng}`,
+      );
+      const res = await fetchAviationUpstream(url, {
         timeoutMs: 6_000,
         maxRetries: 1,
         headers: { Accept: 'application/json' },

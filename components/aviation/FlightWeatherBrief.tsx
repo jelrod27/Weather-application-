@@ -45,11 +45,14 @@ export default function FlightWeatherBrief({
   useEffect(() => {
     if (!effectiveOrigin || !effectiveDest) {
       setBrief(null);
+      setError(null);
+      setLoading(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setBrief(null);
     const params = new URLSearchParams({
       origin: effectiveOrigin,
       dest: effectiveDest,
@@ -67,7 +70,10 @@ export default function FlightWeatherBrief({
       })
       .catch((err) => {
         console.error('[FlightWeatherBrief]', err);
-        if (!cancelled) setError('Brief unavailable');
+        if (!cancelled) {
+          setBrief(null);
+          setError('Brief unavailable');
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

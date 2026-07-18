@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
     if (!rateLimit.allowed) return rateLimit.response;
 
     const callsign = request.nextUrl.searchParams.get('callsign')?.trim().toUpperCase() ?? '';
-    const lat = Number(request.nextUrl.searchParams.get('lat'));
-    const lon = Number(request.nextUrl.searchParams.get('lon'));
     if (!callsign) {
       return NextResponse.json(
         { error: 'callsign is required' },
@@ -22,11 +20,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const resolved = await resolveRouteForCallsign(
-      callsign,
-      Number.isFinite(lat) ? lat : undefined,
-      Number.isFinite(lon) ? lon : undefined,
-    );
+    const latRaw = request.nextUrl.searchParams.get('lat');
+    const lonRaw = request.nextUrl.searchParams.get('lon');
+    const hasCoords = latRaw != null && latRaw.trim() !== '' && lonRaw != null && lonRaw.trim() !== '';
+    let lat: number | undefined;
+    let lon: number | undefined;
+    if (hasCoords) {
+      const parsedLat = Number(latRaw);
+      const parsedLon = Number(lonRaw);
+      if (
+        !Number.isFinite(parsedLat)
+        || !Number.isFinite(parsedLon)
+        || parsedLat < -90
+        || parsedLat > 90
+        || parsedLon < -180
+        || parsedLon > 180
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid lat/lon' },
+          { status: 400, headers: rateLimit.headers },
+        );
+      }
+      lat = parsedLat;
+      lon = parsedLon;
+    }
+
+    const resolved = await resolveRouteForCallsign(callsign, lat, lon);
 
     return NextResponse.json(
       {

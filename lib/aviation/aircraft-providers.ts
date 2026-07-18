@@ -3,13 +3,17 @@
  * Near-point results are cached briefly to protect free upstream quotas.
  */
 
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import {
   MAX_AIRCRAFT_RADIUS_NM,
   type Aircraft,
   type AircraftNearResponse,
   type AircraftSource,
 } from './aircraft-types';
+import {
+  aviationUrl,
+  fetchAviationUpstream,
+  sanitizeCallsign,
+} from './fetch-aviation-upstream';
 import { normalizeAircraftList } from './normalize-aircraft';
 
 export type AircraftProvider = {
@@ -25,6 +29,18 @@ type CacheEntry = {
 
 const nearCache = new Map<string, CacheEntry>();
 const NEAR_CACHE_TTL_MS = 3_000;
+const NEAR_CACHE_MAX_ENTRIES = 200;
+
+function pruneNearCache(now: number): void {
+  for (const [key, entry] of nearCache) {
+    if (entry.expiresAt <= now) nearCache.delete(key);
+  }
+  while (nearCache.size >= NEAR_CACHE_MAX_ENTRIES) {
+    const oldest = nearCache.keys().next().value;
+    if (oldest == null) break;
+    nearCache.delete(oldest);
+  }
+}
 
 function roundCoord(n: number): number {
   return Math.round(n * 100) / 100;
@@ -40,10 +56,10 @@ export function clampRadiusNm(radiusNm: number): number {
 }
 
 async function fetchV2Ac(
-  url: string,
+  url: URL,
   source: AircraftSource,
 ): Promise<Aircraft[]> {
-  const res = await fetchWithTimeout(url, {
+  const res = await fetchAviationUpstream(url, {
     timeoutMs: 8_000,
     maxRetries: 1,
     headers: { Accept: 'application/json' },
@@ -59,13 +75,17 @@ export class AdsbLolProvider implements AircraftProvider {
   readonly name = 'adsb.lol' as const;
 
   async getAircraftNear(lat: number, lon: number, radiusNm: number): Promise<Aircraft[]> {
-    const url = `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${radiusNm}`;
+    const url = aviationUrl(
+      'https://api.adsb.lol',
+      `/v2/lat/${lat}/lon/${lon}/dist/${radiusNm}`,
+    );
     return fetchV2Ac(url, this.name);
   }
 
   async getByCallsign(callsign: string): Promise<Aircraft[]> {
-    const q = encodeURIComponent(callsign.trim().toUpperCase());
-    const url = `https://api.adsb.lol/v2/callsign/${q}`;
+    const q = sanitizeCallsign(callsign);
+    if (!q) return [];
+    const url = aviationUrl('https://api.adsb.lol', `/v2/callsign/${q}`);
     return fetchV2Ac(url, this.name);
   }
 }
@@ -74,7 +94,10 @@ export class AirplanesLiveProvider implements AircraftProvider {
   readonly name = 'airplanes.live' as const;
 
   async getAircraftNear(lat: number, lon: number, radiusNm: number): Promise<Aircraft[]> {
-    const url = `https://api.airplanes.live/v2/point/${lat}/${lon}/${radiusNm}`;
+    const url = aviationUrl(
+      'https://api.airplanes.live',
+      `/v2/point/${lat}/${lon}/${radiusNm}`,
+    );
     return fetchV2Ac(url, this.name);
   }
 }
@@ -83,7 +106,10 @@ export class AdsbFiProvider implements AircraftProvider {
   readonly name = 'adsb.fi' as const;
 
   async getAircraftNear(lat: number, lon: number, radiusNm: number): Promise<Aircraft[]> {
-    const url = `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${radiusNm}`;
+    const url = aviationUrl(
+      'https://opendata.adsb.fi',
+      `/api/v2/lat/${lat}/lon/${lon}/dist/${radiusNm}`,
+    );
     return fetchV2Ac(url, this.name);
   }
 }
@@ -132,6 +158,7 @@ export async function getAircraftNear(
         count: aircraft.length,
         fetchedAt: now,
       };
+      pruneNearCache(now);
       nearCache.set(key, { expiresAt: now + NEAR_CACHE_TTL_MS, value });
       return value;
     } catch (err) {
@@ -150,7 +177,7 @@ export async function getAircraftByCallsign(
   callsign: string,
   providers: AircraftProvider[] = defaultProviders,
 ): Promise<{ aircraft: Aircraft[]; source: AircraftSource; degraded: boolean }> {
-  const q = callsign.trim().toUpperCase();
+  const q = sanitizeCallsign(callsign);
   if (!q) {
     return { aircraft: [], source: 'adsb.lol', degraded: false };
   }
@@ -163,11 +190,10 @@ export async function getAircraftByCallsign(
   for (let i = 0; i < chain.length; i++) {
     const provider = chain[i]!;
     try {
-      const aircraft = provider.getByCallsign
-        ? await provider.getByCallsign(q)
-        : (await provider.getAircraftNear(39.5, -98.35, 250)).filter(
-            (a) => a.callsign === q,
-          );
+      if (!provider.getByCallsign) {
+        throw new Error(`${provider.name} does not support callsign lookup`);
+      }
+      const aircraft = await provider.getByCallsign(q);
       return {
         aircraft,
         source: provider.name,
