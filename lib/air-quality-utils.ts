@@ -87,15 +87,26 @@ export const getAQISeverityChrome = (aqi: number): AQISeverityChrome => {
  * Get color class for pollen category level
  */
 export const getPollenColor = (category: string | number): string => {
-  const cat = typeof category === 'string' ? category.toLowerCase() : category.toString();
-  
-  if (cat === 'no data' || cat === '0') return 'text-gray-400 font-semibold';
-  if (cat === 'low' || cat === '1' || cat === '2') return 'text-green-400 font-semibold';
-  if (cat === 'moderate' || cat === '3' || cat === '4' || cat === '5') return 'text-yellow-400 font-semibold';
-  if (cat === 'high' || cat === '6' || cat === '7' || cat === '8') return 'text-orange-400 font-semibold';
-  if (cat === 'very high' || cat === '9' || cat === '10') return 'text-red-400 font-semibold';
-  
-  return 'text-white font-semibold'; // Default fallback
+  const cat = typeof category === 'string' ? category.toLowerCase().trim() : String(category ?? '');
+
+  if (cat === 'no data' || cat === 'unavailable' || cat === '0') {
+    return 'text-gray-400 font-semibold';
+  }
+  if (cat === 'none') return 'text-gray-400 font-semibold';
+  if (cat === 'very low' || cat === 'low' || cat === '1' || cat === '2') {
+    return 'text-green-400 font-semibold';
+  }
+  if (cat === 'moderate' || cat === '3' || cat === '4' || cat === '5') {
+    return 'text-yellow-400 font-semibold';
+  }
+  if (cat === 'high' || cat === '6' || cat === '7' || cat === '8') {
+    return 'text-orange-400 font-semibold';
+  }
+  if (cat === 'very high' || cat === '9' || cat === '10') {
+    return 'text-red-400 font-semibold';
+  }
+
+  return 'text-white font-semibold';
 };
 
 /**

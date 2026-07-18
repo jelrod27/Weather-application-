@@ -11,6 +11,7 @@ import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo';
 import { mapOpenMeteoPollenHourly } from '@/lib/pollen/open-meteo-pollen';
+import { normalizePollenCategories } from '@/lib/pollen/normalize-pollen-categories';
 
 const unavailableBody = {
   tree: { Tree: 'Unavailable' },
@@ -153,11 +154,16 @@ export async function GET(request: NextRequest) {
               Object.keys(weedBreakdown).length > 0;
 
             if (hasGoogleData) {
+              const normalized = normalizePollenCategories(
+                treeBreakdown,
+                grassBreakdown,
+                weedBreakdown,
+              );
               return NextResponse.json(
                 {
-                  tree: treeBreakdown,
-                  grass: grassBreakdown,
-                  weed: weedBreakdown,
+                  tree: normalized.tree,
+                  grass: normalized.grass,
+                  weed: normalized.weed,
                   source: 'google',
                 },
                 {
@@ -178,6 +184,23 @@ export async function GET(request: NextRequest) {
     try {
       const aq = await fetchOpenMeteoAirQuality(latitude, longitude);
       const mapped = mapOpenMeteoPollenHourly(aq.hourly, aq.utc_offset_seconds);
+      if (mapped.source === 'open-meteo') {
+        const normalized = normalizePollenCategories(mapped.tree, mapped.grass, mapped.weed);
+        return NextResponse.json(
+          {
+            tree: normalized.tree,
+            grass: normalized.grass,
+            weed: normalized.weed,
+            source: mapped.source,
+          },
+          {
+            headers: {
+              'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+              ...rateLimit.headers,
+            },
+          },
+        );
+      }
       return NextResponse.json(
         {
           tree: mapped.tree,
