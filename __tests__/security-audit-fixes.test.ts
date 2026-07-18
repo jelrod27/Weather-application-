@@ -33,6 +33,9 @@ describe('CSP connect-src allows aviation MapLibre basemap hosts', () => {
   it('allowlists OpenFreeMap glyphs for MapLibre labels', () => {
     expect(src).toContain('https://tiles.openfreemap.org');
   });
+  it('does not allowlist the removed ipgeolocation provider', () => {
+    expect(src).not.toContain('api.ipgeolocation.io');
+  });
 });
 
 // Fix 6 covered the games scores route, also removed with the games feature.
