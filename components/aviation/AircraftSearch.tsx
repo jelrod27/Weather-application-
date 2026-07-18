@@ -21,8 +21,7 @@ export default function AircraftSearch({
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     const q = query.trim().toUpperCase();
     if (!q) {
       onError?.('Enter a callsign or flight ident (e.g. UAL2096)');
@@ -51,8 +50,7 @@ export default function AircraftSearch({
   };
 
   return (
-    <form
-      onSubmit={submit}
+    <div
       className={cn('flex flex-col gap-2 sm:flex-row sm:items-center', className)}
       data-testid="aircraft-search"
     >
@@ -60,6 +58,12 @@ export default function AircraftSearch({
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void submit();
+          }
+        }}
         placeholder="Search callsign (e.g. UAL2096)"
         className="flex-1 rounded border-2 border-border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         spellCheck={false}
@@ -68,8 +72,9 @@ export default function AircraftSearch({
         data-testid="aircraft-search-input"
       />
       <button
-        type="submit"
+        type="button"
         disabled={loading}
+        onClick={() => void submit()}
         className={cn(
           'inline-flex items-center justify-center gap-2 rounded border-2 border-border px-4 py-2 font-mono text-sm font-bold uppercase tracking-wider',
           'bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50',
@@ -79,6 +84,6 @@ export default function AircraftSearch({
         <Search className="h-4 w-4" aria-hidden />
         {loading ? 'Searching…' : 'Track'}
       </button>
-    </form>
+    </div>
   );
 }

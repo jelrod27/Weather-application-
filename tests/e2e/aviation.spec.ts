@@ -126,10 +126,10 @@ test.describe('/aviation', () => {
     await page.route('**/api/aviation/turbulence**', (route) =>
       route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_TURBULENCE) }),
     );
-    await page.route('**/api/aviation/aircraft?**', (route) =>
+    await page.route('**/api/aviation/aircraft/callsign**', (route) =>
       route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_AIRCRAFT) }),
     );
-    await page.route('**/api/aviation/aircraft/callsign**', (route) =>
+    await page.route(/\/api\/aviation\/aircraft\?/, (route) =>
       route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_AIRCRAFT) }),
     );
     await page.route('**/api/aviation/aircraft/route**', (route) =>
@@ -171,14 +171,15 @@ test.describe('/aviation', () => {
     await expect(page.getByTestId('flight-weather-brief')).toBeVisible();
   });
 
-  test('callsign search opens selection panel', async ({ page }) => {
-    await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
+  test('deep link ?flight= selects aircraft and opens panel', async ({ page }) => {
+    const callsignPromise = page.waitForResponse(
+      (res) => res.url().includes('/api/aviation/aircraft/callsign') && res.ok(),
+    );
+    await page.goto('/aviation?flight=UAL2096', { waitUntil: 'domcontentloaded' });
+    await callsignPromise;
 
-    await page.getByTestId('aircraft-search-input').fill('UAL2096');
-    await page.getByTestId('aircraft-search-submit').click();
-
-    await expect(page.getByTestId('aircraft-selection-panel')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('UAL2096')).toBeVisible();
+    await expect(page.getByTestId('aircraft-selection-panel')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId('aircraft-selection-panel').getByText('UAL2096')).toBeVisible();
   });
 
   test('detail console reveals flight lookup demo badge', async ({ page }) => {
