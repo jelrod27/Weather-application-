@@ -50,8 +50,15 @@ type MagRow = {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const range = searchParams.get('range') || '6h';
-    const rangeMs = RANGE_MS[range] ?? RANGE_MS['6h'];
+    const rangeParam = searchParams.get('range');
+    const range = rangeParam ?? '6h';
+    if (!Object.prototype.hasOwnProperty.call(RANGE_MS, range)) {
+      return NextResponse.json(
+        { error: 'Invalid range. Use one of: 30m, 1h, 2h, 6h, 24h, 7d' },
+        { status: 400 },
+      );
+    }
+    const rangeMs = RANGE_MS[range]!;
 
     const [plasmaResponse, magResponse] = await Promise.allSettled([
       fetchSwpc(RTSW_WIND_URL),

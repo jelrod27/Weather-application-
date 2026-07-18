@@ -37,10 +37,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lon);
+    const latitude = Number(lat.trim());
+    const longitude = Number(lon.trim());
 
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return NextResponse.json(
         { error: 'Invalid coordinates provided' },
         { status: 400 },

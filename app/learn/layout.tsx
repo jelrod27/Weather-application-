@@ -44,7 +44,7 @@ const learnSchema = {
   name: 'Weather Education Topics',
   description: 'Comprehensive weather education resources',
   url: 'https://www.16bitweather.co/education',
-  numberOfItems: 7,
+  numberOfItems: 5,
   itemListElement: [
     {
       '@type': 'ListItem',
@@ -63,27 +63,20 @@ const learnSchema = {
     {
       '@type': 'ListItem',
       position: 3,
-      name: 'Global Extremes',
-      description: 'Track hottest and coldest places on Earth',
-      url: 'https://www.16bitweather.co/education',
-    },
-    {
-      '@type': 'ListItem',
-      position: 4,
       name: 'Weather Fun Facts',
       description: 'Rare atmospheric phenomena explained',
       url: 'https://www.16bitweather.co/fun-facts',
     },
     {
       '@type': 'ListItem',
-      position: 5,
+      position: 4,
       name: 'Radar & Models',
       description: 'Professional-grade NEXRAD radar and GFS models',
       url: 'https://www.16bitweather.co/radar',
     },
     {
       '@type': 'ListItem',
-      position: 6,
+      position: 5,
       name: 'Weather Glossary',
       description: 'In-depth definitions of every weather metric',
       url: 'https://www.16bitweather.co/education/glossary',

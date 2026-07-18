@@ -92,7 +92,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
   const currentKpDisplay = currentKp ?? null;
   const viewlineLatitude =
     data?.viewline?.latitude
-    ?? (currentKp != null ? getViewlineLatitude(currentKp) : 65);
+    ?? (currentKp != null ? getViewlineLatitude(currentKp) : null);
   const viewlineDescription =
     data?.viewline?.description
     ?? (currentKp != null ? getViewlineDescription(currentKp) : 'Kp unavailable');
@@ -246,7 +246,9 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
               'text-lg font-bold font-mono',
               currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-gray-400',
             )}>
-              {viewlineLatitude}°{hemisphere === 'north' ? 'N' : 'S'}
+              {viewlineLatitude == null
+                ? '--'
+                : `${viewlineLatitude}°${hemisphere === 'north' ? 'N' : 'S'}`}
             </span>
           </div>
           <div className={cn('text-xs font-mono', themeClasses.text, 'opacity-80')}>
