@@ -14,7 +14,8 @@ import {
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
 
-function wmoCodeToOWMCondition(code: number): string {
+/** Map WMO codes to the app's legacy WeatherData condition labels. */
+function wmoCodeToConditionLabel(code: number): string {
   const condition = getWMOCondition(code);
   switch (condition) {
     case 'sunny': return 'Clear';
@@ -92,7 +93,7 @@ export async function buildWeatherDataFromOpenMeteo(
   const temperature = Math.round(current?.temperature_2m ?? 0);
   const unit = unitSystem === 'imperial' ? '°F' : '°C';
   const weatherCode = current?.weather_code ?? 0;
-  const condition = wmoCodeToOWMCondition(weatherCode);
+  const condition = wmoCodeToConditionLabel(weatherCode);
   const description = getWMODescription(weatherCode).toLowerCase();
 
   const windSpeed = current?.wind_speed_10m ?? 0;
@@ -128,7 +129,7 @@ export async function buildWeatherDataFromOpenMeteo(
         day: dayName,
         highTemp: Math.round(daily.temperature_2m_max?.[i] ?? 0),
         lowTemp: Math.round(daily.temperature_2m_min?.[i] ?? 0),
-        condition: wmoCodeToOWMCondition(dayWeatherCode),
+        condition: wmoCodeToConditionLabel(dayWeatherCode),
         description: getWMODescription(dayWeatherCode).toLowerCase(),
         details: {
           humidity: 0,
@@ -206,7 +207,7 @@ export async function buildWeatherDataFromOpenMeteo(
         time: timeString,
         temp: Math.round(hourly.temperature_2m?.[i] ?? 0),
         feelsLike: hourly.apparent_temperature?.[i],
-        condition: wmoCodeToOWMCondition(hourWeatherCode),
+        condition: wmoCodeToConditionLabel(hourWeatherCode),
         description: getWMODescription(hourWeatherCode).toLowerCase(),
         precipChance: Math.round(hourly.precipitation_probability?.[i] ?? 0),
         windSpeed: hourly.wind_speed_10m?.[i],

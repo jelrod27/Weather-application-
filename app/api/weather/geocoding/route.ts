@@ -5,13 +5,12 @@ import { sanitizeLogValue } from "@/lib/sanitize-log"
  * Backed by Open-Meteo (direct search), Zippopotam.us (US ZIPs),
  * and Nominatim (international postal codes + reverse). No API key required.
  *
- * Response shape is preserved to match the legacy OpenWeatherMap `/geo/1.0`
- * shape so existing callers in lib/weather/weather-geocoding.ts, the stargazer
- * page, and the E2E fixtures do not need to change:
+ * Response shape is preserved for existing callers in
+ * lib/weather/weather-geocoding.ts, the stargazer page, and E2E fixtures:
  *
  *   Direct + reverse: GeocodingResponse[] = [{ name, lat, lon, country, state? }]
  *   ZIP:              GeocodingResponse    = { name, lat, lon, country, state? }
- *   (yes, ZIP returns a single object — legacy OWM quirk the caller depends on.)
+ *   (ZIP returns a single object — historical quirk callers still depend on.)
  */
 
 import type { NextRequest} from 'next/server';

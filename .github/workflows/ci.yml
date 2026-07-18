@@ -105,5 +105,4 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
-          OPENWEATHER_API_KEY: placeholder-key
           NEXT_PUBLIC_BASE_URL: http://localhost:3000
