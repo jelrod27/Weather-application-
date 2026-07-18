@@ -11,7 +11,15 @@ import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibr
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
+import {
+  AIRCRAFT_LABEL_DECLUTTER_COUNT,
+  createAirplaneIcon,
+} from '@/lib/aviation/airplane-icon';
 import { sampleGreatCircle } from '@/lib/aviation/route-corridor';
+
+const AIRCRAFT_ICON_ID = 'aircraft-plane';
+const AIRCRAFT_LAYER_ID = 'aircraft-icon';
+const AIRCRAFT_LABEL_LAYER_ID = 'aircraft-label';
 
 /**
  * Same light Carto Voyager basemap as radar (components/radar-v2/radar-constants.ts).
@@ -70,14 +78,6 @@ export type LiveAircraftMapProps = {
   trail?: Array<{ lat: number; lon: number }>;
 };
 
-function altitudeColor(alt: number | null): string {
-  if (alt == null || alt <= 0) return '#64748b';
-  if (alt < 5000) return '#16a34a';
-  if (alt < 15000) return '#ca8a04';
-  if (alt < 30000) return '#ea580c';
-  return '#2563eb';
-}
-
 function toFeatureCollection(aircraft: Aircraft[]): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
@@ -88,8 +88,6 @@ function toFeatureCollection(aircraft: Aircraft[]): GeoJSON.FeatureCollection {
         icao24: a.icao24,
         callsign: a.callsign ?? '',
         track: a.trackDeg ?? 0,
-        color: altitudeColor(a.altitudeFt),
-        selected: false,
       },
       geometry: {
         type: 'Point',
@@ -222,14 +220,34 @@ export default function LiveAircraftMap({
 
   const syncSelectionStyle = useCallback(() => {
     const map = mapRef.current;
-    if (!map || !map.getLayer('aircraft-circle')) return;
-    const sel = selectedRef.current;
-    map.setPaintProperty('aircraft-circle', 'circle-stroke-width', [
-      'case',
-      ['==', ['get', 'icao24'], sel ?? ''],
-      3,
-      1,
+    if (!map || !map.getLayer(AIRCRAFT_LAYER_ID)) return;
+    const sel = selectedRef.current ?? '';
+    map.setLayoutProperty(AIRCRAFT_LAYER_ID, 'icon-size', [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      4,
+      ['case', ['==', ['get', 'icao24'], sel], 0.85, 0.55],
+      7,
+      ['case', ['==', ['get', 'icao24'], sel], 1.2, 0.85],
+      10,
+      ['case', ['==', ['get', 'icao24'], sel], 1.4, 1.1],
     ]);
+  }, []);
+
+  const syncLabelDeclutter = useCallback((count: number) => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer(AIRCRAFT_LABEL_LAYER_ID)) return;
+    const sel = selectedRef.current;
+    if (count > AIRCRAFT_LABEL_DECLUTTER_COUNT) {
+      // FR24-style: crowded views keep icons only; label the selection.
+      map.setFilter(
+        AIRCRAFT_LABEL_LAYER_ID,
+        sel ? ['==', ['get', 'icao24'], sel] : ['==', ['get', 'icao24'], ''],
+      );
+    } else {
+      map.setFilter(AIRCRAFT_LABEL_LAYER_ID, ['!=', ['get', 'callsign'], '']);
+    }
   }, []);
 
   const applyAircraft = useCallback(
@@ -244,6 +262,7 @@ export default function LiveAircraftMap({
       const source = map.getSource('aircraft') as GeoJSONSource | undefined;
       source?.setData(toFeatureCollection([...byId.values()]));
       syncSelectionStyle();
+      syncLabelDeclutter(byId.size);
 
       const selectedId = selectedRef.current;
       if (selectedId && onSelectedUpdateRef.current) {
@@ -251,7 +270,7 @@ export default function LiveAircraftMap({
         if (updated) onSelectedUpdateRef.current(updated);
       }
     },
-    [syncSelectionStyle],
+    [syncLabelDeclutter, syncSelectionStyle],
   );
 
   const fetchAircraft = useCallback(async () => {
@@ -317,6 +336,10 @@ export default function LiveAircraftMap({
     );
 
     map.on('load', () => {
+      if (!map.hasImage(AIRCRAFT_ICON_ID)) {
+        map.addImage(AIRCRAFT_ICON_ID, createAirplaneIcon(64), { pixelRatio: 2 });
+      }
+
       map.addSource('route-line', {
         type: 'geojson',
         data: emptyLineCollection(),
@@ -392,39 +415,60 @@ export default function LiveAircraftMap({
         },
       });
       map.addLayer({
-        id: 'aircraft-circle',
-        type: 'circle',
+        id: AIRCRAFT_LAYER_ID,
+        type: 'symbol',
         source: 'aircraft',
+        layout: {
+          'icon-image': AIRCRAFT_ICON_ID,
+          'icon-rotate': ['coalesce', ['get', 'track'], 0],
+          'icon-rotation-alignment': 'map',
+          'icon-pitch-alignment': 'map',
+          // Collision culling keeps wide zooms readable; zoom in to see denser traffic.
+          'icon-allow-overlap': false,
+          'icon-ignore-placement': false,
+          'icon-padding': 2,
+          'icon-size': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            4,
+            0.55,
+            7,
+            0.85,
+            10,
+            1.1,
+          ],
+        },
         paint: {
-          'circle-radius': 5,
-          'circle-color': ['get', 'color'],
-          'circle-stroke-color': '#0f172a',
-          'circle-stroke-width': 1,
-          'circle-opacity': 0.92,
+          'icon-opacity': 0.96,
         },
       });
       map.addLayer({
-        id: 'aircraft-label',
+        id: AIRCRAFT_LABEL_LAYER_ID,
         type: 'symbol',
         source: 'aircraft',
         layout: {
           'text-field': ['get', 'callsign'],
           'text-size': 10,
-          'text-offset': [0, 1.2],
+          'text-offset': [0, 1.35],
           'text-optional': true,
           'text-allow-overlap': false,
+          'text-ignore-placement': false,
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
         },
         paint: {
           'text-color': '#0f172a',
           'text-halo-color': '#f8fafc',
           'text-halo-width': 1.25,
         },
-        minzoom: 7,
+        // Labels only when zoomed in; declutter filter applied at runtime.
+        minzoom: 8,
+        filter: ['==', ['get', 'icao24'], ''],
       });
       setMapReady(true);
     });
 
-    map.on('click', 'aircraft-circle', (e) => {
+    map.on('click', AIRCRAFT_LAYER_ID, (e) => {
       const feature = e.features?.[0];
       const icao = feature?.properties?.icao24 as string | undefined;
       if (!icao) return;
@@ -433,14 +477,14 @@ export default function LiveAircraftMap({
     });
 
     map.on('click', (e) => {
-      const hits = map.queryRenderedFeatures(e.point, { layers: ['aircraft-circle'] });
+      const hits = map.queryRenderedFeatures(e.point, { layers: [AIRCRAFT_LAYER_ID] });
       if (hits.length === 0) onSelectRef.current?.(null);
     });
 
-    map.on('mouseenter', 'aircraft-circle', () => {
+    map.on('mouseenter', AIRCRAFT_LAYER_ID, () => {
       map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'aircraft-circle', () => {
+    map.on('mouseleave', AIRCRAFT_LAYER_ID, () => {
       map.getCanvas().style.cursor = '';
     });
 
@@ -489,7 +533,8 @@ export default function LiveAircraftMap({
 
   useEffect(() => {
     syncSelectionStyle();
-  }, [selectedIcao24, syncSelectionStyle]);
+    syncLabelDeclutter(aircraftByIdRef.current.size);
+  }, [selectedIcao24, syncLabelDeclutter, syncSelectionStyle]);
 
   // One-shot camera move on explicit search/select token — never on poll updates.
   useEffect(() => {
