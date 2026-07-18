@@ -12,6 +12,7 @@ import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo'
+import { parseCoordinates } from '@/lib/api/query-params'
 
 const CACHE_DURATION = 3600; // 1 hour (Open-Meteo updates hourly)
 
@@ -25,13 +26,12 @@ export async function GET(request: NextRequest) {
 
     // Extract and validate parameters
     const searchParams = request.nextUrl.searchParams
-    const lat = searchParams.get('lat')
-    const lon = searchParams.get('lon')
+    const coords = parseCoordinates(searchParams.get('lat'), searchParams.get('lon'))
 
-    if (!lat || !lon) {
+    if (!coords.ok) {
       return NextResponse.json(
-        { 
-          error: 'Missing required parameters: lat, lon',
+        {
+          error: coords.error,
           aqi: 0,
           category: 'No Data',
           source: 'error'
@@ -40,20 +40,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const latitude = parseFloat(lat)
-    const longitude = parseFloat(lon)
-    
-    if (isNaN(latitude) || isNaN(longitude)) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid coordinates',
-          aqi: 0,
-          category: 'No Data',
-          source: 'error'
-        },
-        { status: 400 }
-      )
-    }
+    const { latitude, longitude } = coords
 
     // Fetch from Open-Meteo Air Quality API
     const data = await fetchOpenMeteoAirQuality(latitude, longitude)

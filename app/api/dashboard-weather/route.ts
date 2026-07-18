@@ -4,6 +4,7 @@ import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
 import { openMeteoLocalTimeToEpoch } from '@/lib/pollen/open-meteo-pollen'
 import { getWMOCondition, getWMODescription } from '@/lib/wmo-codes'
+import { parseCoordinates } from '@/lib/api/query-params'
 
 /**
  * Map WMO weather code + is_day to a compact icon code
@@ -75,16 +76,11 @@ export async function GET(request: NextRequest) {
     const units = searchParams.get('units') === 'metric' ? 'metric' : 'imperial'
     const detail = searchParams.get('detail') === '1' || searchParams.get('detail') === 'true'
 
-    if (!lat || !lon) {
-      return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 })
+    const coords = parseCoordinates(lat, lon)
+    if (!coords.ok) {
+      return NextResponse.json({ error: coords.error }, { status: 400 })
     }
-
-    const latitude = parseFloat(lat)
-    const longitude = parseFloat(lon)
-
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-      return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
-    }
+    const { latitude, longitude } = coords
 
     const forecast = await fetchOpenMeteoForecast(latitude, longitude, {
       forecastDays: detail ? 7 : 1,

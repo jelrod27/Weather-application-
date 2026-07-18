@@ -73,7 +73,8 @@ export function useThemePreview() {
       return
     }
 
-    // Start preview for non-authenticated user
+    // Start preview for non-authenticated user — clear any prior preview timers first
+    clearTimers()
     setTheme(themeId as Theme)
     setPreviewState({
       isPreviewActive: true,

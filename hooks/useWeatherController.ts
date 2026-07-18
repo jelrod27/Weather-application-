@@ -243,16 +243,22 @@ export function useWeatherController() {
 
         setLoading(true)
         setError("")
+        const loadId = ++latestLoadId.current
 
         try {
             const location = await locationService.getCurrentLocation()
+            if (loadId !== latestLoadId.current) return
             await handleLocationDetected(location)
+            if (loadId !== latestLoadId.current) return
             setRemainingSearches(recordRateLimitedRequest().remaining)
         } catch (error: any) {
+            if (loadId !== latestLoadId.current) return
             console.error("Location error:", error)
             setError(error.message || "Failed to get your location")
         } finally {
-            setLoading(false)
+            if (loadId === latestLoadId.current) {
+                setLoading(false)
+            }
         }
     }, [isClient, handleLocationDetected])
 
@@ -286,7 +292,7 @@ export function useWeatherController() {
 
                 if (shouldAutoLocate === false) {
                     if (profile?.default_location) {
-                        await handleSearch(profile.default_location)
+                        await handleSearch(profile.default_location, false, true)
                     }
                     setAutoLocationAttempted(true)
                     return
@@ -324,11 +330,22 @@ export function useWeatherController() {
 
                     if (hasDbPermission) {
                         const locationPromise = locationService.getCurrentLocation()
-                        const timeoutPromise = new Promise<never>((_, reject) =>
-                            setTimeout(() => reject(new Error('Location detection timeout')), 5000)
-                        )
-                        const location = await Promise.race([locationPromise, timeoutPromise]) as LocationData
-                        await handleLocationDetected(location)
+                        let timeoutId: ReturnType<typeof setTimeout> | undefined
+                        const timeoutPromise = new Promise<never>((_, reject) => {
+                            timeoutId = setTimeout(
+                                () => reject(new Error('Location detection timeout')),
+                                5000,
+                            )
+                        })
+                        try {
+                            const location = await Promise.race([
+                                locationPromise,
+                                timeoutPromise,
+                            ]) as LocationData
+                            await handleLocationDetected(location)
+                        } finally {
+                            if (timeoutId !== undefined) clearTimeout(timeoutId)
+                        }
                     } else {
                         throw new Error('Geolocation requires prompt, using IP fallback for perf')
                     }
