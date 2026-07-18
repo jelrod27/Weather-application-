@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -67,6 +67,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   const [detailedWeatherData, setDetailedWeatherData] = useState<DetailedWeatherData | null>(null)
   const [detailedLoading, setDetailedLoading] = useState(false)
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
+  const detailRequestKeyRef = useRef<string>('')
   const { theme } = useTheme()
   const { user } = useAuth()
   const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
@@ -74,6 +75,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   const tempUnit = tempUnitLabel(preferences?.temperature_unit)
   const windUnit = windUnitLabel(preferences?.wind_unit)
   const apiUnits = apiTempUnits(preferences?.temperature_unit)
+  const detailRequestKey = `${location.latitude},${location.longitude},${apiUnits}`
 
   const fetchWeather = async () => {
     setLoading(true)
@@ -91,6 +93,11 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
     fetchWeather()
     // Refresh when coordinates or unit pref change (not just id) so edits and pref toggles refetch.
   }, [location.id, location.latitude, location.longitude, apiUnits])
+
+  useEffect(() => {
+    setDetailedWeatherData(null)
+    detailRequestKeyRef.current = ''
+  }, [detailRequestKey])
 
   useEffect(() => {
     let cancelled = false
@@ -141,6 +148,8 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   }
 
   const fetchDetailedWeather = async () => {
+    const requestKey = detailRequestKey
+    detailRequestKeyRef.current = requestKey
     setDetailedLoading(true)
 
     try {
@@ -149,6 +158,8 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
         fetch(`/api/dashboard-weather?${base}&units=${apiUnits}&detail=1`),
         fetch(`/api/weather/air-quality?${base}`),
       ])
+
+      if (detailRequestKeyRef.current !== requestKey) return
 
       if (detailSettled.status === 'rejected' || !detailSettled.value.ok) {
         throw new Error('Failed to fetch detailed weather')
@@ -166,6 +177,8 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
       } catch (err) {
         console.warn('Air quality fetch failed:', err)
       }
+
+      if (detailRequestKeyRef.current !== requestKey) return
 
       const fullWeatherData: DetailedWeatherData = {
         current: detail.current,
@@ -186,9 +199,13 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
 
       setDetailedWeatherData(fullWeatherData)
     } catch (error) {
-      console.error('Error fetching detailed weather:', error)
+      if (detailRequestKeyRef.current === requestKey) {
+        console.error('Error fetching detailed weather:', error)
+      }
     } finally {
-      setDetailedLoading(false)
+      if (detailRequestKeyRef.current === requestKey) {
+        setDetailedLoading(false)
+      }
     }
   }
 

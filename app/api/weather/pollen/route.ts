@@ -94,6 +94,16 @@ export async function GET(request: NextRequest) {
               indexInfo?: { value?: number; category?: string };
             }
 
+            const categoryFromIndex = (
+              indexInfo?: { value?: number; category?: string },
+            ): string | undefined => {
+              if (indexInfo?.category) return indexInfo.category;
+              if (typeof indexInfo?.value === 'number') {
+                return getPollenCategory(indexInfo.value);
+              }
+              return undefined;
+            };
+
             const extractPlantCategories = (
               plants: PlantInfo[],
               group: string[],
@@ -102,9 +112,8 @@ export async function GET(request: NextRequest) {
               plants?.forEach((p) => {
                 const code = p.code || p.displayName || '';
                 if (group.some((type) => code.includes(type))) {
-                  const value = p.indexInfo?.value || 0;
-                  const category = p.indexInfo?.category || getPollenCategory(value);
-                  result[p.displayName || code] = category;
+                  const category = categoryFromIndex(p.indexInfo);
+                  if (category) result[p.displayName || code] = category;
                 }
               });
               return result;
@@ -126,35 +135,39 @@ export async function GET(request: NextRequest) {
             );
 
             if (Object.keys(treeBreakdown).length === 0 && pollenTypeTree) {
-              treeBreakdown.Tree =
-                pollenTypeTree.indexInfo?.category
-                || getPollenCategory(pollenTypeTree.indexInfo?.value || 0);
+              const category = categoryFromIndex(pollenTypeTree.indexInfo);
+              if (category) treeBreakdown.Tree = category;
             }
             if (Object.keys(grassBreakdown).length === 0 && pollenTypeGrass) {
-              grassBreakdown.Grass =
-                pollenTypeGrass.indexInfo?.category
-                || getPollenCategory(pollenTypeGrass.indexInfo?.value || 0);
+              const category = categoryFromIndex(pollenTypeGrass.indexInfo);
+              if (category) grassBreakdown.Grass = category;
             }
             if (Object.keys(weedBreakdown).length === 0 && pollenTypeWeed) {
-              weedBreakdown.Weed =
-                pollenTypeWeed.indexInfo?.category
-                || getPollenCategory(pollenTypeWeed.indexInfo?.value || 0);
+              const category = categoryFromIndex(pollenTypeWeed.indexInfo);
+              if (category) weedBreakdown.Weed = category;
             }
 
-            return NextResponse.json(
-              {
-                tree: treeBreakdown,
-                grass: grassBreakdown,
-                weed: weedBreakdown,
-                source: 'google',
-              },
-              {
-                headers: {
-                  'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
-                  ...rateLimit.headers,
+            const hasGoogleData =
+              Object.keys(treeBreakdown).length > 0 ||
+              Object.keys(grassBreakdown).length > 0 ||
+              Object.keys(weedBreakdown).length > 0;
+
+            if (hasGoogleData) {
+              return NextResponse.json(
+                {
+                  tree: treeBreakdown,
+                  grass: grassBreakdown,
+                  weed: weedBreakdown,
+                  source: 'google',
                 },
-              },
-            );
+                {
+                  headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+                    ...rateLimit.headers,
+                  },
+                },
+              );
+            }
           }
         }
       } catch (error) {
@@ -164,7 +177,7 @@ export async function GET(request: NextRequest) {
 
     try {
       const aq = await fetchOpenMeteoAirQuality(latitude, longitude);
-      const mapped = mapOpenMeteoPollenHourly(aq.hourly);
+      const mapped = mapOpenMeteoPollenHourly(aq.hourly, aq.utc_offset_seconds);
       return NextResponse.json(
         {
           tree: mapped.tree,

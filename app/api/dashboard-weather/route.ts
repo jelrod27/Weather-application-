@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
+import { openMeteoLocalTimeToEpoch } from '@/lib/pollen/open-meteo-pollen'
 import { getWMOCondition, getWMODescription } from '@/lib/wmo-codes'
 
 /**
@@ -32,10 +33,12 @@ function buildCurrent(
   const hourly = forecast.hourly
 
   const now = Date.now()
+  const utcOffsetSeconds = forecast.utc_offset_seconds ?? 0
   let visibilityRaw = 10000
   if (hourly?.time && hourly?.visibility) {
     for (let i = 0; i < hourly.time.length; i++) {
-      if (Date.parse(hourly.time[i]!) >= now) {
+      const hourEpoch = openMeteoLocalTimeToEpoch(hourly.time[i]!, utcOffsetSeconds)
+      if (!Number.isNaN(hourEpoch) && hourEpoch >= now) {
         visibilityRaw = hourly.visibility[i] ?? 10000
         break
       }

@@ -318,15 +318,18 @@ export async function fetchAviationAlertsFromNOAA(): Promise<NoaaAlert[]> {
       const data = (await settled.value.json()) as AWCAlert[];
       if (!Array.isArray(data)) return;
       for (const alert of data.slice(0, 10)) {
+        // AWC has returned non-string hazard values; coerce before formatHazard.
+        const safeHazard = String(alert.hazard ?? 'Unknown');
+        const formattedHazard = formatHazard(safeHazard);
         alerts.push({
           id: awcAlertId(type, alert),
           type,
-          severity: mapSeverity(alert.hazard ?? '', String(alert.severity ?? '')),
-          hazard: formatHazard(alert.hazard ?? 'Unknown'),
+          severity: mapSeverity(safeHazard, String(alert.severity ?? '')),
+          hazard: formattedHazard,
           region: alert.icaoId ?? 'CONUS',
           validFrom: formatAwcTime(alert.validTimeFrom),
           validTo: formatAwcTime(alert.validTimeTo),
-          text: `${formatHazard(alert.hazard ?? 'Unknown')} from FL${alert.altitudeLow1 || 0} to FL${alert.altitudeHi1 || fallbackHi}`,
+          text: `${formattedHazard} from FL${alert.altitudeLow1 || 0} to FL${alert.altitudeHi1 || fallbackHi}`,
           rawText: alert.rawAirSigmet ?? '',
         });
       }

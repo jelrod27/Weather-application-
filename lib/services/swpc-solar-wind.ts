@@ -11,8 +11,9 @@ export type SolarWindCurrent = {
   speed: number;
   density: number;
   temperature: number;
-  bz: number;
-  bt: number;
+  /** Null when RTSW mag feed has no usable sample (do not invent quiet 0). */
+  bz: number | null;
+  bt: number | null;
 };
 
 export type SolarWindRecentPoint = {
@@ -106,7 +107,7 @@ export function parseRtswSolarWind(
 
   if (!latestWind) {
     return {
-      current: { speed: 0, density: 0, temperature: 0, bz: 0, bt: 0 },
+      current: { speed: 0, density: 0, temperature: 0, bz: null, bt: null },
       recent: [],
       trend: 'stable',
       available: false,
@@ -118,7 +119,9 @@ export function parseRtswSolarWind(
   const speedValues: number[] = [];
   const recent: SolarWindRecentPoint[] = [];
 
-  for (let i = 0; i < last360.length; i += 30) {
+  // Align sampling so the newest row is always included (indices …, n-31, n-1).
+  const start = last360.length === 0 ? 0 : (last360.length - 1) % 30;
+  for (let i = start; i < last360.length; i += 30) {
     const row = last360[i]!;
     const speed = row.proton_speed ?? 0;
     speedValues.push(speed);
@@ -153,13 +156,23 @@ export function parseRtswSolarWind(
     }
   }
 
+  const magFresh =
+    latestMag &&
+    (typeof latestMag.bz_gsm === 'number' || typeof latestMag.bt === 'number');
+
   return {
     current: {
       speed: Math.round(latestWind.proton_speed ?? 0),
       density: Math.round((latestWind.proton_density ?? 0) * 10) / 10,
       temperature: Math.round(latestWind.proton_temperature ?? 0),
-      bz: latestMag?.bz_gsm != null ? Math.round(latestMag.bz_gsm * 10) / 10 : 0,
-      bt: latestMag?.bt != null ? Math.round(latestMag.bt * 10) / 10 : 0,
+      bz:
+        magFresh && typeof latestMag?.bz_gsm === 'number'
+          ? Math.round(latestMag.bz_gsm * 10) / 10
+          : null,
+      bt:
+        magFresh && typeof latestMag?.bt === 'number'
+          ? Math.round(latestMag.bt * 10) / 10
+          : null,
     },
     recent: recent.slice(-12),
     trend: determineSpeedTrend(speedValues),

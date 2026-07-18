@@ -30,13 +30,30 @@ export type OpenMeteoPollenHourly = {
   ragweed_pollen?: (number | null)[];
 };
 
-function currentHourIndex(times: string[] | undefined): number {
+/**
+ * Open-Meteo `timezone=auto` returns offset-free local civil timestamps.
+ * Convert to epoch ms using the feed's utc_offset_seconds.
+ */
+export function openMeteoLocalTimeToEpoch(
+  time: string,
+  utcOffsetSeconds = 0,
+): number {
+  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(time);
+  const asUtc = Date.parse(hasZone ? time : `${time}Z`);
+  if (Number.isNaN(asUtc)) return NaN;
+  return asUtc - utcOffsetSeconds * 1000;
+}
+
+function currentHourIndex(
+  times: string[] | undefined,
+  utcOffsetSeconds = 0,
+): number {
   if (!times?.length) return 0;
   const now = Date.now();
   let best = 0;
   let bestDelta = Infinity;
   for (let i = 0; i < times.length; i++) {
-    const t = Date.parse(times[i]!);
+    const t = openMeteoLocalTimeToEpoch(times[i]!, utcOffsetSeconds);
     if (Number.isNaN(t)) continue;
     const delta = Math.abs(t - now);
     if (delta < bestDelta) {
@@ -58,7 +75,10 @@ function pick(
   return typeof v === 'number' ? v : null;
 }
 
-export function mapOpenMeteoPollenHourly(hourly: OpenMeteoPollenHourly | undefined | null): PollenCategoryMap {
+export function mapOpenMeteoPollenHourly(
+  hourly: OpenMeteoPollenHourly | undefined | null,
+  utcOffsetSeconds = 0,
+): PollenCategoryMap {
   if (!hourly?.time?.length) {
     return {
       tree: { Tree: 'Unavailable' },
@@ -68,7 +88,7 @@ export function mapOpenMeteoPollenHourly(hourly: OpenMeteoPollenHourly | undefin
     };
   }
 
-  const idx = currentHourIndex(hourly.time);
+  const idx = currentHourIndex(hourly.time, utcOffsetSeconds);
   const alder = pick(hourly, 'alder_pollen', idx);
   const birch = pick(hourly, 'birch_pollen', idx);
   const olive = pick(hourly, 'olive_pollen', idx);

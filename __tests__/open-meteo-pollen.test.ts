@@ -37,4 +37,25 @@ describe('mapOpenMeteoPollenHourly', () => {
     expect(mapped.source).toBe('unavailable');
     expect(mapped.tree.Tree).toBe('Unavailable');
   });
+
+  it('selects the hour using utc_offset_seconds (location-local timestamps)', () => {
+    jest.useFakeTimers();
+    // 18:30 UTC → 13:30 CDT (utc_offset_seconds = -18000)
+    jest.setSystemTime(new Date('2026-07-17T18:30:00.000Z'));
+
+    const mapped = mapOpenMeteoPollenHourly(
+      {
+        time: ['2026-07-17T12:00', '2026-07-17T13:00', '2026-07-17T14:00'],
+        birch_pollen: [5, 40, 90],
+        grass_pollen: [1, 2, 3],
+      },
+      -18000,
+    );
+
+    expect(mapped.source).toBe('open-meteo');
+    expect(mapped.tree.Birch).toBe('Moderate'); // 40 at local 13:00
+    expect(mapped.grass.Grass).toBe('Low');
+
+    jest.useRealTimers();
+  });
 });

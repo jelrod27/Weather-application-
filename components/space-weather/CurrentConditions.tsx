@@ -74,8 +74,8 @@ export default function CurrentConditions({
   const kp = kpIndex?.current?.value ?? 0;
   const kpStatus = getKpLabel(kp);
   const windSpeed = solarWind?.current?.speed ?? 0;
-  const bz = solarWind?.current?.bz ?? 0;
-  const bzColor = getBzColor(bz);
+  const bz = solarWind?.current?.bz ?? null;
+  const bzColor = bz == null ? 'text-gray-400' : getBzColor(bz);
   const classification =
     xrayFlux?.current?.flareClass
     ?? xrayFlux?.current?.classification
@@ -134,11 +134,11 @@ export default function CurrentConditions({
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono', bzColor)}>
-            {bz > 0 ? '+' : ''}{bz.toFixed(1)}
+            {bz == null ? '--' : `${bz > 0 ? '+' : ''}${bz.toFixed(1)}`}
           </span>
           <span className={cn('text-xs font-mono', themeClasses.text)}>nT</span>
           <span className={cn('text-xs font-mono', bzColor)}>
-            {bz > 0 ? 'NORTH' : 'SOUTH'}
+            {bz == null ? 'N/A' : bz > 0 ? 'NORTH' : 'SOUTH'}
           </span>
         </div>
       </div>

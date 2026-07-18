@@ -16,10 +16,10 @@ export interface PlasmaEntry {
   speed: number;
   density: number;
   temperature: number;
-  bz: number;
-  by: number;
-  bx: number;
-  bt: number;
+  bz: number | null;
+  by: number | null;
+  bx: number | null;
+  bt: number | null;
 }
 
 const RANGE_MS: Record<string, number> = {
@@ -114,13 +114,20 @@ export async function GET(request: NextRequest) {
             speed: Math.round(speed),
             density: Math.round(density * 100) / 100,
             temperature: Math.round(temperature),
-            bz: mag ? Math.round(mag.bz * 100) / 100 : 0,
-            by: mag ? Math.round(mag.by * 100) / 100 : 0,
-            bx: mag ? Math.round(mag.bx * 100) / 100 : 0,
-            bt: mag ? Math.round(mag.bt * 100) / 100 : 0,
+            bz: mag ? Math.round(mag.bz * 100) / 100 : null,
+            by: mag ? Math.round(mag.by * 100) / 100 : null,
+            bx: mag ? Math.round(mag.bx * 100) / 100 : null,
+            bt: mag ? Math.round(mag.bt * 100) / 100 : null,
           });
         }
       }
+    }
+
+    if (series.length === 0) {
+      return NextResponse.json(
+        { error: 'Unable to build plasma series from RTSW feeds', range },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json(
@@ -128,6 +135,7 @@ export async function GET(request: NextRequest) {
         data: series,
         range,
         source: 'NOAA Space Weather Prediction Center (RTSW)',
+        magneticAvailable: magMap.size > 0,
       },
       {
         headers: {

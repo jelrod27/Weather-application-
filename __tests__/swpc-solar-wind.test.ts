@@ -53,4 +53,33 @@ describe('parseRtswSolarWind', () => {
   it('marks unavailable when wind feed is empty', () => {
     expect(parseRtswSolarWind([], []).available).toBe(false);
   });
+
+  it('keeps magnetic fields null when mag feed is empty', () => {
+    const wind = [
+      {
+        time_tag: '2026-07-17T23:00:00',
+        active: true,
+        proton_speed: 400,
+        proton_density: 3,
+        proton_temperature: 100000,
+      },
+    ];
+    const parsed = parseRtswSolarWind(wind, []);
+    expect(parsed.available).toBe(true);
+    expect(parsed.current.bz).toBeNull();
+    expect(parsed.current.bt).toBeNull();
+  });
+
+  it('includes the newest sample in the recent series', () => {
+    const wind = Array.from({ length: 60 }, (_, i) => ({
+      time_tag: `2026-07-17T${String(i).padStart(2, '0')}:00:00`,
+      active: true,
+      proton_speed: 300 + i,
+      proton_density: 2,
+      proton_temperature: 100000,
+    }));
+    const parsed = parseRtswSolarWind(wind, []);
+    const lastRecent = parsed.recent[parsed.recent.length - 1];
+    expect(lastRecent?.speed).toBe(359);
+  });
 });
