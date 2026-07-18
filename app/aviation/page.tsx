@@ -19,8 +19,10 @@ import { ShareButtons } from '@/components/share-buttons';
 import AirportMiseryBoard from '@/components/aviation/AirportMiseryBoard';
 import AircraftSearch from '@/components/aviation/AircraftSearch';
 import AircraftSelectionPanel from '@/components/aviation/AircraftSelectionPanel';
+import type { RouteInfo } from '@/components/aviation/AircraftSelectionPanel';
 import FlightWeatherBrief from '@/components/aviation/FlightWeatherBrief';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
+import type { RouteMapEndpoints } from '@/components/aviation/LiveAircraftMap';
 
 const FlightConditionsTerminal = lazy(
   () => import('@/components/aviation/FlightConditionsTerminal'),
@@ -55,11 +57,38 @@ function AviationPageInner() {
   const [sourceLabel, setSourceLabel] = useState('adsb.lol');
   const [degraded, setDegraded] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [route, setRoute] = useState<{ origin: string | null; destination: string | null }>({
+  const [route, setRoute] = useState<RouteInfo>({
     origin: null,
     destination: null,
   });
   const [explorerOpen, setExplorerOpen] = useState(false);
+
+  const routeEndpoints = useMemo<RouteMapEndpoints | null>(() => {
+    const o = route.originAirport;
+    const d = route.destinationAirport;
+    if (
+      !o
+      || !d
+      || o.lat == null
+      || o.lon == null
+      || d.lat == null
+      || d.lon == null
+    ) {
+      return null;
+    }
+    return {
+      origin: {
+        lat: o.lat,
+        lon: o.lon,
+        label: o.iata ?? o.icao,
+      },
+      destination: {
+        lat: d.lat,
+        lon: d.lon,
+        label: d.iata ?? d.icao,
+      },
+    };
+  }, [route]);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -216,6 +245,8 @@ function AviationPageInner() {
             selectedIcao24={selected?.icao24 ?? null}
             highlightAircraft={selected}
             flyTo={flyTo}
+            routeEndpoints={routeEndpoints}
+            trail={trail.map(({ lat, lon }) => ({ lat, lon }))}
             onSelectAircraft={selectAircraft}
             onCountChange={(n, meta) => {
               setCount(n);

@@ -10,11 +10,17 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 import { DEFAULT_AIRCRAFT_RADIUS_NM } from '@/lib/aviation/aircraft-types';
+import { sampleGreatCircle } from '@/lib/aviation/route-corridor';
 
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const POLL_MS = 3_000;
 const DEFAULT_CENTER: [number, number] = [-98.35, 39.5];
 const DEFAULT_ZOOM = 4.2;
+
+export type RouteMapEndpoints = {
+  origin: { lat: number; lon: number; label?: string };
+  destination: { lat: number; lon: number; label?: string };
+};
 
 export type LiveAircraftMapProps = {
   className?: string;
@@ -25,6 +31,10 @@ export type LiveAircraftMapProps = {
   onDegradedChange?: (degraded: boolean, source: string | null) => void;
   /** External aircraft override (e.g. callsign search result highlight). */
   highlightAircraft?: Aircraft | null;
+  /** Planned OD great-circle path for the selected flight. */
+  routeEndpoints?: RouteMapEndpoints | null;
+  /** Client-collected trail since selection. */
+  trail?: Array<{ lat: number; lon: number }>;
 };
 
 function altitudeColor(alt: number | null): string {
@@ -65,6 +75,78 @@ function radiusForZoom(zoom: number): number {
   return 40;
 }
 
+function emptyLineCollection(): GeoJSON.FeatureCollection {
+  return { type: 'FeatureCollection', features: [] };
+}
+
+function routeLineCollection(endpoints: RouteMapEndpoints | null | undefined): GeoJSON.FeatureCollection {
+  if (!endpoints) return emptyLineCollection();
+  const samples = sampleGreatCircle(
+    { lat: endpoints.origin.lat, lon: endpoints.origin.lon },
+    { lat: endpoints.destination.lat, lon: endpoints.destination.lon },
+    48,
+  );
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { kind: 'planned' },
+        geometry: {
+          type: 'LineString',
+          coordinates: samples.map((p) => [p.lon, p.lat]),
+        },
+      },
+    ],
+  };
+}
+
+function airportPointsCollection(
+  endpoints: RouteMapEndpoints | null | undefined,
+): GeoJSON.FeatureCollection {
+  if (!endpoints) return emptyLineCollection();
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { label: endpoints.origin.label ?? 'DEP', role: 'origin' },
+        geometry: {
+          type: 'Point',
+          coordinates: [endpoints.origin.lon, endpoints.origin.lat],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: { label: endpoints.destination.label ?? 'ARR', role: 'destination' },
+        geometry: {
+          type: 'Point',
+          coordinates: [endpoints.destination.lon, endpoints.destination.lat],
+        },
+      },
+    ],
+  };
+}
+
+function trailLineCollection(
+  trail: Array<{ lat: number; lon: number }> | undefined,
+): GeoJSON.FeatureCollection {
+  if (!trail || trail.length < 2) return emptyLineCollection();
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { kind: 'trail' },
+        geometry: {
+          type: 'LineString',
+          coordinates: trail.map((p) => [p.lon, p.lat]),
+        },
+      },
+    ],
+  };
+}
+
 export default function LiveAircraftMap({
   className,
   selectedIcao24,
@@ -73,6 +155,8 @@ export default function LiveAircraftMap({
   onCountChange,
   onDegradedChange,
   highlightAircraft,
+  routeEndpoints,
+  trail,
 }: LiveAircraftMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -169,9 +253,78 @@ export default function LiveAircraftMap({
     );
 
     map.on('load', () => {
+      map.addSource('route-line', {
+        type: 'geojson',
+        data: emptyLineCollection(),
+      });
+      map.addSource('route-airports', {
+        type: 'geojson',
+        data: emptyLineCollection(),
+      });
+      map.addSource('trail-line', {
+        type: 'geojson',
+        data: emptyLineCollection(),
+      });
       map.addSource('aircraft', {
         type: 'geojson',
         data: toFeatureCollection([]),
+      });
+
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route-line',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 3,
+          'line-opacity': 0.85,
+          'line-dasharray': [2, 1],
+        },
+      });
+      map.addLayer({
+        id: 'trail-line',
+        type: 'line',
+        source: 'trail-line',
+        paint: {
+          'line-color': '#fbbf24',
+          'line-width': 2,
+          'line-opacity': 0.9,
+        },
+      });
+      map.addLayer({
+        id: 'route-airports',
+        type: 'circle',
+        source: 'route-airports',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': [
+            'match',
+            ['get', 'role'],
+            'origin',
+            '#22c55e',
+            'destination',
+            '#ef4444',
+            '#94a3b8',
+          ],
+          'circle-stroke-color': '#0f172a',
+          'circle-stroke-width': 2,
+        },
+      });
+      map.addLayer({
+        id: 'route-airport-labels',
+        type: 'symbol',
+        source: 'route-airports',
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 11,
+          'text-offset': [0, 1.4],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        },
+        paint: {
+          'text-color': '#f8fafc',
+          'text-halo-color': '#0f172a',
+          'text-halo-width': 1.5,
+        },
       });
       map.addLayer({
         id: 'aircraft-circle',
@@ -256,17 +409,43 @@ export default function LiveAircraftMap({
   }, [selectedIcao24, syncSelectionStyle]);
 
   useEffect(() => {
-    if (!flyTo || !mapRef.current) return;
+    if (!flyTo || !mapRef.current || routeEndpoints) return;
     mapRef.current.flyTo({
       center: [flyTo.lon, flyTo.lat],
       zoom: flyTo.zoom ?? 8,
       essential: true,
     });
-  }, [flyTo]);
+  }, [flyTo, routeEndpoints]);
 
   useEffect(() => {
     if (highlightAircraft) applyAircraft([...aircraftByIdRef.current.values()]);
   }, [highlightAircraft, applyAircraft]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const routeSource = map.getSource('route-line') as GeoJSONSource | undefined;
+    const airportSource = map.getSource('route-airports') as GeoJSONSource | undefined;
+    routeSource?.setData(routeLineCollection(routeEndpoints));
+    airportSource?.setData(airportPointsCollection(routeEndpoints));
+
+    if (routeEndpoints) {
+      const bounds = new maplibregl.LngLatBounds();
+      bounds.extend([routeEndpoints.origin.lon, routeEndpoints.origin.lat]);
+      bounds.extend([routeEndpoints.destination.lon, routeEndpoints.destination.lat]);
+      if (highlightAircraft) {
+        bounds.extend([highlightAircraft.lon, highlightAircraft.lat]);
+      }
+      map.fitBounds(bounds, { padding: 72, maxZoom: 7, duration: 900 });
+    }
+  }, [routeEndpoints, mapReady, highlightAircraft]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const trailSource = map.getSource('trail-line') as GeoJSONSource | undefined;
+    trailSource?.setData(trailLineCollection(trail));
+  }, [trail, mapReady]);
 
   return (
     <div className={cn('relative w-full overflow-hidden rounded-lg border border-border', className)}>

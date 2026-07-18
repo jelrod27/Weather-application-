@@ -135,7 +135,27 @@ test.describe('/aviation', () => {
     await page.route('**/api/aviation/aircraft/route**', (route) =>
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ callsign: 'UAL2096', origin: 'KLAX', destination: 'KDEN', raw: {} }),
+        body: JSON.stringify({
+          callsign: 'UAL2096',
+          origin: 'LAX',
+          destination: 'DEN',
+          airportCodes: 'KLAX-KDEN',
+          source: 'standing-data',
+          originAirport: {
+            icao: 'KLAX',
+            iata: 'LAX',
+            name: 'Los Angeles International',
+            lat: 33.94,
+            lon: -118.41,
+          },
+          destinationAirport: {
+            icao: 'KDEN',
+            iata: 'DEN',
+            name: 'Denver International',
+            lat: 39.86,
+            lon: -104.67,
+          },
+        }),
       }),
     );
     await page.route('**/api/aviation/aircraft/photo**', (route) =>

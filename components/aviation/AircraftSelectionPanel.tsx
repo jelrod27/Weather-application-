@@ -5,9 +5,25 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 
-type RouteInfo = {
+export type RouteInfo = {
   origin: string | null;
   destination: string | null;
+  originAirport?: {
+    icao: string;
+    iata: string | null;
+    name: string | null;
+    lat: number | null;
+    lon: number | null;
+  } | null;
+  destinationAirport?: {
+    icao: string;
+    iata: string | null;
+    name: string | null;
+    lat: number | null;
+    lon: number | null;
+  } | null;
+  airportCodes?: string | null;
+  source?: string;
 };
 
 type PhotoInfo = {
@@ -49,7 +65,14 @@ export default function AircraftSelectionPanel({
         .then((r) => r.json())
         .then((data: RouteInfo & { error?: string }) => {
           if (cancelled) return;
-          const next = { origin: data.origin ?? null, destination: data.destination ?? null };
+          const next: RouteInfo = {
+            origin: data.origin ?? null,
+            destination: data.destination ?? null,
+            originAirport: data.originAirport ?? null,
+            destinationAirport: data.destinationAirport ?? null,
+            airportCodes: data.airportCodes ?? null,
+            source: data.source,
+          };
           setRoute(next);
           onRouteResolved?.(next);
         })
@@ -89,6 +112,13 @@ export default function AircraftSelectionPanel({
     [aircraft],
   );
 
+  const originLabel = route?.originAirport
+    ? `${route.originAirport.iata ?? route.originAirport.icao}${route.originAirport.name ? ` · ${route.originAirport.name}` : ''}`
+    : route?.origin ?? null;
+  const destLabel = route?.destinationAirport
+    ? `${route.destinationAirport.iata ?? route.destinationAirport.icao}${route.destinationAirport.name ? ` · ${route.destinationAirport.name}` : ''}`
+    : route?.destination ?? null;
+
   return (
     <aside
       className={cn(
@@ -127,14 +157,26 @@ export default function AircraftSelectionPanel({
         ))}
       </div>
 
-      <div className="border-t border-border px-3 py-2">
+      <div className="space-y-2 border-t border-border px-3 py-2">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Route</p>
-        <p className="font-semibold">
-          {route?.origin || route?.destination
-            ? `${route?.origin ?? '???'} → ${route?.destination ?? '???'}`
-            : 'Route unknown'}
-        </p>
-        <p className="mt-1 text-[10px] text-muted-foreground">Trail points: {trail.length}</p>
+        {originLabel || destLabel ? (
+          <>
+            <div>
+              <div className="text-[10px] uppercase text-green-400">Origin</div>
+              <div className="text-xs font-semibold leading-snug">{originLabel ?? '—'}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase text-red-400">Destination</div>
+              <div className="text-xs font-semibold leading-snug">{destLabel ?? '—'}</div>
+            </div>
+            {route?.airportCodes && (
+              <p className="text-[10px] text-muted-foreground">{route.airportCodes}</p>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">Route unknown for this callsign</p>
+        )}
+        <p className="text-[10px] text-muted-foreground">Live trail points: {trail.length}</p>
       </div>
 
       {photo?.thumbnail && (
