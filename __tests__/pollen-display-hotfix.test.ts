@@ -25,6 +25,18 @@ describe('normalizePollenCategories', () => {
     expect(normalized.grass).toEqual({ Grass: 'Moderate' });
     expect(normalized.weed).toEqual({ Ragweed: 'High' });
   });
+
+  it('treats null or undefined maps as None', () => {
+    const normalized = normalizePollenCategories(
+      null as unknown as Record<string, string>,
+      undefined as unknown as Record<string, string>,
+      {},
+    );
+
+    expect(normalized.tree).toEqual({ Tree: 'None' });
+    expect(normalized.grass).toEqual({ Grass: 'None' });
+    expect(normalized.weed).toEqual({ Weed: 'None' });
+  });
 });
 
 describe('getPollenColor', () => {

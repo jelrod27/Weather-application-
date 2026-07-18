@@ -46,7 +46,7 @@ function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCa
   const textStyles = minimal ? 'text-white/80' : 'text-foreground'
 
   // Filter out unavailable entries; None and numeric levels are valid readings
-  const validData = Object.entries(categoryData).filter(
+  const validData = Object.entries(categoryData ?? {}).filter(
     ([_, category]) =>
       category !== 'No Data'
       && category !== 'Unavailable',

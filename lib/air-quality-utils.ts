@@ -87,7 +87,7 @@ export const getAQISeverityChrome = (aqi: number): AQISeverityChrome => {
  * Get color class for pollen category level
  */
 export const getPollenColor = (category: string | number): string => {
-  const cat = typeof category === 'string' ? category.toLowerCase().trim() : category.toString();
+  const cat = typeof category === 'string' ? category.toLowerCase().trim() : String(category ?? '');
 
   if (cat === 'no data' || cat === 'unavailable' || cat === '0') {
     return 'text-gray-400 font-semibold';

@@ -17,8 +17,8 @@ export function normalizePollenCategories(
   weed: Record<string, string>;
 } {
   return {
-    tree: Object.keys(tree).length > 0 ? tree : { [DEFAULT_LABEL.tree]: 'None' },
-    grass: Object.keys(grass).length > 0 ? grass : { [DEFAULT_LABEL.grass]: 'None' },
-    weed: Object.keys(weed).length > 0 ? weed : { [DEFAULT_LABEL.weed]: 'None' },
+    tree: tree && Object.keys(tree).length > 0 ? tree : { [DEFAULT_LABEL.tree]: 'None' },
+    grass: grass && Object.keys(grass).length > 0 ? grass : { [DEFAULT_LABEL.grass]: 'None' },
+    weed: weed && Object.keys(weed).length > 0 ? weed : { [DEFAULT_LABEL.weed]: 'None' },
   };
 }
