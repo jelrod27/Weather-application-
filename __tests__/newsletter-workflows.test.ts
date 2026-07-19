@@ -80,7 +80,7 @@ it('keeps the newsletter installer blocks identical', () => {
 
 it('rejects an installer block missing a required command', () => {
   const workflow = readWorkflow(WORKFLOW_FILES[0]).replace(
-    '          tar -xzf "$asset" gitleaks\n',
+    'tar -xzf "$asset" gitleaks',
     '',
   );
 
