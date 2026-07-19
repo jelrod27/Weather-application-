@@ -8,6 +8,7 @@ const WORKFLOW_FILES = [
 const GITLEAKS_VERSION = '8.30.1';
 const GITLEAKS_CHECKSUM =
   '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb';
+const SHELL_GITLEAKS_VERSION = ['$', '{GITLEAKS_VERSION}'].join('');
 const REQUIRED_INSTALLER_COMMANDS = [
   'curl --fail --location --retry 3 --output "$asset" "$url"',
   'sha256sum --check -',
@@ -54,7 +55,7 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
       `GITLEAKS_VERSION: '${GITLEAKS_VERSION}'`,
     );
     expect(installerBlock).toContain(
-      'asset="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"',
+      `asset="gitleaks_${SHELL_GITLEAKS_VERSION}_linux_x64.tar.gz"`,
     );
     expect(installerBlock).toContain(GITLEAKS_CHECKSUM);
     expectRequiredInstallerCommands(installerBlock);
