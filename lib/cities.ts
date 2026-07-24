@@ -20,8 +20,6 @@ export {
 export {
   CITY_DATABASE,
   searchCities,
-  getCityDisplayName,
-  getCityPageSlug,
   type CityData,
 } from '@/lib/city-database'
 
