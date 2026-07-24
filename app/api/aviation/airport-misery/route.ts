@@ -28,7 +28,7 @@ import {
   fetchAviationAlertsFromNOAA,
   type NoaaAlert,
 } from '@/lib/services/aviation-noaa-service';
-import type { MetarObservation } from '@/app/api/aviation/metar/route';
+import type { MetarObservation } from '@/lib/aviation/metar'
 
 export interface AirportMiseryRow {
   airport: MajorAirport;

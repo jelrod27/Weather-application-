@@ -60,7 +60,10 @@ export function useCityWeatherSession(seed: string): UseCityWeatherSessionResult
     void loadQuery(seed, {
       bypassRateLimit: true,
       toastOnError: false,
-      preferResolvedLocation: true,
+      // Keep the route seed in the search bar (e.g. "San Ramon, CA").
+      // Overwriting with the API-resolved bare city name dropped state/country
+      // and made re-search ambiguous. WeatherDisplay still uses weather.location.
+      preferResolvedLocation: false,
     })
 
     return () => {

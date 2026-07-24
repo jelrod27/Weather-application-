@@ -10,7 +10,7 @@
  * The existing /api/aviation/{metar,alerts} HTTP routes are unchanged; they
  * still serve other callers (FlightConditionsTerminal, AI context, etc.).
  */
-import type { MetarObservation } from '@/app/api/aviation/metar/route';
+import type { MetarObservation } from '@/lib/aviation/metar'
 import { captureError, captureUpstreamTimeout, isAbortError } from '@/lib/error-utils';
 
 const NOAA_METAR_BASE = 'https://aviationweather.gov/api/data/metar';

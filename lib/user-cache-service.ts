@@ -56,9 +56,6 @@ export interface LocalUserCache {
   updatedAt: number;
 }
 
-/** @deprecated Use LocalUserCache — name collided with Supabase UserPreferences. */
-export type UserPreferences = LocalUserCache;
-
 export interface CachedWeatherData {
   data: WeatherData;
   timestamp: number;

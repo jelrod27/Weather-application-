@@ -18,7 +18,7 @@ import { formatTimeAgo } from '@/lib/format-time-ago';
 import { MiseryBadge, MiseryDriverList } from '@/components/ui/misery-badge';
 import type { MiseryScore } from '@/lib/services/misery-score-service';
 import type { MajorAirport } from '@/lib/data/major-us-airports';
-import type { MetarObservation } from '@/app/api/aviation/metar/route';
+import type { MetarObservation } from '@/lib/aviation/metar'
 
 interface AirportMiseryRow {
   airport: MajorAirport;

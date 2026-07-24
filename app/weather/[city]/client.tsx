@@ -19,7 +19,6 @@ import WeatherSearch from '@/components/weather-search'
 import { useTheme } from '@/components/theme-provider'
 import { Loader2 } from 'lucide-react'
 import { ResponsiveContainer } from '@/components/responsive-container'
-import { useLocationContext } from '@/components/location-context'
 import { WeatherDisplay } from '@/components/weather-display'
 import SaveLocationButton from '@/components/weather/save-location-button'
 import { locationInputToSlug } from '@/lib/city-slug'
@@ -53,7 +52,6 @@ interface CityWeatherClientProps {
 export default function CityWeatherClient({ city, citySlug, climateGuide }: CityWeatherClientProps): JSX.Element {
   const router = useRouter()
   const { theme } = useTheme()
-  const { setLocationInput } = useLocationContext()
 
   const {
     weather,
@@ -84,7 +82,6 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
     if (!locationInput?.trim()) return
     const slug = locationInputToSlug(locationInput)
     setSelectedDay(null)
-    setLocationInput('')
     router.push(`/weather/${slug}`)
   }
 

@@ -120,7 +120,7 @@ describe('useCityWeatherSession', () => {
     expect(clearLocationState).toHaveBeenCalled()
     expect(setShouldClearOnRouteChange).toHaveBeenCalledWith(false)
     expect(mockFetchWeatherData).toHaveBeenCalledWith('Boston, MA', 'imperial')
-    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston')
+    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston, MA')
 
     unmount()
     expect(setShouldClearOnRouteChange).toHaveBeenCalledWith(true)
@@ -143,7 +143,24 @@ describe('useCityWeatherSession', () => {
     })
 
     expect(mockFetchWeatherData).not.toHaveBeenCalled()
-    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston')
+    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston, MA')
+  })
+
+  it('keeps the route seed in location context after load, not the bare API city name', async () => {
+    mockFetchWeatherData.mockResolvedValueOnce(
+      makeWeather({ location: 'San Ramon' }),
+    )
+
+    renderHook(() => useCityWeatherSession('San Ramon, CA'))
+
+    // Wait for applyWeather/persistWeather — not just fetchWeatherData —
+    // so the final setLocationInput + cache write are settled.
+    await waitFor(() => {
+      expect(mockFetchWeatherData).toHaveBeenCalledWith('San Ramon, CA', 'imperial')
+      const locationWrites = setLocationInput.mock.calls.map((c) => c[0])
+      expect(locationWrites.at(-1)).toBe('San Ramon, CA')
+      expect(weatherSessionCache.getLastDisplayed()?.location).toBe('San Ramon, CA')
+    })
   })
 
   it('sets error when seed fetch fails', async () => {

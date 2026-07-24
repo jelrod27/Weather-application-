@@ -265,20 +265,3 @@ export function searchCities(query: string, maxResults: number = 4): CityData[] 
     return 0;
   });
 }
-
-// Get display name for a city
-export function getCityDisplayName(city: CityData): string {
-  if (city.country === "US" && city.state) {
-    return `${city.name}, ${city.state}`;
-  }
-  return `${city.name}, ${city.country}`;
-}
-
-// Check if a city has a dedicated page
-export function getCityPageSlug(cityName: string): string | null {
-  const city = CITIES_WITH_PAGES.find(c => 
-    c.name.toLowerCase() === cityName.toLowerCase() ||
-    c.searchTerm.toLowerCase() === cityName.toLowerCase()
-  );
-  return city?.pageSlug || null;
-}

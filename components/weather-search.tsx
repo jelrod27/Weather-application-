@@ -17,7 +17,7 @@ import { LoadingSpinner } from "@/components/ui/loading-state"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import CityAutocomplete from "./city-autocomplete"
-import { type CityData } from "@/lib/city-database"
+import { type CityData } from "@/lib/cities"
 import { useLocationContext } from "./location-context"
 import { useTheme } from "./theme-provider"
 import { Input } from "@/components/ui/input"
@@ -119,10 +119,9 @@ export default function WeatherSearch({
 
     setShowAutocomplete(false)
     onSearch(searchTerm.trim())
-
-    // Clear input after successful submission
-    setSearchTerm("")
-    setLocationInput("")
+    // Do not clear the input here. Home navigates to /weather/[slug], and city
+    // re-searches often keep the same slug (no remount). Clearing made a filled
+    // bar look searchable while the controlled value was already emptied.
   }
 
   const handleCitySelect = (city: CityData) => {

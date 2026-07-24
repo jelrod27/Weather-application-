@@ -242,7 +242,7 @@ export class LocationService {
    * Reverse geocode coordinates to a human-readable location.
    *
    * IMPORTANT: this used to call Nominatim directly from the browser, but
-   * the app's CSP `connect-src` whitelist (next.config.mjs:90) does not
+   * the app's CSP `connect-src` whitelist (middleware.ts buildCspHeader) does not
    * include nominatim.openstreetmap.org, so the browser blocks the request
    * and the catch fallback fires every time. Instead we now route through
    * our same-origin proxy at `/api/weather/geocoding?lat=&lon=`, which

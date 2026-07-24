@@ -1,55 +1,49 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server';
-import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
-import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo';
+/**
+ * Raw Open-Meteo air-quality proxy for client adapters.
+ * Enriched AQI shape: /api/weather/air-quality.
+ */
 
-// GET /api/open-meteo/air-quality?lat=..&lon=..
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { withApiRoute } from '@/lib/api/with-api-route'
+import { parseCoordinates } from '@/lib/api/query-params'
+import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo'
+
 export async function GET(request: NextRequest) {
-  try {
-    const rateLimit = await rateLimitRequest(request);
-    if (!rateLimit.allowed) {
-      return rateLimit.response;
-    }
+  return withApiRoute(request, async ({ request: req, rateLimitHeaders }) => {
+    try {
+      const sp = req.nextUrl.searchParams
+      const coords = parseCoordinates(sp.get('lat'), sp.get('lon'))
 
-    const sp = request.nextUrl.searchParams;
-    const lat = sp.get('lat');
-    const lon = sp.get('lon');
+      if (!coords.ok) {
+        // Preserve prior missing-param wording for open-meteo clients/tests.
+        const missing = !sp.get('lat') || !sp.get('lon')
+        return NextResponse.json(
+          {
+            error: missing
+              ? 'Missing required parameters: lat, lon'
+              : coords.error === 'Coordinates out of valid range'
+                ? 'Coordinates out of valid range'
+                : 'Invalid coordinates provided',
+          },
+          { status: 400 },
+        )
+      }
 
-    if (!lat || !lon) {
+      const data = await fetchOpenMeteoAirQuality(coords.latitude, coords.longitude)
+
+      return NextResponse.json(data, {
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+          ...rateLimitHeaders,
+        },
+      })
+    } catch (error) {
+      console.error('[Open-Meteo Air Quality API] Error:', error)
       return NextResponse.json(
-        { error: 'Missing required parameters: lat, lon' },
-        { status: 400 }
-      );
+        { error: 'Air quality service unavailable' },
+        { status: 502 },
+      )
     }
-
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lon);
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-      return NextResponse.json(
-        { error: 'Invalid coordinates provided' },
-        { status: 400 }
-      );
-    }
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-      return NextResponse.json(
-        { error: 'Coordinates out of valid range' },
-        { status: 400 }
-      );
-    }
-
-    const data = await fetchOpenMeteoAirQuality(latitude, longitude);
-
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=3600',
-        ...rateLimit.headers,
-      },
-    });
-  } catch (error) {
-    console.error('[Open-Meteo Air Quality API] Error:', error);
-    return NextResponse.json(
-      { error: 'Air quality service unavailable' },
-      { status: 502 }
-    );
-  }
+  })
 }

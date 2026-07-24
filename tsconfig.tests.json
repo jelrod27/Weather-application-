@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "lib/cron/**/*.ts",
+    "lib/api/**/*.ts",
+    "lib/aviation/**/*.ts",
+    "lib/geocoding/**/*.ts",
+    "lib/us-states.ts",
+    "lib/cities.ts",
+    "__tests__/verify-cron-auth.test.ts",
+    "__tests__/preferences-resolve.test.ts",
+    "__tests__/weather-session-cache.test.ts",
+    "__tests__/useWeatherSession.city.test.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "_archive",
+    "tempest",
+    ".next"
+  ]
+}

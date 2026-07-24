@@ -1,4 +1,4 @@
-import { US_STATE_CODES } from '@/lib/home/hub-location';
+import { US_STATE_CODES } from '@/lib/us-states'
 
 /** Normalize "San Ramon, CA" → "san-ramon-ca" for /weather/[city] routes. */
 export function locationInputToSlug(input: string): string {

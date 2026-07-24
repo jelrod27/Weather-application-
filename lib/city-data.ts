@@ -1,4 +1,8 @@
-// Complete city data for all 100 US cities with SEO-optimized content
+/**
+ * Random-link / lat-lon catalog for ~100 US cities.
+ * SEO page copy lives in `city-metadata`; autocomplete in `city-database`.
+ * Prefer importing via `@/lib/cities`.
+ */
 export const CITY_DATA = {
   'new-york-ny': {
     name: 'New York',

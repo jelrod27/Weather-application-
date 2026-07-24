@@ -7,7 +7,8 @@
  * - Error message generation
  */
 
-import { getApiUrl, normalizeInput } from './weather-utils';
+import { getApiUrl, normalizeInput } from './weather-utils'
+import { isUsState } from '@/lib/us-states'
 
 // ============================================================================
 // Types
@@ -46,28 +47,6 @@ export interface GeocodedLocation {
 // ============================================================================
 // Location Lists
 // ============================================================================
-
-const US_STATE_ABBREVIATIONS = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-  'DC'
-];
-
-const US_STATE_NAMES = [
-  'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado',
-  'connecticut', 'delaware', 'florida', 'georgia', 'hawaii', 'idaho',
-  'illinois', 'indiana', 'iowa', 'kansas', 'kentucky', 'louisiana',
-  'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota',
-  'mississippi', 'missouri', 'montana', 'nebraska', 'nevada',
-  'new hampshire', 'new jersey', 'new mexico', 'new york',
-  'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon',
-  'pennsylvania', 'rhode island', 'south carolina', 'south dakota',
-  'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
-  'west virginia', 'wisconsin', 'wyoming', 'district of columbia'
-];
 
 const COUNTRY_CODES = [
   'US', 'GB', 'UK', 'CA', 'AU', 'DE', 'FR', 'IT', 'ES', 'JP', 'CN', 'IN',
@@ -161,13 +140,8 @@ export const parseLocationInput = (input: string): LocationQuery => {
         };
       }
 
-      const regionOrCountryLower = regionOrCountry.toLowerCase();
-
-      // Check if it's a US state
-      const isUSState = US_STATE_ABBREVIATIONS.includes(regionOrCountry.toUpperCase()) ||
-                       US_STATE_NAMES.includes(regionOrCountryLower);
-
-      if (isUSState) {
+      // Check if it's a US state (canonical list in lib/us-states)
+      if (isUsState(regionOrCountry)) {
         return {
           query: cleanInput,
           type: 'city_state',
@@ -176,6 +150,8 @@ export const parseLocationInput = (input: string): LocationQuery => {
           country: 'US'
         };
       }
+
+      const regionOrCountryLower = regionOrCountry.toLowerCase();
 
       // Check if it's a known country
       const isCountry = COUNTRY_CODES.includes(regionOrCountry.toUpperCase()) ||
