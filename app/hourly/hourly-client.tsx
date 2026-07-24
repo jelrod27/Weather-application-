@@ -8,6 +8,8 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { fetchWeatherByLocation } from "@/lib/weather"
 import HourlyForecast from "@/components/hourly-forecast"
 import type { WeatherData } from "@/lib/types"
+import { resolveUnitSystem } from "@/lib/preferences/resolve"
+import { userCacheService } from "@/lib/user-cache-service"
 
 export default function HourlyClient() {
   const searchParams = useSearchParams()
@@ -21,8 +23,10 @@ export default function HourlyClient() {
   const lat = searchParams.get('lat')
   const lon = searchParams.get('lon')
   const city = searchParams.get('city')
-  const unitSystem: 'metric' | 'imperial' =
-    preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+  const unitSystem = resolveUnitSystem(
+    preferences,
+    userCacheService.getUnitSystem(),
+  )
 
   useEffect(() => {
     async function loadWeather() {

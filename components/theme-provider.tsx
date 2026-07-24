@@ -6,6 +6,7 @@ import type { ThemeType } from '@/lib/theme-config'
 import { THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
 import { useAuth } from '@/lib/auth'
 import { updateUserPreferencesAPI } from '@/lib/services/preferences-service'
+import { userCacheService } from '@/lib/user-cache-service'
 
 export type Theme = ThemeType
 
@@ -103,6 +104,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       try {
         const updated = await updateUserPreferencesAPI({ theme: newTheme })
         if (updated) {
+          userCacheService.mirrorServerPreferences(updated)
           await refreshPreferences()
         }
       } catch (e) {

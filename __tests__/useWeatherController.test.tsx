@@ -30,6 +30,10 @@ jest.mock('@/lib/user-cache-service', () => ({
     getLocationKey: jest.fn((loc: { displayName?: string }) => loc?.displayName ?? 'key'),
     getCachedWeatherData: jest.fn(() => null),
     cacheWeatherData: jest.fn(),
+    getUnitSystem: jest.fn(() => 'imperial'),
+    getAutoLocationEnabled: jest.fn(() => true),
+    mirrorServerPreferences: jest.fn(() => true),
+    resetMirroredSettings: jest.fn(() => true),
   },
 }))
 jest.mock('@/lib/toast-service', () => ({

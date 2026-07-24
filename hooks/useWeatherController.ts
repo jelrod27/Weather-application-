@@ -17,6 +17,7 @@ import {
     addToSearchCache,
     getFromSearchCache,
 } from '@/lib/weather-search-cache'
+import { resolveAutoLocation, resolveUnitSystem } from '@/lib/preferences/resolve'
 
 export function useWeatherController() {
     const {
@@ -68,7 +69,10 @@ export function useWeatherController() {
         const loadId = existingLoadId ?? ++latestLoadId.current
         try {
             userCacheService.saveLastLocation(location)
-            const unitSystemForKey: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+            const unitSystemForKey = resolveUnitSystem(
+                preferences,
+                userCacheService.getUnitSystem(),
+            )
             // Unit-scoped key: cached payloads are unit-baked (see search cache).
             const locationKey = `${userCacheService.getLocationKey(location)}_${unitSystemForKey}`
             const cachedWeather = userCacheService.getCachedWeatherData(locationKey)
@@ -114,8 +118,10 @@ export function useWeatherController() {
 
                 // Fall back to the normal search flow (geocoding -> weather) using display name,
                 // but do it inline to avoid referencing handleSearch before it's declared.
-                const fallbackUnitSystem: 'metric' | 'imperial' =
-                    preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+                const fallbackUnitSystem = resolveUnitSystem(
+                    preferences,
+                    userCacheService.getUnitSystem(),
+                )
                 const fallbackWeather = await fetchWeatherData(fallbackQuery, fallbackUnitSystem)
                 if (loadId !== latestLoadId.current) return
 
@@ -132,7 +138,10 @@ export function useWeatherController() {
             }
 
             const coords = `${location.latitude},${location.longitude}`
-            const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+            const unitSystem = resolveUnitSystem(
+                preferences,
+                userCacheService.getUnitSystem(),
+            )
             const weatherData = await fetchWeatherByLocation(coords, unitSystem, location.displayName)
             if (loadId !== latestLoadId.current) return
 
@@ -195,7 +204,10 @@ export function useWeatherController() {
         const loadId = ++latestLoadId.current
 
         try {
-            const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+            const unitSystem = resolveUnitSystem(
+                preferences,
+                userCacheService.getUnitSystem(),
+            )
 
             const cachedWeather = getFromSearchCache(input, unitSystem)
             if (cachedWeather?.forecast && cachedWeather.forecast.length > 0) {
@@ -285,14 +297,10 @@ export function useWeatherController() {
             if (autoLocationStartedRef.current) return
             autoLocationStartedRef.current = true
             try {
-                const localPrefs = userCacheService.getPreferences()
-                const localAutoLocate =
-                    (localPrefs as any)?.settings?.auto_location ??
-                    (localPrefs as any)?.settings?.autoLocation ??
-                    (localPrefs as any)?.auto_location ??
-                    (localPrefs as any)?.autoLocation
-
-                const shouldAutoLocate = preferences?.auto_location ?? localAutoLocate ?? true
+                const shouldAutoLocate = resolveAutoLocation(
+                    preferences,
+                    userCacheService.getAutoLocationEnabled(),
+                )
 
                 if (shouldAutoLocate === false) {
                     if (profile?.default_location) {
@@ -413,7 +421,10 @@ export function useWeatherController() {
                             const hasCoordinates = weather.coordinates?.lat && weather.coordinates?.lon
                             if (!hasCoordinates) {
                                 const loadId = ++latestLoadId.current
-                                const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+                                const unitSystem = resolveUnitSystem(
+                                    preferences,
+                                    userCacheService.getUnitSystem(),
+                                )
                                 fetchWeatherData(cachedLocationData, unitSystem)
                                     .then((freshData) => {
                                         // Keep the stripped copy in storage; only

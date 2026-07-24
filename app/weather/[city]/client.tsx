@@ -28,6 +28,8 @@ import SaveLocationButton from '@/components/weather/save-location-button'
 import { locationInputToSlug } from '@/lib/city-slug'
 import { useHubLocation } from '@/hooks/use-hub-location'
 import dynamic from 'next/dynamic'
+import { resolveUnitSystem } from '@/lib/preferences/resolve'
+import { userCacheService } from '@/lib/user-cache-service'
 
 const HomeHub = dynamic(() => import('@/components/home/home-hub'), {
   ssr: false,
@@ -113,7 +115,10 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
       setLoading(true)
       setError("")
 
-      const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+      const unitSystem = resolveUnitSystem(
+        preferences,
+        userCacheService.getUnitSystem(),
+      )
       const weatherData = await fetchWeatherData(city.searchTerm, unitSystem)
 
       if (requestId !== weatherRequestRef.current) return
@@ -196,7 +201,10 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
       // API key is now handled by internal API routes
 
       const { fetchWeatherByLocation } = await import('@/lib/weather')
-      const unitSystem: 'metric' | 'imperial' = preferences?.temperature_unit === 'celsius' ? 'metric' : 'imperial'
+      const unitSystem = resolveUnitSystem(
+        preferences,
+        userCacheService.getUnitSystem(),
+      )
       const weatherData = await fetchWeatherByLocation(`${latitude},${longitude}`, unitSystem)
       setWeather(weatherData)
     } catch (err) {

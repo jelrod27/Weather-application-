@@ -7,6 +7,7 @@ import type { Profile, UserPreferences } from '@/lib/supabase/types'
 import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
 import { AuthUserDataLoadGate } from '@/lib/auth/auth-load-generation'
+import { userCacheService } from '@/lib/user-cache-service'
 
 interface AuthContextType {
   user: User | null
@@ -83,6 +84,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
       setPreferences(preferencesData)
+      if (preferencesData) {
+        userCacheService.mirrorServerPreferences(preferencesData)
+      }
     } catch (error) {
       console.error('Error fetching preferences:', error)
       if (gen === preferencesGenRef.current && authStateRef.current.user?.id === userId) {
@@ -149,6 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setProfile(null)
       setPreferences(null)
       setProfileLoading(false)
+      userCacheService.resetMirroredSettings()
     }
   }, [fetchProfile, fetchPreferences])
 
@@ -163,6 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(null)
       setProfile(null)
       setPreferences(null)
+      userCacheService.resetMirroredSettings()
 
       // 2. Clear client-side session (localStorage) - Aggressive Cleanup
       // Manually remove all Supabase-related items from localStorage to ensure clean state
@@ -199,6 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(null)
       setProfile(null)
       setPreferences(null)
+      userCacheService.resetMirroredSettings()
 
       if (typeof window !== 'undefined') {
         window.location.href = '/'

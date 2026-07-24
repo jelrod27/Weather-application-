@@ -44,6 +44,50 @@ describe('preference theme validation', () => {
     const prefs = userCacheService.getPreferences();
     expect(prefs?.settings.theme).toBe(DEFAULT_THEME);
   });
+
+  it('migrates legacy camelCase autoLocation into settings.auto_location', () => {
+    localStorage.setItem(
+      PREFS_KEY,
+      JSON.stringify({
+        settings: {
+          units: 'imperial',
+          theme: DEFAULT_THEME,
+          cacheEnabled: true,
+          autoLocation: false,
+        },
+        updatedAt: Date.now(),
+      })
+    );
+
+    expect(userCacheService.getAutoLocationEnabled()).toBe(false);
+  });
+
+  it('mirrors canonical server preferences into local settings', () => {
+    userCacheService.mirrorServerPreferences({
+      theme: 'synthwave84',
+      temperature_unit: 'celsius',
+      auto_location: false,
+    });
+
+    const prefs = userCacheService.getPreferences();
+    expect(prefs?.settings.theme).toBe('synthwave84');
+    expect(prefs?.settings.units).toBe('metric');
+    expect(prefs?.settings.auto_location).toBe(false);
+    expect(userCacheService.getUnitSystem()).toBe('metric');
+  });
+
+  it('resets mirrored settings to anonymous defaults', () => {
+    userCacheService.mirrorServerPreferences({
+      theme: 'synthwave84',
+      temperature_unit: 'celsius',
+      auto_location: false,
+    });
+
+    expect(userCacheService.resetMirroredSettings()).toBe(true);
+    expect(userCacheService.getUnitSystem()).toBe('imperial');
+    expect(userCacheService.getAutoLocationEnabled()).toBe(true);
+    expect(userCacheService.getPreferences()?.settings.theme).toBe(DEFAULT_THEME);
+  });
 });
 
 describe('corrupted weather cache cleanup', () => {
