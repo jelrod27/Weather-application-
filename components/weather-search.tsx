@@ -119,10 +119,9 @@ export default function WeatherSearch({
 
     setShowAutocomplete(false)
     onSearch(searchTerm.trim())
-
-    // Clear input after successful submission
-    setSearchTerm("")
-    setLocationInput("")
+    // Do not clear the input here. Home navigates to /weather/[slug], and city
+    // re-searches often keep the same slug (no remount). Clearing made a filled
+    // bar look searchable while the controlled value was already emptied.
   }
 
   const handleCitySelect = (city: CityData) => {
