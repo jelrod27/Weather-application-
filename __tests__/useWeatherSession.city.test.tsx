@@ -153,14 +153,14 @@ describe('useCityWeatherSession', () => {
 
     renderHook(() => useCityWeatherSession('San Ramon, CA'))
 
+    // Wait for applyWeather/persistWeather — not just fetchWeatherData —
+    // so the final setLocationInput + cache write are settled.
     await waitFor(() => {
       expect(mockFetchWeatherData).toHaveBeenCalledWith('San Ramon, CA', 'imperial')
+      const locationWrites = setLocationInput.mock.calls.map((c) => c[0])
+      expect(locationWrites.at(-1)).toBe('San Ramon, CA')
+      expect(weatherSessionCache.getLastDisplayed()?.location).toBe('San Ramon, CA')
     })
-
-    // Last write must preserve state so re-search stays disambiguated.
-    const locationWrites = setLocationInput.mock.calls.map((c) => c[0])
-    expect(locationWrites.at(-1)).toBe('San Ramon, CA')
-    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('San Ramon, CA')
   })
 
   it('sets error when seed fetch fails', async () => {
