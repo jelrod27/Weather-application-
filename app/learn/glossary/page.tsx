@@ -10,7 +10,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
 import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

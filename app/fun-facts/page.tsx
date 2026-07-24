@@ -16,7 +16,7 @@
 
 
 import { useState } from "react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import EducationBackLink from "@/components/education/education-back-link"

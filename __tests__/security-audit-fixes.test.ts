@@ -16,12 +16,26 @@ describe('Fix 1: XSS — blog article rendering', () => {
 // Supabase filter injection on /api/games, admin auth on POST /api/games).
 // All three were removed alongside the games feature itself.
 
-describe('Fix 5: CSP unsafe-eval removed', () => {
-  const src = readFileSync(join(__dirname, '..', 'next.config.mjs'), 'utf-8');
-  it('should not contain unsafe-eval in script-src', () => {
-    // unsafe-eval allows arbitrary code execution via eval() — must be removed
-    // unsafe-inline is kept because Next.js requires it for inline hydration scripts
-    expect(src).not.toContain("'unsafe-eval'");
+describe('Fix 5: CSP unsafe-eval removed from production', () => {
+  // CSP is owned by middleware.ts (buildCspHeader). next.config.mjs must not
+  // duplicate it — grepping next.config would be a false green.
+  const src = readFileSync(join(__dirname, '..', 'middleware.ts'), 'utf-8');
+
+  it('builds CSP in middleware', () => {
+    expect(src).toContain('function buildCspHeader');
+  });
+
+  it('production script-src omits unsafe-eval', () => {
+    const prodBranch = src.match(/isProd\s*\?\s*`([^`]+)`/);
+    expect(prodBranch).not.toBeNull();
+    expect(prodBranch![1]).not.toContain("'unsafe-eval'");
+    expect(prodBranch![1]).toContain("script-src 'self' 'unsafe-inline'");
+  });
+
+  it('non-production script-src allows unsafe-eval for tooling', () => {
+    const nonProdBranch = src.match(/isProd\s*\?\s*`[^`]+`\s*:\s*`([^`]+)`/);
+    expect(nonProdBranch).not.toBeNull();
+    expect(nonProdBranch![1]).toContain("'unsafe-eval'");
   });
 });
 
