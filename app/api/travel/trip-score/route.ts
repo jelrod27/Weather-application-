@@ -15,9 +15,8 @@
  * the trip score (matches the badge semantics elsewhere in the app).
  */
 
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import {
   scoreAirportMisery,
   scoreRoadMisery,
@@ -42,17 +41,17 @@ import {
   haversineMeters,
   matchCorridor,
 } from '@/lib/services/trip-routing-service';
-import type { MetarObservation } from '@/app/api/aviation/metar/route';
+import type { MetarObservation } from '@/lib/aviation/metar'
 import {
   fetchMetarsBulk,
   fetchAviationAlertsFromNOAA,
   type NoaaAlert,
-} from '@/lib/services/aviation-noaa-service';
-import interstateData from '@/public/data/us-interstates.json';
+} from '@/lib/services/aviation-noaa-service'
+import { resolveGeocodingQuery } from '@/lib/geocoding/lookup'
+import interstateData from '@/public/data/us-interstates.json'
 
-const REQUEST_TIMEOUT_MS = 15_000;
 /** SIGMETs within this radius of the flight midpoint count as en-route hazards. */
-const ENROUTE_HAZARD_RADIUS_KM = 500;
+const ENROUTE_HAZARD_RADIUS_KM = 500
 
 interface InterstateCorridorData {
   name: string;
@@ -61,14 +60,6 @@ interface InterstateCorridorData {
 }
 
 
-interface GeocodingResult {
-  name: string;
-  lat: number;
-  lon: number;
-  country: string;
-  state?: string;
-}
-
 interface ResolvedEndpoint {
   query: string;
   coords: { lat: number; lon: number };
@@ -76,82 +67,58 @@ interface ResolvedEndpoint {
   airport?: MajorAirport;
 }
 
-function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, '');
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return 'http://localhost:3000';
-}
-
 /**
  * Resolve a free-text query to coordinates. Tries:
  *   1. IATA/ICAO code lookup against the major airports table.
  *   2. City match against the major airports table (so "Atlanta" → ATL).
- *   3. Internal /api/weather/geocoding (Open-Meteo).
+ *   3. Direct Open-Meteo geocoding via lib/geocoding (no HTTP loopback).
  */
 async function resolveEndpoint(
   query: string,
-  baseUrl: string,
   preferAirport: boolean,
 ): Promise<ResolvedEndpoint | null> {
-  const trimmed = query.trim();
-  if (!trimmed) return null;
+  const trimmed = query.trim()
+  if (!trimmed) return null
 
-  // 1) Direct airport code match.
-  const codeMatch = findAirportByCode(trimmed);
+  const codeMatch = findAirportByCode(trimmed)
   if (codeMatch) {
     return {
       query: trimmed,
       coords: { lat: codeMatch.lat, lon: codeMatch.lon },
       label: `${codeMatch.iata} — ${codeMatch.city}, ${codeMatch.state}`,
       airport: codeMatch,
-    };
+    }
   }
 
-  // 2) City/name match against hubs (most useful in fly mode).
   if (preferAirport) {
-    const cityMatch = findAirportByCity(trimmed);
+    const cityMatch = findAirportByCity(trimmed)
     if (cityMatch) {
       return {
         query: trimmed,
         coords: { lat: cityMatch.lat, lon: cityMatch.lon },
         label: `${cityMatch.iata} — ${cityMatch.city}, ${cityMatch.state}`,
         airport: cityMatch,
-      };
+      }
     }
   }
 
-  // 3) Generic geocoding for free-text input.
   try {
-    const url = `${baseUrl}/api/weather/geocoding?q=${encodeURIComponent(trimmed)}&limit=1`;
-    const res = await fetchWithTimeout(url, {
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': '16-Bit-Weather/trip-score',
-      },
-    });
-    if (!res.ok) return null;
+    const data = await resolveGeocodingQuery(trimmed, 1)
+    if (!Array.isArray(data) || data.length === 0) return null
 
-    const data = (await res.json()) as GeocodingResult[] | { error?: string };
-    if (!Array.isArray(data) || data.length === 0) return null;
+    const first = data[0]
+    if (typeof first.lat !== 'number' || typeof first.lon !== 'number') return null
 
-    const first = data[0];
-    if (typeof first.lat !== 'number' || typeof first.lon !== 'number') return null;
-
-    const labelParts = [first.name, first.state, first.country].filter(Boolean);
+    const labelParts = [first.name, first.state, first.country].filter(Boolean)
 
     return {
       query: trimmed,
       coords: { lat: first.lat, lon: first.lon },
       label: labelParts.join(', ') || trimmed,
-    };
+    }
   } catch (error) {
-    console.error('[trip-score]', 'geocoding failed', error);
-    return null;
+    console.error('[trip-score]', 'geocoding failed', error)
+    return null
   }
 }
 
@@ -384,7 +351,6 @@ async function handleDriveMode(
 async function handleFlyMode(
   origin: ResolvedEndpoint,
   destination: ResolvedEndpoint,
-  baseUrl: string,
 ): Promise<NextResponse> {
   if (!origin.airport || !destination.airport) {
     return NextResponse.json(
@@ -501,24 +467,22 @@ export async function GET(request: NextRequest) {
     }
     const forecastDay = Number(dayParam);
 
-    const baseUrl = getBaseUrl();
-
     const [resolvedOrigin, resolvedDest] = await Promise.all([
-      resolveEndpoint(origin, baseUrl, mode === 'fly'),
-      resolveEndpoint(destination, baseUrl, mode === 'fly'),
-    ]);
+      resolveEndpoint(origin, mode === 'fly'),
+      resolveEndpoint(destination, mode === 'fly'),
+    ])
 
     if (!resolvedOrigin || !resolvedDest) {
       return NextResponse.json(
         { error: 'Could not resolve origin/destination' },
         { status: 400 },
-      );
+      )
     }
 
     if (mode === 'drive') {
-      return handleDriveMode(resolvedOrigin, resolvedDest, forecastDay, request.signal);
+      return handleDriveMode(resolvedOrigin, resolvedDest, forecastDay, request.signal)
     }
-    return handleFlyMode(resolvedOrigin, resolvedDest, baseUrl);
+    return handleFlyMode(resolvedOrigin, resolvedDest)
   } catch (error) {
     console.error('[trip-score]', error);
     return NextResponse.json(

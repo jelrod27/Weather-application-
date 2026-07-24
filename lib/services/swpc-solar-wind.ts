@@ -4,8 +4,44 @@
  * `json/rtsw/rtsw_wind_1m.json` and `json/rtsw/rtsw_mag_1m.json`.
  */
 
-export const RTSW_WIND_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json';
-export const RTSW_MAG_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json';
+import { fetchSwpc } from '@/lib/services/swpc-proxy'
+import type { FetchWithTimeoutOptions } from '@/lib/fetch-with-timeout'
+
+export const RTSW_WIND_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json'
+export const RTSW_MAG_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json'
+
+export type RtswFeedPair = {
+  windJson: unknown | null
+  magJson: unknown | null
+  windOk: boolean
+  magOk: boolean
+}
+
+/** Shared RTSW wind+mag fetch used by solar-wind and plasma routes. */
+export async function fetchRtswFeeds(
+  options: FetchWithTimeoutOptions = {},
+): Promise<RtswFeedPair> {
+  const [plasmaResponse, magResponse] = await Promise.allSettled([
+    fetchSwpc(RTSW_WIND_URL, options),
+    fetchSwpc(RTSW_MAG_URL, options),
+  ])
+
+  let windJson: unknown | null = null
+  let magJson: unknown | null = null
+  let windOk = false
+  let magOk = false
+
+  if (plasmaResponse.status === 'fulfilled' && plasmaResponse.value.ok) {
+    windOk = true
+    windJson = await plasmaResponse.value.json()
+  }
+  if (magResponse.status === 'fulfilled' && magResponse.value.ok) {
+    magOk = true
+    magJson = await magResponse.value.json()
+  }
+
+  return { windJson, magJson, windOk, magOk }
+}
 
 export type SolarWindCurrent = {
   speed: number;
