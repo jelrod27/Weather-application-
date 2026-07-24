@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand",

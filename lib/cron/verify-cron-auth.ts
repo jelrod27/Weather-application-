@@ -1,7 +1,13 @@
-import type { NextRequest } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 
-export function verifyCronBearer(request: NextRequest): { ok: true } | { ok: false; status: number; message: string } {
+/** Minimal request shape — NextRequest or a test double. */
+export type CronAuthRequest = {
+  headers: { get(name: string): string | null }
+}
+
+export function verifyCronBearer(
+  request: CronAuthRequest,
+): { ok: true } | { ok: false; status: number; message: string } {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) {
     return { ok: false, status: 500, message: 'CRON_SECRET not configured' }

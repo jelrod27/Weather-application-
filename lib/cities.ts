@@ -30,7 +30,6 @@ export { CITY_DATA } from '@/lib/city-data'
 export {
   US_STATE_CODES,
   US_STATE_ABBREVIATIONS,
-  US_STATE_NAMES,
   toStateAbbr,
   isUsState,
 } from '@/lib/us-states'

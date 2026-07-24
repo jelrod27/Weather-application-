@@ -30,8 +30,6 @@ export const US_STATE_ABBREVIATIONS = [
   'DC',
 ] as const
 
-export const US_STATE_NAMES = Object.keys(US_STATE_ABBR)
-
 /**
  * Codes accepted in "City, ST" labels — states + DC + common territories.
  */
