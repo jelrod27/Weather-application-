@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { CITY_DATA } from '@/lib/city-data'
+import { CITY_DATA } from '@/lib/cities'
 import type { ThemeType } from '@/lib/theme-config'
 
 // Convert CITY_DATA object to array for component use

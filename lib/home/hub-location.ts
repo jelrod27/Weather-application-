@@ -1,6 +1,7 @@
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { isActiveTropicalHeadline, isDiscoveryHeadline } from '@/lib/news/tropical-headlines';
 import { isInConus } from '@/lib/geo/point-in-polygon';
+import { US_STATE_CODES } from '@/lib/us-states';
 
 export interface HubUserLocation {
   lat: number;
@@ -9,14 +10,8 @@ export interface HubUserLocation {
   country: string;
 }
 
-export const US_STATE_CODES = new Set([
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-  'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
-]);
+/** Re-export canonical set for existing hub-location imports. */
+export { US_STATE_CODES };
 
 /** State abbreviations that collide with common English words when matched with \\b. */
 const AMBIGUOUS_STATE_CODES = new Set(['OR', 'IN', 'ME', 'OK', 'HI', 'AS']);

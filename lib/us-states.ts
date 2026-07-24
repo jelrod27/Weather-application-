@@ -1,9 +1,7 @@
 /**
- * US state name / abbreviation helper.
+ * Canonical US state / territory authority.
  *
- * Used by location reverse-geocoding (lib/location-service.ts) and header
- * display (components/navigation.tsx) so both agree on the canonical
- * "City, ST" format.
+ * Used by geocoding, location labels, city slugs, and hub relevance.
  */
 
 const US_STATE_ABBR: Record<string, string> = {
@@ -20,9 +18,29 @@ const US_STATE_ABBR: Record<string, string> = {
   'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT',
   vermont: 'VT', virginia: 'VA', washington: 'WA', 'west virginia': 'WV',
   wisconsin: 'WI', wyoming: 'WY',
-};
+}
 
-const VALID_ABBRS = new Set(Object.values(US_STATE_ABBR));
+/** 50 states + DC (postal / label geocoding). */
+export const US_STATE_ABBREVIATIONS = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+  'DC',
+] as const
+
+export const US_STATE_NAMES = Object.keys(US_STATE_ABBR)
+
+/**
+ * Codes accepted in "City, ST" labels — states + DC + common territories.
+ */
+export const US_STATE_CODES = new Set<string>([
+  ...US_STATE_ABBREVIATIONS,
+  'PR', 'VI', 'GU', 'AS', 'MP',
+])
+
+const VALID_ABBRS = new Set(Object.values(US_STATE_ABBR))
 
 /**
  * Convert a US state name to its 2-letter abbreviation.
@@ -30,13 +48,24 @@ const VALID_ABBRS = new Set(Object.values(US_STATE_ABBR));
  * or `null` if the input doesn't match any known US state.
  */
 export function toStateAbbr(input: string | undefined | null): string | null {
-  if (!input) return null;
-  const trimmed = input.trim();
-  if (!trimmed) return null;
+  if (!input) return null
+  const trimmed = input.trim()
+  if (!trimmed) return null
 
-  const upper = trimmed.toUpperCase();
-  if (upper.length === 2 && VALID_ABBRS.has(upper)) return upper;
+  const upper = trimmed.toUpperCase()
+  if (upper.length === 2 && VALID_ABBRS.has(upper)) return upper
 
-  const abbr = US_STATE_ABBR[trimmed.toLowerCase()];
-  return abbr ?? null;
+  const abbr = US_STATE_ABBR[trimmed.toLowerCase()]
+  return abbr ?? null
+}
+
+const STATE_ABBR_SET = new Set<string>(US_STATE_ABBREVIATIONS)
+
+/** True when value is a US state abbreviation or full name (not territories). */
+export function isUsState(input: string | undefined | null): boolean {
+  if (!input) return false
+  const trimmed = input.trim()
+  if (!trimmed) return false
+  if (STATE_ABBR_SET.has(trimmed.toUpperCase())) return true
+  return Object.prototype.hasOwnProperty.call(US_STATE_ABBR, trimmed.toLowerCase())
 }

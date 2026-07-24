@@ -18,7 +18,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { searchCities, getCityDisplayName, getCityPageSlug, type CityData } from "@/lib/city-database"
+import { searchCities, getCityDisplayName, getCityPageSlug, type CityData } from "@/lib/cities"
 import type { ThemeType } from "@/lib/theme-config"
 
 interface CityAutocompleteProps {
