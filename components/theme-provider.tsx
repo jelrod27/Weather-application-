@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
-import type { ThemeType} from '@/lib/theme-config';
+import type { ThemeType } from '@/lib/theme-config'
 import { THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
-import { supabase } from '@/lib/supabase/client'
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
+import { useAuth } from '@/lib/auth'
+import { updateUserPreferencesAPI } from '@/lib/services/preferences-service'
 
 export type Theme = ThemeType
 
@@ -27,118 +27,87 @@ export function useTheme() {
   return context
 }
 
+function normalizeTheme(raw: string | null | undefined): Theme | null {
+  if (!raw) return null
+  const migrated = raw === 'miami' || raw === 'dark' ? DEFAULT_THEME : raw === 'nord' ? 'nord' : raw
+  return THEME_LIST.includes(migrated as Theme) ? (migrated as Theme) : null
+}
+
 interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+/**
+ * Owns theme presentation only (data-theme / classList / localStorage).
+ * Auth session and user_preferences rows come from AuthProvider — do not
+ * subscribe to Supabase auth here.
+ */
 export function ThemeProvider({ children }: ThemeProviderProps) {
+  const { user, preferences, loading: authLoading, refreshPreferences } = useAuth()
+  const isAuthenticated = Boolean(user)
+
   const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME)
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [hasLocalTheme, setHasLocalTheme] = useState(false)
   const themeRef = useRef<Theme>(theme)
   themeRef.current = theme
 
   const availableThemes: Theme[] = isAuthenticated ? THEME_LIST : FREE_THEMES
 
+  // Hydrate from localStorage once on mount.
   useEffect(() => {
     setMounted(true)
-
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        setIsAuthenticated(true)
-        fetchUserPreferences(session.user.id)
-      } else {
-        setUser(null)
-        setIsAuthenticated(false)
-      }
-      setLoading(false)
+    const saved = safeStorage.getItem('weather-edu-theme')
+    if (saved === 'miami' || saved === 'dark') {
+      safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
     }
-
-    checkUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
-      if (session?.user) {
-        setUser(session.user)
-        setIsAuthenticated(true)
-        fetchUserPreferences(session.user.id)
-      } else {
-        setUser(null)
-        setIsAuthenticated(false)
-        // Drop premium theme back to free default on logout. Phase 4 removed
-        // the NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE bypass that used to skip this
-        // for E2E themes.spec — the test should sign in with a real fixture
-        // user instead of relying on a client bundle env var.
-        const current = themeRef.current
-        if (!FREE_THEMES.includes(current as ThemeType)) {
-          setThemeState(DEFAULT_THEME)
-        }
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
+    const normalized = normalizeTheme(safeStorage.getItem('weather-edu-theme'))
+    if (normalized) {
+      setThemeState(normalized)
     }
   }, [])
 
-  const fetchUserPreferences = async (userId: string, forceApply = false) => {
-    try {
-      if (hasLocalTheme && !forceApply) {
-        return
+  // Apply server theme when auth prefs arrive, unless a local theme already wins.
+  // Drop premium themes on logout.
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      if (!FREE_THEMES.includes(themeRef.current as ThemeType)) {
+        setThemeState(DEFAULT_THEME)
+        safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
       }
-
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('theme')
-        .eq('user_id', userId)
-        .single() as { data: { theme: string } | null, error: any }
-
-      if (data && data.theme) {
-        const dbTheme = data.theme === 'miami' || data.theme === 'nord' ? 'nord' : data.theme
-        if (THEME_LIST.includes(dbTheme as Theme)) {
-          const localTheme = safeStorage.getItem('weather-edu-theme')
-          if (!localTheme || forceApply) {
-            setThemeState(dbTheme as Theme)
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch theme preferences", e)
+      return
     }
-  }
 
-  const saveThemePreference = async (newTheme: Theme) => {
-    if (!isAuthenticated || !user) return
+    const localTheme = safeStorage.getItem('weather-edu-theme')
+    if (localTheme) return
 
-    try {
-      await fetch('/api/user/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: newTheme })
-      })
-    } catch (e) {
-      console.error("Failed to save theme preference", e)
+    const dbTheme = normalizeTheme(preferences?.theme)
+    if (dbTheme) {
+      setThemeState(dbTheme)
     }
-  }
+  }, [user, preferences?.theme, authLoading])
 
   const setTheme = async (newTheme: Theme) => {
-    if (!isAuthenticated && !FREE_THEMES.includes(newTheme as any)) {
+    if (!isAuthenticated && !FREE_THEMES.includes(newTheme)) {
       return
     }
 
     setThemeState(newTheme)
-    setHasLocalTheme(true)
 
     if (typeof window !== 'undefined') {
       safeStorage.setItem('weather-edu-theme', newTheme)
     }
 
     if (isAuthenticated) {
-      saveThemePreference(newTheme)
+      try {
+        const updated = await updateUserPreferencesAPI({ theme: newTheme })
+        if (updated) {
+          await refreshPreferences()
+        }
+      } catch (e) {
+        console.error('Failed to save theme preference', e)
+      }
     }
   }
 
@@ -146,21 +115,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const list = availableThemes
     const currentIndex = list.indexOf(theme)
     const nextIndex = (currentIndex + 1) % list.length
-    setTheme(list[nextIndex])
+    void setTheme(list[nextIndex])
   }
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      let savedTheme = safeStorage.getItem('weather-edu-theme') as string | null
-      if (savedTheme === 'miami' || savedTheme === 'dark') {
-        savedTheme = DEFAULT_THEME
-        safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
-      }
-      if (savedTheme && THEME_LIST.includes(savedTheme as Theme)) {
-        setThemeState(savedTheme as Theme)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     if (!mounted) return
@@ -168,7 +124,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const root = window.document.documentElement
     const body = window.document.body
 
-    THEME_LIST.forEach(t => {
+    THEME_LIST.forEach((t) => {
       root.classList.remove(t)
       body.classList.remove(`theme-${t}`)
     })
@@ -176,17 +132,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.classList.add(theme)
     root.setAttribute('data-theme', theme)
     body.classList.add(`theme-${theme}`)
-
   }, [theme, mounted])
 
   return (
-    <ThemeContext.Provider value={{
-      theme,
-      setTheme,
-      toggleTheme,
-      availableThemes,
-      isAuthenticated
-    }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        toggleTheme,
+        availableThemes,
+        isAuthenticated,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   )
