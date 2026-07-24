@@ -19,6 +19,7 @@ import type { ReactNode} from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { safeStorage } from '@/lib/safe-storage'
+import { weatherSessionCache } from '@/lib/weather-session-cache'
 
 interface LocationContextType {
   locationInput: string
@@ -55,15 +56,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
     // full refetch of data that was still fresh.
     if (typeof window !== 'undefined') {
       try {
-        const keysToRemove = [
-          'bitweather_city',
-          'bitweather_weather_data',
-          'bitweather_cache_timestamp'
-        ]
-
-        keysToRemove.forEach(key => {
-          safeStorage.removeItem(key)
-        })
+        weatherSessionCache.clearLastDisplayed()
       } catch (error) {
         console.warn('[LocationProvider] Failed to clear location cache:', error)
       }
