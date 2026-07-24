@@ -13,6 +13,7 @@ import { updateProfile } from '@/lib/supabase/database'
 import { updateUserPreferencesAPI } from '@/lib/services/preferences-service'
 import type { SavedLocation } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
+import { userCacheService } from '@/lib/user-cache-service'
 
 type TemperatureUnit = 'fahrenheit' | 'celsius'
 type WindUnit = 'mph' | 'kmh' | 'ms'
@@ -96,6 +97,8 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
         setMessage('Failed to save preferences. Try again in a moment.')
         return
       }
+
+      userCacheService.mirrorServerPreferences(prefsResult)
 
       // Only hit the profile endpoint if the default-location value changed
       if ((profile?.default_location ?? '') !== defaultLocation) {

@@ -1,15 +1,16 @@
 /**
  * Test for Sentry fix: JAVASCRIPT-NEXTJS-X / JAVASCRIPT-NEXTJS-W
- * useWeatherController must use a ref gate to prevent infinite re-renders
- * when checkRateLimit is in the useEffect dependency array.
+ * useWeatherSession (home alias: useWeatherController) must use a ref gate
+ * to prevent infinite re-renders when checkRateLimit is in the useEffect
+ * dependency array.
  */
 
-describe('useWeatherController rate limit effect (JAVASCRIPT-NEXTJS-X/W)', () => {
+describe('useWeatherSession rate limit effect (JAVASCRIPT-NEXTJS-X/W)', () => {
   it('should use a ref gate to run rate limit init only once', () => {
     const fs = require('fs');
     const path = require('path');
     const hookSource = fs.readFileSync(
-      path.join(__dirname, '..', 'hooks', 'useWeatherController.ts'),
+      path.join(__dirname, '..', 'hooks', 'useWeatherSession.ts'),
       'utf8'
     );
 

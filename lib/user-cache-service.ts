@@ -26,8 +26,10 @@
 import type { WeatherData } from './types';
 import type { LocationData } from './location-service';
 import { safeStorage } from './safe-storage';
-import type { ThemeType} from './theme-config';
+import type { ThemeType } from './theme-config';
 import { THEME_LIST, DEFAULT_THEME } from './theme-config';
+import type { UserPreferences as ServerUserPreferences } from '@/lib/supabase/types';
+import type { UnitSystem } from '@/lib/preferences/resolve';
 
 /**
  * StoredLastLocation intentionally excludes precise coordinates.
@@ -38,16 +40,24 @@ export interface StoredLastLocation {
   displayName: string;
 }
 
-export interface UserPreferences {
+/**
+ * Offline / anonymous preference mirror stored in localStorage.
+ * Canonical signed-in prefs live in Supabase (`UserPreferences`).
+ * @deprecated Prefer the name LocalUserCache — kept as alias for older imports.
+ */
+export interface LocalUserCache {
   lastLocation?: StoredLastLocation;
   settings: {
-    units: 'metric' | 'imperial';
+    units: UnitSystem;
     theme: ThemeType;
     cacheEnabled: boolean;
     auto_location?: boolean;
   };
   updatedAt: number;
 }
+
+/** @deprecated Use LocalUserCache — name collided with Supabase UserPreferences. */
+export type UserPreferences = LocalUserCache;
 
 export interface CachedWeatherData {
   data: WeatherData;
@@ -90,11 +100,12 @@ export class UserCacheService {
    */
   private initializeDefaults(): void {
     if (!this.getPreferences()) {
-      const defaultPreferences: UserPreferences = {
+      const defaultPreferences: LocalUserCache = {
         settings: {
           units: 'imperial',
           theme: DEFAULT_THEME,
-          cacheEnabled: true
+          cacheEnabled: true,
+          auto_location: true,
         },
         updatedAt: Date.now()
       };
@@ -131,13 +142,13 @@ export class UserCacheService {
   /**
    * Get user preferences with type safety
    */
-  getPreferences(): UserPreferences | null {
+  getPreferences(): LocalUserCache | null {
     if (!this.isStorageAvailable()) return null;
 
     try {
       const stored = safeStorage.getItem(this.STORAGE_PREFIX + this.PREFERENCES_KEY);
       if (stored) {
-        const preferences = JSON.parse(stored) as UserPreferences;
+        const preferences = JSON.parse(stored);
         // Validate and migrate old data if needed
         return this.validateAndMigratePreferences(preferences);
       }
@@ -148,10 +159,65 @@ export class UserCacheService {
     return null;
   }
 
+  /** Local auto-locate mirror (defaults true). */
+  getAutoLocationEnabled(): boolean {
+    const value = this.getPreferences()?.settings.auto_location;
+    return typeof value === 'boolean' ? value : true;
+  }
+
+  /** Local unit-system mirror (defaults imperial). */
+  getUnitSystem(): UnitSystem {
+    const units = this.getPreferences()?.settings.units;
+    return units === 'metric' || units === 'imperial' ? units : 'imperial';
+  }
+
+  /**
+   * Reset mirrored settings to anonymous defaults while keeping lastLocation.
+   * Call on sign-out so guest sessions do not inherit signed-in units/auto-locate.
+   */
+  resetMirroredSettings(): boolean {
+    const preferences = this.getPreferences();
+    if (!preferences) {
+      this.initializeDefaults();
+      return true;
+    }
+
+    preferences.settings = {
+      units: 'imperial',
+      theme: DEFAULT_THEME,
+      cacheEnabled: preferences.settings.cacheEnabled ?? true,
+      auto_location: true,
+    };
+    return this.savePreferences(preferences);
+  }
+
+  /**
+   * Mirror canonical Supabase preferences into local storage so anonymous
+   * fallbacks and signed-in sessions share one shape.
+   */
+  mirrorServerPreferences(server: Pick<
+    ServerUserPreferences,
+    'theme' | 'temperature_unit' | 'auto_location'
+  >): boolean {
+    if (!this.getPreferences()) {
+      this.initializeDefaults();
+    }
+
+    const theme = (THEME_LIST as string[]).includes(server.theme)
+      ? (server.theme as ThemeType)
+      : DEFAULT_THEME;
+
+    return this.updateSettings({
+      theme,
+      units: server.temperature_unit === 'celsius' ? 'metric' : 'imperial',
+      auto_location: server.auto_location,
+    });
+  }
+
   /**
    * Save user preferences
    */
-  savePreferences(preferences: UserPreferences): boolean {
+  savePreferences(preferences: LocalUserCache): boolean {
     if (!this.isStorageAvailable()) return false;
 
     try {
@@ -169,7 +235,7 @@ export class UserCacheService {
   /**
    * Update specific preference settings
    */
-  updateSettings(settings: Partial<UserPreferences['settings']>): boolean {
+  updateSettings(settings: Partial<LocalUserCache['settings']>): boolean {
     const preferences = this.getPreferences();
     if (!preferences) return false;
 
@@ -480,18 +546,19 @@ export class UserCacheService {
   /**
    * Validate and migrate old preference data
    */
-  private validateAndMigratePreferences(preferences: unknown): UserPreferences {
-    const defaultPreferences: UserPreferences = {
+  private validateAndMigratePreferences(preferences: unknown): LocalUserCache {
+    const defaultPreferences: LocalUserCache = {
       settings: {
         units: 'imperial',
         theme: DEFAULT_THEME,
-        cacheEnabled: true
+        cacheEnabled: true,
+        auto_location: true,
       },
       updatedAt: Date.now()
     };
 
     // Type guard for preferences
-    const isValidPreferences = (obj: unknown): obj is Partial<UserPreferences> => {
+    const isValidPreferences = (obj: unknown): obj is Record<string, unknown> => {
       return typeof obj === 'object' && obj !== null;
     };
 
@@ -499,12 +566,18 @@ export class UserCacheService {
       return defaultPreferences;
     }
 
-    // Type guard for settings
-    const isValidSettings = (obj: unknown): obj is Partial<UserPreferences['settings']> => {
-      return typeof obj === 'object' && obj !== null;
-    };
+    const settingsRaw =
+      typeof preferences.settings === 'object' && preferences.settings !== null
+        ? (preferences.settings as Record<string, unknown>)
+        : {};
 
-    // Safely merge with defaults to handle missing properties
+    // Legacy shapes: settings.autoLocation, top-level auto_location / autoLocation
+    const legacyAuto =
+      settingsRaw.auto_location ??
+      settingsRaw.autoLocation ??
+      preferences.auto_location ??
+      preferences.autoLocation;
+
     const sanitizeLastLocation = (value: unknown): StoredLastLocation | undefined => {
       if (!value || typeof value !== 'object') return undefined;
       const v = value as { displayName?: unknown };
@@ -514,31 +587,29 @@ export class UserCacheService {
       return undefined;
     };
 
-    const validatedPreferences: UserPreferences = {
+    const validatedPreferences: LocalUserCache = {
       ...defaultPreferences,
       // Drop any legacy cached location objects that contained latitude/longitude.
       lastLocation: sanitizeLastLocation(preferences.lastLocation) || defaultPreferences.lastLocation,
       updatedAt: typeof preferences.updatedAt === 'number' ? preferences.updatedAt : defaultPreferences.updatedAt,
       settings: {
         ...defaultPreferences.settings,
-        ...(isValidSettings(preferences.settings) ? {
-          units: preferences.settings.units === 'metric' || preferences.settings.units === 'imperial'
-            ? preferences.settings.units
-            : defaultPreferences.settings.units,
-          // Validate against the canonical theme list. A hand-copied array
-          // here previously drifted: it rejected 'daybreak' (the platform
-          // default, silently rewritten to 'nord' on every read) and
-          // accepted 'miami', which no longer exists.
-          theme: (THEME_LIST as string[]).includes(preferences.settings.theme as string)
-            ? (preferences.settings.theme as ThemeType)
-            : defaultPreferences.settings.theme,
-          cacheEnabled: typeof preferences.settings.cacheEnabled === 'boolean'
-            ? preferences.settings.cacheEnabled
-            : defaultPreferences.settings.cacheEnabled,
-          auto_location: typeof preferences.settings.auto_location === 'boolean'
-            ? preferences.settings.auto_location
-            : defaultPreferences.settings.auto_location
-        } : {})
+        units: settingsRaw.units === 'metric' || settingsRaw.units === 'imperial'
+          ? settingsRaw.units
+          : defaultPreferences.settings.units,
+        // Validate against the canonical theme list. A hand-copied array
+        // here previously drifted: it rejected 'daybreak' (the platform
+        // default, silently rewritten to 'nord' on every read) and
+        // accepted 'miami', which no longer exists.
+        theme: (THEME_LIST as string[]).includes(settingsRaw.theme as string)
+          ? (settingsRaw.theme as ThemeType)
+          : defaultPreferences.settings.theme,
+        cacheEnabled: typeof settingsRaw.cacheEnabled === 'boolean'
+          ? settingsRaw.cacheEnabled
+          : defaultPreferences.settings.cacheEnabled,
+        auto_location: typeof legacyAuto === 'boolean'
+          ? legacyAuto
+          : defaultPreferences.settings.auto_location,
       }
     };
 

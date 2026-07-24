@@ -2,7 +2,7 @@
 
 import React from "react"
 import PageWrapper from "@/components/page-wrapper"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
