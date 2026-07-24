@@ -151,11 +151,11 @@ export const parseLocationInput = (input: string): LocationQuery => {
         };
       }
 
-      const regionOrCountryLower = regionOrCountry.toLowerCase()
+      const regionOrCountryLower = regionOrCountry.toLowerCase();
 
       // Check if it's a known country
       const isCountry = COUNTRY_CODES.includes(regionOrCountry.toUpperCase()) ||
-                       COUNTRY_NAMES.includes(regionOrCountryLower)
+                       COUNTRY_NAMES.includes(regionOrCountryLower);
 
       if (isCountry) {
         return {
