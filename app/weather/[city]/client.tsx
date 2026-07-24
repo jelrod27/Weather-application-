@@ -24,7 +24,7 @@ import { WeatherDisplay } from '@/components/weather-display'
 import SaveLocationButton from '@/components/weather/save-location-button'
 import { locationInputToSlug } from '@/lib/city-slug'
 import { useHubLocation } from '@/hooks/use-hub-location'
-import { useWeatherSession } from '@/hooks/useWeatherSession'
+import { useCityWeatherSession } from '@/hooks/useCityWeatherSession'
 import { usePrecipitationHistory } from '@/hooks/usePrecipitationHistory'
 import dynamic from 'next/dynamic'
 
@@ -60,13 +60,13 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
     loading,
     error,
     handleLocationSearch,
-  } = useWeatherSession({ mode: 'city', seed: city.searchTerm })
+  } = useCityWeatherSession(city.searchTerm)
 
-  const hubLocation = useHubLocation(weather)
   const precipitation = usePrecipitationHistory(
     weather?.coordinates?.lat,
     weather?.coordinates?.lon,
   )
+  const hubLocation = useHubLocation(weather)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   useEffect(() => {
@@ -80,11 +80,12 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
     anchor.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [citySlug, weather?.location, loading])
 
-  function handleSearch(locationInput: string): void {
-    if (!locationInput.trim()) return
+  const handleSearch = (locationInput: string) => {
+    if (!locationInput?.trim()) return
+    const slug = locationInputToSlug(locationInput)
     setSelectedDay(null)
     setLocationInput('')
-    router.push(`/weather/${locationInputToSlug(locationInput)}`)
+    router.push(`/weather/${slug}`)
   }
 
   return (

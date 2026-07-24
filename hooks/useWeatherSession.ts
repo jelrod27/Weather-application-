@@ -9,14 +9,13 @@ import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
 import { checkRateLimit, recordRateLimitedRequest } from '@/lib/weather-rate-limit'
 import { weatherSessionCache } from '@/lib/weather-session-cache'
-import { resolveAutoLocation, resolveUnitSystem } from '@/lib/preferences/resolve'
-
-export type WeatherSessionMode = 'home' | 'city'
+import { resolveUnitSystem } from '@/lib/preferences/resolve'
 
 export type UseWeatherSessionOptions = {
-  mode: WeatherSessionMode
-  /** City page search term. Required when mode is `city`. */
-  seed?: string
+  /** When true, searches enforce the client rate limit and decrement remaining. */
+  enforceRateLimit?: boolean
+  /** Initial loading flag (city pages start loading until the seed resolves). */
+  initiallyLoading?: boolean
 }
 
 export type UseWeatherSessionResult = {
@@ -25,14 +24,28 @@ export type UseWeatherSessionResult = {
   error: string
   hasSearched: boolean
   remainingSearches: number
-  handleSearch: (input: string, fromCache?: boolean, bypassRateLimit?: boolean) => Promise<void>
+  /** @param bypassRateLimit Skip rate limit (home bootstrap / seeded loads). */
+  handleSearch: (input: string, bypassRateLimit?: boolean) => Promise<void>
+  /** Query loader used by city seed and other quiet loads. */
+  loadQuery: (
+    input: string,
+    options?: {
+      bypassRateLimit?: boolean
+      toastOnError?: boolean
+      preferResolvedLocation?: boolean
+    },
+  ) => Promise<void>
   handleLocationSearch: () => Promise<void>
-  isAutoDetecting: boolean
-  autoLocationAttempted: boolean
+  /** Shared by home auto-locate after GPS/IP resolve. */
+  loadFromLocation: (location: LocationData, existingLoadId?: number) => Promise<void>
+  beginLoad: () => number
+  isStale: (loadId: number) => boolean
+  /** Clear in-memory weather state (city route transitions). */
+  resetWeatherState: () => void
+  setWeather: (weather: WeatherData | null) => void
+  setHasSearched: (value: boolean) => void
+  isClient: boolean
 }
-
-const COORDS_LIKE = /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/
-const GEOLOCATION_TIMEOUT_MS = 5000
 
 function unitScopedLocationKey(baseKey: string, unitSystem: string): string {
   return `${baseKey}_${unitSystem}`
@@ -54,35 +67,35 @@ function hasFiniteCoords(latitude: unknown, longitude: unknown): boolean {
 }
 
 /**
- * Shared weather session for home bootstrap and city pages.
- * Owns load generations, cache restore/persist, units, and location detect.
+ * Core weather load/cache/generation session.
+ * Home and city compose bootstrap on top — this hook has no product mode flag.
  */
 export function useWeatherSession({
-  mode,
-  seed,
-}: UseWeatherSessionOptions): UseWeatherSessionResult {
-  const {
-    setLocationInput,
-    setCurrentLocation,
-    setShouldClearOnRouteChange,
-    clearLocationState,
-  } = useLocationContext()
+  enforceRateLimit = false,
+  initiallyLoading = false,
+}: UseWeatherSessionOptions = {}): UseWeatherSessionResult {
+  const { setLocationInput, setCurrentLocation } = useLocationContext()
 
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const didInitRemainingSearches = useRef(false)
-  const [loading, setLoading] = useState(mode === 'city')
+  const [loading, setLoading] = useState(initiallyLoading)
   const [error, setError] = useState('')
   const [hasSearched, setHasSearched] = useState(false)
   const [remainingSearches, setRemainingSearches] = useState(10)
   const [isClient, setIsClient] = useState(false)
-  const [autoLocationAttempted, setAutoLocationAttempted] = useState(mode === 'city')
   const latestLoadId = useRef(0)
-  const autoLocationStartedRef = useRef(false)
-  const [isAutoDetecting, setIsAutoDetecting] = useState(false)
 
-  const { profile, preferences, loading: authLoading } = useAuth()
+  const { preferences } = useAuth()
 
-  const isStale = (loadId: number): boolean => loadId !== latestLoadId.current
+  const isStale = useCallback(
+    (loadId: number): boolean => loadId !== latestLoadId.current,
+    [],
+  )
+
+  const beginLoad = useCallback((): number => {
+    latestLoadId.current += 1
+    return latestLoadId.current
+  }, [])
 
   const resolveUnits = useCallback(
     () => resolveUnitSystem(preferences, userCacheService.getUnitSystem()),
@@ -91,10 +104,7 @@ export function useWeatherSession({
 
   useEffect(() => {
     setIsClient(true)
-    if (mode === 'home') {
-      setShouldClearOnRouteChange(true)
-    }
-  }, [mode, setShouldClearOnRouteChange])
+  }, [])
 
   useEffect(() => {
     if (!isClient || didInitRemainingSearches.current) return
@@ -113,9 +123,30 @@ export function useWeatherSession({
     [setLocationInput, setCurrentLocation],
   )
 
-  const handleLocationDetected = useCallback(
+  const persistWeather = useCallback(
+    (
+      displayName: string,
+      weatherData: WeatherData,
+      unitSystem: string,
+      options?: { locationKey?: string; searchTerm?: string },
+    ) => {
+      const locationKey =
+        options?.locationKey ??
+        unitScopedLocationKey(displayName.trim().toLowerCase(), unitSystem)
+      weatherSessionCache.persistAfterFetch({
+        displayName,
+        locationKey,
+        weather: weatherData,
+        unitSystem,
+        searchTerm: options?.searchTerm,
+      })
+    },
+    [],
+  )
+
+  const loadFromLocation = useCallback(
     async (location: LocationData, existingLoadId?: number) => {
-      const loadId = existingLoadId ?? ++latestLoadId.current
+      const loadId = existingLoadId ?? beginLoad()
       try {
         userCacheService.saveLastLocation(location)
         const unitSystem = resolveUnits()
@@ -142,11 +173,8 @@ export function useWeatherSession({
                   },
                 }
           applyWeather(weatherWithCoords, location.displayName)
-          weatherSessionCache.persistAfterFetch({
-            displayName: location.displayName,
+          persistWeather(location.displayName, weatherWithCoords, unitSystem, {
             locationKey,
-            weather: weatherWithCoords,
-            unitSystem,
           })
           return
         }
@@ -165,11 +193,8 @@ export function useWeatherSession({
 
           if (fallbackWeather) {
             applyWeather(fallbackWeather, fallbackQuery)
-            weatherSessionCache.persistAfterFetch({
-              displayName: fallbackQuery,
+            persistWeather(fallbackQuery, fallbackWeather, unitSystem, {
               locationKey,
-              weather: fallbackWeather,
-              unitSystem,
               searchTerm: fallbackQuery,
             })
           }
@@ -186,11 +211,8 @@ export function useWeatherSession({
 
         if (weatherData) {
           applyWeather(weatherData, location.displayName)
-          weatherSessionCache.persistAfterFetch({
-            displayName: location.displayName,
+          persistWeather(location.displayName, weatherData, unitSystem, {
             locationKey,
-            weather: weatherData,
-            unitSystem,
           })
         }
       } catch (err: unknown) {
@@ -203,27 +225,40 @@ export function useWeatherSession({
         }
       }
     },
-    [applyWeather, resolveUnits],
+    [applyWeather, beginLoad, isStale, persistWeather, resolveUnits],
   )
 
-  const handleSearch = useCallback(
-    async (input: string, _fromCache = false, bypassRateLimit = false) => {
+  const loadQuery = useCallback(
+    async (
+      input: string,
+      options: {
+        bypassRateLimit?: boolean
+        toastOnError?: boolean
+        /** Prefer API-resolved location label over the search input. */
+        preferResolvedLocation?: boolean
+      } = {},
+    ) => {
+      const {
+        bypassRateLimit = false,
+        toastOnError = true,
+        preferResolvedLocation = false,
+      } = options
       const trimmed = input.trim()
       if (!trimmed) {
         const msg = 'Please enter a location'
         setError(msg)
-        toastService.error(msg)
+        if (toastOnError) toastService.error(msg)
         return
       }
 
       if (trimmed.length < 3) {
         const msg = 'Please enter at least 3 characters'
         setError(msg)
-        toastService.error(msg)
+        if (toastOnError) toastService.error(msg)
         return
       }
 
-      if (mode === 'home' && !bypassRateLimit) {
+      if (enforceRateLimit && !bypassRateLimit) {
         const { allowed, message } = checkRateLimit()
         if (!allowed) {
           const msg = message || 'Rate limit exceeded'
@@ -235,21 +270,17 @@ export function useWeatherSession({
 
       setLoading(true)
       setError('')
-
-      const loadId = ++latestLoadId.current
+      const loadId = beginLoad()
 
       try {
         const unitSystem = resolveUnits()
         const cachedWeather = weatherSessionCache.getSearch(input, unitSystem)
         if (hasUsableForecast(cachedWeather)) {
-          applyWeather(cachedWeather, input)
-          weatherSessionCache.persistAfterFetch({
-            displayName: input,
-            locationKey: unitScopedLocationKey(trimmed.toLowerCase(), unitSystem),
-            weather: cachedWeather,
-            unitSystem,
-            searchTerm: input,
-          })
+          const label = preferResolvedLocation
+            ? cachedWeather.location || input
+            : input
+          applyWeather(cachedWeather, label)
+          persistWeather(label, cachedWeather, unitSystem, { searchTerm: input })
           return
         }
 
@@ -259,16 +290,13 @@ export function useWeatherSession({
         if (!weatherData) throw new Error('City not found')
         if (!weatherData.forecast?.length) throw new Error('Incomplete weather data')
 
-        applyWeather(weatherData, input)
-        weatherSessionCache.persistAfterFetch({
-          displayName: input,
-          locationKey: unitScopedLocationKey(trimmed.toLowerCase(), unitSystem),
-          weather: weatherData,
-          unitSystem,
-          searchTerm: input,
-        })
+        const label = preferResolvedLocation
+          ? weatherData.location || input
+          : input
+        applyWeather(weatherData, label)
+        persistWeather(label, weatherData, unitSystem, { searchTerm: input })
 
-        if (mode === 'home') {
+        if (enforceRateLimit) {
           setRemainingSearches(recordRateLimitedRequest().remaining)
         }
       } catch (err: unknown) {
@@ -277,14 +305,28 @@ export function useWeatherSession({
         const msg = err instanceof Error ? err.message : 'Failed to load weather data'
         setError(msg)
         setWeather(null)
-        toastService.error(msg)
+        if (toastOnError) toastService.error(msg)
       } finally {
         if (!isStale(loadId)) {
           setLoading(false)
         }
       }
     },
-    [applyWeather, mode, resolveUnits],
+    [
+      applyWeather,
+      beginLoad,
+      enforceRateLimit,
+      isStale,
+      persistWeather,
+      resolveUnits,
+    ],
+  )
+
+  const handleSearch = useCallback(
+    async (input: string, bypassRateLimit = false) => {
+      await loadQuery(input, { bypassRateLimit, toastOnError: true })
+    },
+    [loadQuery],
   )
 
   const handleLocationSearch = useCallback(async () => {
@@ -299,14 +341,14 @@ export function useWeatherSession({
 
     setLoading(true)
     setError('')
-    const loadId = ++latestLoadId.current
+    const loadId = beginLoad()
 
     try {
       const location = await locationService.getCurrentLocation()
       if (isStale(loadId)) return
-      await handleLocationDetected(location, loadId)
+      await loadFromLocation(location, loadId)
       if (isStale(loadId)) return
-      if (mode === 'home') {
+      if (enforceRateLimit) {
         setRemainingSearches(recordRateLimitedRequest().remaining)
       }
     } catch (err: unknown) {
@@ -318,216 +360,13 @@ export function useWeatherSession({
         setLoading(false)
       }
     }
-  }, [handleLocationDetected, isClient, mode])
+  }, [beginLoad, enforceRateLimit, isClient, isStale, loadFromLocation])
 
-  // City mode: reset location context when the route seed changes
-  useEffect(() => {
-    if (mode !== 'city' || !seed?.trim()) return
-
-    clearLocationState()
-    setLocationInput(seed)
-    setCurrentLocation(seed)
+  const resetWeatherState = useCallback(() => {
     setWeather(null)
     setHasSearched(false)
     setError('')
-  }, [mode, seed, clearLocationState, setCurrentLocation, setLocationInput])
-
-  // City mode: load weather for seed (re-runs when units change)
-  useEffect(() => {
-    if (mode !== 'city' || !seed?.trim()) return
-
-    setShouldClearOnRouteChange(false)
-    const loadId = ++latestLoadId.current
-    setLoading(true)
-
-    const run = async () => {
-      try {
-        const unitSystem = resolveUnits()
-        const cached = weatherSessionCache.getSearch(seed, unitSystem)
-        if (hasUsableForecast(cached)) {
-          if (isStale(loadId)) return
-          applyWeather(cached, seed)
-          weatherSessionCache.persistAfterFetch({
-            displayName: seed,
-            locationKey: unitScopedLocationKey(seed.trim().toLowerCase(), unitSystem),
-            weather: cached,
-            unitSystem,
-            searchTerm: seed,
-          })
-          return
-        }
-
-        const weatherData = await fetchWeatherData(seed, unitSystem)
-        if (isStale(loadId)) return
-        if (!weatherData) throw new Error('City not found')
-
-        applyWeather(weatherData, weatherData.location || seed)
-        weatherSessionCache.persistAfterFetch({
-          displayName: weatherData.location || seed,
-          locationKey: unitScopedLocationKey(seed.trim().toLowerCase(), unitSystem),
-          weather: weatherData,
-          unitSystem,
-          searchTerm: seed,
-        })
-      } catch (err: unknown) {
-        if (isStale(loadId)) return
-        console.error('Error loading city weather:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load weather data')
-        setWeather(null)
-      } finally {
-        if (!isStale(loadId)) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void run()
-
-    return () => {
-      setShouldClearOnRouteChange(true)
-    }
-  }, [
-    mode,
-    seed,
-    applyWeather,
-    resolveUnits,
-    setShouldClearOnRouteChange,
-  ])
-
-  // Home auto-location
-  useEffect(() => {
-    if (mode !== 'home') return
-    if (!isClient || autoLocationAttempted) return
-    if (authLoading) return
-
-    const detectWithTimeout = async (): Promise<LocationData> => {
-      const locationPromise = locationService.getCurrentLocation()
-      let timeoutId: ReturnType<typeof setTimeout> | undefined
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error('Location detection timeout')),
-          GEOLOCATION_TIMEOUT_MS,
-        )
-      })
-      try {
-        return (await Promise.race([locationPromise, timeoutPromise])) as LocationData
-      } finally {
-        if (timeoutId !== undefined) clearTimeout(timeoutId)
-      }
-    }
-
-    const tryAutoLocation = async () => {
-      if (autoLocationStartedRef.current) return
-      autoLocationStartedRef.current = true
-      try {
-        const shouldAutoLocate = resolveAutoLocation(
-          preferences,
-          userCacheService.getAutoLocationEnabled(),
-        )
-
-        if (shouldAutoLocate === false) {
-          if (profile?.default_location) {
-            await handleSearch(profile.default_location, false, true)
-          }
-          setAutoLocationAttempted(true)
-          return
-        }
-
-        if (profile?.default_location) {
-          await handleSearch(profile.default_location, false, true)
-          setAutoLocationAttempted(true)
-          return
-        }
-
-        const lastLocation = userCacheService.getLastLocation()
-        const cachedName = lastLocation?.displayName?.trim()
-        if (cachedName && !COORDS_LIKE.test(cachedName) && cachedName !== 'Current Location') {
-          await handleSearch(cachedName, false, true)
-          setAutoLocationAttempted(true)
-          return
-        }
-
-        setIsAutoDetecting(true)
-        try {
-          let geolocationGranted = false
-          if (navigator.permissions?.query) {
-            const perm = await navigator.permissions
-              .query({ name: 'geolocation' })
-              .catch(() => null)
-            geolocationGranted = perm?.state === 'granted'
-          }
-
-          if (geolocationGranted) {
-            await handleLocationDetected(await detectWithTimeout())
-          } else {
-            throw new Error('Geolocation requires prompt, using IP fallback for perf')
-          }
-        } catch {
-          try {
-            const ipLocation = await locationService.getLocationByIP()
-            await handleLocationDetected(ipLocation)
-          } catch {
-            // Silent fail
-          }
-        } finally {
-          setIsAutoDetecting(false)
-        }
-        setAutoLocationAttempted(true)
-      } catch {
-        setIsAutoDetecting(false)
-        setAutoLocationAttempted(true)
-      }
-    }
-
-    const timer = setTimeout(tryAutoLocation, 50)
-    return () => clearTimeout(timer)
-  }, [
-    mode,
-    isClient,
-    autoLocationAttempted,
-    authLoading,
-    profile,
-    preferences,
-    handleSearch,
-    handleLocationDetected,
-  ])
-
-  // Home: restore last-displayed cache after auto-location settles
-  useEffect(() => {
-    if (mode !== 'home') return
-    if (!isClient || isAutoDetecting) return
-    if (!autoLocationAttempted) return
-    if (hasSearched) return
-
-    const cached = weatherSessionCache.getLastDisplayed()
-    if (!cached) return
-
-    setWeather(cached.weather)
-    setLocationInput(cached.location)
-    setHasSearched(true)
-
-    const hasCoordinates = cached.weather.coordinates?.lat && cached.weather.coordinates?.lon
-    if (!hasCoordinates) {
-      const loadId = ++latestLoadId.current
-      const unitSystem = resolveUnits()
-      fetchWeatherData(cached.location, unitSystem)
-        .then((freshData) => {
-          if (isStale(loadId)) return
-          if (freshData) setWeather(freshData)
-        })
-        .catch((e) => {
-          console.warn('[cache-restore] Failed to refresh coordinates:', e)
-        })
-    }
-  }, [
-    mode,
-    isClient,
-    isAutoDetecting,
-    autoLocationAttempted,
-    hasSearched,
-    resolveUnits,
-    setLocationInput,
-  ])
+  }, [])
 
   return {
     weather,
@@ -536,8 +375,14 @@ export function useWeatherSession({
     hasSearched,
     remainingSearches,
     handleSearch,
+    loadQuery,
     handleLocationSearch,
-    isAutoDetecting,
-    autoLocationAttempted,
+    loadFromLocation,
+    beginLoad,
+    isStale,
+    resetWeatherState,
+    setWeather,
+    setHasSearched,
+    isClient,
   }
 }

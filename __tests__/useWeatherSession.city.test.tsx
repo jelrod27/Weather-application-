@@ -1,5 +1,5 @@
 /**
- * City-mode characterization for useWeatherSession.
+ * City-mode characterization for useCityWeatherSession.
  * Pins seed load, cache-hit persist after clear, and route-clear flags.
  */
 import { renderHook, waitFor } from '@testing-library/react'
@@ -40,7 +40,7 @@ jest.mock('@/lib/auth', () => ({
   useAuth: jest.fn(),
 }))
 
-import { useWeatherSession } from '@/hooks/useWeatherSession'
+import { useCityWeatherSession } from '@/hooks/useCityWeatherSession'
 import { fetchWeatherData } from '@/lib/weather'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
@@ -106,13 +106,11 @@ beforeEach(() => {
   mockUseAuth.mockReturnValue({ profile: null, preferences: null, loading: false })
 })
 
-describe('useWeatherSession city mode', () => {
+describe('useCityWeatherSession', () => {
   it('loads seed weather and disables route-clear while mounted', async () => {
     mockFetchWeatherData.mockResolvedValueOnce(makeWeather())
 
-    const { result, unmount } = renderHook(() =>
-      useWeatherSession({ mode: 'city', seed: 'Boston, MA' }),
-    )
+    const { result, unmount } = renderHook(() => useCityWeatherSession('Boston, MA'))
 
     await waitFor(() => {
       expect(result.current.weather?.location).toBe('Boston')
@@ -137,9 +135,7 @@ describe('useWeatherSession city mode', () => {
       }),
     )
 
-    const { result } = renderHook(() =>
-      useWeatherSession({ mode: 'city', seed: 'Boston, MA' }),
-    )
+    const { result } = renderHook(() => useCityWeatherSession('Boston, MA'))
 
     await waitFor(() => {
       expect(result.current.weather?.location).toBe('Boston')
@@ -147,15 +143,13 @@ describe('useWeatherSession city mode', () => {
     })
 
     expect(mockFetchWeatherData).not.toHaveBeenCalled()
-    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston, MA')
+    expect(weatherSessionCache.getLastDisplayed()?.location).toBe('Boston')
   })
 
   it('sets error when seed fetch fails', async () => {
     mockFetchWeatherData.mockRejectedValueOnce(new Error('City not found'))
 
-    const { result } = renderHook(() =>
-      useWeatherSession({ mode: 'city', seed: 'Atlantis' }),
-    )
+    const { result } = renderHook(() => useCityWeatherSession('Atlantis'))
 
     await waitFor(() => {
       expect(result.current.error).toBe('City not found')

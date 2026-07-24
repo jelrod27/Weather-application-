@@ -166,7 +166,7 @@ describe('rate limiting', () => {
 
     const { result } = renderHook(() => useWeatherController())
     await act(async () => {
-      await result.current.handleSearch('Boston', false, true)
+      await result.current.handleSearch('Boston', true)
     })
 
     expect(mockFetchWeatherData).toHaveBeenCalledTimes(1)
