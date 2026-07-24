@@ -15,7 +15,7 @@ Product specs live in `planning/prds/`. Start with `planning/prds/README.md` bef
 - `app/`: Next.js App Router routes, layouts, API routes, and route-local components.
 - `components/`: Shared React components. Use `components/ui/` for shadcn primitives.
 - `lib/`: Business logic, utilities, API clients, weather logic, and reusable server/client helpers.
-- `hooks/`: Custom React hooks such as `useWeatherController`.
+- `hooks/`: Custom React hooks. Weather bootstrap lives in `useWeatherSession` (home + city); `useWeatherController` is the home alias.
 - `content/` and `data/`: Static content and data sources.
 - `supabase/`: Database and Supabase configuration.
 - `__tests__/`: Jest unit tests.

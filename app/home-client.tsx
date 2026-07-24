@@ -45,6 +45,7 @@ import { ResponsiveContainer } from "@/components/responsive-container"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { WeatherSkeleton } from '@/components/weather-skeleton'
 import { useWeatherController } from "@/hooks/useWeatherController"
+import { usePrecipitationHistory } from "@/hooks/usePrecipitationHistory"
 import { locationInputToSlug } from "@/lib/city-slug"
 import { useHubLocation } from "@/hooks/use-hub-location"
 
@@ -57,7 +58,6 @@ function WeatherApp() {
   const { theme } = useTheme()
   const router = useRouter()
 
-  // Use the new controller hook
   const {
     weather,
     loading,
@@ -69,9 +69,12 @@ function WeatherApp() {
   } = useWeatherController()
 
   const hubLocation = useHubLocation(weather)
+  const precipitation = usePrecipitationHistory(
+    weather?.coordinates?.lat,
+    weather?.coordinates?.lon,
+  )
 
   const [selectedDay, setSelectedDay] = React.useState<number | null>(null)
-  const [precipitation, setPrecipitation] = React.useState<{rain24h: number; snow24h: number} | null>(null)
 
   // Latch: cities mount once the initial auto-location flow has settled and
   // never unmount again (manual searches must not flicker them; post-input
@@ -91,33 +94,6 @@ function WeatherApp() {
     if (trimmed.length < 3) return
     router.push(`/weather/${locationInputToSlug(trimmed)}`)
   }
-  React.useEffect(() => {
-    if (!weather?.coordinates) return
-
-    // Clear stale data immediately on city transition
-    setPrecipitation(null)
-
-    // AbortController to prevent race conditions when switching cities quickly
-    const controller = new AbortController()
-
-    fetch(`/api/weather/precipitation-history?lat=${weather.coordinates.lat}&lon=${weather.coordinates.lon}`, {
-      signal: controller.signal
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (!controller.signal.aborted) {
-          data?.dataAvailable ? setPrecipitation({rain24h: data.rain24h, snow24h: data.snow24h}) : setPrecipitation(null)
-        }
-      })
-      .catch((err) => {
-        // Ignore abort errors, only handle real failures
-        if (err.name !== 'AbortError') {
-          setPrecipitation(null)
-        }
-      })
-
-    return () => controller.abort()
-  }, [weather?.coordinates?.lat, weather?.coordinates?.lon])
 
   return (
     <PageWrapper
