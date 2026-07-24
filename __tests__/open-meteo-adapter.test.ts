@@ -1,17 +1,37 @@
 /**
  * Unit tests for Open-Meteo adapter
+ *
+ * jsdom = client path (same-origin /api proxies).
+ * Server path is covered by temporarily removing `window`.
  */
 
+const mockFetchOpenMeteoForecast = jest.fn();
+const mockFetchOpenMeteoAirQuality = jest.fn();
+const mockFetchPollenData = jest.fn().mockResolvedValue({
+  tree: { Tree: 'No Data' },
+  grass: { Grass: 'No Data' },
+  weed: { Weed: 'No Data' },
+});
+const mockIsServerRuntime = jest.fn(() => false);
+
+jest.mock('@/lib/open-meteo', () => ({
+  fetchOpenMeteoForecast: (...args: unknown[]) => mockFetchOpenMeteoForecast(...args),
+  fetchOpenMeteoAirQuality: (...args: unknown[]) => mockFetchOpenMeteoAirQuality(...args),
+}));
+
 jest.mock('@/lib/weather/weather-forecast', () => ({
-  fetchPollenData: jest.fn().mockResolvedValue({
-    tree: { 'Tree': 'No Data' },
-    grass: { 'Grass': 'No Data' },
-    weed: { 'Weed': 'No Data' },
-  }),
+  fetchPollenData: (...args: unknown[]) => mockFetchPollenData(...args),
+}));
+
+jest.mock('@/lib/runtime-env', () => ({
+  isServerRuntime: () => mockIsServerRuntime(),
 }));
 
 import { buildWeatherDataFromOpenMeteo } from '@/lib/weather/open-meteo-adapter';
-import type { OpenMeteoForecastResponse } from '@/lib/open-meteo-types';
+import type {
+  OpenMeteoAirQualityResponse,
+  OpenMeteoForecastResponse,
+} from '@/lib/open-meteo-types';
 
 const originalFetch = global.fetch;
 const mockFetch = jest.fn();
@@ -82,35 +102,71 @@ function makeForecastResponse(): OpenMeteoForecastResponse {
   };
 }
 
-const mockAirQualityData = {
-  latitude: 40.71, longitude: -74.01, generationtime_ms: 0.3,
-  utc_offset_seconds: -18000, timezone: 'America/New_York', timezone_abbreviation: 'EST',
+const mockAirQualityData: OpenMeteoAirQualityResponse = {
+  latitude: 40.71,
+  longitude: -74.01,
+  generationtime_ms: 0.3,
+  utc_offset_seconds: -18000,
+  timezone: 'America/New_York',
+  timezone_abbreviation: 'EST',
   current: {
-    time: '2025-03-25T14:00', interval: 3600, us_aqi: 42,
-    pm10: 15, pm2_5: 8, carbon_monoxide: 200, nitrogen_dioxide: 12,
-    sulphur_dioxide: 5, ozone: 60, dust: 3, uv_index: 4.2,
+    time: '2025-03-25T14:00',
+    interval: 3600,
+    us_aqi: 42,
+    pm10: 15,
+    pm2_5: 8,
+    carbon_monoxide: 200,
+    nitrogen_dioxide: 12,
+    sulphur_dioxide: 5,
+    ozone: 60,
+    dust: 3,
+    uv_index: 4.2,
   },
+  current_units: {},
 };
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  jest.spyOn(Date, 'now').mockReturnValue(new Date('2025-03-25T14:00:00Z').getTime());
+function stubClientApiFetches(forecast: OpenMeteoForecastResponse = makeForecastResponse()) {
   mockFetch.mockImplementation((url: string) => {
-    if (url.includes('/api/open-meteo/forecast')) {
-      return Promise.resolve({ ok: true, json: () => Promise.resolve(makeForecastResponse()) });
+    if (String(url).includes('/api/open-meteo/forecast')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(forecast) });
     }
-    if (url.includes('/api/open-meteo/air-quality')) {
+    if (String(url).includes('/api/open-meteo/air-quality')) {
       return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
     }
     return Promise.resolve({ ok: false, status: 404 });
   });
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  delete process.env.GOOGLE_POLLEN_API_KEY;
+  mockIsServerRuntime.mockReturnValue(false);
+  jest.spyOn(Date, 'now').mockReturnValue(new Date('2025-03-25T14:00:00Z').getTime());
+  stubClientApiFetches();
+  mockFetchOpenMeteoForecast.mockResolvedValue(makeForecastResponse());
+  mockFetchOpenMeteoAirQuality.mockResolvedValue(mockAirQualityData);
 });
 
 afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('buildWeatherDataFromOpenMeteo', () => {
+describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
+  it('should use same-origin Open-Meteo API proxies and pollen API', async () => {
+    await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/open-meteo/forecast?'),
+      expect.any(Object),
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/open-meteo/air-quality?'),
+      expect.any(Object),
+    );
+    expect(mockFetchOpenMeteoForecast).not.toHaveBeenCalled();
+    expect(mockFetchPollenData).toHaveBeenCalledWith(40.71, -74.01);
+  });
+
   it('should return WeatherData with correct current conditions', async () => {
     const result = await buildWeatherDataFromOpenMeteo(
       40.71, -74.01, 'New York', 'imperial', 'US'
@@ -195,16 +251,7 @@ describe('buildWeatherDataFromOpenMeteo', () => {
       const hour = i % 24;
       return `2025-03-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00`;
     });
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/open-meteo/forecast')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(tokyoResponse) });
-      }
-      if (url.includes('/api/open-meteo/air-quality')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
-      }
-      return Promise.resolve({ ok: false, status: 404 });
-    });
+    stubClientApiFetches(tokyoResponse);
 
     const result = await buildWeatherDataFromOpenMeteo(
       35.68, 139.69, 'Tokyo', 'metric', 'JP'
@@ -224,6 +271,74 @@ describe('buildWeatherDataFromOpenMeteo', () => {
 
     // Fixture visibility is 10000 m for every hour -> 6.2 mi.
     expect(result.forecast[0].details.visibility).toBe(6.2);
+  });
+});
+
+describe('buildWeatherDataFromOpenMeteo (server runtime)', () => {
+  beforeEach(() => {
+    mockIsServerRuntime.mockReturnValue(true);
+  });
+
+  it('should call lib/open-meteo directly and derive pollen from AQ when Google key is absent', async () => {
+    const aqWithPollen: OpenMeteoAirQualityResponse = {
+      ...mockAirQualityData,
+      hourly: {
+        time: ['2025-03-25T14:00'],
+        birch_pollen: [35],
+        grass_pollen: [10],
+        ragweed_pollen: [5],
+      },
+    };
+    mockFetchOpenMeteoAirQuality.mockResolvedValue(aqWithPollen);
+
+    const result = await buildWeatherDataFromOpenMeteo(
+      40.71, -74.01, 'New York', 'imperial', 'US'
+    );
+
+    expect(mockFetchOpenMeteoForecast).toHaveBeenCalledWith(40.71, -74.01, {
+      forecastDays: 7,
+      temperatureUnit: 'fahrenheit',
+      windSpeedUnit: 'mph',
+      precipitationUnit: 'inch',
+    });
+    expect(mockFetchOpenMeteoAirQuality).toHaveBeenCalledWith(40.71, -74.01);
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockFetchPollenData).not.toHaveBeenCalled();
+    expect(result.pollen.tree.Birch).toBe('Moderate');
+    expect(result.pollen.grass.Grass).toBe('Low');
+    expect(result.aqi).toBe(42);
+  });
+
+  it('should use pollen API on server when GOOGLE_POLLEN_API_KEY is set', async () => {
+    process.env.GOOGLE_POLLEN_API_KEY = 'test-key';
+    mockFetchPollenData.mockResolvedValueOnce({
+      tree: { Oak: 'High' },
+      grass: { Grass: 'Low' },
+      weed: { Ragweed: 'Moderate' },
+    });
+
+    const result = await buildWeatherDataFromOpenMeteo(
+      40.71, -74.01, 'New York', 'imperial', 'US'
+    );
+
+    expect(mockFetchOpenMeteoForecast).toHaveBeenCalled();
+    expect(mockFetchPollenData).toHaveBeenCalledWith(40.71, -74.01);
+    expect(result.pollen).toEqual({
+      tree: { Oak: 'High' },
+      grass: { Grass: 'Low' },
+      weed: { Ragweed: 'Moderate' },
+    });
+  });
+
+  it('should pass metric unit options through to lib/open-meteo', async () => {
+    await buildWeatherDataFromOpenMeteo(35.68, 139.69, 'Tokyo', 'metric', 'JP');
+
+    expect(mockFetchOpenMeteoForecast).toHaveBeenCalledWith(35.68, 139.69, {
+      forecastDays: 7,
+      temperatureUnit: 'celsius',
+      windSpeedUnit: 'kmh',
+      precipitationUnit: 'mm',
+    });
   });
 });
 
@@ -254,16 +369,7 @@ describe('hourly window edge cases', () => {
     response.hourly.visibility = response.hourly.visibility.slice(0, count);
     response.hourly.precipitation = response.hourly.precipitation.slice(0, count);
     response.hourly.precipitation_probability = response.hourly.precipitation_probability.slice(0, count);
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/open-meteo/forecast')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
-      }
-      if (url.includes('/api/open-meteo/air-quality')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
-      }
-      return Promise.resolve({ ok: false, status: 404 });
-    });
+    stubClientApiFetches(response);
 
     const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
 
@@ -296,16 +402,7 @@ describe('hourly window edge cases', () => {
     response.hourly.visibility = Array.from({ length: count }, () => 10000);
     response.hourly.precipitation = Array.from({ length: count }, () => 0);
     response.hourly.precipitation_probability = Array.from({ length: count }, () => 10);
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/open-meteo/forecast')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
-      }
-      if (url.includes('/api/open-meteo/air-quality')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
-      }
-      return Promise.resolve({ ok: false, status: 404 });
-    });
+    stubClientApiFetches(response);
 
     const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
 
@@ -330,16 +427,7 @@ describe('hourly window edge cases', () => {
     });
     response.hourly.time = staleTimes;
     // other arrays keep their 168-entry defaults from makeForecastResponse()
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/open-meteo/forecast')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
-      }
-      if (url.includes('/api/open-meteo/air-quality')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
-      }
-      return Promise.resolve({ ok: false, status: 404 });
-    });
+    stubClientApiFetches(response);
 
     const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
 
@@ -361,16 +449,7 @@ describe('hourly window edge cases', () => {
     response.hourly.visibility = [];
     response.hourly.precipitation = [];
     response.hourly.precipitation_probability = [];
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/open-meteo/forecast')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(response) });
-      }
-      if (url.includes('/api/open-meteo/air-quality')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockAirQualityData) });
-      }
-      return Promise.resolve({ ok: false, status: 404 });
-    });
+    stubClientApiFetches(response);
 
     const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
 

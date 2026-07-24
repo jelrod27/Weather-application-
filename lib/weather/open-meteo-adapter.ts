@@ -2,17 +2,39 @@
  * Open-Meteo Adapter
  *
  * Transforms Open-Meteo API responses into the app's WeatherData interface.
+ *
+ * Server: fetch upstream via lib/open-meteo (no HTTP self-proxy).
+ * Client: fetch same-origin /api/open-meteo/* (CSP-safe; rate-limited).
  */
 
 import type { WeatherData } from '../types';
-import { getApiUrl } from './weather-utils';
+import type {
+  OpenMeteoAirQualityResponse,
+  OpenMeteoForecastResponse,
+} from '@/lib/open-meteo-types';
+import {
+  fetchOpenMeteoAirQuality,
+  fetchOpenMeteoForecast,
+} from '@/lib/open-meteo';
+import { mapOpenMeteoPollenHourly } from '@/lib/pollen/open-meteo-pollen';
+import { normalizePollenCategories } from '@/lib/pollen/normalize-pollen-categories';
+import { isServerRuntime } from '@/lib/runtime-env';
 import { getWMODescription, getWMOCondition } from '../wmo-codes';
 import {
   formatPressureByRegion,
   getCompassDirection,
   calculateMoonPhase,
+  getApiUrl,
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
+
+type PollenPayload = WeatherData['pollen'];
+
+const UNAVAILABLE_POLLEN: PollenPayload = {
+  tree: { Tree: 'Unavailable' },
+  grass: { Grass: 'Unavailable' },
+  weed: { Weed: 'Unavailable' },
+};
 
 /** Map WMO codes to the app's legacy WeatherData condition labels. */
 function wmoCodeToConditionLabel(code: number): string {
@@ -48,6 +70,90 @@ function formatISOTimeToDisplay(isoString: string): string {
   return `${displayHours}:${paddedMinutes} ${ampm}`;
 }
 
+function pollenFromAirQuality(
+  airQuality: OpenMeteoAirQualityResponse | null,
+): PollenPayload {
+  if (!airQuality) return UNAVAILABLE_POLLEN;
+
+  const mapped = mapOpenMeteoPollenHourly(
+    airQuality.hourly,
+    airQuality.utc_offset_seconds,
+  );
+
+  if (mapped.source !== 'open-meteo') {
+    return {
+      tree: mapped.tree,
+      grass: mapped.grass,
+      weed: mapped.weed,
+    };
+  }
+
+  return normalizePollenCategories(mapped.tree, mapped.grass, mapped.weed);
+}
+
+async function fetchForecastAndAirQualityViaApi(
+  lat: number,
+  lon: number,
+  temperatureUnit: 'celsius' | 'fahrenheit',
+  windSpeedUnit: 'kmh' | 'mph',
+  precipitationUnit: 'mm' | 'inch',
+): Promise<{
+  forecast: OpenMeteoForecastResponse;
+  airQuality: OpenMeteoAirQualityResponse | null;
+}> {
+  const forecastQuery = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    days: '7',
+    temperature_unit: temperatureUnit,
+    wind_speed_unit: windSpeedUnit,
+    precipitation_unit: precipitationUnit,
+  });
+
+  const [forecastRes, airQualityRes] = await Promise.all([
+    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`), {
+      signal: AbortSignal.timeout(10000),
+    }),
+    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`), {
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => null),
+  ]);
+
+  if (!forecastRes.ok) {
+    throw new Error(`Open-Meteo proxy error: ${forecastRes.status}`);
+  }
+
+  const forecast = (await forecastRes.json()) as OpenMeteoForecastResponse;
+  const airQuality = airQualityRes?.ok
+    ? ((await airQualityRes.json()) as OpenMeteoAirQualityResponse)
+    : null;
+
+  return { forecast, airQuality };
+}
+
+async function fetchForecastAndAirQualityDirect(
+  lat: number,
+  lon: number,
+  temperatureUnit: 'celsius' | 'fahrenheit',
+  windSpeedUnit: 'kmh' | 'mph',
+  precipitationUnit: 'mm' | 'inch',
+): Promise<{
+  forecast: OpenMeteoForecastResponse;
+  airQuality: OpenMeteoAirQualityResponse | null;
+}> {
+  const [forecast, airQuality] = await Promise.all([
+    fetchOpenMeteoForecast(lat, lon, {
+      forecastDays: 7,
+      temperatureUnit,
+      windSpeedUnit,
+      precipitationUnit,
+    }),
+    fetchOpenMeteoAirQuality(lat, lon).catch(() => null),
+  ]);
+
+  return { forecast, airQuality };
+}
+
 export async function buildWeatherDataFromOpenMeteo(
   lat: number,
   lon: number,
@@ -59,33 +165,36 @@ export async function buildWeatherDataFromOpenMeteo(
   const temperatureUnit = unitSystem === 'metric' ? 'celsius' as const : 'fahrenheit' as const;
   const windSpeedUnit = unitSystem === 'metric' ? 'kmh' as const : 'mph' as const;
   const precipitationUnit = unitSystem === 'metric' ? 'mm' as const : 'inch' as const;
+  const onServer = isServerRuntime();
 
-  const forecastQuery = new URLSearchParams({
-    lat: String(lat),
-    lon: String(lon),
-    days: '7',
-    temperature_unit: temperatureUnit,
-    wind_speed_unit: windSpeedUnit,
-    precipitation_unit: precipitationUnit,
-  });
-  // Bounded: this chain also runs server-side (generateMetadata on city
-  // pages self-fetches through these URLs), where a hung request would
-  // block the render indefinitely.
-  const [forecastRes, airQualityRes, pollenData] = await Promise.all([
-    fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`), {
-      signal: AbortSignal.timeout(10000),
-    }),
-    fetch(getApiUrl(`/api/open-meteo/air-quality?lat=${lat}&lon=${lon}`), {
-      signal: AbortSignal.timeout(10000),
-    }).catch(() => null),
-    fetchPollenData(lat, lon),
-  ]);
+  // Client / Google path: pollen API in parallel with forecast+AQ.
+  // Server without Google: derive pollen from the AQ payload after it returns.
+  const pollenPromise =
+    !onServer || process.env.GOOGLE_POLLEN_API_KEY
+      ? fetchPollenData(lat, lon)
+      : null;
 
-  if (!forecastRes.ok) {
-    throw new Error(`Open-Meteo proxy error: ${forecastRes.status}`);
-  }
-  const forecast = await forecastRes.json();
-  const airQualityResponse = airQualityRes?.ok ? await airQualityRes.json() : null;
+  // Client must keep same-origin /api proxies (CSP + rate limit).
+  // Server calls lib/open-meteo directly to avoid HTTP self-proxy / VERCEL_URL hops.
+  const { forecast, airQuality } = onServer
+    ? await fetchForecastAndAirQualityDirect(
+        lat,
+        lon,
+        temperatureUnit,
+        windSpeedUnit,
+        precipitationUnit,
+      )
+    : await fetchForecastAndAirQualityViaApi(
+        lat,
+        lon,
+        temperatureUnit,
+        windSpeedUnit,
+        precipitationUnit,
+      );
+
+  const pollenData = pollenPromise
+    ? await pollenPromise
+    : pollenFromAirQuality(airQuality);
 
   const current = forecast.current;
   const daily = forecast.daily;
@@ -113,7 +222,7 @@ export async function buildWeatherDataFromOpenMeteo(
     : 'N/A';
 
   const uvIndex = Math.round(current?.uv_index ?? 0);
-  const aqi = airQualityResponse?.current?.us_aqi ?? 0;
+  const aqi = airQuality?.current?.us_aqi ?? 0;
   const aqiCategory = getAQICategory(aqi);
   const moonPhase = calculateMoonPhase();
 
