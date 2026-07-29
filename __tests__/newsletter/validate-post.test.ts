@@ -272,6 +272,41 @@ Cities replace evapotranspiring surfaces with asphalt, concrete, and roofs. The 
     expect(result.errors).toEqual([]);
   });
 
+  it('accepts Wikimedia URLs whose titles contain encoded parentheses', () => {
+    const floodUrl =
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Flooding%20on%20the%20Mississippi%20River%20%28MODIS%202019-01-29%29.jpg?width=1280';
+    const filePath = writePost(`---
+slug: mississippi-flood-parens
+title: Mississippi Flood Parens
+date: 2026-07-29T12:00:00.000Z
+author: 16bitbot
+summary: Flood imagery with parentheses in the filename.
+tags:
+  - weather
+heroImage: "/api/og/blog?title=Flood&type=weather"
+readTime: 4
+cadence: wednesday_topic
+topic_slug: agricultural
+topic_title: Agricultural Weather
+images_used:
+  - mississippi-river-flooding-modis-2019
+image_audit:
+  - "id=mississippi-river-flooding-modis-2019; lane=agricultural; anchor=nighttime lows; tags=severe_storms,historical_events; caption=NASA Terra/MODIS false-color image of the lower Mississippi River swollen above flood stage, January 2019."
+---
+
+## Heat and moisture stress
+
+When nighttime lows this week are running 78-82°F in some locations, that threshold has been crossed.
+
+![NASA Terra/MODIS false-color image of the lower Mississippi River swollen above flood stage, January 2019.](${floodUrl})
+*MODIS Land Rapid Response Team, NASA GSFC*
+`);
+
+    const result = validateGeneratedPost(filePath);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
   it('rejects a Wednesday placeholder image before PR creation', () => {
     const filePath = writePost(`---
 slug: placeholder-wednesday

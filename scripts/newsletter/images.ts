@@ -742,7 +742,7 @@ export const IMAGES: ImageEntry[] = [
   },
   {
     id: 'mississippi-river-flooding-modis-2019',
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Flooding%20on%20the%20Mississippi%20River%20(MODIS%202019-01-29).jpg?width=1280',
+    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Flooding%20on%20the%20Mississippi%20River%20%28MODIS%202019-01-29%29.jpg?width=1280',
     caption: 'NASA Terra/MODIS false-color image of the lower Mississippi River swollen above flood stage, January 2019.',
     credit: 'MODIS Land Rapid Response Team, NASA GSFC',
     topic_tags: ['severe_storms', 'historical_events'],

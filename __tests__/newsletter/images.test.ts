@@ -49,6 +49,16 @@ describe('IMAGES catalog', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('encodes parentheses in catalog URLs so markdown image parsers do not truncate', () => {
+    // Bare `()` in `![alt](url)` destinations end the link early (CommonMark
+    // and naive regex extractors). Wikimedia titles often contain them —
+    // encode as %28/%29 like Lightning_Pritzerbe_01_%28MK%29.jpg.
+    const offenders = IMAGES.filter((img) => /[()]/.test(img.url)).map(
+      (img) => `${img.id}: ${img.url}`,
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it('every license is one of the allowed public-use values', () => {
     const allowed = new Set(['PD-USGov', 'PD', 'CC0', 'CC-BY-4.0']);
     for (const img of IMAGES) {

@@ -130,14 +130,51 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
   };
 }
 
+/**
+ * Extract `![alt](url)` destinations. Unencoded `()` in a URL (common in
+ * Wikimedia Special:FilePath titles) must not truncate the capture — CommonMark
+ * allows balanced parentheses inside unbracketed destinations.
+ */
 function extractMarkdownImages(content: string): MarkdownImage[] {
   const images: MarkdownImage[] = [];
-  const rx = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const startRx = /!\[([^\]]*)\]\(/g;
   let match: RegExpExecArray | null;
-  while ((match = rx.exec(content)) !== null) {
-    images.push({ alt: match[1], url: match[2].trim() });
+  while ((match = startRx.exec(content)) !== null) {
+    const destStart = match.index + match[0].length;
+    const url = readLinkDestination(content, destStart);
+    if (url === null) continue;
+    images.push({ alt: match[1], url: url.trim() });
+    startRx.lastIndex = destStart + url.length + 1;
   }
   return images;
+}
+
+function readLinkDestination(content: string, start: number): string | null {
+  if (content[start] === '<') {
+    const end = content.indexOf('>', start + 1);
+    if (end === -1) return null;
+    return content.slice(start + 1, end);
+  }
+
+  let depth = 0;
+  for (let i = start; i < content.length; i++) {
+    const ch = content[i];
+    if (ch === '\\' && i + 1 < content.length) {
+      i += 1;
+      continue;
+    }
+    if (ch === '(') {
+      depth += 1;
+      continue;
+    }
+    if (ch === ')') {
+      if (depth === 0) return content.slice(start, i);
+      depth -= 1;
+      continue;
+    }
+    if (depth === 0 && (ch === '\n' || ch === '\r')) return null;
+  }
+  return null;
 }
 
 function parseAuditEntries(value: unknown): ParsedAuditEntry[] {
