@@ -8,7 +8,7 @@ import { BLOG_CATEGORIES, getPostCategoryIds, type BlogCategory } from './catego
 // `@/lib/blog`. Client components should import from `@/lib/blog/categories`
 // directly to avoid pulling this fs-backed module into the browser bundle.
 export { BLOG_CATEGORIES, getPostCategoryIds } from './categories'
-export type { BlogCategory, BlogCategoryId } from './categories'
+export type { BlogCategory } from './categories'
 
 const BLOG_DIR = path.join(process.cwd(), 'content/blog')
 

@@ -6,28 +6,12 @@
  * - `city-database` — autocomplete / search index
  * - `city-data` — random-link catalog with lat/lon for ~100 US cities
  * - `us-states` — state code/name authority for geocoding + slugs
+ *
+ * Re-exports only what is imported through this path. Callers of the other
+ * symbols import their owning module directly, so re-exporting them here was
+ * dead surface.
  */
 
-export {
-  cityData,
-  cityEnrichments,
-  cityNeighbors,
-  getCityEnrichment,
-  getNearbyCities,
-  type CitySeoEnrichment,
-} from '@/lib/city-metadata'
-
-export {
-  CITY_DATABASE,
-  searchCities,
-  type CityData,
-} from '@/lib/city-database'
+export { searchCities, type CityData } from '@/lib/city-database'
 
 export { CITY_DATA } from '@/lib/city-data'
-
-export {
-  US_STATE_CODES,
-  US_STATE_ABBREVIATIONS,
-  toStateAbbr,
-  isUsState,
-} from '@/lib/us-states'
