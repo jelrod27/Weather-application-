@@ -3,13 +3,11 @@
  *
  * Copyright (C) 2025 16-Bit Weather
  * Licensed under Fair Source License, Version 0.9
+ *
+ * Only the symbols imported through this barrel are re-exported. The rest are
+ * imported directly from their component files; re-exporting them here created
+ * dead surface that knip 6.29 flags.
  */
 
-export { default as AlertTicker } from './AlertTicker';
 export type { AviationAlert } from './AlertTicker';
-export { default as FlightConditionsTerminal } from './FlightConditionsTerminal';
-export { default as TurbulenceMap } from './TurbulenceMap';
-export { default as FlightRouteLookup } from './FlightRouteLookup';
-export { default as FlightNumberInput } from './FlightNumberInput';
-export type { FlightData } from './FlightNumberInput';
 export { default as AirportMiseryBoard } from './AirportMiseryBoard';
