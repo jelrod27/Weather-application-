@@ -4,6 +4,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { fetchRtswFeeds } from '@/lib/services/swpc-solar-wind'
+import { SPACE_WEATHER_CACHE } from '@/lib/space-weather/series-route'
 import { logRouteError } from '@/lib/error-utils'
 
 export interface PlasmaEntry {
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',
+          'Cache-Control': SPACE_WEATHER_CACHE.realtime,
         },
       },
     )

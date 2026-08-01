@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
 import { logRouteError } from '@/lib/error-utils'
 
@@ -31,11 +31,11 @@ export interface KpIndexData {
 export async function GET() {
   try {
     const [kpResponse, forecastResponse] = await Promise.allSettled([
-      fetchWithTimeout('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
+      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 300 },
       } as RequestInit),
-      fetchWithTimeout('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
+      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 900 },
       } as RequestInit),
