@@ -14,6 +14,7 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 
 export const runtime = 'edge';
 
@@ -101,12 +102,7 @@ export async function GET(request: NextRequest) {
   // Try primary source (NOAA SWPC), then fallback (NASA SDO)
   for (const url of [config.primary, config.fallback]) {
     try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': '16BitWeather/1.0 (https://www.16bitweather.co)',
-        },
-        signal: AbortSignal.timeout(8000),
-      });
+      const response = await fetchSwpc(url, { timeoutMs: 8000 });
 
       if (!response.ok) {
         console.warn(`[sdo-image] ${url} returned ${response.status}`);

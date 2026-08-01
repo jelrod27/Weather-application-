@@ -29,6 +29,7 @@ import {
   type NoaaAlert,
 } from '@/lib/services/aviation-noaa-service';
 import type { MetarObservation } from '@/lib/aviation/metar'
+import { logRouteError } from '@/lib/error-utils'
 
 export interface AirportMiseryRow {
   airport: MajorAirport;
@@ -165,7 +166,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[airport-misery]', error);
+    logRouteError('airport-misery', error);
     return NextResponse.json(
       { error: 'Failed to build airport misery board' },
       { status: 500 },

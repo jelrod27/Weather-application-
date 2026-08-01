@@ -4,6 +4,7 @@ import { deliverSevereAlertAllClearEmail, deliverSevereAlertEmail } from '@/lib/
 import { backfillSevereAlertSubscriptions } from '@/lib/services/severe-alert-subscriptions'
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
+import { logRouteError } from '@/lib/error-utils'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
       ...result,
     })
   } catch (error) {
-    console.error('[cron/severe-alerts] unhandled error:', error)
+    logRouteError('cron/severe-alerts', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

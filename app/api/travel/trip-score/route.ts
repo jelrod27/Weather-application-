@@ -49,6 +49,7 @@ import {
 } from '@/lib/services/aviation-noaa-service'
 import { resolveGeocodingQuery } from '@/lib/geocoding/lookup'
 import interstateData from '@/public/data/us-interstates.json'
+import { logRouteError } from '@/lib/error-utils'
 
 /** SIGMETs within this radius of the flight midpoint count as en-route hazards. */
 const ENROUTE_HAZARD_RADIUS_KM = 500
@@ -117,7 +118,7 @@ async function resolveEndpoint(
       label: labelParts.join(', ') || trimmed,
     }
   } catch (error) {
-    console.error('[trip-score]', 'geocoding failed', error)
+    logRouteError('trip-score', error, { stage: 'geocoding' })
     return null
   }
 }
@@ -170,7 +171,7 @@ async function fetchMetarsForAirports(
   try {
     return await fetchMetarsBulk(airports.map((a) => a.icao));
   } catch (error) {
-    console.error('[trip-score]', 'bulk metar fetch failed', error);
+    logRouteError('trip-score', error, { stage: 'bulk-metar' });
     return new Map();
   }
 }
@@ -179,7 +180,7 @@ async function fetchAlerts(): Promise<NoaaAlert[]> {
   try {
     return await fetchAviationAlertsFromNOAA();
   } catch (error) {
-    console.error('[trip-score]', 'alerts fetch failed', error);
+    logRouteError('trip-score', error, { stage: 'alerts' });
     return [];
   }
 }
@@ -289,7 +290,7 @@ async function handleDriveMode(
       userAgent: '16-Bit-Weather/trip-score',
     });
   } catch (error) {
-    console.error('[trip-score]', 'open-meteo fetch failed', error);
+    logRouteError('trip-score', error, { stage: 'open-meteo' });
     return NextResponse.json(
       { error: 'Weather service unavailable' },
       { status: 502 },
@@ -484,7 +485,7 @@ export async function GET(request: NextRequest) {
     }
     return handleFlyMode(resolvedOrigin, resolvedDest)
   } catch (error) {
-    console.error('[trip-score]', error);
+    logRouteError('trip-score', error);
     return NextResponse.json(
       { error: 'Failed to compute trip score' },
       { status: 500 },

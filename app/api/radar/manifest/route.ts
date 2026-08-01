@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { fetchRainViewerManifest } from '@/lib/radar/rainviewer'
+import { logRouteError } from '@/lib/error-utils'
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('[radar-manifest]', error)
+    logRouteError('radar-manifest', error)
     return NextResponse.json(
       { error: 'Failed to fetch RainViewer manifest' },
       { status: 502 },

@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 const ENLIL_BASE_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/';
 const ENLIL_LATEST_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/latest.jpg';
@@ -57,7 +58,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('[ENLIL]', error);
+    logRouteError('ENLIL', error);
 
     return NextResponse.json(
       { error: 'Failed to fetch ENLIL model data' },

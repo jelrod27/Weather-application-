@@ -14,6 +14,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { logRouteError } from '@/lib/error-utils'
 
 export type TurbulenceSeverity =
   | 'smooth'
@@ -200,7 +201,7 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API] Turbulence (G-AIRMET) error:', error);
+    logRouteError('API', error);
     return NextResponse.json<TurbulenceResponse>(
       {
         success: false,

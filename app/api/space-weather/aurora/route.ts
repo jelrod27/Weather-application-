@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface AuroraForecastData {
   timestamp: string;
@@ -102,7 +103,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Aurora Forecast API error:', error);
+    logRouteError('space-weather/aurora', error);
 
     return NextResponse.json({
       data: {

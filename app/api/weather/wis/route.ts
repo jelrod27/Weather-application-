@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { getWISScore } from '@/lib/services/nws-alerts-service'
+import { logRouteError } from '@/lib/error-utils'
 
 export async function GET() {
   try {
@@ -18,7 +19,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('[WIS API]', error)
+    logRouteError('WIS API', error)
     return NextResponse.json(
       { error: 'Failed to fetch WIS score' },
       { status: 500 }

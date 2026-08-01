@@ -22,13 +22,11 @@
 
 import { callAnthropic, DEFAULT_MODEL } from './repetition';
 import type { ImageEntry } from './images';
-import { passesNarrativeFit } from './narrative-fit';
+import { imageGateFor, type ImagePlacement } from './image-selection';
+import { stripImageMarkdown } from './markdown-images';
+import { parseModelJson } from './model-json';
 
-export interface ImagePlacement {
-  image: ImageEntry;
-  /** Verbatim short snippet (3-8 words) from the draft, after which the image is inserted. */
-  insertAfter: string;
-}
+export type { ImagePlacement };
 
 export interface ContentMatchOptions {
   draft: string;
@@ -109,9 +107,8 @@ ${catalog}`;
 }
 
 /**
- * Drops judge picks that fail the same narrative-fit rules used by
- * validate-post.ts, then backfills from the remaining pool so the cron
- * does not fail on a single mismatched image.
+ * Drops judge picks the gate rejects, then backfills from the remaining pool
+ * so the cron does not fail on a single mismatched image.
  */
 export function filterPlacementsByNarrativeFit(
   draft: string,
@@ -119,22 +116,18 @@ export function filterPlacementsByNarrativeFit(
   pool: ImageEntry[],
   count: number,
 ): ImagePlacement[] {
-  const accepted: ImagePlacement[] = [];
-  const usedIds = new Set<string>();
+  const gate = imageGateFor(draft);
+  const accepted = gate.filterPlacements(placements);
+  const usedIds = new Set(accepted.map((p) => p.image.id));
 
   for (const placement of placements) {
-    if (passesNarrativeFit(draft, placement.image)) {
-      accepted.push(placement);
-      usedIds.add(placement.image.id);
-      continue;
-    }
+    if (usedIds.has(placement.image.id)) continue;
     console.warn(`[content-match] dropping ${placement.image.id}: narrative mismatch`);
   }
 
-  for (const image of pool) {
+  for (const image of gate.filter(pool)) {
     if (accepted.length >= count) break;
     if (usedIds.has(image.id)) continue;
-    if (!passesNarrativeFit(draft, image)) continue;
     usedIds.add(image.id);
     accepted.push({ image, insertAfter: '##' });
   }
@@ -177,26 +170,15 @@ function renderImageMarkdown(img: ImageEntry): string {
 }
 
 /**
- * Removes ALL image markdown the model emitted. The generator is told not to
- * embed images — real catalog images are spliced in afterward by
- * embedImagesInDraft — so any `![...](...)` or bare `![...]` left in the draft
- * is a hallucination: a placeholder (e.g. placehold.co), a relative `(image1)`
- * ref, or a prompt-injected off-catalog/tracker URL. Stripping every one keeps
- * the published post limited to allow-listed catalog imagery (the same defense
- * as lib/blog/allowed-hosts). Also collapses the horizontal-rule separators the
- * model tends to wrap such placeholders in, plus any blank-line runs left behind.
+ * Removes ALL image markdown the model emitted, so the published post carries
+ * only catalog imagery spliced in by `embedImagesInDraft`.
+ *
+ * Delegates to the shared reader in markdown-images.ts — the same one the
+ * publish-time validator uses, so a destination containing balanced parens
+ * (Wikimedia `Special:FilePath` titles) is not truncated here while being read
+ * correctly there.
  */
-export function stripBareImageMarkdown(draft: string): string {
-  let out = draft
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/!\[[^\]]*\](?!\()/g, '');
-  // Drop horizontal-rule separators that, after the placeholder removal, now
-  // bracket only whitespace — i.e. two or more "---" lines in a row.
-  out = out.replace(/(?:^[ \t]*---[ \t]*$\s*){2,}/gm, '');
-  // Normalize 3+ consecutive newlines created by removals down to one blank line.
-  out = out.replace(/\n{3,}/g, '\n\n');
-  return out;
-}
+export const stripBareImageMarkdown = stripImageMarkdown;
 
 function locateAnchor(draft: string, anchor: string): number {
   if (!anchor) return -1;
@@ -243,28 +225,18 @@ interface RawJudgeResponse {
 }
 
 function parseJudgeResponse(raw: string): RawJudgeResponse | null {
-  // Tolerate models that wrap JSON in code fences despite instructions.
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```\s*$/i, '')
-    .trim();
-  try {
-    const obj = JSON.parse(cleaned) as unknown;
-    if (!obj || typeof obj !== 'object') return null;
-    const picks = (obj as { picks?: unknown }).picks;
-    if (!Array.isArray(picks)) return null;
-    const valid: RawJudgeResponse['picks'] = [];
-    for (const p of picks) {
-      if (!p || typeof p !== 'object') continue;
-      const id = (p as { id?: unknown }).id;
-      const insertAfter = (p as { insert_after?: unknown }).insert_after;
-      if (typeof id === 'string' && typeof insertAfter === 'string') {
-        valid.push({ id, insert_after: insertAfter });
-      }
+  const obj = parseModelJson(raw);
+  if (!obj || typeof obj !== 'object') return null;
+  const picks = (obj as { picks?: unknown }).picks;
+  if (!Array.isArray(picks)) return null;
+  const valid: RawJudgeResponse['picks'] = [];
+  for (const p of picks) {
+    if (!p || typeof p !== 'object') continue;
+    const id = (p as { id?: unknown }).id;
+    const insertAfter = (p as { insert_after?: unknown }).insert_after;
+    if (typeof id === 'string' && typeof insertAfter === 'string') {
+      valid.push({ id, insert_after: insertAfter });
     }
-    return { picks: valid };
-  } catch {
-    return null;
   }
+  return { picks: valid };
 }

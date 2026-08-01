@@ -1,10 +1,11 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
 import { openMeteoLocalTimeToEpoch } from '@/lib/pollen/open-meteo-pollen'
 import { getWMOCondition, getWMODescription } from '@/lib/wmo-codes'
 import { parseCoordinates } from '@/lib/api/query-params'
+import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 /**
  * Map WMO weather code + is_day to a compact icon code
@@ -64,86 +65,83 @@ function buildCurrent(
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const rateLimit = await rateLimitRequest(request)
-    if (!rateLimit.allowed) {
-      return rateLimit.response
-    }
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
+    try {
+      const { searchParams } = new URL(request.url)
+      const lat = searchParams.get('lat')
+      const lon = searchParams.get('lon')
+      const units = searchParams.get('units') === 'metric' ? 'metric' : 'imperial'
+      const detail = searchParams.get('detail') === '1' || searchParams.get('detail') === 'true'
 
-    const { searchParams } = new URL(request.url)
-    const lat = searchParams.get('lat')
-    const lon = searchParams.get('lon')
-    const units = searchParams.get('units') === 'metric' ? 'metric' : 'imperial'
-    const detail = searchParams.get('detail') === '1' || searchParams.get('detail') === 'true'
+      const coords = parseCoordinates(lat, lon)
+      if (!coords.ok) {
+        return NextResponse.json({ error: coords.error }, { status: 400 })
+      }
+      const { latitude, longitude } = coords
 
-    const coords = parseCoordinates(lat, lon)
-    if (!coords.ok) {
-      return NextResponse.json({ error: coords.error }, { status: 400 })
-    }
-    const { latitude, longitude } = coords
-
-    const forecast = await fetchOpenMeteoForecast(latitude, longitude, {
-      forecastDays: detail ? 7 : 1,
-      temperatureUnit: units === 'metric' ? 'celsius' : 'fahrenheit',
-      windSpeedUnit: units === 'metric' ? 'kmh' : 'mph',
-      precipitationUnit: units === 'metric' ? 'mm' : 'inch',
-    })
-
-    const current = buildCurrent(forecast, units)
-
-    if (!detail) {
-      return NextResponse.json(current, {
-        headers: {
-          'Cache-Control': 'public, max-age=600, s-maxage=600',
-          ...rateLimit.headers,
-        },
+      const forecast = await fetchOpenMeteoForecast(latitude, longitude, {
+        forecastDays: detail ? 7 : 1,
+        temperatureUnit: units === 'metric' ? 'celsius' : 'fahrenheit',
+        windSpeedUnit: units === 'metric' ? 'kmh' : 'mph',
+        precipitationUnit: units === 'metric' ? 'mm' : 'inch',
       })
-    }
 
-    const daily = forecast.daily
-    const days: Array<{
-      day: string
-      highTemp: number
-      lowTemp: number
-      condition: string
-      description: string
-    }> = []
+      const current = buildCurrent(forecast, units)
 
-    if (daily?.time?.length) {
-      const count = Math.min(daily.time.length, 5)
-      for (let i = 0; i < count; i++) {
-        const code = daily.weather_code?.[i] ?? 0
-        const date = new Date(`${daily.time[i]}T12:00:00`)
-        days.push({
-          day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          highTemp: Math.round(daily.temperature_2m_max?.[i] ?? 0),
-          lowTemp: Math.round(daily.temperature_2m_min?.[i] ?? 0),
-          condition: getWMOCondition(code),
-          description: getWMODescription(code).toLowerCase(),
+      if (!detail) {
+        return NextResponse.json(current, {
+          headers: {
+            'Cache-Control': 'public, max-age=600, s-maxage=600',
+            ...rateLimitHeaders,
+          },
         })
       }
-    }
 
-    const uvIndex = Math.round(forecast.current?.uv_index ?? daily?.uv_index_max?.[0] ?? 0)
+      const daily = forecast.daily
+      const days: Array<{
+        day: string
+        highTemp: number
+        lowTemp: number
+        condition: string
+        description: string
+      }> = []
 
-    return NextResponse.json(
-      {
-        current,
-        forecast: days,
-        uvIndex,
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, max-age=600, s-maxage=600',
-          ...rateLimit.headers,
+      if (daily?.time?.length) {
+        const count = Math.min(daily.time.length, 5)
+        for (let i = 0; i < count; i++) {
+          const code = daily.weather_code?.[i] ?? 0
+          const date = new Date(`${daily.time[i]}T12:00:00`)
+          days.push({
+            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            highTemp: Math.round(daily.temperature_2m_max?.[i] ?? 0),
+            lowTemp: Math.round(daily.temperature_2m_min?.[i] ?? 0),
+            condition: getWMOCondition(code),
+            description: getWMODescription(code).toLowerCase(),
+          })
+        }
+      }
+
+      const uvIndex = Math.round(forecast.current?.uv_index ?? daily?.uv_index_max?.[0] ?? 0)
+
+      return NextResponse.json(
+        {
+          current,
+          forecast: days,
+          uvIndex,
         },
-      },
-    )
-  } catch (error) {
-    console.error('[dashboard-weather]', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch weather data' },
-      { status: 500 },
-    )
-  }
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=600, s-maxage=600',
+            ...rateLimitHeaders,
+          },
+        },
+      )
+    } catch (error) {
+      logRouteError('dashboard-weather', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch weather data' },
+        { status: 500 },
+      )
+    }
+  })
 }

@@ -191,10 +191,9 @@ describe('GET /api/stargazer — validation and upstream failures', () => {
     expect(body.error).toBe(
       'Internal server error while computing stargazer forecast',
     );
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      '[Stargazer] Unexpected error:',
-      expect.any(Error),
-    );
+    // Routes now report through logRouteError, which logs to the console AND
+    // captures to Sentry — the console side keeps the same tag.
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[Stargazer]', expect.any(Error));
     consoleErrorSpy.mockRestore();
   });
 });

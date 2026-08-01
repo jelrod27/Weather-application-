@@ -9,6 +9,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { XMLParser } from 'fast-xml-parser';
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 import type { FeedSource, FeedCategory} from './feedSources';
 import { FEED_SOURCES, CATEGORY_CONFIG, getEnabledSourceNames } from './feedSources';
 import { decodeHtmlEntities } from './html-utils';
@@ -65,8 +66,7 @@ function parseItemTimestamp(raw: string | undefined): Date {
 // `next.revalidate` and the CDN `Cache-Control` (see cacheControlForCategories)
 // are the real cache. Kept short (5 min) to match the Fast tier so severe
 // alerts stay fresh on a warm instance.
-const cache = new Map<string, { data: AggregatedResult; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const cache = createTtlCache<AggregatedResult>({ ttlMs: 5 * 60 * 1000 });
 
 // Per-feed item cap to bound memory/parse cost (PRD §8.1).
 const MAX_ITEMS_PER_FEED = 30;
@@ -695,8 +695,8 @@ export async function aggregateFeeds(options: {
   // Check cache
   const cacheKey = JSON.stringify({ categories, maxItems, maxAge });
   const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
+  if (cached) {
+    return cached;
   }
 
   // Filter feeds by category if specified
@@ -788,7 +788,7 @@ export async function aggregateFeeds(options: {
   };
 
   // Cache result
-  cache.set(cacheKey, { data: result, timestamp: Date.now() });
+  cache.set(cacheKey, result);
 
   return result;
 }
