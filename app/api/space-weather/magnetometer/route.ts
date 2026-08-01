@@ -7,54 +7,33 @@
  * Fetches GOES magnetometer data (Hp parallel component) from NOAA SWPC
  */
 
-import { NextResponse } from 'next/server';
-import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import {
+  finiteRounded,
+  swpcSeriesRoute,
+  SWPC_GOES_SOURCE,
+} from '@/lib/space-weather/series-route';
 
 export interface MagnetometerEntry {
   time: string;
   hp: number;
 }
 
-export async function GET() {
-  try {
-    const data = await fetchSwpcJson<Array<{
-      time_tag: string;
-      satellite: string;
-      He: number;
-      Hp: number;
-      Hn: number;
-      total: number;
-    }>>('https://services.swpc.noaa.gov/json/goes/primary/magnetometers-1-day.json');
-
-    const series: MagnetometerEntry[] = [];
-
-    for (const entry of data) {
-      const hp = entry.Hp;
-      if (hp == null || isNaN(hp)) continue;
-
-      series.push({
-        time: entry.time_tag,
-        hp: Math.round(hp * 100) / 100,
-      });
-    }
-
-    return NextResponse.json(
-      {
-        data: series,
-        source: 'NOAA Space Weather Prediction Center (GOES)',
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
-        },
-      }
-    );
-  } catch (error) {
-    console.error('[Magnetometer]', error);
-
-    return NextResponse.json(
-      { error: 'Failed to fetch magnetometer data' },
-      { status: 500 }
-    );
-  }
+interface RawMagnetometerRow {
+  time_tag: string;
+  satellite: string;
+  He: number;
+  Hp: number;
+  Hn: number;
+  total: number;
 }
+
+export const GET = swpcSeriesRoute<RawMagnetometerRow, MagnetometerEntry>({
+  context: 'Magnetometer',
+  url: 'https://services.swpc.noaa.gov/json/goes/primary/magnetometers-1-day.json',
+  source: SWPC_GOES_SOURCE,
+  errorMessage: 'Failed to fetch magnetometer data',
+  toPoint: (row) => {
+    const hp = finiteRounded(row.Hp);
+    return hp === null ? null : { time: row.time_tag, hp };
+  },
+});

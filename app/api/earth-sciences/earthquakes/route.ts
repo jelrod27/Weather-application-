@@ -12,6 +12,7 @@ import {
   fetchGlobalEarthquakes,
   type EarthquakeData,
 } from '@/lib/services/usgs-earthquake';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface EarthquakesApiResponse {
   earthquakes: Array<
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Earth Sciences API] Earthquake fetch failed:', error);
+    logRouteError('Earth Sciences API', error);
     const body: EarthquakesApiResponse = {
       earthquakes: [],
       count: 0,

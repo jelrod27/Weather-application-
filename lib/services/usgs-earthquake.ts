@@ -6,6 +6,8 @@
  * API Docs: https://earthquake.usgs.gov/fdsnws/event/1/
  */
 
+import { createTtlCache } from '@/lib/cache/ttl-cache';
+
 export interface EarthquakeData {
     magnitude: number;
     location: string;
@@ -26,9 +28,7 @@ export interface EarthquakeResponse {
     error?: string;
 }
 
-// Cache for earthquake data (5-minute TTL)
-const earthquakeCache = new Map<string, { data: EarthquakeResponse; timestamp: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const earthquakeCache = createTtlCache<EarthquakeResponse>({ ttlMs: 5 * 60 * 1000 });
 const FETCH_TIMEOUT_MS = 10000; // 10 second timeout for API calls
 
 /**
@@ -115,8 +115,8 @@ export async function fetchGlobalEarthquakes(
     const cacheKey = `global_${safeMinMag}_${safeDays}_${safeLimit}`;
 
     const cached = earthquakeCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        return cached.data;
+    if (cached) {
+        return cached;
     }
 
     try {
@@ -161,7 +161,7 @@ export async function fetchGlobalEarthquakes(
             lastSignificant: significantQuakes.length > 0 ? significantQuakes[0] : undefined
         };
 
-        earthquakeCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        earthquakeCache.set(cacheKey, result);
         return result;
     } catch (error) {
         const isTimeout = error instanceof Error && error.name === 'AbortError';

@@ -10,6 +10,7 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
+import { logRouteError } from '@/lib/error-utils'
 
 export const runtime = 'edge';
 
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching GFS image:', error);
+    logRouteError('gfs-image', error);
     return NextResponse.json(
       { error: 'Internal server error while fetching GFS image' },
       { status: 500 }

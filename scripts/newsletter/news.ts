@@ -11,6 +11,7 @@
  */
 
 import { callAnthropic, DEFAULT_MODEL } from './repetition';
+import { parseModelJsonObject } from './model-json';
 import type { Topic } from './topics';
 import { sanitizeForPrompt } from './util/sanitize';
 
@@ -152,20 +153,13 @@ Return JSON only, no prose.`;
 }
 
 function parseAngle(raw: string, headlines: NewsHeadline[]): NewsAngle | null {
-  const trimmed = raw.trim();
-  const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  const body = fenceMatch ? fenceMatch[1].trim() : trimmed;
-  try {
-    const parsed = JSON.parse(body) as { angle?: unknown; source_indices?: unknown };
-    const angle = typeof parsed.angle === 'string' ? parsed.angle : null;
-    if (!angle) return null;
-    const indices = Array.isArray(parsed.source_indices) ? (parsed.source_indices as unknown[]) : [];
-    const sources = indices
-      .map((i) => (typeof i === 'number' ? headlines[i - 1]?.title : undefined))
-      .filter((s): s is string => Boolean(s))
-      .slice(0, 5);
-    return { angle, sources };
-  } catch {
-    return null;
-  }
+  const parsed = parseModelJsonObject(raw);
+  const angle = typeof parsed.angle === 'string' ? parsed.angle : null;
+  if (!angle) return null;
+  const indices = Array.isArray(parsed.source_indices) ? (parsed.source_indices as unknown[]) : [];
+  const sources = indices
+    .map((i) => (typeof i === 'number' ? headlines[i - 1]?.title : undefined))
+    .filter((s): s is string => Boolean(s))
+    .slice(0, 5);
+  return { angle, sources };
 }

@@ -11,13 +11,9 @@ import path from 'node:path';
 import matter from 'gray-matter';
 
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts';
-import { getNarrativeFitErrors } from './narrative-fit';
+import { imageGateFor } from './image-selection';
+import { extractMarkdownImages } from './markdown-images';
 import { IMAGES, type ImageEntry } from './images';
-
-interface MarkdownImage {
-  alt: string;
-  url: string;
-}
 
 interface ParsedAuditEntry {
   id: string;
@@ -37,6 +33,9 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const errors: string[] = [];
+  // Same gate the selection path picks through — if selection went through it,
+  // these calls cannot produce an error.
+  const gate = imageGateFor(content);
   const imagesById = new Map(IMAGES.map((img) => [img.id, img]));
   const imagesByUrl = new Map(IMAGES.map((img) => [img.url, img]));
   const markdownImages = extractMarkdownImages(content);
@@ -74,7 +73,7 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
       if (!catalogHero) {
         errors.push(`External hero image is not present in scripts/newsletter/images.ts: ${heroImage}`);
       } else {
-        errors.push(...getNarrativeFitErrors(content, catalogHero));
+        errors.push(...gate.errorsFor(catalogHero));
       }
     }
   }
@@ -119,7 +118,7 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
   for (const image of markdownImages) {
     const catalogImage = imagesByUrl.get(image.url);
     if (catalogImage) {
-      errors.push(...getNarrativeFitErrors(content, catalogImage));
+      errors.push(...gate.errorsFor(catalogImage));
     }
   }
 
@@ -128,53 +127,6 @@ export function validateGeneratedPost(filePath: string): ValidationResult {
     errors,
     auditMarkdown: renderAuditMarkdown(auditEntries, imagesUsed, imagesById),
   };
-}
-
-/**
- * Extract `![alt](url)` destinations. Unencoded `()` in a URL (common in
- * Wikimedia Special:FilePath titles) must not truncate the capture — CommonMark
- * allows balanced parentheses inside unbracketed destinations.
- */
-function extractMarkdownImages(content: string): MarkdownImage[] {
-  const images: MarkdownImage[] = [];
-  const startRx = /!\[([^\]]*)\]\(/g;
-  let match: RegExpExecArray | null;
-  while ((match = startRx.exec(content)) !== null) {
-    const destStart = match.index + match[0].length;
-    const url = readLinkDestination(content, destStart);
-    if (url === null) continue;
-    images.push({ alt: match[1], url: url.trim() });
-    startRx.lastIndex = destStart + url.length + 1;
-  }
-  return images;
-}
-
-function readLinkDestination(content: string, start: number): string | null {
-  if (content[start] === '<') {
-    const end = content.indexOf('>', start + 1);
-    if (end === -1) return null;
-    return content.slice(start + 1, end);
-  }
-
-  let depth = 0;
-  for (let i = start; i < content.length; i++) {
-    const ch = content[i];
-    if (ch === '\\' && i + 1 < content.length) {
-      i += 1;
-      continue;
-    }
-    if (ch === '(') {
-      depth += 1;
-      continue;
-    }
-    if (ch === ')') {
-      if (depth === 0) return content.slice(start, i);
-      depth -= 1;
-      continue;
-    }
-    if (depth === 0 && (ch === '\n' || ch === '\r')) return null;
-  }
-  return null;
 }
 
 function parseAuditEntries(value: unknown): ParsedAuditEntry[] {

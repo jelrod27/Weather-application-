@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { buildRadarMetadata } from '@/lib/radar'
+import { logRouteError } from '@/lib/error-utils'
 
 function parseCoordinate(value: string | null): number | null {
   if (value == null || value.trim() === '') return null
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[radar-metadata]', error)
+    logRouteError('radar-metadata', error)
     return NextResponse.json(
       { error: 'Failed to build radar metadata' },
       { status: 500 }

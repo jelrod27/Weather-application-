@@ -1,70 +1,61 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRemoteData } from '@/hooks/useRemoteData';
 import type { WeatherData } from '@/lib/types';
 import type { HubUserLocation } from '@/lib/home/hub-utils';
 
-const geocodeCache = new Map<string, { lat: number; lon: number }>();
+type Coords = { lat: number; lon: number };
 
-async function geocodeLabel(label: string): Promise<{ lat: number; lon: number } | null> {
-  const key = label.toLowerCase().trim();
-  const cached = geocodeCache.get(key);
-  if (cached) return cached;
+/** Resolved labels change rarely; an hour is plenty and bounds the memory. */
+const GEOCODE_CACHE_TTL_MS = 60 * 60 * 1000;
 
-  try {
-    const res = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(label)}&limit=1`);
-    if (!res.ok) return null;
-    const data = (await res.json()) as Array<{ lat?: number; lon?: number }> | { lat?: number; lon?: number };
-    const first = Array.isArray(data) ? data[0] : data;
-    if (first?.lat == null || first?.lon == null) return null;
-    const coords = { lat: first.lat, lon: first.lon };
-    geocodeCache.set(key, coords);
-    return coords;
-  } catch {
-    return null;
-  }
-}
-
-/** Resolve lat/lon for the home hub even when weather cache stripped coordinates. */
+/**
+ * Resolve lat/lon for the home hub even when the weather cache stripped
+ * coordinates.
+ *
+ * The module-scope geocode Map this used to keep is now the shared cache in
+ * useRemoteData, which also brings the cancellation this hook only approximated
+ * with a `cancelled` flag — the request itself was never aborted.
+ */
 export function useHubLocation(weather: WeatherData | null): HubUserLocation | null {
-  const [resolved, setResolved] = useState<HubUserLocation | null>(null);
+  const label = weather?.location ?? null;
+  const lat = weather?.coordinates?.lat;
+  const lon = weather?.coordinates?.lon;
+  const hasCoords = lat != null && lon != null;
 
-  useEffect(() => {
-    if (!weather?.location) {
-      setResolved(null);
-      return;
-    }
+  const { data: geocoded } = useRemoteData<Coords | null>({
+    // Only geocode when the weather payload arrived without coordinates.
+    key: label && !hasCoords ? `geocode:${label.toLowerCase().trim()}` : null,
+    cacheTtlMs: GEOCODE_CACHE_TTL_MS,
+    fetcher: async (signal) => {
+      const res = await fetch(
+        `/api/weather/geocoding?q=${encodeURIComponent(label ?? '')}&limit=1`,
+        { signal },
+      );
+      // Throw rather than return null: a rejected load is not cached, so a
+      // transient geocoding failure doesn't blank the hub's coordinates for the
+      // full hour. Only a genuine no-result is cached as null.
+      if (!res.ok) throw new Error(`geocoding failed: ${res.status}`);
 
-    const lat = weather.coordinates?.lat;
-    const lon = weather.coordinates?.lon;
-    if (lat != null && lon != null) {
-      setResolved({
-        lat,
-        lon,
-        locationLabel: weather.location,
-        country: weather.country ?? '',
-      });
-      return;
-    }
+      const body = (await res.json()) as
+        | Array<{ lat?: number; lon?: number }>
+        | { lat?: number; lon?: number };
+      const first = Array.isArray(body) ? body[0] : body;
+      if (first?.lat == null || first?.lon == null) return null;
 
-    let cancelled = false;
-    void geocodeLabel(weather.location).then((coords) => {
-      if (cancelled || !coords) {
-        if (!cancelled) setResolved(null);
-        return;
-      }
-      setResolved({
-        lat: coords.lat,
-        lon: coords.lon,
-        locationLabel: weather.location,
-        country: weather.country ?? '',
-      });
-    });
+      return { lat: first.lat, lon: first.lon };
+    },
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [weather?.location, weather?.country, weather?.coordinates?.lat, weather?.coordinates?.lon]);
+  if (!label) return null;
 
-  return resolved;
+  const coords: Coords | null = hasCoords ? { lat, lon } : geocoded ?? null;
+  if (!coords) return null;
+
+  return {
+    lat: coords.lat,
+    lon: coords.lon,
+    locationLabel: label,
+    country: weather?.country ?? '',
+  };
 }

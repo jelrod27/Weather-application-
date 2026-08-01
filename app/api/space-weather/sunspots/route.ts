@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface SunspotData {
   timestamp: string;
@@ -131,7 +132,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Sunspot Data API error:', error);
+    logRouteError('space-weather/sunspots', error);
 
     return NextResponse.json({
       data: {

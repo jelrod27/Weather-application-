@@ -12,7 +12,7 @@ import {
   pickImagesForContent,
   type ImagePlacement,
 } from './content-match';
-import { passesNarrativeFit } from './narrative-fit';
+import { imageGateFor, type DraftImageGate } from './image-selection';
 import { fetchPastWeekQuakes } from './data/earthquakes';
 import { fetchForecastOutlook } from './data/forecast';
 import { fetchPastWeekWarnings, MesonetEmptyError } from './data/mesonet';
@@ -249,6 +249,7 @@ export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<S
   const heroImage = heroImageForLane(primaryLane);
   const secondaryLane = chooseSecondaryLane(opts, primaryLane);
   const judge = opts.judge ?? pickImagesForContent;
+  const gate = imageGateFor(opts.draft);
 
   // Lead lanes only — the candidate pool is scoped to the dominant stories so the
   // judge can match the prose without a side topic sneaking in.
@@ -270,9 +271,9 @@ export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<S
       // here: that path stamps a synthetic '##' anchor that clumps images at the
       // first heading and would let the count fill before the lane fallback below
       // can place each image next to the relevant paragraph.
-      for (const p of raw) {
+      for (const p of gate.filterPlacements(raw)) {
         if (placements.length >= targetCount) break;
-        if (usedIds.has(p.image.id) || !passesNarrativeFit(opts.draft, p.image)) continue;
+        if (usedIds.has(p.image.id)) continue;
         usedIds.add(p.image.id);
         placements.push(p);
       }
@@ -288,7 +289,7 @@ export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<S
   for (const lane of leadLanes) {
     if (placements.length >= targetCount) break;
     if (filledLanes.has(lane)) continue;
-    const image = pickLaneImage(lane, opts.draft, opts.recentImageIds, usedIds);
+    const image = pickLaneImage(lane, opts.draft, opts.recentImageIds, usedIds, gate);
     if (!image) continue;
     usedIds.add(image.id);
     filledLanes.add(lane);
@@ -299,9 +300,9 @@ export async function buildSundayImagePlan(opts: SundayImagePlanOpts): Promise<S
   // always carries imagery by filling from the pool with the closest
   // narrative-fit-safe image, still anchored to its lane's section.
   if (placements.length < targetCount) {
-    for (const image of pool) {
+    for (const image of gate.filter(pool)) {
       if (placements.length >= targetCount) break;
-      if (usedIds.has(image.id) || !passesNarrativeFit(opts.draft, image)) continue;
+      if (usedIds.has(image.id)) continue;
       usedIds.add(image.id);
       placements.push({
         image,
@@ -422,7 +423,9 @@ export function pickLaneImage(
   draft: string,
   recentImageIds: Set<string>,
   usedIds: Set<string>,
+  draftGate?: DraftImageGate,
 ): ImageEntry | null {
+  const gate = draftGate ?? imageGateFor(draft);
   const config = IMAGE_LANES[lane];
   const preferred = config.preferredIds
     .map((id) => IMAGES.find((img) => img.id === id))
@@ -440,29 +443,22 @@ export function pickLaneImage(
       rng: () => 0,
     });
 
-  // validate-post.ts rejects any embedded image that fails getNarrativeFitErrors,
-  // so the lane picker MUST honor the same gate. Without it, a lane starved by the
-  // 8-week reuse window falls back to off-topic neighbor imagery (drought, tropical,
-  // or solar art under a severe/seismic lead) that then fails validation and kills
-  // the Sunday cron before it can open the PR.
-  const fits = (img: ImageEntry): boolean => passesNarrativeFit(draft, img);
+  // Every candidate crosses the gate, so a lane starved by the 8-week reuse
+  // window can only fall back to imagery the validator also accepts — it can
+  // never reach for off-topic neighbor art (drought, tropical, or solar under a
+  // severe/seismic lead) and kill the Sunday cron at publish time.
 
-  // Tier 1: respect the reuse window, prefer curated ids, require narrative fit.
+  // Tier 1: respect the reuse window, prefer curated ids.
   const blocked = new Set([...recentImageIds, ...usedIds]);
-  const tier1 = [...preferred, ...topicPool(blocked)].find(
-    (img) => !blocked.has(img.id) && fits(img),
-  );
+  const tier1 = gate.firstFitting([...preferred, ...topicPool(blocked)], blocked);
   if (tier1) return tier1;
 
-  // Tier 2: relax the reuse window (still skip images already used in this post),
-  // but keep the narrative-fit gate.
-  const tier2 = [...preferred, ...topicPool(usedIds)].find(
-    (img) => !usedIds.has(img.id) && fits(img),
-  );
+  // Tier 2: relax the reuse window, still skipping images already used in this post.
+  const tier2 = gate.firstFitting([...preferred, ...topicPool(usedIds)], usedIds);
   if (tier2) return tier2;
 
-  // No narrative-fit-safe image for this lane — leave the slot empty rather than
-  // embed a mismatch the validator will reject.
+  // No fitting image for this lane — leave the slot empty rather than embed a
+  // mismatch the validator will reject.
   return null;
 }
 

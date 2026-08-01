@@ -7,56 +7,47 @@
  * Fetches GOES integral proton flux (>= 10 MeV) from NOAA SWPC
  */
 
-import { NextResponse } from 'next/server';
-import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { swpcSeriesRoute, SWPC_GOES_SOURCE } from '@/lib/space-weather/series-route';
 
 export interface ProtonFluxEntry {
   time: string;
   flux: number;
 }
 
-export async function GET() {
-  try {
-    const data = await fetchSwpcJson<Array<{
-      time_tag: string;
-      satellite: string;
-      flux: number;
-      energy: string;
-    }>>('https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json');
+interface RawProtonFluxRow {
+  time_tag: string;
+  satellite: string;
+  flux: number;
+  energy: string;
+}
 
-    const series: ProtonFluxEntry[] = [];
+export const GET = swpcSeriesRoute<RawProtonFluxRow, ProtonFluxEntry>({
+  context: 'Proton Flux',
+  url: 'https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json',
+  source: SWPC_GOES_SOURCE,
+  errorMessage: 'Failed to fetch proton flux data',
+  toPoint: (row) => {
+    // Exactly the >=10 MeV channel. SWPC's integral channels are cumulative and
+    // share time_tags, so accepting every channel at or above 10 (>=50, >=100…)
+    // interleaves several series into one array with duplicate timestamps.
+    const energy = parseEnergyMev(row.energy);
+    if (energy !== 10) return null;
 
-    for (const entry of data) {
-      // Filter for energy >= 10 MeV only
-      const energyValue = parseFloat(entry.energy);
-      if (isNaN(energyValue) || energyValue < 10) continue;
+    const flux = row.flux;
+    if (flux == null || Number.isNaN(flux)) return null;
 
-      const flux = entry.flux;
-      if (flux == null || isNaN(flux)) continue;
+    return { time: row.time_tag, flux };
+  },
+});
 
-      series.push({
-        time: entry.time_tag,
-        flux,
-      });
-    }
-
-    return NextResponse.json(
-      {
-        data: series,
-        source: 'NOAA Space Weather Prediction Center (GOES)',
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
-        },
-      }
-    );
-  } catch (error) {
-    console.error('[Proton Flux]', error);
-
-    return NextResponse.json(
-      { error: 'Failed to fetch proton flux data' },
-      { status: 500 }
-    );
-  }
+/**
+ * SWPC labels these channels with a comparator, e.g. ">=10 MeV". A bare
+ * parseFloat on that string returns NaN, which dropped every row — so the
+ * comparator is stripped before parsing. Plain numeric strings parse exactly
+ * as they did before; this only stops discarding rows that were meant to be
+ * kept.
+ */
+function parseEnergyMev(energy: string): number | null {
+  const value = parseFloat(String(energy).replace(/^[^\d.+-]*/, ''));
+  return Number.isNaN(value) ? null : value;
 }

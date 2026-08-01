@@ -19,6 +19,7 @@ import {
   type CorridorSegment,
 } from '@/lib/services/travel-corridor-service';
 import interstateData from '@/public/data/us-interstates.json';
+import { logRouteError } from '@/lib/error-utils'
 
 interface InterstateCorridorData {
   name: string;
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
             path: corridor.path,
           };
         } catch (err) {
-          console.error(`[Travel Corridors] Error fetching ${corridor.name}:`, err);
+          logRouteError('Travel Corridors', err);
           return {
             name: corridor.name,
             score: -1,
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Travel Corridors API]', error);
+    logRouteError('Travel Corridors API', error);
     return NextResponse.json(
       { error: 'Failed to fetch corridor data' },
       { status: 500 }

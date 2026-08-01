@@ -5,6 +5,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server'
 import { fetchRecentSpcReports } from '@/lib/services/spc-storm-reports-service'
+import { logRouteError } from '@/lib/error-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
       }
     )
   } catch (error) {
-    console.error('[storm-reports API]', error)
+    logRouteError('storm-reports API', error)
     return NextResponse.json({ error: 'Failed to fetch storm reports' }, { status: 500 })
   }
 }

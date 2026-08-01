@@ -8,8 +8,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface KpIndexData {
   timestamp: string;
@@ -30,11 +31,11 @@ export interface KpIndexData {
 export async function GET() {
   try {
     const [kpResponse, forecastResponse] = await Promise.allSettled([
-      fetchWithTimeout('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
+      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 300 },
       } as RequestInit),
-      fetchWithTimeout('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
+      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 900 },
       } as RequestInit),
@@ -62,7 +63,7 @@ export async function GET() {
         const forecastData = await forecastResponse.value.json();
         forecast = parseKpForecast(forecastData);
       } catch (e) {
-        console.error('[kp-index] Error parsing Kp forecast:', e);
+        logRouteError('kp-index', e);
       }
     }
 
@@ -92,7 +93,7 @@ export async function GET() {
       source: 'NOAA Space Weather Prediction Center',
     });
   } catch (error) {
-    console.error('[kp-index]', error);
+    logRouteError('kp-index', error);
 
     return NextResponse.json(
       {

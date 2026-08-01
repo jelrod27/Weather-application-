@@ -8,6 +8,7 @@ import {
   parseRtswSolarWind,
   type SolarWindCurrent,
 } from '@/lib/services/swpc-solar-wind'
+import { logRouteError } from '@/lib/error-utils'
 
 export interface SolarWindData {
   timestamp: string
@@ -53,7 +54,7 @@ export async function GET() {
       source: 'NOAA Space Weather Prediction Center (RTSW)',
     })
   } catch (error) {
-    console.error('[solar-wind]', error)
+    logRouteError('solar-wind', error)
 
     return NextResponse.json(
       {

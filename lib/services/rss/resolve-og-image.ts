@@ -3,11 +3,11 @@
  * Cached in-memory with a short TTL to avoid hammering publishers.
  */
 
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { decodeHtmlEntities } from '@/lib/services/rss/html-utils';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
-const OG_CACHE = new Map<string, { url: string | null; expires: number }>();
-const OG_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const OG_CACHE = createTtlCache<string | null>({ ttlMs: 6 * 60 * 60 * 1000 });
 const FETCH_TIMEOUT_MS = 6000;
 const MAX_HTML_BYTES = 48_000;
 
@@ -43,16 +43,16 @@ export function shouldAttemptOgImage(articleUrl: string): boolean {
 }
 
 export async function resolveOgImage(articleUrl: string): Promise<string | null> {
+  // A cached `null` is a negative result, distinct from a miss (undefined).
   const cached = OG_CACHE.get(articleUrl);
-  if (cached && cached.expires > Date.now()) return cached.url;
+  if (cached !== undefined) return cached;
 
   let resolved: string | null = null;
   if (shouldAttemptOgImage(articleUrl)) {
     resolved = await fetchOgImage(articleUrl);
   }
 
-  OG_CACHE.set(articleUrl, { url: resolved, expires: Date.now() + OG_CACHE_TTL_MS });
-  return resolved;
+  return OG_CACHE.set(articleUrl, resolved);
 }
 
 async function fetchOgImage(articleUrl: string): Promise<string | null> {

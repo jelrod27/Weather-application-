@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server'
 import { withApiRoute } from '@/lib/api/with-api-route'
 import { parseCoordinates } from '@/lib/api/query-params'
 import { fetchOpenMeteoAirQuality } from '@/lib/open-meteo'
+import { logRouteError } from '@/lib/error-utils'
 
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ request: req, rateLimitHeaders }) => {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
         },
       })
     } catch (error) {
-      console.error('[Open-Meteo Air Quality API] Error:', error)
+      logRouteError('Open-Meteo Air Quality API', error)
       return NextResponse.json(
         { error: 'Air quality service unavailable' },
         { status: 502 },

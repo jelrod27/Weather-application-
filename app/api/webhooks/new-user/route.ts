@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { notifyNewRegistration } from '@/lib/services/admin-notify-service'
+import { logRouteError } from '@/lib/error-utils'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       notifications: results,
     })
   } catch (error) {
-    console.error('[webhooks/new-user] Notification failed:', error)
+    logRouteError('webhooks/new-user', error)
     return NextResponse.json({ error: 'Failed to send notifications' }, { status: 500 })
   }
 }

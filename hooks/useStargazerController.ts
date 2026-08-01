@@ -61,6 +61,29 @@ export function useStargazerController(): UseStargazerControllerResult {
   const [isSearching, setIsSearching] = useState(false);
   const lastLoadedKeyRef = useRef<string | null>(null);
 
+  // Monotonic load id + in-flight abort. This surface resolves coordinates
+  // through geolocation, a geocode, or an imperative search box, so loads can
+  // overlap: without this guard a slow earlier response lands after a fast
+  // later one and overwrites it. useRemoteData applies the same rule for the
+  // surfaces whose load is a single keyed request.
+  const loadIdRef = useRef(0);
+  const inFlightRef = useRef<AbortController | null>(null);
+
+  // loadIdRef alone only covers work *inside* fetchData. Both callers below do
+  // async work (a geocode) BEFORE calling it, so an abandoned run's slow geocode
+  // would resolve late and start a brand-new load that then wins — a race the
+  // monotonic counter cannot see, because the stale work starts a fresh load
+  // rather than finishing an old one. intentRef versions the user-visible
+  // intent, and each caller re-checks it after every await.
+  const intentRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      loadIdRef.current += 1;
+      inFlightRef.current?.abort();
+    };
+  }, []);
+
   useEffect(() => {
     if (qParam) setSearchQuery(qParam);
   }, [qParam]);
@@ -81,6 +104,12 @@ export function useStargazerController(): UseStargazerControllerResult {
   }, []);
 
   const fetchData = useCallback(async (customLat?: number, customLon?: number, options?: { usedFallback?: boolean }) => {
+    const loadId = ++loadIdRef.current;
+    inFlightRef.current?.abort();
+    const controller = new AbortController();
+    inFlightRef.current = controller;
+    const isCurrent = () => loadId === loadIdRef.current;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -106,8 +135,11 @@ export function useStargazerController(): UseStargazerControllerResult {
         }
       }
 
+      if (!isCurrent()) return;
+
       const response = await fetch(
-        `/api/stargazer?lat=${latitude}&lon=${longitude}`
+        `/api/stargazer?lat=${latitude}&lon=${longitude}`,
+        { signal: controller.signal }
       );
 
       if (!response.ok) {
@@ -115,6 +147,7 @@ export function useStargazerController(): UseStargazerControllerResult {
       }
 
       const json = await response.json();
+      if (!isCurrent()) return;
       setData(json);
 
       if (usedFallback) {
@@ -123,12 +156,14 @@ export function useStargazerController(): UseStargazerControllerResult {
         );
       }
     } catch (err) {
+      // A load superseded by a newer one is not a failure to report.
+      if (controller.signal.aborted || !isCurrent()) return;
       console.error('[Stargazer]', err);
       setError(
         'Failed to load stargazer forecast. Please try again later.'
       );
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   }, []);
 
@@ -147,6 +182,8 @@ export function useStargazerController(): UseStargazerControllerResult {
       if (contextLabel) setSearchQuery(contextLabel);
     }
 
+    const intent = ++intentRef.current;
+
     if (urlLat != null && urlLon != null) {
       await fetchData(urlLat, urlLon);
       return;
@@ -155,6 +192,8 @@ export function useStargazerController(): UseStargazerControllerResult {
     const contextLabel = (locationInput || currentLocation)?.trim();
     if (contextLabel) {
       const coords = await geocodeLabel(contextLabel);
+      // A newer resolve started while this geocode was in flight.
+      if (intent !== intentRef.current) return;
       if (coords) {
         await fetchData(coords.lat, coords.lon);
         return;
@@ -168,14 +207,20 @@ export function useStargazerController(): UseStargazerControllerResult {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    const intent = ++intentRef.current;
+    const isCurrent = () => intent === intentRef.current;
+
     setIsSearching(true);
     try {
       const geoRes = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(searchQuery.trim())}&limit=1`);
+      // A superseded search must not write "not found" over a newer result.
+      if (!isCurrent()) return;
       if (!geoRes.ok) {
         setError('Location not found. Try a different search.');
         return;
       }
       const geoData = await geoRes.json();
+      if (!isCurrent()) return;
       const result = Array.isArray(geoData) ? geoData[0] : geoData;
       if (result?.lat != null && result?.lon != null) {
         setSearchQuery('');
@@ -184,9 +229,11 @@ export function useStargazerController(): UseStargazerControllerResult {
         setError('Location not found. Try a different search.');
       }
     } catch {
+      if (!isCurrent()) return;
       setError('Failed to search location.');
     } finally {
-      setIsSearching(false);
+      // Only the newest search owns the spinner.
+      if (isCurrent()) setIsSearching(false);
     }
   }, [searchQuery, fetchData]);
 

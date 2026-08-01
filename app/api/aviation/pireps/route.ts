@@ -10,8 +10,9 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
-import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 // PIREP data structure
 export interface PIREPData {
@@ -94,199 +95,196 @@ const CONUS_BOUNDS = {
 };
 
 export async function GET(request: NextRequest) {
-  const rateLimit = await rateLimitRequest(request);
-  if (!rateLimit.allowed) {
-    return rateLimit.response;
-  }
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
+    const { searchParams } = new URL(request.url);
 
-  const { searchParams } = new URL(request.url);
+    // Parse and validate query parameters
+    const hoursParam = parseInt(searchParams.get('hours') || '2', 10);
+    const minAltParam = parseInt(searchParams.get('minAltitude') || '0', 10);
+    const maxAltParam = parseInt(searchParams.get('maxAltitude') || '60000', 10);
+    const turbulenceOnly = searchParams.get('turbulenceOnly') === 'true';
 
-  // Parse and validate query parameters
-  const hoursParam = parseInt(searchParams.get('hours') || '2', 10);
-  const minAltParam = parseInt(searchParams.get('minAltitude') || '0', 10);
-  const maxAltParam = parseInt(searchParams.get('maxAltitude') || '60000', 10);
-  const turbulenceOnly = searchParams.get('turbulenceOnly') === 'true';
-
-  // Validate hours parameter
-  if (isNaN(hoursParam) || hoursParam < 1 || hoursParam > 6) {
-    return NextResponse.json({
-      success: false,
-      data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
-      source: 'NOAA Aviation Weather Center',
-      error: 'Invalid hours parameter. Must be between 1 and 6.',
-    }, { status: 400 });
-  }
-
-  // Validate altitude parameters
-  if (isNaN(minAltParam) || isNaN(maxAltParam) || minAltParam < 0 || maxAltParam < 0) {
-    return NextResponse.json({
-      success: false,
-      data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
-      source: 'NOAA Aviation Weather Center',
-      error: 'Invalid altitude parameters. Must be non-negative numbers.',
-    }, { status: 400 });
-  }
-
-  // Validate altitude range (min must be <= max)
-  if (minAltParam > maxAltParam) {
-    return NextResponse.json({
-      success: false,
-      data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
-      source: 'NOAA Aviation Weather Center',
-      error: 'Invalid altitude range. minAltitude must be less than or equal to maxAltitude.',
-    }, { status: 400 });
-  }
-
-  const hoursBack = Math.min(hoursParam, 6);
-  const minAltitude = minAltParam;
-  const maxAltitude = maxAltParam;
-
-  try {
-    // Fetch PIREP cache file (15 second timeout)
-    const response = await fetchWithTimeout(PIREP_CACHE_URL, {
-      timeoutMs: 15000,
-      headers: {
-        'Accept-Encoding': 'gzip',
-      },
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
-
-    if (!response.ok) {
-      throw new Error(`NOAA API returned ${response.status}`);
+    // Validate hours parameter
+    if (isNaN(hoursParam) || hoursParam < 1 || hoursParam > 6) {
+      return NextResponse.json({
+        success: false,
+        data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
+        source: 'NOAA Aviation Weather Center',
+        error: 'Invalid hours parameter. Must be between 1 and 6.',
+      }, { status: 400 });
     }
 
-    // Decompress gzip response
-    const decompressedStream = response.body?.pipeThrough(new DecompressionStream('gzip'));
-    const reader = decompressedStream?.getReader();
-
-    if (!reader) {
-      throw new Error('Failed to read PIREP data stream');
+    // Validate altitude parameters
+    if (isNaN(minAltParam) || isNaN(maxAltParam) || minAltParam < 0 || maxAltParam < 0) {
+      return NextResponse.json({
+        success: false,
+        data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
+        source: 'NOAA Aviation Weather Center',
+        error: 'Invalid altitude parameters. Must be non-negative numbers.',
+      }, { status: 400 });
     }
 
-    // Read and decode the CSV data
-    const decoder = new TextDecoder();
-    let csvText = '';
-    let reading = true;
-    while (reading) {
-      const { done, value } = await reader.read();
-      if (done) {
-        reading = false;
-      } else {
-        csvText += decoder.decode(value, { stream: true });
-      }
+    // Validate altitude range (min must be <= max)
+    if (minAltParam > maxAltParam) {
+      return NextResponse.json({
+        success: false,
+        data: { pireps: [], fetchedAt: new Date().toISOString(), count: 0, bounds: CONUS_BOUNDS },
+        source: 'NOAA Aviation Weather Center',
+        error: 'Invalid altitude range. minAltitude must be less than or equal to maxAltitude.',
+      }, { status: 400 });
     }
-    // Flush any remaining bytes in the decoder buffer
-    csvText += decoder.decode();
 
-    // Parse CSV
-    const lines = csvText.split('\n');
-    // Use parseCSVRow for headers to handle quoted values consistently
-    const headers = lines[0] ? parseCSVRow(lines[0]) : [];
+    const hoursBack = Math.min(hoursParam, 6);
+    const minAltitude = minAltParam;
+    const maxAltitude = maxAltParam;
 
-    // Find column indices
-    const colIndex: Record<string, number> = {};
-    headers.forEach((h, i) => {
-      colIndex[h.trim()] = i;
-    });
+    try {
+      // Fetch PIREP cache file (15 second timeout)
+      const response = await fetchWithTimeout(PIREP_CACHE_URL, {
+        timeoutMs: 15000,
+        headers: {
+          'Accept-Encoding': 'gzip',
+        },
+        next: { revalidate: 300 }, // Cache for 5 minutes
+      });
 
-    const pireps: PIREPData[] = [];
-    const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
-
-    // Parse data rows
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]?.trim();
-      if (!line) continue;
-
-      const values = parseCSVRow(line);
-
-      // Extract values by column index
-      const lat = parseNum(values[colIndex['latitude']]);
-      const lon = parseNum(values[colIndex['longitude']]);
-      const alt = parseNum(values[colIndex['altitude_ft_msl']]);
-      const obsTimeStr = values[colIndex['observation_time']];
-      const turbIntensity = values[colIndex['turbulence_intensity']] || null;
-      const turbType = values[colIndex['turbulence_type']] || null;
-
-      // Skip if missing required fields
-      if (lat === null || lon === null) continue;
-
-      // Filter by CONUS bounds
-      if (lat < CONUS_BOUNDS.south || lat > CONUS_BOUNDS.north ||
-          lon < CONUS_BOUNDS.west || lon > CONUS_BOUNDS.east) {
-        continue;
+      if (!response.ok) {
+        throw new Error(`NOAA API returned ${response.status}`);
       }
 
-      // Filter by time - skip PIREPs with missing or invalid observation times
-      if (!obsTimeStr) continue;
-      const obsTime = new Date(obsTimeStr);
-      if (isNaN(obsTime.getTime()) || obsTime < cutoffTime) continue;
+      // Decompress gzip response
+      const decompressedStream = response.body?.pipeThrough(new DecompressionStream('gzip'));
+      const reader = decompressedStream?.getReader();
 
-      // Filter by altitude
-      const altitude = alt ?? 0;
-      if (altitude < minAltitude || altitude > maxAltitude) continue;
+      if (!reader) {
+        throw new Error('Failed to read PIREP data stream');
+      }
 
-      // Filter turbulence only if requested
-      if (turbulenceOnly && !turbIntensity) continue;
+      // Read and decode the CSV data
+      const decoder = new TextDecoder();
+      let csvText = '';
+      let reading = true;
+      while (reading) {
+        const { done, value } = await reader.read();
+        if (done) {
+          reading = false;
+        } else {
+          csvText += decoder.decode(value, { stream: true });
+        }
+      }
+      // Flush any remaining bytes in the decoder buffer
+      csvText += decoder.decode();
 
-      // Generate stable ID from PIREP data to maintain identity across refreshes
-      const stableId = `pirep-${lat.toFixed(4)}-${lon.toFixed(4)}-${altitude}-${obsTimeStr}`;
+      // Parse CSV
+      const lines = csvText.split('\n');
+      // Use parseCSVRow for headers to handle quoted values consistently
+      const headers = lines[0] ? parseCSVRow(lines[0]) : [];
 
-      const pirep: PIREPData = {
-        id: stableId,
-        receiptTime: values[colIndex['receipt_time']] || '',
-        observationTime: obsTimeStr || '',
-        aircraftRef: values[colIndex['aircraft_ref']] || '',
-        latitude: lat,
-        longitude: lon,
-        altitudeFt: altitude,
-        turbulenceType: turbType,
-        turbulenceIntensity: turbIntensity,
-        turbulenceBaseFt: parseNum(values[colIndex['turbulence_base_ft_msl']]),
-        turbulenceTopFt: parseNum(values[colIndex['turbulence_top_ft_msl']]),
-        icingType: values[colIndex['icing_type']] || null,
-        icingIntensity: values[colIndex['icing_intensity']] || null,
-        icingBaseFt: parseNum(values[colIndex['icing_base_ft_msl']]),
-        icingTopFt: parseNum(values[colIndex['icing_top_ft_msl']]),
-        tempC: parseNum(values[colIndex['temp_c']]),
-        windDir: parseNum(values[colIndex['wind_dir_degrees']]),
-        windSpeedKt: parseNum(values[colIndex['wind_speed_kt']]),
-        reportType: values[colIndex['report_type']] || 'PIREP',
-        rawText: values[colIndex['raw_text']] || '',
+      // Find column indices
+      const colIndex: Record<string, number> = {};
+      headers.forEach((h, i) => {
+        colIndex[h.trim()] = i;
+      });
+
+      const pireps: PIREPData[] = [];
+      const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
+
+      // Parse data rows
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]?.trim();
+        if (!line) continue;
+
+        const values = parseCSVRow(line);
+
+        // Extract values by column index
+        const lat = parseNum(values[colIndex['latitude']]);
+        const lon = parseNum(values[colIndex['longitude']]);
+        const alt = parseNum(values[colIndex['altitude_ft_msl']]);
+        const obsTimeStr = values[colIndex['observation_time']];
+        const turbIntensity = values[colIndex['turbulence_intensity']] || null;
+        const turbType = values[colIndex['turbulence_type']] || null;
+
+        // Skip if missing required fields
+        if (lat === null || lon === null) continue;
+
+        // Filter by CONUS bounds
+        if (lat < CONUS_BOUNDS.south || lat > CONUS_BOUNDS.north ||
+            lon < CONUS_BOUNDS.west || lon > CONUS_BOUNDS.east) {
+          continue;
+        }
+
+        // Filter by time - skip PIREPs with missing or invalid observation times
+        if (!obsTimeStr) continue;
+        const obsTime = new Date(obsTimeStr);
+        if (isNaN(obsTime.getTime()) || obsTime < cutoffTime) continue;
+
+        // Filter by altitude
+        const altitude = alt ?? 0;
+        if (altitude < minAltitude || altitude > maxAltitude) continue;
+
+        // Filter turbulence only if requested
+        if (turbulenceOnly && !turbIntensity) continue;
+
+        // Generate stable ID from PIREP data to maintain identity across refreshes
+        const stableId = `pirep-${lat.toFixed(4)}-${lon.toFixed(4)}-${altitude}-${obsTimeStr}`;
+
+        const pirep: PIREPData = {
+          id: stableId,
+          receiptTime: values[colIndex['receipt_time']] || '',
+          observationTime: obsTimeStr || '',
+          aircraftRef: values[colIndex['aircraft_ref']] || '',
+          latitude: lat,
+          longitude: lon,
+          altitudeFt: altitude,
+          turbulenceType: turbType,
+          turbulenceIntensity: turbIntensity,
+          turbulenceBaseFt: parseNum(values[colIndex['turbulence_base_ft_msl']]),
+          turbulenceTopFt: parseNum(values[colIndex['turbulence_top_ft_msl']]),
+          icingType: values[colIndex['icing_type']] || null,
+          icingIntensity: values[colIndex['icing_intensity']] || null,
+          icingBaseFt: parseNum(values[colIndex['icing_base_ft_msl']]),
+          icingTopFt: parseNum(values[colIndex['icing_top_ft_msl']]),
+          tempC: parseNum(values[colIndex['temp_c']]),
+          windDir: parseNum(values[colIndex['wind_dir_degrees']]),
+          windSpeedKt: parseNum(values[colIndex['wind_speed_kt']]),
+          reportType: values[colIndex['report_type']] || 'PIREP',
+          rawText: values[colIndex['raw_text']] || '',
+        };
+
+        pireps.push(pirep);
+      }
+
+      const result: PIREPResponse = {
+        success: true,
+        data: {
+          pireps,
+          fetchedAt: new Date().toISOString(),
+          count: pireps.length,
+          bounds: CONUS_BOUNDS,
+        },
+        source: 'NOAA Aviation Weather Center',
       };
 
-      pireps.push(pirep);
+      return NextResponse.json(result, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      });
+
+    } catch (error) {
+      logRouteError('aviation/pireps', error);
+
+      return NextResponse.json({
+        success: false,
+        data: {
+          pireps: [],
+          fetchedAt: new Date().toISOString(),
+          count: 0,
+          bounds: CONUS_BOUNDS,
+        },
+        source: 'NOAA Aviation Weather Center',
+        error: 'Unable to fetch PIREP data. Please try again later.',
+      }, { status: 500 });
     }
-
-    const result: PIREPResponse = {
-      success: true,
-      data: {
-        pireps,
-        fetchedAt: new Date().toISOString(),
-        count: pireps.length,
-        bounds: CONUS_BOUNDS,
-      },
-      source: 'NOAA Aviation Weather Center',
-    };
-
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-      },
-    });
-
-  } catch (error) {
-    console.error('PIREP API error:', error);
-
-    return NextResponse.json({
-      success: false,
-      data: {
-        pireps: [],
-        fetchedAt: new Date().toISOString(),
-        count: 0,
-        bounds: CONUS_BOUNDS,
-      },
-      source: 'NOAA Aviation Weather Center',
-      error: 'Unable to fetch PIREP data. Please try again later.',
-    }, { status: 500 });
-  }
+  })
 }

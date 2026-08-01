@@ -23,6 +23,7 @@
  * - Type-safe storage operations
  */
 
+import { LOCATION_CACHE_TTL_MS, WEATHER_CACHE_TTL_MS } from '@/lib/cache/weather-cache-policy';
 import type { WeatherData } from './types';
 import type { LocationData } from './location-service';
 import { safeStorage } from './safe-storage';
@@ -76,8 +77,8 @@ export class UserCacheService {
   private readonly STORAGE_PREFIX = 'bitweather_';
   private readonly PREFERENCES_KEY = 'user_preferences';
   private readonly WEATHER_CACHE_KEY = 'weather_cache';
-  private readonly DEFAULT_WEATHER_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-  private readonly DEFAULT_LOCATION_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly DEFAULT_WEATHER_CACHE_DURATION = WEATHER_CACHE_TTL_MS;
+  private readonly DEFAULT_LOCATION_CACHE_DURATION = LOCATION_CACHE_TTL_MS;
   private readonly MAX_CACHE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
   static getInstance(): UserCacheService {
