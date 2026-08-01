@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
 import { PLACEHOLDER_URL, PLACEHOLDER_SERVICE_KEY } from '@/lib/supabase/constants'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
+import { logRouteError } from '@/lib/error-utils'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
 
     if (error) {
-      console.error('[cron/keep-alive] Database ping failed:', error.message)
+      logRouteError('cron/keep-alive', error, { stage: 'database-ping' })
       return Response.json({ error: 'Service unavailable' }, { status: 503 })
     }
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       message: 'Database is alive',
     })
   } catch (error) {
-    console.error('[cron/keep-alive] unhandled error:', error)
+    logRouteError('cron/keep-alive', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

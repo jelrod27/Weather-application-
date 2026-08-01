@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createTtlCache } from '@/lib/cache/ttl-cache'
+import { logRouteError } from '@/lib/error-utils'
 
 const RAINVIEWER_TILE_HOST = 'https://tilecache.rainviewer.com'
 const TILE_CACHE_TTL_MS = 10 * 60 * 1000
@@ -86,11 +87,11 @@ export async function GET(
       if (stale) {
         return tileResponse(stale.body, stale.contentType, 'public, max-age=60, stale-while-revalidate=300')
       }
-      console.error('[radar-tile]', joined, error)
+      logRouteError('radar-tile', error, { tile: joined })
       return NextResponse.json({ error: 'Failed to fetch radar tile' }, { status: 502 })
     }
   } catch (error) {
-    console.error('[radar-tile]', error)
+    logRouteError('radar-tile', error)
     return NextResponse.json({ error: 'Failed to process radar tile request' }, { status: 500 })
   }
 }

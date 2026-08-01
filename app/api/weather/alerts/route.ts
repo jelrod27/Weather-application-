@@ -14,6 +14,7 @@ import {
   countsFromAlerts,
   fetchActiveAlertsDetail,
 } from '@/lib/services/nws-alerts-service'
+import { logRouteError } from '@/lib/error-utils'
 
 function parsePoint(raw: string | null): { lat: number; lon: number } | null {
   if (!raw) return null
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': cacheControl } }
     )
   } catch (error) {
-    console.error('[Alerts API]', error)
+    logRouteError('Alerts API', error)
     return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 })
   }
 }

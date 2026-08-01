@@ -9,6 +9,7 @@ import {
   stormReportSubmitSchema,
   formatStormReportValidationErrors,
 } from '@/lib/validations/storm-report'
+import { logRouteError } from '@/lib/error-utils'
 
 export async function GET() {
   try {
@@ -24,7 +25,7 @@ export async function GET() {
       if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
         return NextResponse.json({ reports: [], total: 0, note: 'storm_reports table not deployed' })
       }
-      console.error('[storm-reports GET]', error)
+      logRouteError('storm-reports GET', error)
       return NextResponse.json({ error: 'Failed to load reports' }, { status: 500 })
     }
 
@@ -37,7 +38,7 @@ export async function GET() {
       }
     )
   } catch (e) {
-    console.error('[storm-reports GET]', e)
+    logRouteError('storm-reports GET', e)
     return NextResponse.json({ error: 'Failed to load reports' }, { status: 500 })
   }
 }
@@ -97,13 +98,13 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         )
       }
-      console.error('[storm-reports POST]', error)
+      logRouteError('storm-reports POST', error)
       return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
     }
 
     return NextResponse.json({ ok: true }, { status: 201 })
   } catch (e) {
-    console.error('[storm-reports POST]', e)
+    logRouteError('storm-reports POST', e)
     return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
   }
 }

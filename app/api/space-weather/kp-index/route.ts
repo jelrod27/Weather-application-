@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface KpIndexData {
   timestamp: string;
@@ -62,7 +63,7 @@ export async function GET() {
         const forecastData = await forecastResponse.value.json();
         forecast = parseKpForecast(forecastData);
       } catch (e) {
-        console.error('[kp-index] Error parsing Kp forecast:', e);
+        logRouteError('kp-index', e);
       }
     }
 
@@ -92,7 +93,7 @@ export async function GET() {
       source: 'NOAA Space Weather Prediction Center',
     });
   } catch (error) {
-    console.error('[kp-index]', error);
+    logRouteError('kp-index', error);
 
     return NextResponse.json(
       {

@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 interface NOAAScalesResponse {
   '0': {
@@ -115,7 +116,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Space Weather Scales API error:', error);
+    logRouteError('space-weather/scales', error);
 
     return NextResponse.json({
       scales: {

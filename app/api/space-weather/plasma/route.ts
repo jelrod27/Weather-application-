@@ -4,6 +4,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { fetchRtswFeeds } from '@/lib/services/swpc-solar-wind'
+import { logRouteError } from '@/lib/error-utils'
 
 export interface PlasmaEntry {
   time: string
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
       },
     )
   } catch (error) {
-    console.error('[Plasma]', error)
+    logRouteError('Plasma', error)
 
     return NextResponse.json(
       { error: 'Failed to fetch solar wind plasma data' },

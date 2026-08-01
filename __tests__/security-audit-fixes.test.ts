@@ -87,9 +87,10 @@ describe('Fix 9: Test auth bypass gated to non-prod', () => {
 
 describe('Fix 10: RSS news route is rate-limited', () => {
   const src = readFileSync(join(__dirname, '..', 'app', 'api', 'news', 'rss', 'route.ts'), 'utf-8');
-  it('calls rateLimitRequest before aggregating feeds', () => {
-    expect(src).toContain("import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'");
-    expect(src).toContain('rateLimitRequest(request)');
-    expect(src).toMatch(/if\s*\(\s*!rateLimit\.allowed\s*\)\s*return\s*rateLimit\.response/);
+  it('runs the handler behind the shared rate-limit gate', () => {
+    // The gate moved from a hand-rolled `rateLimitRequest` call in this route
+    // to withApiRoute, which applies it before the handler runs.
+    expect(src).toContain("import { withApiRoute } from '@/lib/api/with-api-route'");
+    expect(src).toMatch(/return withApiRoute\(\s*request\s*,/);
   });
 });

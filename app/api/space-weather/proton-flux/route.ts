@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface ProtonFluxEntry {
   time: string;
@@ -52,7 +53,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('[Proton Flux]', error);
+    logRouteError('Proton Flux', error);
 
     return NextResponse.json(
       { error: 'Failed to fetch proton flux data' },

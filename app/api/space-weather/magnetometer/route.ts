@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface MagnetometerEntry {
   time: string;
@@ -50,7 +51,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('[Magnetometer]', error);
+    logRouteError('Magnetometer', error);
 
     return NextResponse.json(
       { error: 'Failed to fetch magnetometer data' },
