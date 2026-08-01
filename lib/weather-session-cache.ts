@@ -7,6 +7,7 @@
  * 3. Location-keyed weather TTL via userCacheService
  */
 
+import { WEATHER_CACHE_TTL_MS, WEATHER_SEARCH_CACHE_TTL_MS } from '@/lib/cache/weather-cache-policy'
 import { safeStorage } from '@/lib/safe-storage'
 import type { WeatherData } from '@/lib/types'
 import { userCacheService } from '@/lib/user-cache-service'
@@ -16,8 +17,8 @@ export const LAST_WEATHER_KEY = 'bitweather_weather_data'
 export const LAST_WEATHER_TS_KEY = 'bitweather_cache_timestamp'
 
 const SEARCH_CACHE_KEY = 'weather-search-cache'
-export const SEARCH_CACHE_DURATION = 5 * 60 * 1000
-export const LAST_DISPLAYED_TTL_MS = 10 * 60 * 1000
+export const SEARCH_CACHE_DURATION = WEATHER_SEARCH_CACHE_TTL_MS
+export const LAST_DISPLAYED_TTL_MS = WEATHER_CACHE_TTL_MS
 
 type SearchCacheEntry = { data: WeatherData; timestamp: number }
 

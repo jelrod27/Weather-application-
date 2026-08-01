@@ -4,6 +4,7 @@
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { createTtlCache } from '@/lib/cache/ttl-cache'
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
 import {
@@ -14,8 +15,7 @@ import {
 // Re-export domain types for any leftover route-path imports.
 export type { MetarObservation, MetarResponse } from '@/lib/aviation/metar'
 
-const metarCache = new Map<string, { data: MetarResponse; expires: number }>()
-const CACHE_TTL_MS = 10 * 60 * 1000
+const metarCache = createTtlCache<MetarResponse>({ ttlMs: 10 * 60 * 1000 })
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
     }
 
     const cached = metarCache.get(station)
-    if (cached && cached.expires > Date.now()) {
-      return NextResponse.json(cached.data, {
+    if (cached) {
+      return NextResponse.json(cached, {
         headers: {
           'X-Cache': 'HIT',
           'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
@@ -93,17 +93,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     }
 
-    metarCache.set(station, {
-      data: result,
-      expires: Date.now() + CACHE_TTL_MS,
-    })
-
-    const now = Date.now()
-    for (const [key, value] of Array.from(metarCache.entries())) {
-      if (value.expires < now) {
-        metarCache.delete(key)
-      }
-    }
+    metarCache.set(station, result)
 
     return NextResponse.json(result, {
       headers: {

@@ -17,6 +17,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/supabase/server';
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 
 // Helper to safely parse env integers with validation
 function parseEnvInt(value: string | undefined, defaultValue: number): number {
@@ -39,17 +40,16 @@ interface RateLimitEntry {
   burstResetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-// Clean up old entries periodically (every 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 300000);
+/**
+ * An entry's lifetime IS the hourly window, so the cache's expiry replaces the
+ * old `now > entry.resetTime` check and expired entries are swept on write —
+ * no import-time `setInterval`, which started a real timer in every test that
+ * imported this module.
+ *
+ * Deliberately unbounded: evicting under a size cap would let a flood of
+ * distinct identifiers push out an active limit and reset someone's quota.
+ */
+const rateLimitStore = createTtlCache<RateLimitEntry>({ ttlMs: HOURLY_WINDOW_MS });
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -88,10 +88,10 @@ export async function getClientIdentifier(request: NextRequest): Promise<string>
  */
 export function checkRateLimit(identifier: string): RateLimitResult {
   const now = Date.now();
+  // An expired entry reads as a miss, so this is the "new window" branch.
   const entry = rateLimitStore.get(identifier);
 
-  if (!entry || now > entry.resetTime) {
-    // New window or expired - create fresh entry
+  if (!entry) {
     const newEntry: RateLimitEntry = {
       count: 1,
       resetTime: now + HOURLY_WINDOW_MS,
@@ -242,7 +242,7 @@ async function getRateLimitStatus(request: NextRequest): Promise<RateLimitResult
   const now = Date.now();
   const entry = rateLimitStore.get(identifier);
 
-  if (!entry || now > entry.resetTime) {
+  if (!entry) {
     return {
       allowed: true,
       remaining: HOURLY_LIMIT,

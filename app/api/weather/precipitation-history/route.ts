@@ -9,11 +9,11 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo';
 
-// Simple in-memory cache with 1-hour TTL
-const precipitationCache = new Map<string, { data: PrecipitationResponse; expires: number }>();
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes — precipitation changes fast during active rain
+// 15 minutes — precipitation changes fast during active rain.
+const precipitationCache = createTtlCache<PrecipitationResponse>({ ttlMs: 15 * 60 * 1000 });
 
 interface PrecipitationResponse {
   currentRain: number;
@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
     const cacheKey = `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
     const cached = precipitationCache.get(cacheKey);
 
-    if (cached && cached.expires > Date.now()) {
-      return NextResponse.json(cached.data, {
+    if (cached) {
+      return NextResponse.json(cached, {
         headers: {
           'X-Cache': 'HIT',
           'Cache-Control': 'private, max-age=900',
@@ -188,18 +188,7 @@ export async function GET(request: NextRequest) {
 
     // Only cache successful responses
     if (dataAvailable) {
-      precipitationCache.set(cacheKey, {
-        data: precipitationData,
-        expires: Date.now() + CACHE_TTL_MS,
-      });
-    }
-
-    // Clean up old cache entries
-    const nowCleanup = Date.now();
-    for (const [key, value] of precipitationCache.entries()) {
-      if (value.expires < nowCleanup) {
-        precipitationCache.delete(key);
-      }
+      precipitationCache.set(cacheKey, precipitationData);
     }
 
     return NextResponse.json(precipitationData, {
