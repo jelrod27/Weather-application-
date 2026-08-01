@@ -16,8 +16,7 @@ import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils';
 
-/** Attribution strings echoed back to clients. */
-export const SWPC_SOURCE = 'NOAA Space Weather Prediction Center';
+/** Attribution echoed back to clients for GOES instrument series. */
 export const SWPC_GOES_SOURCE = 'NOAA Space Weather Prediction Center (GOES)';
 
 /**

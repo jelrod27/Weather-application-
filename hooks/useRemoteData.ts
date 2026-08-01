@@ -190,17 +190,3 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
     }, { once: true })
   })
 }
-
-/**
- * Convenience fetcher for the common case: GET a JSON endpoint, throw on a
- * non-OK status. Cancellation is wired for you.
- */
-export function jsonFetcher<T>(url: string): (signal: AbortSignal) => Promise<T> {
-  return async (signal) => {
-    const response = await fetch(url, { signal })
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`)
-    }
-    return (await response.json()) as T
-  }
-}
