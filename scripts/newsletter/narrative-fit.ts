@@ -4,9 +4,22 @@ export function proseOnly(content: string): string {
   return content.replace(/!\[[^\]]*\]\([^)]+\)\s*\n?\*[^*\n]+\*/g, '');
 }
 
+/**
+ * The prose a fit decision is made against: image markdown and its credit line
+ * removed, lowercased. Callers that check many images against one draft should
+ * compute this once and use `narrativeFitErrorsForBody` — see image-selection.ts.
+ */
+export function narrativeBody(content: string): string {
+  return proseOnly(content).toLowerCase();
+}
+
 export function getNarrativeFitErrors(content: string, image: ImageEntry): string[] {
+  return narrativeFitErrorsForBody(narrativeBody(content), image);
+}
+
+/** Rule table. `body` must already be normalized by `narrativeBody`. */
+export function narrativeFitErrorsForBody(body: string, image: ImageEntry): string[] {
   const errors: string[] = [];
-  const body = proseOnly(content).toLowerCase();
   const imageText = `${image.id} ${image.caption} ${image.topic_tags.join(' ')}`.toLowerCase();
   const hasSevereOrQuakeLead = /tornado|supercell|severe convective|spc storm|earthquake|seismic|aftershock|subduction/.test(body);
   const hasMeaningfulSpace = /geomagnetic storm|aurora|x-class|m-class|\bkp\s*[4-9]\b|kp index maxed at [4-9]/.test(body);

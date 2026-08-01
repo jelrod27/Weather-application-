@@ -1,4 +1,5 @@
 import type { BlogPost } from '@/lib/blog';
+import { parseModelJsonArray, parseModelJsonObject } from './model-json';
 
 export const DEFAULT_MODEL = process.env.NEWSLETTER_MODEL || 'claude-sonnet-4-6';
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
@@ -191,46 +192,5 @@ export function checkOpenerCollision(currentHash: string, priorHashes: string[])
   return priorHashes.includes(currentHash);
 }
 
-function parseJsonArray(raw: string): string[] {
-  const stripped = stripFence(raw);
-  try {
-    const parsed = JSON.parse(stripped);
-    if (Array.isArray(parsed)) {
-      return parsed.filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean);
-    }
-  } catch {
-    // fall through
-  }
-  return [];
-}
-
-function parseJsonObject(raw: string): Record<string, unknown> {
-  const stripped = stripFence(raw);
-  try {
-    const parsed = JSON.parse(stripped);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
-    }
-  } catch {
-    // fall through
-  }
-  return {};
-}
-
-function stripFence(raw: string): string {
-  const trimmed = raw.trim();
-  const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  if (fenceMatch) return fenceMatch[1].trim();
-  // Sometimes the model adds prose before the JSON; grab the largest
-  // brace-or-bracket block.
-  const objStart = trimmed.indexOf('{');
-  const arrStart = trimmed.indexOf('[');
-  let start = -1;
-  if (objStart !== -1 && (arrStart === -1 || objStart < arrStart)) start = objStart;
-  else if (arrStart !== -1) start = arrStart;
-  if (start !== -1) {
-    const close = start === trimmed.indexOf('{') ? trimmed.lastIndexOf('}') : trimmed.lastIndexOf(']');
-    if (close > start) return trimmed.slice(start, close + 1);
-  }
-  return trimmed;
-}
+const parseJsonArray = parseModelJsonArray;
+const parseJsonObject = parseModelJsonObject;
