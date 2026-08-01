@@ -1,86 +1,13 @@
 /**
  * Weather API Module - Barrel Export
  *
- * This module re-exports all weather-related functions for backward compatibility.
- * Import from 'lib/weather' instead of 'lib/weather-api' for the new modular structure.
+ * Re-exports only what callers actually import through this path. Everything
+ * else was re-exported here for "backward compatibility" that nothing used —
+ * 28 dead symbols that knip 6.23 did not detect and 6.29 does. Import the
+ * owning module directly (./weather-utils, ./weather-geocoding, …) rather than
+ * widening this surface again.
  */
 
-// ============================================================================
-// Main Weather Functions
-// ============================================================================
+export { fetchWeatherData, fetchWeatherByLocation } from './weather-current';
 
-export {
-  fetchWeatherData,
-  fetchWeatherByLocation
-} from './weather-current';
-
-// ============================================================================
-// Geocoding Functions
-// ============================================================================
-
-export {
-  parseLocationInput,
-  geocodeLocation,
-  getLocationNotFoundError,
-  type LocationQuery,
-  type GeocodingResponse,
-  type GeocodedLocation
-} from './weather-geocoding';
-
-// ============================================================================
-// Forecast Functions
-// ============================================================================
-
-export {
-  processDailyForecastFromOpenMeteo,
-  fetchPollenData,
-  fetchAirQualityData,
-  type DailyForecast,
-  type AirQualityPollutants
-} from './weather-forecast';
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-export {
-  // API URL Helper
-  getApiUrl,
-
-  // Unit System Detection
-  shouldUseMetricUnits,
-  isUSALocation,
-  shouldUseFahrenheit,
-  shouldUseInchesOfMercury,
-
-  // Temperature Functions
-  celsiusToFahrenheit,
-  fahrenheitToCelsius,
-  formatTemperature,
-  calculateDewPoint,
-
-  // Wind Functions
-  getCompassDirection,
-  getWindDirection,
-
-  // Time Functions
-  formatTime,
-
-  // Pressure Functions
-  formatPressureByRegion,
-
-  // UV Index Functions
-  getUVDescription,
-
-  // Moon Phase Functions
-  calculateMoonPhase,
-
-  // Weather Condition Mapping
-  mapWeatherCondition,
-
-  // Input Normalization
-  normalizeInput,
-
-  // Types
-  type MoonPhaseInfo
-} from './weather-utils';
+export type { GeocodingResponse } from './weather-geocoding';
