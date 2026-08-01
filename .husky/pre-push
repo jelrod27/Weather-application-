@@ -1,12 +1,38 @@
 #!/usr/bin/env sh
-# Block pushes that contain secrets anywhere in unpushed commits.
-# Backstop in case pre-commit was bypassed (--no-verify) or a different machine
-# committed without gitleaks installed.
+# Two gates before anything leaves this machine:
+#   1. Secret scan over the unpushed commits.
+#   2. Type check, so a red CI run isn't the first sign of a type error.
+#
+# Kept at push time rather than commit time: the type check costs a few seconds,
+# which is fine once per push but not on every commit.
+#
+# Bypass in a true emergency with `git push --no-verify`.
+
+# git feeds pre-push "<local ref> <local sha> <remote ref> <remote sha>" per ref.
+# A branch deletion has an all-zero local sha and nothing worth checking.
+refs="$(cat)"
+if [ -n "$refs" ]; then
+  deleting_only=1
+  while read -r _local_ref local_sha _rest; do
+    [ -z "$local_sha" ] && continue
+    case "$local_sha" in
+      *[!0]*) deleting_only=0 ;;
+    esac
+  done <<EOF
+$refs
+EOF
+  if [ "$deleting_only" = "1" ]; then
+    exit 0
+  fi
+fi
+
+# ── 1. Secrets ───────────────────────────────────────────────────────────────
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "[pre-push] gitleaks not installed. Install one of:"
   echo "  - macOS:        brew install gitleaks"
   echo "  - Debian/Ubuntu: sudo apt-get install gitleaks"
+  echo "  - Arch:         sudo pacman -S gitleaks"
   echo "  - Other:        https://github.com/gitleaks/gitleaks#installing"
   echo "[pre-push] refusing to push without a secret scan"
   exit 1
@@ -17,7 +43,32 @@ fi
 # history as a safe fallback.
 upstream="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)"
 if [ -n "$upstream" ]; then
-  gitleaks git --log-opts="${upstream}..HEAD" --redact -v --no-banner
+  gitleaks git --log-opts="${upstream}..HEAD" --redact -v --no-banner || exit 1
 else
-  gitleaks git --redact -v --no-banner
+  gitleaks git --redact -v --no-banner || exit 1
 fi
+
+# ── 2. Types ─────────────────────────────────────────────────────────────────
+
+if [ ! -x node_modules/.bin/tsc ]; then
+  echo "[pre-push] TypeScript not installed - run 'npm ci' before pushing."
+  echo "[pre-push] refusing to push without a type check"
+  exit 1
+fi
+
+# Same two projects CI type-checks (see .github/workflows/ci.yml). Run tsc
+# directly rather than via npm so the output is the compiler's, not a script
+# wrapper's.
+echo "[pre-push] type-checking app..."
+if ! node_modules/.bin/tsc --noEmit; then
+  echo "[pre-push] type errors above - push aborted (CI would fail on these)"
+  exit 1
+fi
+
+echo "[pre-push] type-checking tests..."
+if ! node_modules/.bin/tsc --noEmit -p tsconfig.tests.json; then
+  echo "[pre-push] type errors in tests above - push aborted"
+  exit 1
+fi
+
+echo "[pre-push] secrets + types ok"

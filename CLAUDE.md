@@ -46,7 +46,17 @@ npm run lighthouse       # Lighthouse CI only
 
 Hooks live in `.husky/` (installed via the `prepare` script):
 - `pre-commit` — gitleaks secret scan of the staged diff
-- `pre-push` — gitleaks secret scan of unpushed commits
+- `pre-push` — gitleaks secret scan of unpushed commits, then `tsc --noEmit`
+  against both `tsconfig.json` and `tsconfig.tests.json` (the same two projects
+  CI type-checks). Roughly 4s. Skipped entirely when the push only deletes refs.
+
+Both hooks hard-fail if `gitleaks` is not installed; pre-push also hard-fails if
+`node_modules/.bin/tsc` is missing (run `npm ci`). Bypass in an emergency with
+`git commit --no-verify` / `git push --no-verify`.
+
+Note: `tsconfig.json` excludes all test files and `tsconfig.tests.json` includes
+only a handful by name, so neither the hook nor CI type-checks most of
+`__tests__/`. Widening it is tracked separately.
 
 E2E (Playwright) and Lighthouse CI run in GitHub Actions
 (`.github/workflows/`), not in local hooks. Lighthouse config: `lighthouserc.js`.
