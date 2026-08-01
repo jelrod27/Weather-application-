@@ -1,18 +1,23 @@
 /**
- * Unit tests for lib/weather-search-cache.ts
+ * Search-cache and last-displayed behaviour of lib/weather-session-cache.
+ *
+ * These assertions used to run through lib/weather-search-cache, an
+ * @deprecated shim that delegated here. The shim had no production importers
+ * and knip 6.29 flagged its exports as dead, so the tests were repointed at the
+ * real module and the shim removed. Coverage is unchanged — the search-cache
+ * round-trip, unit-scoped keys, expiry and corrupted-JSON recovery are still
+ * only asserted here, not in weather-session-cache.test.ts.
+ *
  * Seeds localStorage directly (same technique as the referee suite).
  */
 
 import {
-    saveLocationToCache,
-    saveWeatherToCache,
-    addToSearchCache,
-    getFromSearchCache,
-    CACHE_KEY,
-    WEATHER_KEY,
-    CACHE_TIMESTAMP_KEY,
+    weatherSessionCache,
+    LAST_LOCATION_KEY,
+    LAST_WEATHER_KEY,
+    LAST_WEATHER_TS_KEY,
     SEARCH_CACHE_DURATION,
-} from '@/lib/weather-search-cache'
+} from '@/lib/weather-session-cache'
 import type { WeatherData } from '@/lib/types'
 
 const SEARCH_CACHE_KEY = 'weather-search-cache'
@@ -46,50 +51,48 @@ beforeEach(() => {
     localStorage.clear()
 })
 
-describe('saveLocationToCache / CACHE_KEY', () => {
-    it('persists the location string under CACHE_KEY', () => {
-        saveLocationToCache('Boston')
-        expect(localStorage.getItem(CACHE_KEY)).toBe('Boston')
+describe('saveLastDisplayed', () => {
+    it('persists the location string under LAST_LOCATION_KEY', () => {
+        weatherSessionCache.saveLastDisplayed('Boston', makeWeatherData())
+        expect(localStorage.getItem(LAST_LOCATION_KEY)).toBe('Boston')
     })
-})
 
-describe('saveWeatherToCache', () => {
     it('strips coordinates before persisting', () => {
         const data = makeWeatherData({ coordinates: { lat: 42.36, lon: -71.06 } })
-        saveWeatherToCache(data)
+        weatherSessionCache.saveLastDisplayed('Boston', data)
 
-        const raw = JSON.parse(localStorage.getItem(WEATHER_KEY)!)
+        const raw = JSON.parse(localStorage.getItem(LAST_WEATHER_KEY)!)
         expect(raw.coordinates).toBeUndefined()
         expect(raw.city).toBe('TestCity')
     })
 
-    it('writes a timestamp under CACHE_TIMESTAMP_KEY', () => {
+    it('writes a timestamp under LAST_WEATHER_TS_KEY', () => {
         const before = Date.now()
-        saveWeatherToCache(makeWeatherData())
-        const ts = parseInt(localStorage.getItem(CACHE_TIMESTAMP_KEY)!)
+        weatherSessionCache.saveLastDisplayed('Boston', makeWeatherData())
+        const ts = parseInt(localStorage.getItem(LAST_WEATHER_TS_KEY)!)
         expect(ts).toBeGreaterThanOrEqual(before)
         expect(ts).toBeLessThanOrEqual(Date.now())
     })
 })
 
-describe('addToSearchCache / getFromSearchCache', () => {
+describe('addSearch / getSearch', () => {
     it('round-trips a cached entry with unit-scoped key', () => {
         const data = makeWeatherData()
-        addToSearchCache('Boston', data, 'imperial')
+        weatherSessionCache.addSearch('Boston', data, 'imperial')
 
-        const result = getFromSearchCache('Boston', 'imperial')
+        const result = weatherSessionCache.getSearch('Boston', 'imperial')
         expect(result?.city).toBe('TestCity')
     })
 
     it('normalises case and trims whitespace in the key', () => {
         const data = makeWeatherData()
-        addToSearchCache('  Boston  ', data, 'imperial')
-        expect(getFromSearchCache('boston', 'imperial')?.city).toBe('TestCity')
+        weatherSessionCache.addSearch('  Boston  ', data, 'imperial')
+        expect(weatherSessionCache.getSearch('boston', 'imperial')?.city).toBe('TestCity')
     })
 
     it('returns null for a different unit system (cache miss)', () => {
-        addToSearchCache('Boston', makeWeatherData(), 'imperial')
-        expect(getFromSearchCache('Boston', 'metric')).toBeNull()
+        weatherSessionCache.addSearch('Boston', makeWeatherData(), 'imperial')
+        expect(weatherSessionCache.getSearch('Boston', 'metric')).toBeNull()
     })
 
     it('returns null for an entry past the 5-minute expiry', () => {
@@ -102,12 +105,12 @@ describe('addToSearchCache / getFromSearchCache', () => {
         }
         localStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(entry))
 
-        expect(getFromSearchCache('Boston', 'imperial')).toBeNull()
+        expect(weatherSessionCache.getSearch('Boston', 'imperial')).toBeNull()
     })
 
     it('recovers gracefully from corrupted JSON in localStorage', () => {
         localStorage.setItem(SEARCH_CACHE_KEY, 'not-json')
-        expect(getFromSearchCache('Boston', 'imperial')).toBeNull()
+        expect(weatherSessionCache.getSearch('Boston', 'imperial')).toBeNull()
         // Should not throw
     })
 })
