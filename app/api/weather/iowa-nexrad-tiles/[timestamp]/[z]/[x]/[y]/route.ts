@@ -19,7 +19,7 @@ const COORD_RE = /^\d+$/                // tile x or y, non-negative integer
 // timestamp format: YYYYMMDD-HHMM (e.g., 20251011-2050)
 export async function GET(request: NextRequest,
   { params }: { params: Promise<{ timestamp: string; z: string; x: string; y: string }> }) {
-  return withApiRoute(request, async ({ rateLimitHeaders }) => {
+  return withApiRoute(request, async () => {
     const { timestamp, z, x, y } = await params
 
     // Validation 400s still need CORS headers — without them, allowed browser

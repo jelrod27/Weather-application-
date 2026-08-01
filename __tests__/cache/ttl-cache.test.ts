@@ -79,15 +79,35 @@ describe('createTtlCache', () => {
     expect(cache.get('third')).toBe(3);
   });
 
-  it('sweeps expired entries on write rather than leaving them to accumulate', () => {
+  it('sweeps expired entries on every write when bounded', () => {
     const c = clock();
-    const cache = createTtlCache<number>({ ttlMs: 100, now: c.now });
+    const cache = createTtlCache<number>({ ttlMs: 100, maxEntries: 50, now: c.now });
 
     cache.set('a', 1);
     cache.set('b', 2);
     expect(cache.size).toBe(2);
 
     c.advance(500);
+    cache.set('c', 3);
+    expect(cache.size).toBe(1);
+  });
+
+  it('defers the sweep on an unbounded cache instead of rescanning every write', () => {
+    // An unbounded store keyed by client identifier (the rate limiter) must not
+    // pay an O(n) scan per write, or a flood of distinct keys becomes quadratic.
+    const c = clock();
+    const cache = createTtlCache<number>({ ttlMs: 100, now: c.now });
+
+    cache.set('a', 1);
+    c.advance(500);
+
+    cache.set('b', 2);
+    // 'a' has expired but has not been swept yet — writes stay O(1).
+    expect(cache.size).toBe(2);
+    // It is still never *served*, which is what matters for correctness.
+    expect(cache.get('a')).toBeUndefined();
+
+    c.advance(60_000);
     cache.set('c', 3);
     expect(cache.size).toBe(1);
   });

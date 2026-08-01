@@ -32,7 +32,10 @@ export function useHubLocation(weather: WeatherData | null): HubUserLocation | n
         `/api/weather/geocoding?q=${encodeURIComponent(label ?? '')}&limit=1`,
         { signal },
       );
-      if (!res.ok) return null;
+      // Throw rather than return null: a rejected load is not cached, so a
+      // transient geocoding failure doesn't blank the hub's coordinates for the
+      // full hour. Only a genuine no-result is cached as null.
+      if (!res.ok) throw new Error(`geocoding failed: ${res.status}`);
 
       const body = (await res.json()) as
         | Array<{ lat?: number; lon?: number }>

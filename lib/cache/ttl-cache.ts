@@ -70,11 +70,26 @@ export function createTtlCache<T>(options: TtlCacheOptions): TtlCache<T> {
   const isFresh = (entry: Entry<T>, at: number): boolean => at <= entry.expiresAt;
   const isUsable = (entry: Entry<T>, at: number): boolean => at <= entry.expiresAt + staleMs;
 
+  // An unbounded cache cannot afford a full sweep per write. The rate-limit
+  // store is keyed by client identifier, so a flood of distinct identifiers
+  // would make each new key's first request an O(n) scan over every identifier
+  // in the window — quadratic overall, turning the limiter into a CPU amplifier
+  // under exactly the traffic it exists to defend against. Bounded caches sweep
+  // on every write (the scan is capped by maxEntries); unbounded ones sweep at
+  // most once per interval. Reads expire entries individually regardless, so a
+  // stale value is never served either way.
+  const SWEEP_INTERVAL_MS = 60_000;
+  let lastSweptAt = Number.NEGATIVE_INFINITY;
+
   /** Drops entries past their stale window, then enforces the size bound. */
   const prune = (): void => {
     const at = now();
-    for (const [key, entry] of entries) {
-      if (!isUsable(entry, at)) entries.delete(key);
+
+    if (maxEntries !== undefined || at - lastSweptAt >= SWEEP_INTERVAL_MS) {
+      lastSweptAt = at;
+      for (const [key, entry] of entries) {
+        if (!isUsable(entry, at)) entries.delete(key);
+      }
     }
 
     if (maxEntries === undefined) return;

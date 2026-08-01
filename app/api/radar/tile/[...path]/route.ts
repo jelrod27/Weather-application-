@@ -48,9 +48,12 @@ async function fetchTileFromRainViewer(joined: string): Promise<CachedTile> {
     })
 
     if (!response.ok) {
-      // Being rate-limited is exactly when a stale tile beats an error.
-      const stale = tileCache.getStale(joined)
-      if (response.status === 429 && stale) return stale
+      // Deliberately does NOT return a stale tile here. cache.load() stores
+      // whatever the loader resolves to, which would re-stamp the old bytes as
+      // freshly fetched and let a persistently 429ing tile stay "fresh" forever,
+      // past the stale ceiling. Throwing hands the stale fallback to the GET
+      // handler's catch, which serves it via getStale (no re-stamp) with the
+      // weaker cache-control it deserves.
       throw new Error(`RainViewer tile fetch failed: ${response.status}`)
     }
 

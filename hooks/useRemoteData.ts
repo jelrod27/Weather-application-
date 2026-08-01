@@ -84,7 +84,13 @@ export function useRemoteData<T>(options: RemoteDataOptions<T>): RemoteDataState
   const loadIdRef = useRef(0)
   const [reloadToken, setReloadToken] = useState(0)
 
+  // One-shot, not "reloadToken > 0": the token never resets, so testing it would
+  // skip the cache read for every later load — including loads for a different
+  // key — leaving a cache that is written but never read.
+  const bypassCacheRef = useRef(false)
+
   const refresh = useCallback(() => {
+    bypassCacheRef.current = true
     setReloadToken((n) => n + 1)
   }, [])
 
@@ -102,7 +108,9 @@ export function useRemoteData<T>(options: RemoteDataOptions<T>): RemoteDataState
     const isCurrent = () => loadId === loadIdRef.current && !controller.signal.aborted
 
     const cache = cacheTtlMs ? cacheFor(cacheTtlMs) : null
-    const cached = reloadToken === 0 ? (cache?.get(key) as T | undefined) : undefined
+    const bypassCache = bypassCacheRef.current
+    bypassCacheRef.current = false
+    const cached = bypassCache ? undefined : (cache?.get(key) as T | undefined)
 
     if (cached !== undefined) {
       setData(cached)

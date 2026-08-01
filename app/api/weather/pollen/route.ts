@@ -174,7 +174,15 @@ export async function GET(request: NextRequest) {
             }
           }
         } catch (error) {
-          logRouteError('pollen', error);
+          // googlePollenUrl carries GOOGLE_POLLEN_API_KEY in its query string,
+          // and an upstream fetch error can embed the request URL in its
+          // message or stack. Report the shape of the failure rather than the
+          // error object so the key cannot reach Sentry. (Same reasoning as the
+          // NASA DONKI key note in space-weather/flares.)
+          logRouteError('pollen', new Error('Google Pollen request failed'), {
+            upstream: 'pollen.googleapis.com',
+            reason: error instanceof Error ? error.name : typeof error,
+          });
         }
       }
 

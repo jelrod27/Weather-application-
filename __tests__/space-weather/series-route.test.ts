@@ -141,21 +141,21 @@ describe('magnetometer route', () => {
 });
 
 describe('proton-flux route', () => {
-  it('keeps only the >= 10 MeV channel, parsing SWPC comparator labels', async () => {
-    // SWPC labels the channel ">=10 MeV". A bare parseFloat on that returns
-    // NaN, which previously dropped every row and left the series empty.
+  it('isolates the >=10 MeV channel, parsing SWPC comparator labels', async () => {
+    // Two things at once: a bare parseFloat on ">=10 MeV" returns NaN, which
+    // dropped every row and left the series empty; and SWPC's integral channels
+    // are cumulative and share time_tags, so accepting everything at or above 10
+    // would interleave >=50/>=100 into one array with duplicate timestamps.
     const { GET } = await import('@/app/api/space-weather/proton-flux/route');
     mockFetch.mockResolvedValue([
       { time_tag: 't1', satellite: '18', flux: 0.5, energy: '>=10 MeV' },
+      { time_tag: 't1', satellite: '18', flux: 0.2, energy: '>=50 MeV' },
       { time_tag: 't2', satellite: '18', flux: 0.9, energy: '>=1 MeV' },
-      { time_tag: 't3', satellite: '18', flux: 0.7, energy: '>=100 MeV' },
+      { time_tag: 't1', satellite: '18', flux: 0.7, energy: '>=100 MeV' },
     ]);
 
     const body = await (await GET()).json();
-    expect(body.data).toEqual([
-      { time: 't1', flux: 0.5 },
-      { time: 't3', flux: 0.7 },
-    ]);
+    expect(body.data).toEqual([{ time: 't1', flux: 0.5 }]);
   });
 
   it('still parses a plain numeric energy label', async () => {

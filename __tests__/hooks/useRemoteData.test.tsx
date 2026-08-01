@@ -227,4 +227,40 @@ describe('useRemoteData', () => {
     await waitFor(() => expect(result.current.data).toBe('two'))
     expect(fetcher).toHaveBeenCalledTimes(2)
   })
+
+  it('bypasses the cache for one load only, not permanently', async () => {
+    // A bypass keyed off "have we ever refreshed" never resets, which would skip
+    // the cache read for every subsequent load and leave a write-only cache.
+    const fetcher = jest
+      .fn<Promise<string>, [AbortSignal]>()
+      .mockResolvedValueOnce('one')
+      .mockResolvedValueOnce('two')
+      .mockResolvedValueOnce('three')
+
+    const ttl = 60_000
+    const { result, rerender } = renderHook(
+      ({ k }: { k: string }) =>
+        useRemoteData<string>({ key: k, fetcher, cacheTtlMs: ttl }),
+      { initialProps: { k: 'one-shot:a' } },
+    )
+
+    await waitFor(() => expect(result.current.data).toBe('one'))
+
+    act(() => {
+      result.current.refresh()
+    })
+    await waitFor(() => expect(result.current.data).toBe('two'))
+    expect(fetcher).toHaveBeenCalledTimes(2)
+
+    // A different key loads and caches normally...
+    rerender({ k: 'one-shot:b' })
+    await waitFor(() => expect(result.current.data).toBe('three'))
+    expect(fetcher).toHaveBeenCalledTimes(3)
+
+    // ...and coming back to the refreshed key is served from cache, proving the
+    // bypass did not stick.
+    rerender({ k: 'one-shot:a' })
+    expect(result.current.data).toBe('two')
+    expect(fetcher).toHaveBeenCalledTimes(3)
+  })
 })

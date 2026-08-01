@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 // Proxy NOAA MRMS WMS tiles to bypass CORS restrictions
 // GET /api/weather/noaa-wms?REQUEST=GetMap&SERVICE=WMS&...
 export async function GET(request: NextRequest) {
-  return withApiRoute(request, async ({ rateLimitHeaders }) => {
+  return withApiRoute(request, async () => {
     try {
       const { searchParams } = new URL(request.url)
     

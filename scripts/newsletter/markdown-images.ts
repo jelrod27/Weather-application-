@@ -17,16 +17,29 @@ export interface MarkdownImage {
   url: string;
 }
 
+export interface LinkDestination {
+  /** The destination itself, without any `<>` delimiters. */
+  url: string;
+  /** Index just past the closing `)`, so callers can resume scanning there. */
+  endIndex: number;
+}
+
 /**
  * Reads a link destination starting at `start` (the character after the
- * opening `(`). Returns the raw destination, or null when it is unterminated.
- * Handles `<...>` bracketed destinations and balanced nested parentheses.
+ * opening `(`). Returns null when it is unterminated.
+ *
+ * Returns `endIndex` rather than leaving callers to derive it: for a `<...>`
+ * destination the returned url excludes both delimiters, so `start + url.length`
+ * lands two characters short of the closing `)` and the scan resumes inside the
+ * text it was supposed to consume.
  */
-export function readLinkDestination(content: string, start: number): string | null {
+export function readLinkDestination(content: string, start: number): LinkDestination | null {
   if (content[start] === '<') {
-    const end = content.indexOf('>', start + 1);
-    if (end === -1) return null;
-    return content.slice(start + 1, end);
+    const close = content.indexOf('>', start + 1);
+    if (close === -1) return null;
+    const paren = content.indexOf(')', close + 1);
+    if (paren === -1) return null;
+    return { url: content.slice(start + 1, close), endIndex: paren + 1 };
   }
 
   let depth = 0;
@@ -41,7 +54,7 @@ export function readLinkDestination(content: string, start: number): string | nu
       continue;
     }
     if (ch === ')') {
-      if (depth === 0) return content.slice(start, i);
+      if (depth === 0) return { url: content.slice(start, i), endIndex: i + 1 };
       depth -= 1;
       continue;
     }
@@ -56,11 +69,10 @@ export function extractMarkdownImages(content: string): MarkdownImage[] {
   const startRx = /!\[([^\]]*)\]\(/g;
   let match: RegExpExecArray | null;
   while ((match = startRx.exec(content)) !== null) {
-    const destStart = match.index + match[0].length;
-    const url = readLinkDestination(content, destStart);
-    if (url === null) continue;
-    images.push({ alt: match[1], url: url.trim() });
-    startRx.lastIndex = destStart + url.length + 1;
+    const dest = readLinkDestination(content, match.index + match[0].length);
+    if (dest === null) continue;
+    images.push({ alt: match[1], url: dest.url.trim() });
+    startRx.lastIndex = dest.endIndex;
   }
   return images;
 }
@@ -95,14 +107,13 @@ export function stripImageMarkdown(content: string): string {
       continue;
     }
 
-    const destStart = afterBracket + 1;
-    const url = readLinkDestination(content, destStart);
+    const dest = readLinkDestination(content, afterBracket + 1);
     // Unterminated destination — leave the text alone rather than eating the
     // rest of the draft.
-    if (url === null) continue;
+    if (dest === null) continue;
 
     out += content.slice(cursor, match.index);
-    cursor = destStart + url.length + 1;
+    cursor = dest.endIndex;
     startRx.lastIndex = cursor;
   }
 

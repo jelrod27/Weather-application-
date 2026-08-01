@@ -81,4 +81,22 @@ describe('imageGateFor', () => {
     const withEmbeddedSolar = `${SEVERE_QUAKE_DRAFT}\n\n![Solar corona](https://example.com/sdo.jpg)\n*NASA SDO*`;
     expect(imageGateFor(withEmbeddedSolar).accepts(byId('sdo-current-193'))).toBe(false);
   });
+
+  it('strips an embedded image whose URL contains literal parens', () => {
+    // A `[^)]+` destination class cannot cross a `)`, so a Wikimedia
+    // Special:FilePath URL left the whole block in the body and its alt text
+    // then leaked keywords into the verdict for other images.
+    const draft = [
+      SEVERE_QUAKE_DRAFT,
+      '',
+      '![Aurora over the pole](https://upload.wikimedia.org/Special:FilePath/Aurora (SDO 2019).jpg)',
+      '*NASA*',
+    ].join('\n');
+
+    // The aurora/solar keywords live only inside the stripped image block, so
+    // the seismic lead must still reject solar imagery.
+    expect(imageGateFor(draft).accepts(byId('sdo-current-193'))).toBe(false);
+    // And on-topic imagery is unaffected.
+    expect(imageGateFor(draft).accepts(byId('mesocyclone-diagram'))).toBe(true);
+  });
 });

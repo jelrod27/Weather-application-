@@ -28,6 +28,18 @@ describe('extractMarkdownImages', () => {
     expect(images[0].url).toBe('https://example.com/a b.png');
   });
 
+  it('resumes scanning past an angle-bracketed destination', () => {
+    // The returned url excludes `<` and `>`, so deriving the next scan position
+    // from its length alone lands two characters short of the closing `)`.
+    const images = extractMarkdownImages(
+      '![A](<https://e.com/a b.png>) then ![B](https://e.com/b.png)',
+    );
+    expect(images.map((i) => i.url)).toEqual([
+      'https://e.com/a b.png',
+      'https://e.com/b.png',
+    ]);
+  });
+
   it('reads several images in document order', () => {
     const content = `![One](https://example.com/1.png)\n\ntext\n\n![Two](${PARENTHESISED_URL})`;
     expect(extractMarkdownImages(content).map((i) => i.url)).toEqual([
@@ -92,5 +104,15 @@ describe('stripImageMarkdown', () => {
   it('leaves non-image links intact', () => {
     const draft = 'See [the outlook](https://example.com/outlook) for details.';
     expect(stripImageMarkdown(draft)).toBe(draft);
+  });
+
+  it('strips an angle-bracketed image whole, leaving no `>)` behind', () => {
+    const out = stripImageMarkdown(
+      'Intro.\n\n![Sea ice](<https://example.com/pic (1).jpg>)\n\nOutro.',
+    );
+    expect(out).not.toContain('>');
+    expect(out).not.toContain(')');
+    expect(out).toContain('Intro.');
+    expect(out).toContain('Outro.');
   });
 });

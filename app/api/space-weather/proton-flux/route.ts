@@ -27,8 +27,11 @@ export const GET = swpcSeriesRoute<RawProtonFluxRow, ProtonFluxEntry>({
   source: SWPC_GOES_SOURCE,
   errorMessage: 'Failed to fetch proton flux data',
   toPoint: (row) => {
+    // Exactly the >=10 MeV channel. SWPC's integral channels are cumulative and
+    // share time_tags, so accepting every channel at or above 10 (>=50, >=100…)
+    // interleaves several series into one array with duplicate timestamps.
     const energy = parseEnergyMev(row.energy);
-    if (energy === null || energy < 10) return null;
+    if (energy !== 10) return null;
 
     const flux = row.flux;
     if (flux == null || Number.isNaN(flux)) return null;

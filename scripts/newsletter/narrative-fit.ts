@@ -1,7 +1,37 @@
 import type { ImageEntry } from './images';
+import { readLinkDestination } from './markdown-images';
 
+/**
+ * The draft with embedded image blocks (and the italic credit line that follows
+ * one) removed, so fit rules judge the prose rather than the alt text and URL of
+ * images already placed.
+ *
+ * Uses the shared balanced-paren reader: a `[^)]+` destination class cannot
+ * cross a literal `)`, so a Wikimedia Special:FilePath URL left the whole image
+ * block in the body and its keywords then skewed the verdict for every other
+ * image checked against the same gate.
+ */
 export function proseOnly(content: string): string {
-  return content.replace(/!\[[^\]]*\]\([^)]+\)\s*\n?\*[^*\n]+\*/g, '');
+  let out = '';
+  let cursor = 0;
+  const startRx = /!\[[^\]]*\]\(/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = startRx.exec(content)) !== null) {
+    if (match.index < cursor) continue;
+
+    const dest = readLinkDestination(content, match.index + match[0].length);
+    if (dest === null) continue;
+
+    out += content.slice(cursor, match.index);
+
+    // Drop the `*credit*` line immediately after the image, when present.
+    const credit = content.slice(dest.endIndex).match(/^[ \t]*\n?\*[^*\n]+\*/);
+    cursor = dest.endIndex + (credit ? credit[0].length : 0);
+    startRx.lastIndex = cursor;
+  }
+
+  return out + content.slice(cursor);
 }
 
 /**
