@@ -61,6 +61,21 @@ export function useStargazerController(): UseStargazerControllerResult {
   const [isSearching, setIsSearching] = useState(false);
   const lastLoadedKeyRef = useRef<string | null>(null);
 
+  // Monotonic load id + in-flight abort. This surface resolves coordinates
+  // through geolocation, a geocode, or an imperative search box, so loads can
+  // overlap: without this guard a slow earlier response lands after a fast
+  // later one and overwrites it. useRemoteData applies the same rule for the
+  // surfaces whose load is a single keyed request.
+  const loadIdRef = useRef(0);
+  const inFlightRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      loadIdRef.current += 1;
+      inFlightRef.current?.abort();
+    };
+  }, []);
+
   useEffect(() => {
     if (qParam) setSearchQuery(qParam);
   }, [qParam]);
@@ -81,6 +96,12 @@ export function useStargazerController(): UseStargazerControllerResult {
   }, []);
 
   const fetchData = useCallback(async (customLat?: number, customLon?: number, options?: { usedFallback?: boolean }) => {
+    const loadId = ++loadIdRef.current;
+    inFlightRef.current?.abort();
+    const controller = new AbortController();
+    inFlightRef.current = controller;
+    const isCurrent = () => loadId === loadIdRef.current;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -106,8 +127,11 @@ export function useStargazerController(): UseStargazerControllerResult {
         }
       }
 
+      if (!isCurrent()) return;
+
       const response = await fetch(
-        `/api/stargazer?lat=${latitude}&lon=${longitude}`
+        `/api/stargazer?lat=${latitude}&lon=${longitude}`,
+        { signal: controller.signal }
       );
 
       if (!response.ok) {
@@ -115,6 +139,7 @@ export function useStargazerController(): UseStargazerControllerResult {
       }
 
       const json = await response.json();
+      if (!isCurrent()) return;
       setData(json);
 
       if (usedFallback) {
@@ -123,12 +148,14 @@ export function useStargazerController(): UseStargazerControllerResult {
         );
       }
     } catch (err) {
+      // A load superseded by a newer one is not a failure to report.
+      if (controller.signal.aborted || !isCurrent()) return;
       console.error('[Stargazer]', err);
       setError(
         'Failed to load stargazer forecast. Please try again later.'
       );
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   }, []);
 
