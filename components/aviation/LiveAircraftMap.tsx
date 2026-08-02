@@ -7,7 +7,22 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl';
+import {
+  GeolocateControl,
+  LngLatBounds,
+  Map as MapLibreMap,
+  NavigationControl,
+  type GeoJSONSource,
+  type MapOptions,
+} from 'maplibre-gl';
+
+/**
+ * maplibre-gl 6 dropped the default export and no longer re-exports
+ * StyleSpecification (it lives in @maplibre/maplibre-gl-style-spec now).
+ * Derive it from MapOptions so this stays correct without taking a direct
+ * dependency on the style-spec package.
+ */
+type MapStyleSpec = Exclude<NonNullable<MapOptions['style']>, string>;
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
@@ -26,7 +41,7 @@ const AIRCRAFT_LABEL_LAYER_ID = 'aircraft-label';
  * Glyphs still come from OpenFreeMap for callsign / airport labels.
  * CSP: connect-src must allow *.basemaps.cartocdn.com + tiles.openfreemap.org.
  */
-const CARTO_VOYAGER_STYLE: maplibregl.StyleSpecification = {
+const CARTO_VOYAGER_STYLE: MapStyleSpec = {
   version: 8,
   sources: {
     carto: {
@@ -327,7 +342,7 @@ export default function LiveAircraftMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
+    const map = new MapLibreMap({
       container: containerRef.current,
       style: CARTO_VOYAGER_STYLE,
       center: DEFAULT_CENTER,
@@ -336,9 +351,9 @@ export default function LiveAircraftMap({
       dragRotate: false,
       pitchWithRotate: false,
     });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(
-      new maplibregl.GeolocateControl({
+      new GeolocateControl({
         positionOptions: { enableHighAccuracy: false },
         trackUserLocation: false,
       }),
@@ -593,7 +608,7 @@ export default function LiveAircraftMap({
     if (lastFittedRouteRef.current === key) return;
     lastFittedRouteRef.current = key;
 
-    const bounds = new maplibregl.LngLatBounds();
+    const bounds = new LngLatBounds();
     bounds.extend([routeEndpoints!.origin.lon, routeEndpoints!.origin.lat]);
     bounds.extend([routeEndpoints!.destination.lon, routeEndpoints!.destination.lat]);
     map.fitBounds(bounds, { padding: 72, maxZoom: 7, duration: 700 });
