@@ -51,7 +51,7 @@ Use targeted commands first, then broaden validation when changing shared behavi
 - Use `gh` for GitHub workflow tasks when requested.
 - Before opening a PR, summarize what changed, why it changed, tests run, and known risks.
 - Do not push, open PRs, bypass hooks, delete files, or reset git state unless explicitly asked.
-- The pre-push hook runs gitleaks on unpushed commits; E2E and Lighthouse run in GitHub Actions.
+- The pre-push hook runs gitleaks on unpushed commits, then type-checks both TS projects (skipped when `CI` is set); E2E and Lighthouse run in GitHub Actions.
 
 ## Agent Operating Rules
 
