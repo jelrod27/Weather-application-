@@ -10,6 +10,9 @@
 
 # git feeds pre-push "<local ref> <local sha> <remote ref> <remote sha>" per ref.
 # A branch deletion has an all-zero local sha and nothing worth checking.
+#
+# Note: this blocks on EOF, so invoking the hook by hand (`sh .husky/pre-push`)
+# appears to hang until stdin is closed. Feed it a ref line or /dev/null.
 refs="$(cat)"
 if [ -n "$refs" ]; then
   deleting_only=1
@@ -49,6 +52,21 @@ else
 fi
 
 # ── 2. Types ─────────────────────────────────────────────────────────────────
+
+# Local-only. The newsletter workflows run `npm ci` (which installs husky) and
+# then `git push`, and they must not pass --no-verify or set HUSKY=0 — see
+# __tests__/newsletter-workflows.test.ts and planning/newsletter-gitleaks-design.md.
+# Without this guard those cron runs would compile the whole repo twice before
+# pushing, and a type error on main would fail the newsletter rather than the
+# change that introduced it. ci.yml already type-checks both projects on every
+# PR, so running it again here would be redundant as well as harmful.
+#
+# The secret scan above deliberately still runs in CI: that one is a security
+# gate, and the design doc requires those workflows to keep it.
+if [ -n "${CI:-}" ]; then
+  echo "[pre-push] CI detected - skipping type check (ci.yml covers it)"
+  exit 0
+fi
 
 if [ ! -x node_modules/.bin/tsc ]; then
   echo "[pre-push] TypeScript not installed - run 'npm ci' before pushing."

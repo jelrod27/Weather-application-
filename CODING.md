@@ -166,7 +166,14 @@ Use this order:
 Hooks live in `.husky/` (installed via the `prepare` script):
 
 - `pre-commit` — gitleaks secret scan of the staged diff
-- `pre-push` — gitleaks secret scan of unpushed commits
+- `pre-push` — gitleaks secret scan of unpushed commits, then `tsc --noEmit`
+  against both `tsconfig.json` and `tsconfig.tests.json` (the same two projects
+  CI type-checks)
+
+The pre-push type check is local-only: it is skipped when `CI` is set, because
+`ci.yml` already type-checks both projects, and the newsletter workflows push
+from CI without being allowed to bypass hooks. The secret scan always runs.
+Pushes that only delete refs skip both gates — a deletion sends no objects.
 
 E2E (Playwright) and Lighthouse CI run in GitHub Actions (`.github/workflows/`), not in local hooks. Lighthouse config: `lighthouserc.js`.
 
