@@ -45,7 +45,7 @@ export async function enrichItemImages(
     if (item.imageUrl) continue;
     const stockSeed = item.category === 'volcanoes' ? (item.location ?? item.id) : item.title;
     item.imageUrl = resolved.get(item.id)
-      ?? pickCategoryStockImage(item.category, stockSeed, item.sourceId).url;
+      ?? pickCategoryStockImage(item.category, stockSeed, item.sourceId)?.url;
   }
 
   return result;

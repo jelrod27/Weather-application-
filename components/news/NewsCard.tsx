@@ -109,10 +109,16 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
               <div
                 className={cn(
                   'w-16 h-16 flex-shrink-0 border-2 rounded flex items-center justify-center',
-                  'border-border'
+                  'border-border',
+                  item.category === 'earthquakes' && item.magnitude != null && 'bg-orange-600/20'
                 )}
+                data-testid="news-card-compact-data"
               >
-                <CategoryBadge category={item.category} />
+                {item.category === 'earthquakes' && item.magnitude != null ? (
+                  <span className="font-mono font-bold text-sm">M{item.magnitude.toFixed(1)}</span>
+                ) : (
+                  <CategoryBadge category={item.category} />
+                )}
               </div>
             )}
 
@@ -194,17 +200,33 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
           </div>
         </div>
       ) : (
-        // Most feed items (USGS/NWS/NHC data feeds) have no image. Rather than
-        // a blank card, show a category-colored banner with the category icon so
-        // imageless cards read as deliberate and stay scannable by category.
+        // Hazard items without provenance-bound imagery stay imageless on
+        // purpose. Earthquakes get a data-forward magnitude panel; other
+        // categories keep the category icon banner.
         <div
           className={cn(
-            'relative w-full h-24 flex items-center justify-center border-b-2',
+            'relative w-full border-b-2 flex items-center justify-center',
+            item.category === 'earthquakes' && item.magnitude != null ? 'h-28' : 'h-24',
             categoryConfig.colorClass
           )}
+          data-testid="news-card-data-banner"
           aria-hidden="true"
         >
-          <CategoryIcon className="w-10 h-10 opacity-90" />
+          {item.category === 'earthquakes' && item.magnitude != null ? (
+            <div className="flex flex-col items-center gap-0.5 px-3 text-center font-mono">
+              <span className="text-3xl sm:text-4xl font-bold leading-none tracking-tight">
+                M{item.magnitude.toFixed(1)}
+              </span>
+              {item.location ? (
+                <span className="text-xs opacity-90 line-clamp-1 max-w-full">{item.location}</span>
+              ) : null}
+              {typeof item.depth === 'number' ? (
+                <span className="text-[10px] opacity-75">{item.depth.toFixed(1)} km depth</span>
+              ) : null}
+            </div>
+          ) : (
+            <CategoryIcon className="w-10 h-10 opacity-90" />
+          )}
           <div className="absolute top-2 right-2 flex gap-2">
             <PriorityIndicator priority={item.priority} size="md" />
           </div>

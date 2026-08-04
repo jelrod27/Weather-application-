@@ -1,7 +1,13 @@
 /**
- * Photorealistic fallback imagery per hazard category when a story has no
- * feed or OG image. Volcano items rotate through a pool keyed by volcano name
- * so concurrent alerts do not all show the same St. Helens photo.
+ * Fallback imagery when a story has no feed / OG / provenance-bound product.
+ *
+ * Image honesty (hazard spine):
+ * - Earthquakes: never use place-specific historical stock. Prefer USGS
+ *   ShakeMap; otherwise leave imageless for a data-forward card.
+ * - Volcanoes: only named peaks with a photo of that peak; no hash pool of
+ *   unrelated eruptions standing in for Aleutian alerts.
+ * - Severe / tropical: live GOES / SPC / NHC products (provenance-bound).
+ * - Science / climate / space: illustrative stock is allowed (credit later).
  */
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 
@@ -10,7 +16,8 @@ export interface StockImage {
   credit: string;
 }
 
-export const CATEGORY_STOCK_IMAGES: Record<FeedCategory, StockImage> = {
+/** Editorial / live-product stock only. Hazards omitted on purpose. */
+export const CATEGORY_STOCK_IMAGES: Partial<Record<FeedCategory, StockImage>> = {
   severe: {
     url: 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/CONUS/GEOCOLOR/1250x750.jpg',
     credit: 'NOAA GOES-16 GeoColor',
@@ -18,14 +25,6 @@ export const CATEGORY_STOCK_IMAGES: Record<FeedCategory, StockImage> = {
   hurricanes: {
     url: 'https://www.nhc.noaa.gov/xgtwo/resize/xgtwo_atl_2d0_w1024.png',
     credit: 'NHC / NOAA',
-  },
-  earthquakes: {
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/1906_San_Francisco_earthquake.jpg?width=1280',
-    credit: 'USGS / Wikimedia Commons',
-  },
-  volcanoes: {
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/MSH80_eruption_mount_st_helens_05-18-80.jpg?width=1280',
-    credit: 'USGS / Wikimedia Commons',
   },
   space: {
     url: 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg',
@@ -41,7 +40,10 @@ export const CATEGORY_STOCK_IMAGES: Record<FeedCategory, StockImage> = {
   },
 };
 
-/** Diverse PD volcano photography — index chosen by volcano name hash. */
+/**
+ * Retained for tests / future curated use. Not used as a blind hash fallback —
+ * that caused St. Helens / Pinatubo / Tambora to stand in for unrelated peaks.
+ */
 export const VOLCANO_STOCK_POOL: StockImage[] = [
   {
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/MSH80_eruption_mount_st_helens_05-18-80.jpg?width=1280',
@@ -77,7 +79,7 @@ export const VOLCANO_STOCK_POOL: StockImage[] = [
   },
 ];
 
-/** Well-known volcanoes get a distinctive photo instead of a hash collision. */
+/** Only peaks whose photo is actually of that volcano. */
 export const NAMED_VOLCANO_IMAGES: Record<string, StockImage> = {
   kilauea: {
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Puu_Oo_crater_bench_lava_lake.jpg?width=1280',
@@ -90,14 +92,6 @@ export const NAMED_VOLCANO_IMAGES: Record<string, StockImage> = {
   shishaldin: {
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Shishaldin_Volcano_from_the_ISS.jpg?width=1280',
     credit: 'NASA ISS',
-  },
-  'great sitkin': {
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Pinatubo91eruption_clark_air_base.jpg?width=1280',
-    credit: 'USGS',
-  },
-  kupreanof: {
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Mount_Tambora_Volcano,_Sumbawa_Island,_Indonesia.jpg?width=1280',
-    credit: 'NASA Earth Observatory',
   },
   'mount st. helens': {
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/MSH80_eruption_mount_st_helens_05-18-80.jpg?width=1280',
@@ -130,25 +124,26 @@ function hashSeed(seed: string): number {
   return Math.abs(hash);
 }
 
-export function pickVolcanoStockImage(locationOrId: string): StockImage {
+/** Named-peak photo only; unknown peaks stay imageless (data-forward card). */
+export function pickVolcanoStockImage(locationOrId: string): StockImage | undefined {
   const key = normalizeVolcanoKey(locationOrId);
-  const named = NAMED_VOLCANO_IMAGES[key];
-  if (named) return named;
-
-  const idx = hashSeed(key) % VOLCANO_STOCK_POOL.length;
-  return VOLCANO_STOCK_POOL[idx];
+  return NAMED_VOLCANO_IMAGES[key];
 }
 
-export function getCategoryStockImage(category: FeedCategory): StockImage {
+export function getCategoryStockImage(category: FeedCategory): StockImage | undefined {
   return CATEGORY_STOCK_IMAGES[category];
 }
 
-/** Pick stock art; volcano, tropical, and severe categories use richer pools. */
+/**
+ * Optional stock art. Returns undefined for earthquakes and unnamed volcanoes
+ * so cards never show a wrong-place historical catastrophe photo.
+ */
 export function pickCategoryStockImage(
   category: FeedCategory,
   seed: string,
   sourceId?: string,
-): StockImage {
+): StockImage | undefined {
+  if (category === 'earthquakes') return undefined;
   if (category === 'volcanoes') return pickVolcanoStockImage(seed);
   if (category === 'hurricanes') return pickTropicalStockImage(seed, sourceId);
   if (category === 'severe') return pickSevereStockImage(seed, sourceId);

@@ -98,4 +98,24 @@ describe('NewsCard default variant', () => {
     fireEvent.click(link);
     expect(openSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a data-forward magnitude banner for imageless earthquakes', () => {
+    render(
+      <NewsCard
+        item={makeItem({
+          imageUrl: undefined,
+          category: 'earthquakes',
+          title: 'M 5.1 - south of Tonga',
+          magnitude: 5.1,
+          depth: 10,
+          location: 'south of Tonga',
+        })}
+      />,
+    );
+
+    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('M5.1');
+    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('south of Tonga');
+    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('10.0 km depth');
+    expect(screen.queryByRole('img')).toBeNull();
+  });
 });
