@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { logRouteError } from '@/lib/error-utils'
 
 interface NasaFlare {
   flrID: string;
@@ -140,7 +141,7 @@ export async function GET() {
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[flares]', error);
+    logRouteError('flares', error);
 
     // Return fallback data
     return NextResponse.json({

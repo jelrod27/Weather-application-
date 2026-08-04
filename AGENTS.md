@@ -51,7 +51,7 @@ Use targeted commands first, then broaden validation when changing shared behavi
 - Use `gh` for GitHub workflow tasks when requested.
 - Before opening a PR, summarize what changed, why it changed, tests run, and known risks.
 - Do not push, open PRs, bypass hooks, delete files, or reset git state unless explicitly asked.
-- The pre-push hook runs gitleaks on unpushed commits; E2E and Lighthouse run in GitHub Actions.
+- The pre-push hook runs gitleaks on unpushed commits, then type-checks both TS projects (skipped when `CI` is set); E2E and Lighthouse run in GitHub Actions.
 
 ## Agent Operating Rules
 
@@ -71,3 +71,13 @@ When finished, report:
 - tests or checks run
 - any tests not run and why
 - risks or follow-ups that matter
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -1,12 +1,55 @@
 import type { ImageEntry } from './images';
+import { readLinkDestination } from './markdown-images';
 
+/**
+ * The draft with embedded image blocks (and the italic credit line that follows
+ * one) removed, so fit rules judge the prose rather than the alt text and URL of
+ * images already placed.
+ *
+ * Uses the shared balanced-paren reader: a `[^)]+` destination class cannot
+ * cross a literal `)`, so a Wikimedia Special:FilePath URL left the whole image
+ * block in the body and its keywords then skewed the verdict for every other
+ * image checked against the same gate.
+ */
 export function proseOnly(content: string): string {
-  return content.replace(/!\[[^\]]*\]\([^)]+\)\s*\n?\*[^*\n]+\*/g, '');
+  let out = '';
+  let cursor = 0;
+  const startRx = /!\[[^\]]*\]\(/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = startRx.exec(content)) !== null) {
+    if (match.index < cursor) continue;
+
+    const dest = readLinkDestination(content, match.index + match[0].length);
+    if (dest === null) continue;
+
+    out += content.slice(cursor, match.index);
+
+    // Drop the `*credit*` line immediately after the image, when present.
+    const credit = content.slice(dest.endIndex).match(/^[ \t]*\n?\*[^*\n]+\*/);
+    cursor = dest.endIndex + (credit ? credit[0].length : 0);
+    startRx.lastIndex = cursor;
+  }
+
+  return out + content.slice(cursor);
+}
+
+/**
+ * The prose a fit decision is made against: image markdown and its credit line
+ * removed, lowercased. Callers that check many images against one draft should
+ * compute this once and use `narrativeFitErrorsForBody` — see image-selection.ts.
+ */
+export function narrativeBody(content: string): string {
+  return proseOnly(content).toLowerCase();
 }
 
 export function getNarrativeFitErrors(content: string, image: ImageEntry): string[] {
+  return narrativeFitErrorsForBody(narrativeBody(content), image);
+}
+
+/** Rule table. `body` must already be normalized by `narrativeBody`. */
+export function narrativeFitErrorsForBody(body: string, image: ImageEntry): string[] {
   const errors: string[] = [];
-  const body = proseOnly(content).toLowerCase();
   const imageText = `${image.id} ${image.caption} ${image.topic_tags.join(' ')}`.toLowerCase();
   const hasSevereOrQuakeLead = /tornado|supercell|severe convective|spc storm|earthquake|seismic|aftershock|subduction/.test(body);
   const hasMeaningfulSpace = /geomagnetic storm|aurora|x-class|m-class|\bkp\s*[4-9]\b|kp index maxed at [4-9]/.test(body);

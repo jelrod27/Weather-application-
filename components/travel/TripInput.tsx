@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import { MAJOR_US_AIRPORTS } from '@/lib/data/major-us-airports';
 import type { TripDay, TripMode, TripScoreResponse } from './trip-types';
 
-export type { TripScoreResponse } from './trip-types';
 
 interface TripInputProps {
   defaultMode?: TripMode;

@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface XRayFluxData {
   timestamp: string;
@@ -128,7 +129,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('X-Ray Flux API error:', error);
+    logRouteError('space-weather/xray-flux', error);
 
     return NextResponse.json({
       data: {

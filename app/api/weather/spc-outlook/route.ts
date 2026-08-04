@@ -7,6 +7,7 @@ import {
   type SPCOutlookGeoJSON,
 } from '@/lib/services/spc-outlook-service';
 import { getHighestSpcRiskAtPoint } from '@/lib/geo/spc-point-risk';
+import { logRouteError } from '@/lib/error-utils'
 
 const VALID_TYPES = new Set(['cat', 'torn', 'hail', 'wind']);
 
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[SPC Outlook API]', error);
+    logRouteError('SPC Outlook API', error);
     return NextResponse.json(
       { error: 'Failed to fetch SPC outlook data' },
       { status: 500 }

@@ -10,6 +10,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { logRouteError } from '@/lib/error-utils'
 
 export interface CoronagraphFrame {
   timestamp: string;
@@ -122,7 +123,7 @@ export async function GET(request: Request) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Coronagraph API error:', error);
+    logRouteError('space-weather/coronagraph', error);
 
     const cameraParam = new URL(request.url).searchParams.get('camera');
     const camera: 'c2' | 'c3' = cameraParam === 'c3' ? 'c3' : 'c2';

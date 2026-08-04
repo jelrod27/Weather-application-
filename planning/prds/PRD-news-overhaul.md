@@ -6,7 +6,7 @@
 **Project:** 16-Bit Weather (16bitweather.co)
 **Branch:** `feat/news-overhaul`
 **Priority:** High (3 of 17 live feeds are broken in production; ~1,500 LOC of dead code)
-**Lighthouse Gate:** Performance score must remain >= 85 on mobile and desktop after all changes (per `lighthouserc.js` / pre-push hook).
+**Lighthouse Gate:** Performance score must remain >= 85 on mobile and desktop after all changes (per `lighthouserc.js`, enforced by the Lighthouse CI workflow).
 
 ---
 
@@ -321,8 +321,8 @@ A reusable `scripts/check-news-feeds.ts` (run via `tsx`) that imports `FEED_SOUR
 - `npm run lint` passes.
 - `npm test` passes (new parser/dedup/cache tests green).
 - `npm run knip` reports no new unused files/exports; orphaned subsystem gone.
-- Playwright `/news` smoke passes (pre-push hook).
-- Lighthouse performance >= 85 mobile and desktop (pre-push hook).
+- Playwright `/news` smoke passes (E2E workflow).
+- Lighthouse performance >= 85 mobile and desktop (Lighthouse CI workflow).
 - All enabled feeds 2xx via `scripts/check-news-feeds.ts`.
 - No `NEWS_API_KEY` reference remains in code or required-env docs.
 

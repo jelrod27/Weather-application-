@@ -2,10 +2,10 @@
  * Geocoding API route — thin wrapper over lib/geocoding/lookup.
  */
 
-import { sanitizeLogValue } from '@/lib/sanitize-log'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { withApiRoute } from '@/lib/api/with-api-route'
+import { logRouteError } from '@/lib/error-utils'
 import {
   lookupGeocodingZip,
   resolveGeocodingQuery,
@@ -46,10 +46,7 @@ export async function GET(request: NextRequest) {
           }
           return NextResponse.json(results, { headers: rateLimitHeaders })
         } catch (err) {
-          console.error(
-            'Reverse geocoding error:',
-            sanitizeLogValue(err instanceof Error ? err.message : err),
-          )
+          logRouteError('weather/geocoding', err, { mode: 'reverse' })
           return NextResponse.json({ error: 'Reverse geocoding failed' }, { status: 502 })
         }
       }
@@ -62,10 +59,7 @@ export async function GET(request: NextRequest) {
           }
           return NextResponse.json(result, { headers: rateLimitHeaders })
         } catch (err) {
-          console.error(
-            'ZIP geocoding error:',
-            sanitizeLogValue(err instanceof Error ? err.message : err),
-          )
+          logRouteError('weather/geocoding', err, { mode: 'zip' })
           return NextResponse.json({ error: 'ZIP lookup failed' }, { status: 502 })
         }
       }
@@ -92,17 +86,11 @@ export async function GET(request: NextRequest) {
         }
         return NextResponse.json(results, { headers: rateLimitHeaders })
       } catch (err) {
-        console.error(
-          'Direct geocoding error:',
-          sanitizeLogValue(err instanceof Error ? err.message : err),
-        )
+        logRouteError('weather/geocoding', err, { mode: 'direct' })
         return NextResponse.json({ error: 'Geocoding service unavailable' }, { status: 502 })
       }
     } catch (error) {
-      console.error(
-        'Geocoding API error:',
-        error instanceof Error ? error.message : sanitizeLogValue(error),
-      )
+      logRouteError('weather/geocoding', error)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
   })

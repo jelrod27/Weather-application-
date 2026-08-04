@@ -256,6 +256,33 @@ export function captureUpstreamTimeout(
 }
 
 /**
+ * Log a route failure to the console AND to Sentry.
+ *
+ * 55 of the 56 route files that logged errors used bare `console.error`, so
+ * upstream failures across the space-weather group, most of aviation and every
+ * cron job never reached Sentry. This keeps the local console output those
+ * routes already had and adds the reporting they were missing.
+ *
+ * A fetch aborted by our own timeout is recorded as a breadcrumb rather than an
+ * exception — transient upstream latency the caller already degrades around is
+ * context, not a defect.
+ */
+export function logRouteError(
+  context: string,
+  error: unknown,
+  extra?: Record<string, unknown>
+): void {
+  if (isAbortError(error)) {
+    console.warn(`[${context}] upstream timeout`)
+    captureUpstreamTimeout(context, extra)
+    return
+  }
+
+  console.error(`[${context}]`, error)
+  captureError(error, context, extra)
+}
+
+/**
  * Capture a database error with structured context
  */
 export function captureDbError(

@@ -2,14 +2,14 @@
  * Post-parse image enrichment: USGS shakemaps, Open Graph photos, category stock art.
  */
 
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { pickCategoryStockImage, resolveNhcOutlookImage, resolveNwsAlertImage } from '@/lib/news/stock-images';
 import type { RSSItem } from './rssAggregator';
 import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
 const USGS_EVENT_ID = /earthquakes\/eventpage\/([a-z0-9]+)/i;
-const USGS_DETAIL_CACHE = new Map<string, { url: string | null; expires: number }>();
-const USGS_CACHE_TTL_MS = 30 * 60 * 1000;
+const USGS_DETAIL_CACHE = createTtlCache<string | null>({ ttlMs: 30 * 60 * 1000 });
 
 export interface EnrichImagesOptions {
   /** Max items to enrich per aggregation (priority order preserved). */
@@ -81,9 +81,10 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
   if (!match?.[1]) return undefined;
 
   const eventId = match[1];
+  // A cached `null` is a negative result, distinct from a miss (undefined).
   const cached = USGS_DETAIL_CACHE.get(eventId);
-  if (cached && cached.expires > Date.now()) {
-    return cached.url ?? undefined;
+  if (cached !== undefined) {
+    return cached ?? undefined;
   }
 
   const controller = new AbortController();
@@ -100,7 +101,7 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
       },
     );
     if (!response.ok) {
-      USGS_DETAIL_CACHE.set(eventId, { url: null, expires: Date.now() + USGS_CACHE_TTL_MS });
+      USGS_DETAIL_CACHE.set(eventId, null);
       return undefined;
     }
 
@@ -125,7 +126,7 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
     clearTimeout(timer);
   }
 
-  USGS_DETAIL_CACHE.set(eventId, { url: resolved, expires: Date.now() + USGS_CACHE_TTL_MS });
+  USGS_DETAIL_CACHE.set(eventId, resolved);
   return resolved ?? undefined;
 }
 

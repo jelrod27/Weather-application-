@@ -15,6 +15,7 @@ import type { NextRequest } from 'next/server';
 import { PLACEHOLDER_URL, PLACEHOLDER_SERVICE_KEY } from '@/lib/supabase/constants';
 import { AEROAPI_DEFAULT_MONTHLY_CAP } from '@/lib/services/aeroapi-usage';
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth';
+import { logRouteError } from '@/lib/error-utils'
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       .in('month', [currentMonth, priorMonth]);
 
     if (error) {
-      console.error('[cron/aeroapi-usage] query failed:', error.message);
+      logRouteError('cron/aeroapi-usage', error, { stage: 'query' });
       return Response.json({ error: 'Query failed' }, { status: 503 });
     }
 
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
         : { month: priorMonth, queryCount: 0, updatedAt: null },
     });
   } catch (error) {
-    console.error('[cron/aeroapi-usage] unhandled error:', error);
+    logRouteError('cron/aeroapi-usage', error);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

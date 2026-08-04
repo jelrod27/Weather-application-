@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { logRouteError } from '@/lib/error-utils'
 
 export const revalidate = 86400;
 
@@ -30,7 +31,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[TLE Proxy] Unexpected error:', error);
+    logRouteError('TLE Proxy', error);
     return NextResponse.json(
       { error: 'Internal server error fetching TLE data' },
       { status: 500 },

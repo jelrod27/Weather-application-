@@ -14,6 +14,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchAviationAlertsFromNOAA } from '@/lib/services/aviation-noaa-service';
+import { logRouteError } from '@/lib/error-utils'
 
 const SOURCE = 'NOAA Aviation Weather Center';
 
@@ -34,7 +35,7 @@ export async function GET() {
       },
     );
   } catch (error) {
-    console.error('[aviation-alerts]', error);
+    logRouteError('aviation-alerts', error);
 
     // The service degrades to an empty list on upstream failure, so reaching
     // here means a genuine internal error — return 500 (not 200) so callers can

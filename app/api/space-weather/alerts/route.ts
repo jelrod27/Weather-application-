@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { logRouteError } from '@/lib/error-utils'
 
 interface NOAAAlert {
   product_id: string;
@@ -146,7 +147,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Space Weather Alerts API error:', error);
+    logRouteError('space-weather/alerts', error);
 
     return NextResponse.json({
       alerts: [],

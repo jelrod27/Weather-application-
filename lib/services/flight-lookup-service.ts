@@ -17,6 +17,7 @@
  * so warm Vercel functions share it; cold starts repopulate.
  */
 
+import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { tryIncrementAeroApiUsage } from './aeroapi-usage';
 
 export interface AirlineData {
@@ -138,35 +139,11 @@ export function parseFlightNumber(input: string): ParsedFlightNumber | null {
 // In-process TTL cache
 // ───────────────────────────────────────────────────────────────
 
-interface CacheEntry<T> {
-  value: T;
-  expiresAt: number;
-}
-
 const SCHEDULE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const POSITION_TTL_MS = 60 * 1000; // 1 minute
 
-const scheduleCache = new Map<string, CacheEntry<FlightLookupResult>>();
-const positionCache = new Map<string, CacheEntry<LivePosition>>();
-
-function cacheGet<T>(cache: Map<string, CacheEntry<T>>, key: string): T | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    cache.delete(key);
-    return null;
-  }
-  return entry.value;
-}
-
-function cacheSet<T>(
-  cache: Map<string, CacheEntry<T>>,
-  key: string,
-  value: T,
-  ttlMs: number,
-): void {
-  cache.set(key, { value, expiresAt: Date.now() + ttlMs });
-}
+const scheduleCache = createTtlCache<FlightLookupResult>({ ttlMs: SCHEDULE_TTL_MS });
+const positionCache = createTtlCache<LivePosition>({ ttlMs: POSITION_TTL_MS });
 
 /** Test helper — clears all cached state. */
 export function _resetCacheForTests(): void {
@@ -481,7 +458,7 @@ export async function fetchLivePosition(
   // Callsigns are typically ICAO airline + flight number, padded with spaces.
   const callsignPrefix = `${airlineIcao}${flightNum}`.toUpperCase();
   const cacheKey = `pos:${callsignPrefix}`;
-  const cached = cacheGet(positionCache, cacheKey);
+  const cached = positionCache.get(cacheKey);
   if (cached) return cached;
 
   const username = process.env.OPENSKY_USERNAME;
@@ -528,7 +505,7 @@ export async function fetchLivePosition(
     fetchedAt: Date.now(),
   };
 
-  cacheSet(positionCache, cacheKey, position, POSITION_TTL_MS);
+  positionCache.set(cacheKey, position);
   return position;
 }
 
@@ -605,7 +582,7 @@ export async function lookupFlight(
   // request (or vice versa).
   const cacheKey = `flight:${airlineCode}${flightNum}`;
   if (!options.bypassCache && !options.forceMock) {
-    const cached = cacheGet(scheduleCache, cacheKey);
+    const cached = scheduleCache.get(cacheKey);
     if (cached) return { ok: true, result: cached };
   }
 
@@ -627,7 +604,7 @@ export async function lookupFlight(
         // condition cleared. Same condition we already use to skip live-
         // position enrichment on mock results.
         if (!options.forceMock && !result.mock) {
-          cacheSet(scheduleCache, cacheKey, result, SCHEDULE_TTL_MS);
+          scheduleCache.set(cacheKey, result);
         }
 
         if (options.includeLivePosition !== false && !result.mock) {
@@ -639,7 +616,7 @@ export async function lookupFlight(
           if (livePosition) {
             const enriched = { ...result, livePosition };
             if (!options.forceMock && !result.mock) {
-              cacheSet(scheduleCache, cacheKey, enriched, SCHEDULE_TTL_MS);
+              scheduleCache.set(cacheKey, enriched);
             }
             return { ok: true, result: enriched };
           }
