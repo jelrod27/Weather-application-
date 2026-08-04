@@ -1,12 +1,16 @@
 /**
- * News feed health-check (PRD §14 manual gate for the news-overhaul work).
+ * News feed health-check for the /news aggregator.
  *
  * Imports the live FEED_SOURCES list, fetches every ENABLED feed with the same
  * User-Agent the aggregator uses, follows redirects, and prints `status id url`.
- * Exits non-zero if any enabled feed returns a non-2xx status so it can gate a
- * commit. NOT wired into CI (external network); run manually:
+ * Exits non-zero if any enabled feed returns a non-2xx status (or a body that
+ * does not match the declared format).
  *
+ * Run manually:
  *   npx tsx scripts/check-news-feeds.ts
+ *
+ * Also runs on a weekly schedule via `.github/workflows/news-feed-health.yml`
+ * (and workflow_dispatch) so feed outages do not depend on a human remembering.
  */
 
 import { FEED_SOURCES, type FeedSource } from '../lib/services/rss/feedSources'
