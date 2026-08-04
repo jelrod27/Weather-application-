@@ -245,6 +245,15 @@ test.describe('/aviation', () => {
 
     const flightInput = page.getByTestId('flight-number-input');
     await expect(flightInput).toBeVisible({ timeout: 30000 });
+
+    // Force mock routes so the Demo badge appears even when AeroAPI is configured
+    // (e.g. Vercel preview). Without this, live AA123 responses omit `mock: true`.
+    const demoToggle = page.getByTestId('aviation-demo-mode-toggle');
+    await expect(demoToggle).toBeVisible();
+    if (!(await demoToggle.isChecked())) {
+      await demoToggle.check();
+    }
+
     await flightInput.fill('AA123');
     await page.getByTestId('flight-search-button').click();
     await expect(page.getByText(/Demo data/i)).toBeVisible({ timeout: 15000 });
