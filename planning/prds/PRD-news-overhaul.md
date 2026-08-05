@@ -1,12 +1,63 @@
 # PRD: News Section Overhaul — Earth & Space Hazard Feed
 
-**Version:** 1.0
-**Date:** 2026-05-29
+**Version:** 1.1 (amendment)
+**Date:** 2026-05-29 (v1.0); amended 2026-08-04
 **Author:** Justin Elrod / Claude Analysis
 **Project:** 16-Bit Weather (16bitweather.co)
-**Branch:** `feat/news-overhaul`
-**Priority:** High (3 of 17 live feeds are broken in production; ~1,500 LOC of dead code)
+**Priority:** High (v1.0); follow-through after Phases 1–3 shipped
 **Lighthouse Gate:** Performance score must remain >= 85 on mobile and desktop after all changes (per `lighthouserc.js`, enforced by the Lighthouse CI workflow).
+
+---
+
+## Amendment (2026-08-04) — product identity + image honesty
+
+### Status of v1.0 phases
+
+Phases **1–3 are shipped** in production code. Do **not** re-implement them from the body below without verifying against `main`:
+
+| Phase | Intent | Status |
+|---|---|---|
+| 1 | Feed remediation + Sentry feed health + `scripts/check-news-feeds.ts` | Done |
+| 2 | Delete orphaned NewsAPI / NewsTicker / `NEWS_API_KEY` | Done in app (docs/fixtures may still mention orphans) |
+| 3 | `fast-xml-parser`, fuzzy dedup, tiered cache, Happening Now, freshness | Done |
+
+Treat §§7–13 of this document as **historical implementation notes**, not an open backlog.
+
+### Product decision (Hard C)
+
+`/news` is a **hybrid**:
+
+1. **Hazard console as the spine** — USGS / NWS / NHC / SPC primary-source hazards, optimized for “is this real and current.”
+2. **Earth & Space magazine as the reading layer** — NASA, Carbon Brief, Yale, ScienceDaily, etc., so quiet days still have a reason to visit.
+
+Nobody needs another generic science-magazine aggregator. The differentiator is fast primary-source hazards with honest presentation.
+
+### Image honesty (governs the whole page)
+
+| Item type | Imagery rule |
+|---|---|
+| Earthquakes | ShakeMap / event product, or **imageless data-forward card** (magnitude, location, depth). Never place-specific historical stock (e.g. 1906 San Francisco). |
+| Volcanoes | Photo only when it is **of that named peak**. No hash pool of unrelated eruptions. |
+| Severe / tropical | Live GOES / SPC / NHC products (provenance-bound). |
+| Science / climate / space (editorial) | Illustrative stock / OG allowed; **must show visible credit** when stock is used. |
+
+**Never** an unlabeled historical catastrophe photo on a live hazard card.
+
+Implementation track: PR `fix/news-hazard-image-honesty` (quake/volcano honesty + data cards). Editorial credit UI ships after that lands.
+
+### Feed-health detection (closes G3 for real)
+
+v1.0 left `scripts/check-news-feeds.ts` as a **manual** gate (§14). That repeated the original failure mode: NWS can go dark and nobody notices until a human runs the script.
+
+**Required follow-through:** a scheduled GitHub Actions workflow runs `npx tsx scripts/check-news-feeds.ts` weekly (and on `workflow_dispatch`). Failure is allowed to fail the job so maintainers get notified; flaky upstream should be investigated, not silenced forever.
+
+### Open follow-ups (post-amendment)
+
+1. Ship hazard image honesty (no SF-1906 / wrong-peak stand-ins).
+2. Weekly feed-health workflow (this amendment).
+3. Visible stock image credits on editorial cards.
+4. Soften `stats.errors` / `NewsFeedBanner` so swallowed per-feed `[]` failures still surface.
+5. Archive or trim stale body sections of this PRD once honesty + credits land; keep this amendment as the living north star.
 
 ---
 
