@@ -1,11 +1,13 @@
 import { parseOgImageFromHtml, shouldAttemptOgImage } from '@/lib/services/rss/resolve-og-image';
 import {
   getCategoryStockImage,
+  pickCategoryStockImage,
   pickSevereStockImage,
   pickTropicalStockImage,
   pickVolcanoStockImage,
   resolveNhcOutlookImage,
   resolveNwsAlertImage,
+  CATEGORY_STOCK_IMAGES,
   SEVERE_STOCK_POOL,
   TROPICAL_STOCK_POOL,
   VOLCANO_STOCK_POOL,
@@ -73,27 +75,29 @@ describe('parseRSSFeed image extraction', () => {
 });
 
 describe('category stock images', () => {
-  it('provides a fallback image for every category', () => {
-    for (const category of [
-      'severe',
-      'hurricanes',
-      'earthquakes',
-      'volcanoes',
-      'space',
-      'climate',
-      'science',
-    ] as const) {
-      expect(getCategoryStockImage(category).url).toMatch(/^https:\/\//);
+  it('provides editorial stock for non-hazard categories only', () => {
+    for (const category of ['space', 'climate', 'science'] as const) {
+      expect(getCategoryStockImage(category)?.url).toMatch(/^https:\/\//);
     }
+    expect(getCategoryStockImage('earthquakes')).toBeUndefined();
+    expect(getCategoryStockImage('volcanoes')).toBeUndefined();
   });
 
-  it('assigns different volcano stock art per peak name', () => {
-    const greatSitkin = pickVolcanoStockImage('Great Sitkin');
-    const kupreanof = pickVolcanoStockImage('Kupreanof');
-    const kilauea = pickVolcanoStockImage('Kilauea');
+  it('never falls back to the 1906 San Francisco earthquake photo', () => {
+    expect(pickCategoryStockImage('earthquakes', 'M 5.1 - south of Tonga')).toBeUndefined();
+    expect(pickCategoryStockImage('earthquakes', 'M 4.6 - 79 km E of Onagawa Chō, Japan')).toBeUndefined();
+    const urls = JSON.stringify(CATEGORY_STOCK_IMAGES);
+    expect(urls).not.toMatch(/1906_San_Francisco/);
+  });
 
-    expect(greatSitkin.url).not.toBe(kupreanof.url);
-    expect(kilauea.url).toContain('Puu_Oo');
+  it('only returns volcano stock for accurately named peaks', () => {
+    const kilauea = pickVolcanoStockImage('Kilauea');
+    expect(kilauea?.url).toContain('Puu_Oo');
+
+    // Unknown / previously mis-mapped peaks stay imageless
+    expect(pickVolcanoStockImage('Great Sitkin')).toBeUndefined();
+    expect(pickVolcanoStockImage('Kupreanof')).toBeUndefined();
+    expect(pickCategoryStockImage('volcanoes', 'Great Sitkin')).toBeUndefined();
     expect(VOLCANO_STOCK_POOL.length).toBeGreaterThanOrEqual(6);
   });
 
