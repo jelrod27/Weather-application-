@@ -166,6 +166,9 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
   const showImage = Boolean(item.imageUrl) && !imageError;
   const categoryConfig = getCategoryConfig(item.category);
   const CategoryIcon = categoryConfig.icon;
+  const earthquakeMagnitude =
+    item.category === 'earthquakes' ? item.magnitude : undefined;
+  const showEarthquakeData = earthquakeMagnitude != null;
 
   return (
     <Card
@@ -206,16 +209,18 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
         <div
           className={cn(
             'relative w-full border-b-2 flex items-center justify-center',
-            item.category === 'earthquakes' && item.magnitude != null ? 'h-28' : 'h-24',
+            showEarthquakeData ? 'h-28' : 'h-24',
             categoryConfig.colorClass
           )}
           data-testid="news-card-data-banner"
-          aria-hidden="true"
+          // Magnitude/location/depth are real content for SR users; only the
+          // decorative category-icon banner stays hidden.
+          aria-hidden={!showEarthquakeData}
         >
-          {item.category === 'earthquakes' && item.magnitude != null ? (
+          {showEarthquakeData ? (
             <div className="flex flex-col items-center gap-0.5 px-3 text-center font-mono">
               <span className="text-3xl sm:text-4xl font-bold leading-none tracking-tight">
-                M{item.magnitude.toFixed(1)}
+                M{earthquakeMagnitude.toFixed(1)}
               </span>
               {item.location ? (
                 <span className="text-xs opacity-90 line-clamp-1 max-w-full">{item.location}</span>
@@ -225,7 +230,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
               ) : null}
             </div>
           ) : (
-            <CategoryIcon className="w-10 h-10 opacity-90" />
+            <CategoryIcon className="w-10 h-10 opacity-90" aria-hidden="true" />
           )}
           <div className="absolute top-2 right-2 flex gap-2">
             <PriorityIndicator priority={item.priority} size="md" />

@@ -113,9 +113,17 @@ describe('NewsCard default variant', () => {
       />,
     );
 
-    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('M5.1');
-    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('south of Tonga');
-    expect(screen.getByTestId('news-card-data-banner')).toHaveTextContent('10.0 km depth');
+    const banner = screen.getByTestId('news-card-data-banner');
+    expect(banner).toHaveTextContent('M5.1');
+    expect(banner).toHaveTextContent('south of Tonga');
+    expect(banner).toHaveTextContent('10.0 km depth');
+    expect(banner).not.toHaveAttribute('aria-hidden', 'true');
     expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('keeps decorative category banners hidden from assistive tech', () => {
+    render(<NewsCard item={makeItem({ imageUrl: undefined, category: 'severe' })} />);
+
+    expect(screen.getByTestId('news-card-data-banner')).toHaveAttribute('aria-hidden', 'true');
   });
 });
