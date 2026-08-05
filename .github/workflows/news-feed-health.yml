@@ -1,0 +1,30 @@
+name: News Feed Health
+
+# Weekly probe of enabled RSS/Atom/JSON sources used by /news.
+# Fails the job when any enabled feed is non-2xx or returns a mismatched body
+# so silent outages (like the old NWS CAP decommission) surface without a human
+# remembering to run scripts/check-news-feeds.ts.
+
+on:
+  schedule:
+    - cron: '0 15 * * 1' # Mondays 15:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Check enabled news feeds
+        run: npx tsx scripts/check-news-feeds.ts
