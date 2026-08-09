@@ -260,6 +260,41 @@ describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
     // 05:00 UTC is 14:00 in Tokyo — the strip must start at the 2 PM slot.
     expect(result.hourlyForecast![0].time).toBe('2 PM');
     expect(result.hourlyForecast!.length).toBe(48);
+    // dt must be a true UTC epoch for 14:00 JST (= 05:00 UTC), not runtime-local parse.
+    expect(result.hourlyForecast![0].dt).toBe(
+      Math.floor(new Date('2025-03-25T05:00:00Z').getTime() / 1000),
+    );
+    expect(result.timezone).toBe('Asia/Tokyo');
+    expect(result.timezoneAbbreviation).toBe('JST');
+  });
+
+  // Regression: a Lisbon viewer looking at Pleasanton must get California
+  // epochs on hourly dt so the "NOW" chip lands on local noon, not Lisbon evening.
+  it('should emit UTC epochs for Pleasanton hours when utc_offset is Pacific', async () => {
+    // Lisbon-ish "now": 2025-08-09T19:27:00Z (== 12:27 PM PDT).
+    jest.spyOn(Date, 'now').mockReturnValue(new Date('2025-08-09T19:27:00Z').getTime());
+
+    const pleasanton = makeForecastResponse();
+    pleasanton.utc_offset_seconds = -25200; // PDT
+    pleasanton.timezone = 'America/Los_Angeles';
+    pleasanton.timezone_abbreviation = 'PDT';
+    pleasanton.hourly.time = Array.from({ length: 48 }, (_, i) => {
+      const hour = i % 24;
+      const day = 9 + Math.floor(i / 24);
+      return `2025-08-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00`;
+    });
+    stubClientApiFetches(pleasanton);
+
+    const result = await buildWeatherDataFromOpenMeteo(
+      37.66, -121.87, 'Pleasanton', 'imperial', 'US'
+    );
+
+    // First slot should be 12 PM PDT wall clock.
+    expect(result.hourlyForecast![0].time).toBe('12 PM');
+    // 12:00 PDT = 19:00 UTC.
+    expect(result.hourlyForecast![0].dt).toBe(
+      Math.floor(new Date('2025-08-09T19:00:00Z').getTime() / 1000),
+    );
   });
 
   // Regression: hourly visibility was fetched but never mapped, so the

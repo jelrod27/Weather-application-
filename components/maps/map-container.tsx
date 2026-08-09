@@ -25,6 +25,7 @@ interface MapContainerProps {
   latitude?: number
   longitude?: number
   locationName?: string
+  timeZone?: string
   theme?: ThemeType | string
   displayMode?: 'widget' | 'full-page'
   className?: string
@@ -34,6 +35,7 @@ export function MapContainer({
   latitude,
   longitude,
   locationName,
+  timeZone,
   theme = 'nord',
   displayMode = 'widget',
   className
@@ -62,6 +64,7 @@ export function MapContainer({
           latitude={latitude}
           longitude={longitude}
           locationName={locationName}
+          timeZone={timeZone}
           theme={theme as ThemeType}
           displayMode={displayMode}
         />

@@ -20,6 +20,8 @@ interface LazyWeatherMapProps {
   latitude?: number
   longitude?: number
   locationName?: string
+  /** IANA timezone for radar "updated" stamp (location-local, not viewer). */
+  timeZone?: string
   theme?: ThemeType | string
   defaultMode?: 'static' | 'animation'
   displayMode?: 'full-page' | 'widget'
@@ -29,6 +31,7 @@ export default function LazyWeatherMap({
   latitude,
   longitude,
   locationName,
+  timeZone,
   theme = 'nord',
   displayMode = 'widget'
 }: LazyWeatherMapProps) {
@@ -37,6 +40,7 @@ export default function LazyWeatherMap({
       latitude={latitude}
       longitude={longitude}
       locationName={locationName}
+      timeZone={timeZone}
       theme={theme}
       displayMode={displayMode}
     />

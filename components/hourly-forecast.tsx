@@ -92,7 +92,8 @@ export default function HourlyForecast({
               const hourTime = new Date(hour.dt * 1000);
               const isCurrentHour =
                 now !== null && Math.abs(hourTime.getTime() - now) < 1800000; // Within 30 min
-              const isMidnight = hourTime.getHours() === 0;
+              // City wall-clock label is already local; don't use viewer getHours().
+              const isMidnight = hour.time === '12 AM';
 
               return (
                 <HourlyCard
