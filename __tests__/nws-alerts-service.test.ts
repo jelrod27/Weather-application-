@@ -7,6 +7,7 @@ import {
   fetchAlertCounts,
   fetchActiveAlerts,
   getWISScore,
+  harmWarningActiveAlertsUrl,
   type AlertCounts,
 } from '@/lib/services/nws-alerts-service';
 
@@ -236,3 +237,14 @@ describe('Weather Intensity Score (WIS)', () => {
     });
   });
 });
+
+describe('harmWarningActiveAlertsUrl', () => {
+  it('requests only tornado, severe thunderstorm, and flash flood warnings', () => {
+    const url = harmWarningActiveAlertsUrl()
+    expect(url).toContain('api.weather.gov/alerts/active')
+    expect(url).toContain('Tornado%20Warning')
+    expect(url).toContain('Severe%20Thunderstorm%20Warning')
+    expect(url).toContain('Flash%20Flood%20Warning')
+    expect(url).not.toContain('Watch')
+  })
+})

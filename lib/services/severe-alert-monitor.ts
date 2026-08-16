@@ -1,21 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getHubAlertsHref } from '@/lib/home/hub-links'
 import type { Database } from '@/lib/supabase/types'
-import { fetchActiveAlertsDetail, type NWSAlertDetail } from '@/lib/services/nws-alerts-service'
+import { fetchHarmWarningAlerts, type NWSAlertDetail } from '@/lib/services/nws-alerts-service'
+import { pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 import { filterSevereMonitorAlerts } from '@/lib/services/severe-alert-filter'
 import { classifySevereAlertTier } from '@/lib/services/severe-alert-classifier'
 import { fetchEnabledSevereSubscriptions } from '@/lib/services/severe-alert-subscriptions'
 import type {
-  MonitorClearedLocation,
   MonitorNewAlert,
   MonitorSubscription,
   SevereMonitorRunResult,
   SevereWeatherAlertPayload,
-  SevereWeatherAllClearPayload,
 } from '@/lib/services/severe-alert-types'
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.16bitweather.co'
 
 function pointKey(lat: number, lon: number): string {
   return `${lat.toFixed(4)},${lon.toFixed(4)}`
@@ -30,6 +26,7 @@ function buildWarningPayload(
     alertId: alert.id,
     event: alert.event,
     headline: alert.headline,
+    instruction: alert.instruction,
     severity: alert.severity,
     urgency: alert.urgency,
     expires: alert.expires,
@@ -38,18 +35,6 @@ function buildWarningPayload(
     savedLocationId: subscription.saved_location_id,
     warningsHref: getHubAlertsHref(alert.id),
     tier,
-  }
-}
-
-function buildAllClearPayload(
-  subscription: MonitorSubscription,
-  clearedAlertIds: string[],
-): SevereWeatherAllClearPayload {
-  return {
-    locationName: subscription.locationLabel,
-    savedLocationId: subscription.saved_location_id,
-    clearedAlertIds,
-    warningsHref: `${BASE_URL}/warnings`,
   }
 }
 
@@ -95,20 +80,23 @@ async function insertUserAlert(
   input: {
     userId: string
     subscriptionId: string
-    kind: 'severe_weather' | 'severe_weather_all_clear'
-    payload: SevereWeatherAlertPayload | SevereWeatherAllClearPayload
+    payload: SevereWeatherAlertPayload
   },
-): Promise<string> {
+): Promise<string | null> {
   const { data, error } = await supabase
     .from('user_alerts')
     .insert({
       user_id: input.userId,
       subscription_id: input.subscriptionId,
-      kind: input.kind,
+      kind: 'severe_weather',
       payload: input.payload,
     } as never)
     .select('id')
     .single()
+
+  if (error?.code === '23505') {
+    return null
+  }
 
   if (error || !(data as { id?: string } | null)?.id) {
     throw new Error(`user_alerts insert failed: ${error?.message ?? 'missing id'}`)
@@ -119,12 +107,12 @@ async function insertUserAlert(
 
 export type SevereMonitorHooks = {
   onNewAlert?: (item: MonitorNewAlert) => Promise<void>
-  onAllClear?: (item: MonitorClearedLocation) => Promise<void>
 }
 
 /**
- * Poll NWS point alerts for each enabled subscription, diff against stored state,
- * and write in-app alerts for newly active or cleared warnings.
+ * Fetch national harm-causing warnings once, match saved pins to polygons,
+ * and write in-app alerts for newly covering events. Never infers all-clear
+ * from an empty or failed fetch.
  */
 export async function runSevereAlertMonitor(
   supabase: SupabaseClient<Database>,
@@ -143,40 +131,29 @@ export async function runSevereAlertMonitor(
     return result
   }
 
-  const pointCache = new Map<string, NWSAlertDetail[]>()
-  const uniquePoints = new Set<string>()
+  result.uniquePoints = new Set(
+    subscriptions.map((sub) => pointKey(sub.latitude, sub.longitude)),
+  ).size
 
-  for (const sub of subscriptions) {
-    const key = pointKey(sub.latitude, sub.longitude)
-    uniquePoints.add(key)
-    if (!pointCache.has(key)) {
-      try {
-        const alerts = await fetchActiveAlertsDetail({
-          point: { lat: sub.latitude, lon: sub.longitude },
-        })
-        pointCache.set(key, filterSevereMonitorAlerts(alerts))
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'NWS fetch failed'
-        result.errors.push(`${key}: ${msg}`)
-        pointCache.set(key, [])
-      }
-    }
+  let nationalAlerts: NWSAlertDetail[]
+  try {
+    nationalAlerts = filterSevereMonitorAlerts(await fetchHarmWarningAlerts())
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'NWS fetch failed'
+    result.errors.push(`national: ${msg}`)
+    return result
   }
 
-  result.uniquePoints = uniquePoints.size
-
   for (const subscription of subscriptions) {
-    const key = pointKey(subscription.latitude, subscription.longitude)
-    const currentAlerts = pointCache.get(key) ?? []
-    const currentIds = currentAlerts.map((a) => a.id)
+    const currentAlerts = nationalAlerts.filter((alert) =>
+      pointInNwsGeometry(subscription.latitude, subscription.longitude, alert.geometry),
+    )
+    const currentIds = currentAlerts.map((alert) => alert.id)
 
     try {
       const previousIds = await loadMonitorState(supabase, subscription.id)
       const previousSet = new Set(previousIds)
-      const currentSet = new Set(currentIds)
-
-      const newAlerts = currentAlerts.filter((a) => !previousSet.has(a.id))
-      const clearedIds = previousIds.filter((id) => !currentSet.has(id))
+      const newAlerts = currentAlerts.filter((alert) => !previousSet.has(alert.id))
 
       let syncedIds = [...previousIds]
 
@@ -185,30 +162,16 @@ export async function runSevereAlertMonitor(
         const userAlertId = await insertUserAlert(supabase, {
           userId: subscription.user_id,
           subscriptionId: subscription.id,
-          kind: 'severe_weather',
           payload,
         })
+        if (!userAlertId) {
+          syncedIds.push(alert.id)
+          continue
+        }
         result.newAlerts += 1
         syncedIds.push(alert.id)
         await saveMonitorState(supabase, subscription.id, syncedIds)
         await hooks.onNewAlert?.({ subscription, alert, userAlertId, payload })
-      }
-
-      if (clearedIds.length > 0 && previousIds.length > 0 && currentIds.length === 0) {
-        const payload = buildAllClearPayload(subscription, clearedIds)
-        const userAlertId = await insertUserAlert(supabase, {
-          userId: subscription.user_id,
-          subscriptionId: subscription.id,
-          kind: 'severe_weather_all_clear',
-          payload,
-        })
-        result.allClears += 1
-        await hooks.onAllClear?.({
-          subscription,
-          clearedAlertIds: clearedIds,
-          userAlertId,
-          payload,
-        })
       }
 
       await saveMonitorState(supabase, subscription.id, currentIds)

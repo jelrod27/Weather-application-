@@ -1,14 +1,13 @@
 import type { NextRequest } from 'next/server'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
-import { deliverSevereAlertAllClearEmail, deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
-import { backfillSevereAlertSubscriptions } from '@/lib/services/severe-alert-subscriptions'
+import { deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { logRouteError } from '@/lib/error-utils'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const maxDuration = 300
+export const maxDuration = 55
 
 export async function GET(request: NextRequest) {
   const auth = verifyCronBearer(request)
@@ -26,20 +25,12 @@ export async function GET(request: NextRequest) {
     let emailsFailed = 0
     let emailsSkipped = 0
 
-    let allClearEmailsSent = 0
-
-    const backfill = await backfillSevereAlertSubscriptions(supabase)
-
     const result = await runSevereAlertMonitor(supabase, {
       onNewAlert: async (item) => {
         const emailResult = await deliverSevereAlertEmail(supabase, item)
         if (emailResult.sent) emailsSent += 1
         else if (emailResult.skipped) emailsSkipped += 1
         else emailsFailed += 1
-      },
-      onAllClear: async (item) => {
-        const emailResult = await deliverSevereAlertAllClearEmail(supabase, item)
-        if (emailResult.sent) allClearEmailsSent += 1
       },
     })
 
@@ -49,8 +40,6 @@ export async function GET(request: NextRequest) {
       emailsSent,
       emailsSkipped,
       emailsFailed,
-      allClearEmailsSent,
-      usersSynced: backfill.usersSynced,
       ...result,
     })
   } catch (error) {

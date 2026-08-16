@@ -21,11 +21,15 @@ describe('severe-alert-email-service', () => {
       locationName: 'Denver, CO',
       savedLocationId: 'loc-1',
       warningsHref: '/warnings?alert=urn%3Aoid%3A1',
+      instruction: 'Take shelter now.',
     })
 
     expect(subject).toBe('Tornado Warning — Denver, CO')
     expect(text).toContain('/warnings?alert=')
+    expect(text).toContain('Take shelter now.')
+    expect(text).toContain('does not replace Wireless Emergency Alerts')
     expect(html).toContain('Open warnings command center')
+    expect(html).toContain('Take shelter now.')
   })
 
   it('escapes HTML in email body fields', () => {
