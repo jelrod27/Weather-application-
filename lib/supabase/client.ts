@@ -3,6 +3,7 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from './types'
 import { PLACEHOLDER_URL, PLACEHOLDER_ANON_KEY, warnIfPlaceholder } from './constants'
+import { supabaseTimedFetch } from './timed-fetch'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_ANON_KEY
@@ -11,8 +12,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER
 warnIfPlaceholder(supabaseUrl, supabaseAnonKey, 'createBrowserClient')
 
 export const supabase = createBrowserClient<Database>(
-  supabaseUrl, 
-  supabaseAnonKey
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    global: { fetch: supabaseTimedFetch },
+  },
 )
 
 const getCurrentUser = async () => {

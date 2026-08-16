@@ -8,6 +8,10 @@ import { getProfile } from '@/lib/supabase/database'
 import { fetchUserPreferences } from '@/lib/services/preferences-service'
 import { AuthUserDataLoadGate } from '@/lib/auth/auth-load-generation'
 import { userCacheService } from '@/lib/user-cache-service'
+import { SUPABASE_FETCH_TIMEOUT_MS } from '@/lib/supabase/timed-fetch'
+
+/** Safety net above the supabase-js fetch abort so the login control cannot spin forever. */
+const AUTH_INIT_TIMEOUT_MS = SUPABASE_FETCH_TIMEOUT_MS + 1500
 
 interface AuthContextType {
   user: User | null
@@ -297,7 +301,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setLoading(false)
         setIsInitialized(true)
       }
-    }, 8000) // 8 second timeout for production environments
+    }, AUTH_INIT_TIMEOUT_MS)
 
     // Initialize
     initializeAuth()

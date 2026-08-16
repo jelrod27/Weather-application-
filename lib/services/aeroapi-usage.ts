@@ -20,7 +20,8 @@
  * lets us blow past the cap.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const AEROAPI_DEFAULT_MONTHLY_CAP = 800;
 
@@ -28,13 +29,9 @@ let cachedClient: SupabaseClient | null = null;
 
 function getServiceRoleClient(): SupabaseClient | null {
   if (cachedClient) return cachedClient;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) return null;
-  cachedClient = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  return cachedClient;
+  const client = createServiceRoleSupabaseClient();
+  if (client) cachedClient = client;
+  return client;
 }
 
 function readCapFromEnv(): number {
