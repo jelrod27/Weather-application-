@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isPlaywrightTestModeRequest } from '@/lib/playwright-test-mode'
-import { resolveAuthenticatedAuthRouteRedirect } from '@/lib/auth/middleware-redirects'
+import {
+  AUTH_SESSION_LOOKUP_TIMEOUT_MS,
+  needsAuthSessionLookup,
+  resolveAuthenticatedAuthRouteRedirect,
+} from '@/lib/auth/middleware-redirects'
+import type { User } from '@supabase/supabase-js'
 
 /**
  * Build a Content-Security-Policy for this request.
@@ -40,6 +45,24 @@ function buildCspHeader(isProd: boolean): string {
   ].join('; ')
 }
 
+async function getVerifiedUserOrNull(
+  supabase: ReturnType<typeof createServerClient>,
+): Promise<User | null> {
+  try {
+    const timedOut = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), AUTH_SESSION_LOOKUP_TIMEOUT_MS)
+    })
+    const lookup = supabase.auth.getUser().then(
+      (result: { data: { user: User | null } }) => result.data.user,
+      () => null,
+    )
+    return await Promise.race([lookup, timedOut])
+  } catch (error) {
+    console.error('[middleware] auth lookup failed', error)
+    return null
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
 
@@ -59,11 +82,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // API routes authenticate themselves (cookie session or Bearer token) and
-  // are never in `protectedRoutes`/`authRoutes` below. Skip the per-request
-  // `getUser()` network round-trip for them — it added latency to every
-  // public API call and logged AuthSessionMissingError noise for anonymous
-  // traffic. Session cookie refresh for browser clients still happens on
-  // page navigations, which always pass through the block below.
+  // are never session-gated here. Skip the per-request `getUser()` round-trip.
+  // Session cookie refresh still runs on /profile, /saved-locations, and /auth.
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return response
   }
@@ -71,6 +91,13 @@ export async function middleware(request: NextRequest) {
   // TEST MODE: Skip auth checks during E2E (same rules as API routes — see lib/playwright-test-mode.ts)
 
   if (isPlaywrightTestModeRequest(request)) {
+    return response
+  }
+
+  // Public pages (home, radar, blog, …) only need CSP. A failing/retrying
+  // supabase.auth.getUser() on every navigation 504'd production: Vercel
+  // kills Edge middleware that does not respond within 25s.
+  if (!needsAuthSessionLookup(request.nextUrl.pathname)) {
     return response
   }
 
@@ -97,18 +124,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getVerifiedUserOrNull(supabase)
 
-
-  // /dashboard is intentionally NOT protected: anonymous visitors get a
-  // preview state with a sign-in CTA (app/dashboard/page.tsx) instead of a
-  // redirect. Authenticated-only data stays safe behind RLS + API auth.
-  const protectedRoutes = ['/profile', '/saved-locations']
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  )
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith('/profile') ||
+    request.nextUrl.pathname.startsWith('/saved-locations')
 
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/auth', request.url)
