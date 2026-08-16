@@ -6,6 +6,7 @@
  */
 
 import { captureError } from '@/lib/error-utils'
+import { HARM_WARNING_EVENTS } from '@/lib/services/severe-alert-filter'
 
 const NWS_USER_AGENT =
   '16BitWeather/1.0 (https://16bitweather.co; ops@16bitweather.co)'
@@ -198,6 +199,11 @@ export function pointActiveAlertsUrl(lat: number, lon: number): string {
   return `https://api.weather.gov/alerts/active?status=actual&message_type=alert&point=${lat},${lon}`
 }
 
+export function harmWarningActiveAlertsUrl(): string {
+  const event = HARM_WARNING_EVENTS.map((name) => encodeURIComponent(name)).join(',')
+  return `https://api.weather.gov/alerts/active?status=actual&message_type=alert&event=${event}`
+}
+
 export async function fetchActiveAlertsDetail(options?: {
   point?: { lat: number; lon: number }
 }): Promise<NWSAlertDetail[]> {
@@ -205,6 +211,11 @@ export async function fetchActiveAlertsDetail(options?: {
     ? pointActiveAlertsUrl(options.point.lat, options.point.lon)
     : nationalActiveAlertsUrl()
   const fc = await fetchNwsFeatureCollection(url)
+  return fc.features.map((f) => mapNwsFeatureToDetail(f))
+}
+
+export async function fetchHarmWarningAlerts(): Promise<NWSAlertDetail[]> {
+  const fc = await fetchNwsFeatureCollection(harmWarningActiveAlertsUrl())
   return fc.features.map((f) => mapNwsFeatureToDetail(f))
 }
 

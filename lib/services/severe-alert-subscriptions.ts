@@ -153,26 +153,4 @@ export async function fetchEnabledSevereSubscriptions(
   return rows
 }
 
-/** Ensure every notifications-enabled user has severe subscriptions for saved locations. */
-export async function backfillSevereAlertSubscriptions(
-  supabase: SupabaseClient<Database>,
-): Promise<{ usersSynced: number }> {
-  const { data: prefs, error } = await supabase
-    .from('user_preferences')
-    .select('user_id')
-    .eq('notifications_enabled', true)
-
-  if (error) {
-    throw new Error(`Failed to load notification preferences: ${error.message}`)
-  }
-
-  let usersSynced = 0
-  for (const row of prefs ?? []) {
-    await syncSevereAlertSubscriptions(supabase, (row as { user_id: string }).user_id, true)
-    usersSynced += 1
-  }
-
-  return { usersSynced }
-}
-
 export { locationLabel }

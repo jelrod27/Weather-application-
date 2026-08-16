@@ -6,6 +6,7 @@ export type SevereWeatherAlertPayload = {
   alertId: string
   event: string
   headline: string
+  instruction?: string
   severity: string
   urgency: string
   expires: string
@@ -37,13 +38,6 @@ export type MonitorNewAlert = {
   alert: NWSAlertDetail
   userAlertId: string
   payload: SevereWeatherAlertPayload
-}
-
-export type MonitorClearedLocation = {
-  subscription: MonitorSubscription
-  clearedAlertIds: string[]
-  userAlertId: string
-  payload: SevereWeatherAllClearPayload
 }
 
 export type SevereMonitorRunResult = {
