@@ -13,6 +13,7 @@ import {
   countNwsProductTiers,
   countsFromAlerts,
   fetchActiveAlertsDetail,
+  fetchHarmWarningAlerts,
 } from '@/lib/services/nws-alerts-service'
 import { logRouteError } from '@/lib/error-utils'
 
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     const area = url.searchParams.get('area') ?? undefined
     const detail = url.searchParams.get('detail') === '1'
     const geojson = url.searchParams.get('geojson') === '1'
+    const harm = url.searchParams.get('harm') === '1'
     const pointParam = url.searchParams.get('point')
     const point = parsePoint(pointParam)
     if (pointParam != null && pointParam.trim() !== '' && !point) {
@@ -40,7 +42,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let details = await fetchActiveAlertsDetail(point ? { point } : undefined)
+    let details = harm
+      ? await fetchHarmWarningAlerts()
+      : await fetchActiveAlertsDetail(point ? { point } : undefined)
 
     if (area) {
       details = details.filter((a) =>

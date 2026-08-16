@@ -281,6 +281,119 @@ export interface Database {
           read_at?: string | null
         }
       }
+      guest_alert_subscribers: {
+        Row: {
+          id: string
+          email: string
+          latitude: number
+          longitude: number
+          location_label: string
+          enabled: boolean
+          verified_at: string | null
+          verify_token_hash: string | null
+          verify_token_expires_at: string | null
+          manage_token_hash: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          latitude: number
+          longitude: number
+          location_label: string
+          enabled?: boolean
+          verified_at?: string | null
+          verify_token_hash?: string | null
+          verify_token_expires_at?: string | null
+          manage_token_hash: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          latitude?: number
+          longitude?: number
+          location_label?: string
+          enabled?: boolean
+          verified_at?: string | null
+          verify_token_hash?: string | null
+          verify_token_expires_at?: string | null
+          manage_token_hash?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      guest_alert_monitor_state: {
+        Row: {
+          subscriber_id: string
+          active_alert_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          subscriber_id: string
+          active_alert_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          subscriber_id?: string
+          active_alert_ids?: string[]
+          updated_at?: string
+        }
+      }
+      guest_alert_deliveries: {
+        Row: {
+          id: string
+          subscriber_id: string
+          alert_id: string
+          email_sent_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          subscriber_id: string
+          alert_id: string
+          email_sent_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          subscriber_id?: string
+          alert_id?: string
+          email_sent_at?: string | null
+          created_at?: string
+        }
+      }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string | null
+          guest_subscriber_id: string | null
+          endpoint: string
+          p256dh: string
+          auth: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          guest_subscriber_id?: string | null
+          endpoint: string
+          p256dh: string
+          auth: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          guest_subscriber_id?: string | null
+          endpoint?: string
+          p256dh?: string
+          auth?: string
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

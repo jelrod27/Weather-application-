@@ -6,13 +6,7 @@ import {
   shouldShowStargazerCard,
   type HubUserLocation,
 } from '@/lib/home/hub-location';
-
-const SEVERITY_ORDER: Record<string, number> = {
-  Extreme: 0,
-  Severe: 1,
-  Moderate: 2,
-  Minor: 3,
-};
+import { compareWarningPriority } from '@/lib/warnings/local-ranking';
 
 /** SPC categorical risk levels worth surfacing on the home hub (Slight or higher). */
 export const ELEVATED_SPC_RISK_CODES = new Set(['SLGT', 'ENH', 'MDT', 'HIGH']);
@@ -37,7 +31,7 @@ export function shouldShowHubAlerts(
   alerts: { count: number | null; needsLocation: boolean; loading: boolean },
 ): boolean {
   if (alerts.needsLocation || alerts.loading) return false;
-  return (alerts.count ?? 0) > 0;
+  return true;
 }
 
 export function shouldShowSpcOutlook(
@@ -66,14 +60,10 @@ export function summarizeAlerts(alerts: NWSAlertDetail[]): {
   topAlertId: string | null;
 } {
   if (alerts.length === 0) {
-    return { count: 0, headline: 'No active alerts nearby', severity: null, topAlertId: null };
+    return { count: 0, headline: 'No active alerts for this pin', severity: null, topAlertId: null };
   }
 
-  const sorted = [...alerts].sort((a, b) => {
-    const sa = SEVERITY_ORDER[a.severity] ?? 99;
-    const sb = SEVERITY_ORDER[b.severity] ?? 99;
-    return sa - sb;
-  });
+  const sorted = [...alerts].sort(compareWarningPriority);
 
   const top = sorted[0];
   const headline =

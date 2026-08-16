@@ -18,6 +18,7 @@
 import Navigation from "./navigation"
 import Link from "next/link"
 import { getFeaturedCities } from "@/lib/featured-city-links"
+import WarningTakeover from "@/components/alerts/warning-takeover"
 
 interface PageWrapperProps {
   children: React.ReactNode
@@ -45,6 +46,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
         weatherTemperature={weatherTemperature}
         weatherUnit={weatherUnit}
       />
+      <WarningTakeover />
       <main className="relative z-10">
         {children}
       </main>

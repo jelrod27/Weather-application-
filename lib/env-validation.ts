@@ -94,6 +94,18 @@ const envConfig: EnvConfig = {
       name: 'DISCORD_WEBHOOK_URL',
       description: 'Discord webhook for new signup alerts (optional).',
     },
+    VAPID_PUBLIC_KEY: {
+      name: 'VAPID_PUBLIC_KEY',
+      description: 'Web Push VAPID public key (optional - browser alerts stay disabled until set).',
+    },
+    VAPID_PRIVATE_KEY: {
+      name: 'VAPID_PRIVATE_KEY',
+      description: 'Web Push VAPID private key (optional - server-only).',
+    },
+    VAPID_SUBJECT: {
+      name: 'VAPID_SUBJECT',
+      description: 'Web Push VAPID subject, mailto: or https: URL (optional).',
+    },
   },
 };
 

@@ -6,9 +6,11 @@ import { pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 import { filterSevereMonitorAlerts } from '@/lib/services/severe-alert-filter'
 import { classifySevereAlertTier } from '@/lib/services/severe-alert-classifier'
 import { fetchEnabledSevereSubscriptions } from '@/lib/services/severe-alert-subscriptions'
+import { fetchEnabledGuestSubscribers } from '@/lib/services/guest-alert-subscribers'
+import type { GuestAlertSubscriber } from '@/lib/services/guest-alert-subscribers'
 import type {
   MonitorNewAlert,
-  MonitorSubscription,
+  MonitorNewGuestAlert,
   SevereMonitorRunResult,
   SevereWeatherAlertPayload,
 } from '@/lib/services/severe-alert-types'
@@ -18,7 +20,8 @@ function pointKey(lat: number, lon: number): string {
 }
 
 function buildWarningPayload(
-  subscription: MonitorSubscription,
+  locationName: string,
+  savedLocationId: string,
   alert: NWSAlertDetail,
 ): SevereWeatherAlertPayload {
   const tier = classifySevereAlertTier(alert)
@@ -31,8 +34,8 @@ function buildWarningPayload(
     urgency: alert.urgency,
     expires: alert.expires,
     areaDesc: alert.areaDesc,
-    locationName: subscription.locationLabel,
-    savedLocationId: subscription.saved_location_id,
+    locationName,
+    savedLocationId,
     warningsHref: getHubAlertsHref(alert.id),
     tier,
   }
@@ -75,6 +78,43 @@ async function saveMonitorState(
   }
 }
 
+async function loadGuestMonitorState(
+  supabase: SupabaseClient<Database>,
+  subscriberId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('guest_alert_monitor_state')
+    .select('active_alert_ids')
+    .eq('subscriber_id', subscriberId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Guest monitor state read failed: ${error.message}`)
+  }
+
+  return (data as { active_alert_ids?: string[] } | null)?.active_alert_ids ?? []
+}
+
+async function saveGuestMonitorState(
+  supabase: SupabaseClient<Database>,
+  subscriberId: string,
+  activeAlertIds: string[],
+): Promise<void> {
+  const now = new Date().toISOString()
+  const { error } = await supabase.from('guest_alert_monitor_state').upsert(
+    {
+      subscriber_id: subscriberId,
+      active_alert_ids: activeAlertIds,
+      updated_at: now,
+    } as never,
+    { onConflict: 'subscriber_id' },
+  )
+
+  if (error) {
+    throw new Error(`Guest monitor state write failed: ${error.message}`)
+  }
+}
+
 async function insertUserAlert(
   supabase: SupabaseClient<Database>,
   input: {
@@ -105,35 +145,64 @@ async function insertUserAlert(
   return (data as { id: string }).id
 }
 
+async function insertGuestDelivery(
+  supabase: SupabaseClient<Database>,
+  input: { subscriberId: string; alertId: string },
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('guest_alert_deliveries')
+    .insert({
+      subscriber_id: input.subscriberId,
+      alert_id: input.alertId,
+    } as never)
+    .select('id')
+    .single()
+
+  if (error?.code === '23505') {
+    return null
+  }
+
+  if (error || !(data as { id?: string } | null)?.id) {
+    throw new Error(`guest_alert_deliveries insert failed: ${error?.message ?? 'missing id'}`)
+  }
+
+  return (data as { id: string }).id
+}
+
 export type SevereMonitorHooks = {
   onNewAlert?: (item: MonitorNewAlert) => Promise<void>
+  onNewGuestAlert?: (item: MonitorNewGuestAlert) => Promise<void>
 }
 
 /**
- * Fetch national harm-causing warnings once, match saved pins to polygons,
- * and write in-app alerts for newly covering events. Never infers all-clear
- * from an empty or failed fetch.
+ * Fetch national harm-causing warnings once, match saved pins and guest pins
+ * to polygons, and write in-app / guest deliveries for newly covering events.
+ * Never infers all-clear from an empty or failed fetch.
  */
 export async function runSevereAlertMonitor(
   supabase: SupabaseClient<Database>,
   hooks: SevereMonitorHooks = {},
 ): Promise<SevereMonitorRunResult> {
   const subscriptions = await fetchEnabledSevereSubscriptions(supabase)
+  const guests = await fetchEnabledGuestSubscribers(supabase)
   const result: SevereMonitorRunResult = {
     subscriptionsChecked: subscriptions.length,
+    guestSubscribersChecked: guests.length,
     uniquePoints: 0,
     newAlerts: 0,
+    guestNewAlerts: 0,
     allClears: 0,
     errors: [],
   }
 
-  if (subscriptions.length === 0) {
+  if (subscriptions.length === 0 && guests.length === 0) {
     return result
   }
 
-  result.uniquePoints = new Set(
-    subscriptions.map((sub) => pointKey(sub.latitude, sub.longitude)),
-  ).size
+  result.uniquePoints = new Set([
+    ...subscriptions.map((sub) => pointKey(sub.latitude, sub.longitude)),
+    ...guests.map((guest) => pointKey(guest.latitude, guest.longitude)),
+  ]).size
 
   let nationalAlerts: NWSAlertDetail[]
   try {
@@ -158,7 +227,11 @@ export async function runSevereAlertMonitor(
       let syncedIds = [...previousIds]
 
       for (const alert of newAlerts) {
-        const payload = buildWarningPayload(subscription, alert)
+        const payload = buildWarningPayload(
+          subscription.locationLabel,
+          subscription.saved_location_id,
+          alert,
+        )
         const userAlertId = await insertUserAlert(supabase, {
           userId: subscription.user_id,
           subscriptionId: subscription.id,
@@ -181,5 +254,51 @@ export async function runSevereAlertMonitor(
     }
   }
 
+  for (const subscriber of guests) {
+    await processGuestSubscriber(supabase, subscriber, nationalAlerts, result, hooks)
+  }
+
   return result
+}
+
+async function processGuestSubscriber(
+  supabase: SupabaseClient<Database>,
+  subscriber: GuestAlertSubscriber,
+  nationalAlerts: NWSAlertDetail[],
+  result: SevereMonitorRunResult,
+  hooks: SevereMonitorHooks,
+): Promise<void> {
+  const currentAlerts = nationalAlerts.filter((alert) =>
+    pointInNwsGeometry(subscriber.latitude, subscriber.longitude, alert.geometry),
+  )
+  const currentIds = currentAlerts.map((alert) => alert.id)
+
+  try {
+    const previousIds = await loadGuestMonitorState(supabase, subscriber.id)
+    const previousSet = new Set(previousIds)
+    const newAlerts = currentAlerts.filter((alert) => !previousSet.has(alert.id))
+
+    let syncedIds = [...previousIds]
+
+    for (const alert of newAlerts) {
+      const payload = buildWarningPayload(subscriber.locationLabel, subscriber.id, alert)
+      const deliveryId = await insertGuestDelivery(supabase, {
+        subscriberId: subscriber.id,
+        alertId: alert.id,
+      })
+      if (!deliveryId) {
+        syncedIds.push(alert.id)
+        continue
+      }
+      result.guestNewAlerts += 1
+      syncedIds.push(alert.id)
+      await saveGuestMonitorState(supabase, subscriber.id, syncedIds)
+      await hooks.onNewGuestAlert?.({ subscriber, alert, deliveryId, payload })
+    }
+
+    await saveGuestMonitorState(supabase, subscriber.id, currentIds)
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'guest monitor failed'
+    result.errors.push(`guest:${subscriber.id}: ${msg}`)
+  }
 }

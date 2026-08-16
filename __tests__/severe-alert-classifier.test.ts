@@ -18,6 +18,12 @@ function alert(partial: Partial<NWSAlertDetail> & Pick<NWSAlertDetail, 'event'>)
     response: partial.response ?? '',
     sender: partial.sender ?? '',
     geometry: partial.geometry ?? null,
+    hazard: partial.hazard ?? {
+      maxHail: null,
+      maxWind: null,
+      source: null,
+      damageThreat: null,
+    },
     event: partial.event,
   }
 }

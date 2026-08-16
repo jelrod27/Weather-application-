@@ -12,11 +12,7 @@ import {
   type HubUserLocation,
 } from '@/lib/home/hub-utils';
 import { isSpcOutlookRegion } from '@/lib/home/hub-location';
-
-interface HomeHubCoordinates {
-  lat: number;
-  lon: number;
-}
+import { splitLocalWarnings } from '@/lib/warnings/local-ranking';
 
 export interface LocalSpcOutlook {
   label: string | null;
@@ -105,13 +101,17 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
       const requests: Promise<void>[] = [];
 
       requests.push(
-        fetch(`/api/weather/alerts?detail=1&point=${encodeURIComponent(point)}`, { signal })
+        fetch(`/api/weather/alerts?harm=1&detail=1`, { signal })
           .then(async (alertsRes) => {
             if (signal?.aborted) return;
             try {
               if (alertsRes.ok) {
                 const data = (await alertsRes.json()) as { alerts?: NWSAlertDetail[] };
-                setAlertSummary(summarizeAlerts(data.alerts ?? []));
+                const { onYou } = splitLocalWarnings(data.alerts ?? [], {
+                  lat: user.lat,
+                  lon: user.lon,
+                });
+                setAlertSummary(summarizeAlerts(onYou));
               } else {
                 setAlertSummary({ count: 0, headline: 'Alerts unavailable', severity: null, topAlertId: null });
               }
@@ -205,7 +205,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
     if (!userLocation) {
       setAlertSummary({
         count: 0,
-        headline: 'Press START or search for local alerts',
+        headline: 'No active alerts for this pin',
         severity: null,
         topAlertId: null,
       });
@@ -272,11 +272,6 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
       lastUpdatedLabel: lastUpdated ? formatUpdatedAgo(lastUpdated) : null,
     },
   };
-}
-
-export function getAlertsCardValue(data: HomeHubData['alerts']): string {
-  if (data.count === 0) return 'All clear';
-  return `${data.count} near you`;
 }
 
 export function getStargazerCardValue(data: HomeHubData['stargazer']): string {

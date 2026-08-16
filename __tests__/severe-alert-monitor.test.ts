@@ -11,6 +11,10 @@ jest.mock('@/lib/services/severe-alert-subscriptions', () => ({
   fetchEnabledSevereSubscriptions: jest.fn(),
 }))
 
+jest.mock('@/lib/services/guest-alert-subscribers', () => ({
+  fetchEnabledGuestSubscribers: jest.fn().mockResolvedValue([]),
+}))
+
 const mockFetchAlerts = fetchHarmWarningAlerts as jest.Mock
 const { fetchEnabledSevereSubscriptions } = jest.requireMock(
   '@/lib/services/severe-alert-subscriptions',
@@ -80,6 +84,22 @@ function makeSupabaseMock(
         }
       }
 
+      if (table === 'guest_alert_monitor_state' || table === 'guest_alert_deliveries') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+            }),
+          }),
+          upsert: async () => ({ error: null }),
+          insert: () => ({
+            select: () => ({
+              single: async () => ({ data: { id: 'guest-delivery' }, error: null }),
+            }),
+          }),
+        }
+      }
+
       throw new Error(`Unexpected table ${table}`)
     },
   }
@@ -121,7 +141,7 @@ describe('runSevereAlertMonitor', () => {
       payload: expect.objectContaining({
         alertId: 'alert-1',
         instruction: 'Take shelter now.',
-        warningsHref: '/warnings?alert=alert-1',
+        warningsHref: '/warnings/alert-1',
       }),
     })
     expect(state['sub-1']).toEqual(['alert-1'])

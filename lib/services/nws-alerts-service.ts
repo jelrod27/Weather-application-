@@ -7,6 +7,10 @@
 
 import { captureError } from '@/lib/error-utils'
 import { HARM_WARNING_EVENTS } from '@/lib/services/severe-alert-filter'
+import {
+  parseNwsHazardParameters,
+  type NwsHazardParameters,
+} from '@/lib/warnings/nws-parameters'
 
 const NWS_USER_AGENT =
   '16BitWeather/1.0 (https://16bitweather.co; ops@16bitweather.co)'
@@ -43,6 +47,8 @@ export interface NWSAlertDetail extends NWSAlert {
   response: string
   sender: string
   geometry: NwsGeometry | null
+  /** Hail / wind / source parsed from NWS CAP `parameters` with description fallbacks. */
+  hazard: NwsHazardParameters
 }
 
 /** Subset of GeoJSON geometry returned by NWS api.weather.gov alerts. */
@@ -95,6 +101,11 @@ function mapNwsFeatureToDetail(feature: {
   const geom = feature.geometry
   const geometry: NwsGeometry | null =
     geom && typeof geom === 'object' && 'type' in geom ? (geom as NwsGeometry) : null
+  const description = asString(p.description)
+  const rawParameters =
+    p.parameters && typeof p.parameters === 'object' && !Array.isArray(p.parameters)
+      ? (p.parameters as Record<string, unknown>)
+      : null
 
   return {
     id: asString(p.id),
@@ -107,12 +118,13 @@ function mapNwsFeatureToDetail(feature: {
     sent: asString(p.sent),
     effective: asString(p.effective),
     ends: asString(p.ends),
-    description: asString(p.description),
+    description,
     instruction: asString(p.instruction),
     certainty: asString(p.certainty),
     response: asString(p.response),
     sender: asString(p.sender),
     geometry,
+    hazard: parseNwsHazardParameters(rawParameters, description),
   }
 }
 
