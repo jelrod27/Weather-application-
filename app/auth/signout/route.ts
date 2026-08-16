@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
 
 export async function POST(request: Request) {
     // CSRF guard: this route is cookie-authenticated, so reject cross-site
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            global: { fetch: supabaseTimedFetch },
             cookies: {
                 getAll() {
                     return cookieStore.getAll()

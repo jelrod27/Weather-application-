@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { Database } from '@/lib/supabase/types'
 import { maybeSendWelcomeEmail } from '@/lib/services/welcome-email-service'
+import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -14,6 +15,7 @@ export async function POST() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: supabaseTimedFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll()

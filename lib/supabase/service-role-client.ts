@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
 import { PLACEHOLDER_SERVICE_KEY, PLACEHOLDER_URL } from '@/lib/supabase/constants'
+import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
 
 export function createServiceRoleSupabaseClient(): SupabaseClient<Database> | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,5 +18,6 @@ export function createServiceRoleSupabaseClient(): SupabaseClient<Database> | nu
 
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: supabaseTimedFetch },
   })
 }

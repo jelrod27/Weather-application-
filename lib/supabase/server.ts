@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from './types'
 import { PLACEHOLDER_URL, PLACEHOLDER_ANON_KEY, warnIfPlaceholder } from './constants'
+import { supabaseTimedFetch } from './timed-fetch'
 
 // Create a server-side supabase client
 export const createServerSupabaseClient = async () => {
@@ -17,6 +18,7 @@ export const createServerSupabaseClient = async () => {
     supabaseUrl,
     supabaseKey,
     {
+      global: { fetch: supabaseTimedFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll()

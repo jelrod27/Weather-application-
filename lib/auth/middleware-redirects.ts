@@ -1,10 +1,11 @@
+import { SUPABASE_FETCH_TIMEOUT_MS } from '@/lib/supabase/timed-fetch'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 
 const PROTECTED_ROUTE_PREFIXES = ['/profile', '/saved-locations'] as const
 const AUTH_ROUTE_PREFIXES = ['/auth/login', '/auth/signup'] as const
 
 /** Cap edge `getUser()` so a hung Supabase fetch cannot trip Vercel's 25s middleware gateway timeout. */
-export const AUTH_SESSION_LOOKUP_TIMEOUT_MS = 2500
+export const AUTH_SESSION_LOOKUP_TIMEOUT_MS = SUPABASE_FETCH_TIMEOUT_MS
 
 /**
  * Homepage and other public routes do not need a verified session in middleware.

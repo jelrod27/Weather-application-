@@ -7,6 +7,7 @@ import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import { maybeSendWelcomeEmail } from '@/lib/services/welcome-email-service'
 import { resolvePostAuthRedirect } from '@/lib/auth/post-auth-redirect'
 import { sanitizeLogValue } from '@/lib/sanitize-log'
+import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
 
 export async function handleAuthCallbackWelcome(user: {
   id: string
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: supabaseTimedFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll()

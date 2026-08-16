@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { captureError, captureDbError } from '@/lib/error-utils'
 import { tryEnableSevereAlertsForUser } from '@/lib/services/severe-alert-subscription-sync'
 import { withApiRoute } from '@/lib/api/with-api-route'
+import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
 
 // Reject blank/whitespace coordinates instead of coercing them to 0. Plain
 // z.coerce.number() runs Number(...), which turns '', '   ', null, and false
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
       // Auth-scoped client: verifies the JWT and enforces RLS
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
         global: {
+          fetch: supabaseTimedFetch,
           headers: {
             Authorization: authHeader
           }
@@ -185,6 +187,7 @@ export async function GET(request: NextRequest) {
 
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
         global: {
+          fetch: supabaseTimedFetch,
           headers: {
             Authorization: authHeader
           }
