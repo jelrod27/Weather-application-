@@ -7,6 +7,7 @@ import WeatherIconModern from "@/components/weather-icon-modern"
 import { ShareButton } from "@/components/share-weather-modal"
 import { useTheme } from "@/components/theme-provider"
 import { getHeroAccent } from "@/lib/weather/hero-utils"
+import { formatLocationTimeWithZone } from "@/lib/format-location-time"
 import { ArrowDown, ArrowUp, CloudRain, Droplets, Thermometer, Wind } from "lucide-react"
 
 /** Icon tints tuned per theme — dark themes use pastel /90; daybreak uses saturated hues for cream bg. */
@@ -47,6 +48,8 @@ interface HeroWeatherCardProps {
   windUnit?: string
   precipChance?: number
   glowClass?: string
+  /** IANA timezone for the viewed location (city-local clock). */
+  timezone?: string
 }
 
 export function HeroWeatherCard({
@@ -64,11 +67,13 @@ export function HeroWeatherCard({
   windUnit = 'mph',
   precipChance,
   glowClass,
+  timezone,
 }: HeroWeatherCardProps) {
   const { theme } = useTheme()
   const accent = getHeroAccent(condition)
   const displayTemp = typeof temperature === 'number' ? Math.round(temperature) : null
   const chipIcon = theme === 'daybreak' ? HERO_CHIP_ICON.daybreak : HERO_CHIP_ICON.dark
+  const localTimeLabel = useLocationLocalTime(timezone)
 
   return (
     <Card className={cn(HERO_CARD_BASE, accent, "relative overflow-hidden")}>
@@ -101,6 +106,15 @@ export function HeroWeatherCard({
                 />
               )}
             </div>
+
+            {localTimeLabel ? (
+              <p
+                data-testid="location-local-time"
+                className="mb-1 text-xs sm:text-sm font-mono text-muted-foreground/80 tracking-wide"
+              >
+                Local time {localTimeLabel}
+              </p>
+            ) : null}
 
             <p
               data-testid="temperature-value"
@@ -174,6 +188,25 @@ function HeroChip({ icon, label, value }: { icon: React.ReactNode; label: string
       <span className="tabular-nums text-foreground">{value}</span>
     </div>
   )
+}
+
+/** Live city-local clock; null until mount (and when timezone unknown) to avoid SSR skew. */
+function useLocationLocalTime(timeZone?: string): string | null {
+  const [label, setLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!timeZone) {
+      setLabel(null)
+      return
+    }
+
+    const tick = () => setLabel(formatLocationTimeWithZone(Date.now(), timeZone))
+    tick()
+    const id = window.setInterval(tick, 30_000)
+    return () => window.clearInterval(id)
+  }, [timeZone])
+
+  return label
 }
 
 /**

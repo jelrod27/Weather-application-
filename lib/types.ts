@@ -73,6 +73,12 @@ export interface WeatherData {
   pressure: string;
   sunrise: string;
   sunset: string;
+  /** IANA timezone for the location (e.g. America/Los_Angeles) from Open-Meteo. */
+  timezone?: string;
+  /** Short timezone label from Open-Meteo (e.g. PDT). */
+  timezoneAbbreviation?: string;
+  /** Seconds east of UTC for the location at forecast time. */
+  utcOffsetSeconds?: number;
   coordinates?: {
     lat: number;
     lon: number;
