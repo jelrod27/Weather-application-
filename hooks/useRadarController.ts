@@ -29,6 +29,7 @@ import {
   URL_SYNC_DEBOUNCE_MS,
 } from '@/components/radar-v2/radar-constants'
 import { alertStyle, spcStyle, stormReportStyle } from '@/components/radar-v2/radar-styles'
+import { formatLocationTime } from '@/lib/format-location-time'
 
 import Map from 'ol/Map'
 import View from 'ol/View'
@@ -45,6 +46,8 @@ export interface UseRadarControllerProps {
   latitude?: number
   longitude?: number
   locationName?: string
+  /** IANA timezone for location-local "updated" labels. */
+  timeZone?: string
   theme?: ThemeType
   displayMode?: 'full-page' | 'widget'
   onLocationSearch?: (location: string) => void
@@ -169,6 +172,7 @@ export function useRadarController({
   latitude,
   longitude,
   locationName,
+  timeZone,
   theme: _theme = 'nord',
   displayMode = 'full-page',
   onLocationSearch,
@@ -578,7 +582,7 @@ export function useRadarController({
   }, [metadata, isWidget])
 
   const updatedLabel = metadata?.generatedAt
-    ? new Date(metadata.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    ? formatLocationTime(metadata.generatedAt, timeZone)
     : null
 
   const statusClass = getFreshnessClass(metadata?.generatedAt ?? null)

@@ -16,7 +16,10 @@ import {
   fetchOpenMeteoAirQuality,
   fetchOpenMeteoForecast,
 } from '@/lib/open-meteo';
-import { mapOpenMeteoPollenHourly } from '@/lib/pollen/open-meteo-pollen';
+import {
+  mapOpenMeteoPollenHourly,
+  openMeteoLocalTimeToEpoch,
+} from '@/lib/pollen/open-meteo-pollen';
 import { normalizePollenCategories } from '@/lib/pollen/normalize-pollen-categories';
 import { isServerRuntime } from '@/lib/runtime-env';
 import { getWMODescription, getWMOCondition } from '../wmo-codes';
@@ -27,6 +30,17 @@ import {
   getApiUrl,
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
+
+/** Format Open-Meteo city wall-clock hour ("…T14:00") as "2 PM" without runtime TZ. */
+function formatHourlyLabel(naiveLocalTime: string): string {
+  const timePart = naiveLocalTime.split('T')[1];
+  if (!timePart) return 'N/A';
+  const hours = parseInt(timePart.split(':')[0] ?? '', 10);
+  if (Number.isNaN(hours)) return 'N/A';
+  const h12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  return `${h12} ${ampm}`;
+}
 
 type PollenPayload = WeatherData['pollen'];
 
@@ -283,14 +297,12 @@ export async function buildWeatherDataFromOpenMeteo(
     // window by the viewer<->city offset (a Tokyo lookup from New York
     // started ~13h in the past). Convert each entry to a true epoch using
     // utc_offset_seconds from the same response instead.
-    const utcOffsetMs = (forecast.utc_offset_seconds ?? 0) * 1000;
-    const cityWallClockToEpoch = (naive: string): number =>
-      Date.parse(`${naive}Z`) - utcOffsetMs;
+    const utcOffsetSeconds = forecast.utc_offset_seconds ?? 0;
 
     // Find the first hourly entry at or after the current time
     let startIdx = 0;
     for (let i = 0; i < hourly.time.length; i++) {
-      if (cityWallClockToEpoch(hourly.time[i]) >= nowMs - 30 * 60 * 1000) {
+      if (openMeteoLocalTimeToEpoch(hourly.time[i], utcOffsetSeconds) >= nowMs - 30 * 60 * 1000) {
         startIdx = i;
         break;
       }
@@ -300,14 +312,12 @@ export async function buildWeatherDataFromOpenMeteo(
     for (let j = 0; j < hourlyCount; j++) {
       const i = startIdx + j;
       const hourTime = hourly.time[i];
-      const dt = Math.floor(new Date(hourTime).getTime() / 1000);
-
-      // Format time display (e.g., "2 PM")
-      const hourDate = new Date(hourTime);
-      const h = hourDate.getHours();
-      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const timeString = `${h12} ${ampm}`;
+      // dt must be a true UTC epoch so client "NOW" highlighting works for
+      // remote cities (Lisbon viewer looking at Pleasanton, etc.).
+      const dt = Math.floor(
+        openMeteoLocalTimeToEpoch(hourTime, utcOffsetSeconds) / 1000,
+      );
+      const timeString = formatHourlyLabel(hourTime);
 
       const hourWeatherCode = hourly.weather_code?.[i] ?? 0;
 
@@ -353,6 +363,9 @@ export async function buildWeatherDataFromOpenMeteo(
     pressure,
     sunrise,
     sunset,
+    timezone: forecast.timezone,
+    timezoneAbbreviation: forecast.timezone_abbreviation,
+    utcOffsetSeconds: forecast.utc_offset_seconds,
     coordinates: { lat, lon },
     forecast: forecastDays,
     moonPhase,

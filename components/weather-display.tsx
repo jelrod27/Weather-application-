@@ -110,6 +110,7 @@ export function WeatherDisplay({
         windUnit={weather.unit === '°C' ? 'km/h' : 'mph'}
         precipChance={weather.forecast?.[0]?.details?.precipitationChance}
         glowClass={theme === 'daybreak' ? undefined : themeClasses.glow}
+        timezone={weather.timezone}
       />
 
       {/* 2. Hourly Forecast - Always visible if data exists */}
@@ -179,6 +180,7 @@ export function WeatherDisplay({
                 latitude={weather?.coordinates?.lat}
                 longitude={weather?.coordinates?.lon}
                 locationName={weather?.location}
+                timeZone={weather?.timezone}
                 theme={(theme || 'nord') as ThemeType}
                 displayMode="widget"
               />

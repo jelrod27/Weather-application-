@@ -19,6 +19,8 @@ interface RadarShellProps {
   latitude?: number
   longitude?: number
   locationName?: string
+  /** IANA timezone so "updated" stamps use the viewed location's clock. */
+  timeZone?: string
   theme?: ThemeType
   displayMode?: 'full-page' | 'widget'
   onLocationSearch?: (location: string) => void
