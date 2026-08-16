@@ -50,12 +50,16 @@ describe('hub-utils', () => {
   });
 
   describe('shouldShowHubAlerts', () => {
-    it('hides when all clear', () => {
-      expect(shouldShowHubAlerts({ count: 0, needsLocation: false, loading: false })).toBe(false);
+    it('shows an explicit empty state when all clear', () => {
+      expect(shouldShowHubAlerts({ count: 0, needsLocation: false, loading: false })).toBe(true);
     });
 
     it('shows when alerts are active', () => {
       expect(shouldShowHubAlerts({ count: 2, needsLocation: false, loading: false })).toBe(true);
+    });
+
+    it('hides until a pin is available', () => {
+      expect(shouldShowHubAlerts({ count: 0, needsLocation: true, loading: false })).toBe(false);
     });
   });
 
@@ -95,7 +99,7 @@ describe('hub-utils', () => {
     it('returns all clear when empty', () => {
       expect(summarizeAlerts([])).toEqual({
         count: 0,
-        headline: 'No active alerts nearby',
+        headline: 'No active alerts for this pin',
         severity: null,
         topAlertId: null,
       });

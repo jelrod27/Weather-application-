@@ -8,7 +8,7 @@ import {
 
 describe('hub-links', () => {
   it('builds warnings deep links with alert id', () => {
-    expect(getHubAlertsHref('urn:oid:abc123')).toBe('/warnings?alert=urn%3Aoid%3Aabc123');
+    expect(getHubAlertsHref('urn:oid:abc123')).toBe('/warnings/urn%3Aoid%3Aabc123');
     expect(getHubAlertsHref(null)).toBe('/warnings');
   });
 

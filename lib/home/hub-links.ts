@@ -1,6 +1,7 @@
 import { safeExternalUrl } from '@/lib/safe-url';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 import type { HubUserLocation } from '@/lib/home/hub-utils';
+import { getWarningDetailHref } from '@/lib/warnings/alert-links';
 
 export function getHubStargazerHref(location: HubUserLocation | null | undefined): string {
   if (!location) return '/stargazer';
@@ -14,8 +15,7 @@ export function getHubStargazerHref(location: HubUserLocation | null | undefined
 }
 
 export function getHubAlertsHref(topAlertId: string | null | undefined): string {
-  if (!topAlertId) return '/warnings';
-  return `/warnings?alert=${encodeURIComponent(topAlertId)}`;
+  return getWarningDetailHref(topAlertId);
 }
 
 export function getHubHeadlineHref(headline: {

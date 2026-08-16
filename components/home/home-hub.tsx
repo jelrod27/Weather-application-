@@ -5,6 +5,7 @@ import { useTheme } from '@/components/theme-provider';
 import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import { getCategoryConfig } from '@/components/news/CategoryBadge';
 import HomeHubCard from '@/components/home/home-hub-card';
+import HappeningNowCard from '@/components/home/happening-now-card';
 import { stargazerCardDetail } from '@/lib/home/hub-location';
 import {
   shouldShowHubAlerts,
@@ -14,13 +15,12 @@ import {
 } from '@/lib/home/hub-utils';
 import type { HubUserLocation } from '@/lib/home/hub-utils';
 import {
-  getAlertsCardValue,
   getHeadlineCardValue,
   getStargazerCardValue,
   SEVERITY_ACCENT,
   useHomeHubData,
 } from '@/hooks/use-home-hub-data';
-import { getHubAlertsHref, getHubHeadlineHref, getHubStargazerHref } from '@/lib/home/hub-links';
+import { getHubHeadlineHref, getHubStargazerHref } from '@/lib/home/hub-links';
 
 export interface HomeHubProps {
   userLocation?: HubUserLocation | null;
@@ -110,12 +110,13 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
 
       <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {showAlerts ? (
-          <HomeHubCard
-            title="Alerts near you"
-            value={getAlertsCardValue(data.alerts)}
-            detail={truncateAlertDetail(data.alerts.headline)}
-            href={getHubAlertsHref(data.alerts.topAlertId)}
+          <HappeningNowCard
+            count={data.alerts.count}
+            headline={data.alerts.headline}
+            severity={data.alerts.severity}
+            topAlertId={data.alerts.topAlertId}
             accentColor={alertsAccent}
+            loading={data.alerts.loading}
           />
         ) : null}
 
@@ -151,9 +152,4 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
       </div>
     </section>
   );
-}
-
-function truncateAlertDetail(headline: string): string {
-  if (headline.length <= 40) return headline;
-  return `${headline.slice(0, 40).trim()}…`;
 }

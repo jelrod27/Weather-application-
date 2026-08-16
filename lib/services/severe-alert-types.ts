@@ -1,4 +1,5 @@
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
+import type { GuestAlertSubscriber } from '@/lib/services/guest-alert-subscribers'
 
 export type SevereAlertTier = 'critical' | 'high' | 'standard'
 
@@ -40,10 +41,19 @@ export type MonitorNewAlert = {
   payload: SevereWeatherAlertPayload
 }
 
+export type MonitorNewGuestAlert = {
+  subscriber: GuestAlertSubscriber
+  alert: NWSAlertDetail
+  deliveryId: string
+  payload: SevereWeatherAlertPayload
+}
+
 export type SevereMonitorRunResult = {
   subscriptionsChecked: number
+  guestSubscribersChecked: number
   uniquePoints: number
   newAlerts: number
+  guestNewAlerts: number
   allClears: number
   errors: string[]
 }

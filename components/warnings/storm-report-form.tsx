@@ -157,9 +157,17 @@ export default function StormReportForm({
         />
       </label>
       <label className="text-xs uppercase text-muted-foreground block">
-        Image URL (optional, https)
-        <Input className="mt-1 font-mono" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+        Photo URL (optional, https)
+        <Input
+          className="mt-1 font-mono"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="https://…"
+        />
       </label>
+      <p className="text-[11px] text-muted-foreground">
+        Optional photo of hail, flooding, or damage. Moderated before it appears on the map.
+      </p>
       <Button type="submit" disabled={submitting} className="font-mono">
         {submitting ? 'Submitting…' : 'Submit for review'}
       </Button>

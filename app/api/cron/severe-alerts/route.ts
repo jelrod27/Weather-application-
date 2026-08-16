@@ -1,7 +1,9 @@
 import type { NextRequest } from 'next/server'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
 import { deliverSevereAlertEmail } from '@/lib/services/severe-alert-email-delivery'
+import { deliverGuestSevereAlertEmail } from '@/lib/services/guest-alert-email-delivery'
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
+import { sendSeverePushNotifications } from '@/lib/push/send'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { logRouteError } from '@/lib/error-utils'
 
@@ -31,6 +33,18 @@ export async function GET(request: NextRequest) {
         if (emailResult.sent) emailsSent += 1
         else if (emailResult.skipped) emailsSkipped += 1
         else emailsFailed += 1
+        await sendSeverePushNotifications(supabase, { userId: item.subscription.user_id }, item.payload)
+      },
+      onNewGuestAlert: async (item) => {
+        const emailResult = await deliverGuestSevereAlertEmail(supabase, item)
+        if (emailResult.sent) emailsSent += 1
+        else if (emailResult.skipped) emailsSkipped += 1
+        else emailsFailed += 1
+        await sendSeverePushNotifications(
+          supabase,
+          { guestSubscriberId: item.subscriber.id },
+          item.payload,
+        )
       },
     })
 
