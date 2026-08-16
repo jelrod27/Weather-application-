@@ -53,7 +53,7 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   const html = `
     <p><strong>${escapeHtml(severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
     <p>${escapeHtml(payload.headline)}</p>
-    ${instruction ? `<p><strong>Official instructions:</strong> ${escapeHtml(instruction)}</p>` : ''}
+    ${instruction ? `<p><strong>Official instructions:</strong> ${escapeHtml(instruction).replace(/\r\n|\n|\r/g, '<br />')}</p>` : ''}
     <ul>
       <li><strong>Area:</strong> ${escapeHtml(payload.areaDesc)}</li>
       <li><strong>Severity:</strong> ${escapeHtml(payload.severity)}</li>

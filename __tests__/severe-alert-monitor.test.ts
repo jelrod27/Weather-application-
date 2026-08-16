@@ -38,7 +38,11 @@ const denverSub = {
   locationLabel: 'Denver, CO',
 }
 
-function makeSupabaseMock(state: Record<string, string[]>, inserts: unknown[]) {
+function makeSupabaseMock(
+  state: Record<string, string[]>,
+  inserts: unknown[],
+  options?: { insertError?: { code: string } },
+) {
   return {
     from: (table: string) => {
       if (table === 'alert_monitor_state') {
@@ -66,6 +70,9 @@ function makeSupabaseMock(state: Record<string, string[]>, inserts: unknown[]) {
             select: () => ({
               single: async () => {
                 inserts.push(row)
+                if (options?.insertError) {
+                  return { data: null, error: options.insertError }
+                }
                 return { data: { id: `alert-row-${inserts.length}` }, error: null }
               },
             }),
@@ -227,5 +234,32 @@ describe('runSevereAlertMonitor', () => {
 
     expect(result.newAlerts).toBe(0)
     expect(inserts).toHaveLength(0)
+  })
+
+  it('treats a unique-violation insert as already paged', async () => {
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'alert-1',
+        event: 'Tornado Warning',
+        headline: 'Tornado Warning for Denver',
+        severity: 'Extreme',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Denver CO',
+        geometry: DENVER_POLYGON,
+      },
+    ])
+
+    const state: Record<string, string[]> = {}
+    const inserts: unknown[] = []
+    const onNewAlert = jest.fn()
+    const result = await runSevereAlertMonitor(
+      makeSupabaseMock(state, inserts, { insertError: { code: '23505' } }) as never,
+      { onNewAlert },
+    )
+
+    expect(result.newAlerts).toBe(0)
+    expect(onNewAlert).not.toHaveBeenCalled()
+    expect(state['sub-1']).toEqual(['alert-1'])
   })
 })

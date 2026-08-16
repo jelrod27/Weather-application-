@@ -26,6 +26,21 @@ describe('pointInNwsGeometry', () => {
     expect(pointInNwsGeometry(39.74, -104.99, null)).toBe(false)
   })
 
+  it('does not treat a polygon with an unreadable hole as coverage', () => {
+    expect(
+      pointInNwsGeometry(39.74, -104.99, {
+        type: 'Polygon',
+        coordinates: [
+          DENVER_POLYGON.coordinates[0],
+          [
+            [-105.0, 39.7],
+            [-104.9, 39.7],
+          ],
+        ],
+      }),
+    ).toBe(false)
+  })
+
   it('matches a pin in any polygon of a MultiPolygon', () => {
     expect(
       pointInNwsGeometry(39.74, -104.99, {

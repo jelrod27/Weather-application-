@@ -37,7 +37,8 @@ function pointInPolygonRings(lat: number, lon: number, rings: unknown): boolean 
   if (!pointInRing(lat, lon, exterior)) return false
   for (let i = 1; i < rings.length; i += 1) {
     const hole = asRing(rings[i])
-    if (hole && pointInRing(lat, lon, hole)) return false
+    if (!hole) return false
+    if (pointInRing(lat, lon, hole)) return false
   }
   return true
 }
