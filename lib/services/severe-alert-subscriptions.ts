@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { hazardPrefsFrom } from '@/lib/bitwatch/delivery-policy'
 import type { Database } from '@/lib/supabase/types'
 
 const SEVERE_KIND = 'severe_weather' as const
@@ -87,6 +88,10 @@ export async function fetchEnabledSevereSubscriptions(
     latitude: number
     longitude: number
     locationLabel: string
+    notifyTornado: boolean
+    notifySevereThunderstorm: boolean
+    notifyFlashFlood: boolean
+    notifyUpgrades: boolean
   }>
 > {
   const { data, error } = await supabase
@@ -96,6 +101,10 @@ export async function fetchEnabledSevereSubscriptions(
       id,
       user_id,
       saved_location_id,
+      notify_tornado,
+      notify_severe_thunderstorm,
+      notify_flash_flood,
+      notify_upgrades,
       saved_locations (
         latitude,
         longitude,
@@ -121,13 +130,21 @@ export async function fetchEnabledSevereSubscriptions(
     latitude: number
     longitude: number
     locationLabel: string
+    notifyTornado: boolean
+    notifySevereThunderstorm: boolean
+    notifyFlashFlood: boolean
+    notifyUpgrades: boolean
   }> = []
 
   for (const row of data ?? []) {
-    const loc = (row as {
+    const typed = row as {
       id: string
       user_id: string
       saved_location_id: string
+      notify_tornado?: boolean | null
+      notify_severe_thunderstorm?: boolean | null
+      notify_flash_flood?: boolean | null
+      notify_upgrades?: boolean | null
       saved_locations: {
         latitude: number
         longitude: number
@@ -136,17 +153,24 @@ export async function fetchEnabledSevereSubscriptions(
         city: string
         state: string | null
       } | null
-    }).saved_locations
+    }
+    const loc = typed.saved_locations
 
     if (!loc) continue
 
     rows.push({
-      id: (row as { id: string }).id,
-      user_id: (row as { user_id: string }).user_id,
-      saved_location_id: (row as { saved_location_id: string }).saved_location_id,
+      id: typed.id,
+      user_id: typed.user_id,
+      saved_location_id: typed.saved_location_id,
       latitude: loc.latitude,
       longitude: loc.longitude,
       locationLabel: locationLabel(loc),
+      ...hazardPrefsFrom({
+        notifyTornado: typed.notify_tornado,
+        notifySevereThunderstorm: typed.notify_severe_thunderstorm,
+        notifyFlashFlood: typed.notify_flash_flood,
+        notifyUpgrades: typed.notify_upgrades,
+      }),
     })
   }
 

@@ -1,3 +1,4 @@
+import type { HazardDeliveryPrefs } from '@/lib/bitwatch/delivery-policy'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import type { GuestAlertSubscriber } from '@/lib/services/guest-alert-subscribers'
 
@@ -16,6 +17,9 @@ export type SevereWeatherAlertPayload = {
   savedLocationId: string
   warningsHref: string
   tier?: SevereAlertTier
+  warningEventId?: string
+  phase?: 'new' | 'upgrade' | 'ended' | 'scout'
+  manageHref?: string
 }
 
 export type SevereWeatherAllClearPayload = {
@@ -32,7 +36,7 @@ export type MonitorSubscription = {
   latitude: number
   longitude: number
   locationLabel: string
-}
+} & HazardDeliveryPrefs
 
 export type MonitorNewAlert = {
   subscription: MonitorSubscription
@@ -54,6 +58,8 @@ export type SevereMonitorRunResult = {
   uniquePoints: number
   newAlerts: number
   guestNewAlerts: number
+  endedAlerts: number
+  guestEndedAlerts: number
   allClears: number
   errors: string[]
 }

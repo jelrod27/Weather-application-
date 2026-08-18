@@ -210,6 +210,10 @@ export interface Database {
           saved_location_id: string
           kind: 'severe_weather'
           enabled: boolean
+          notify_tornado: boolean
+          notify_severe_thunderstorm: boolean
+          notify_flash_flood: boolean
+          notify_upgrades: boolean
           created_at: string
           updated_at: string
         }
@@ -219,6 +223,10 @@ export interface Database {
           saved_location_id: string
           kind: 'severe_weather'
           enabled?: boolean
+          notify_tornado?: boolean
+          notify_severe_thunderstorm?: boolean
+          notify_flash_flood?: boolean
+          notify_upgrades?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -228,6 +236,10 @@ export interface Database {
           saved_location_id?: string
           kind?: 'severe_weather'
           enabled?: boolean
+          notify_tornado?: boolean
+          notify_severe_thunderstorm?: boolean
+          notify_flash_flood?: boolean
+          notify_upgrades?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -293,6 +305,10 @@ export interface Database {
           verify_token_hash: string | null
           verify_token_expires_at: string | null
           manage_token_hash: string
+          notify_tornado: boolean
+          notify_severe_thunderstorm: boolean
+          notify_flash_flood: boolean
+          notify_upgrades: boolean
           created_at: string
           updated_at: string
         }
@@ -307,6 +323,10 @@ export interface Database {
           verify_token_hash?: string | null
           verify_token_expires_at?: string | null
           manage_token_hash: string
+          notify_tornado?: boolean
+          notify_severe_thunderstorm?: boolean
+          notify_flash_flood?: boolean
+          notify_upgrades?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -321,6 +341,10 @@ export interface Database {
           verify_token_hash?: string | null
           verify_token_expires_at?: string | null
           manage_token_hash?: string
+          notify_tornado?: boolean
+          notify_severe_thunderstorm?: boolean
+          notify_flash_flood?: boolean
+          notify_upgrades?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -485,6 +509,44 @@ export interface Database {
           ended_reason?: string | null
           display?: Json
           updated_at?: string
+        }
+      }
+      bitwatch_deliveries: {
+        Row: {
+          id: string
+          warning_event_id: string
+          lifecycle_phase: string
+          channel: string
+          subscriber_kind: string
+          subscriber_id: string
+          protected_place_key: string
+          payload: Json
+          provider_accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          warning_event_id: string
+          lifecycle_phase: string
+          channel: string
+          subscriber_kind: string
+          subscriber_id: string
+          protected_place_key: string
+          payload?: Json
+          provider_accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          warning_event_id?: string
+          lifecycle_phase?: string
+          channel?: string
+          subscriber_kind?: string
+          subscriber_id?: string
+          protected_place_key?: string
+          payload?: Json
+          provider_accepted_at?: string | null
+          created_at?: string
         }
       }
     }

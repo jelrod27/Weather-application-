@@ -28,8 +28,31 @@ describe('severe-alert-email-service', () => {
     expect(text).toContain('/warnings/')
     expect(text).toContain('Take shelter now.\nStay away from windows.')
     expect(text).toContain('does not replace Wireless Emergency Alerts')
+    expect(text).toContain('Manage or unsubscribe')
     expect(html).toContain('Open warnings command center')
     expect(html).toContain('Take shelter now.<br />Stay away from windows.')
+  })
+
+  it('says warning ended without calling it an all-clear', () => {
+    const { subject, text } = buildSevereAlertEmailContent({
+      alertId: 'alert-1#ended',
+      event: 'Tornado Warning',
+      headline: 'A National Weather Service Tornado Warning ended or no longer covers Denver, CO.',
+      severity: 'Extreme',
+      urgency: 'Immediate',
+      expires: '2026-07-04T01:00:00Z',
+      areaDesc: 'Denver CO',
+      locationName: 'Denver, CO',
+      savedLocationId: 'loc-1',
+      warningsHref: '/warnings/alert-1',
+      phase: 'ended',
+      instruction:
+        'This National Weather Service warning ended or no longer covers your pin. That is not an all-clear. Stay alert and follow local officials, Wireless Emergency Alerts, and NOAA Weather Radio.',
+    })
+
+    expect(subject).toBe('Warning ended — Denver, CO')
+    expect(text.toLowerCase()).toContain('not an all-clear')
+    expect(text.toLowerCase()).not.toContain('all-clear for')
   })
 
   it('escapes HTML in email body fields', () => {

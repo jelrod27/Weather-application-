@@ -2,6 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
 import { guestVerifyExpiry, hashGuestToken, newGuestToken } from '@/lib/alerts/guest-tokens'
 
+import type { HazardDeliveryPrefs } from '@/lib/bitwatch/delivery-policy'
+import { hazardPrefsFrom } from '@/lib/bitwatch/delivery-policy'
+
 export type GuestAlertSubscriber = {
   id: string
   email: string
@@ -10,7 +13,10 @@ export type GuestAlertSubscriber = {
   locationLabel: string
   enabled: boolean
   verifiedAt: string | null
-}
+} & HazardDeliveryPrefs
+
+const GUEST_SELECT =
+  'id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash, notify_tornado, notify_severe_thunderstorm, notify_flash_flood, notify_upgrades'
 
 type GuestRow = {
   id: string
@@ -21,6 +27,10 @@ type GuestRow = {
   enabled: boolean
   verified_at: string | null
   manage_token_hash: string
+  notify_tornado?: boolean | null
+  notify_severe_thunderstorm?: boolean | null
+  notify_flash_flood?: boolean | null
+  notify_upgrades?: boolean | null
 }
 
 function mapRow(row: GuestRow): GuestAlertSubscriber {
@@ -32,6 +42,12 @@ function mapRow(row: GuestRow): GuestAlertSubscriber {
     locationLabel: row.location_label,
     enabled: row.enabled,
     verifiedAt: row.verified_at,
+    ...hazardPrefsFrom({
+      notifyTornado: row.notify_tornado,
+      notifySevereThunderstorm: row.notify_severe_thunderstorm,
+      notifyFlashFlood: row.notify_flash_flood,
+      notifyUpgrades: row.notify_upgrades,
+    }),
   }
 }
 
@@ -40,7 +56,7 @@ export async function fetchEnabledGuestSubscribers(
 ): Promise<GuestAlertSubscriber[]> {
   const { data, error } = await supabase
     .from('guest_alert_subscribers')
-    .select('id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash')
+    .select(GUEST_SELECT)
     .eq('enabled', true)
     .not('verified_at', 'is', null)
 
@@ -64,7 +80,7 @@ export async function upsertGuestSubscriber(
   const email = input.email.trim().toLowerCase()
   const { data: existing, error: lookupError } = await supabase
     .from('guest_alert_subscribers')
-    .select('id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash')
+    .select(GUEST_SELECT)
     .eq('email', email)
     .maybeSingle()
 
@@ -137,7 +153,7 @@ export async function upsertGuestSubscriber(
   const { data: inserted, error: insertError } = await supabase
     .from('guest_alert_subscribers')
     .insert({ ...payload, created_at: now } as never)
-    .select('id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash')
+    .select(GUEST_SELECT)
     .single()
 
   if (insertError || !inserted) {
@@ -159,7 +175,7 @@ export async function verifyGuestSubscriber(
   const hash = hashGuestToken(token)
   const { data, error } = await supabase
     .from('guest_alert_subscribers')
-    .select('id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash, verify_token_expires_at')
+    .select(`${GUEST_SELECT}, verify_token_expires_at`)
     .eq('verify_token_hash', hash)
     .maybeSingle()
 
@@ -191,7 +207,7 @@ export async function findGuestByManageToken(
 ): Promise<GuestAlertSubscriber | null> {
   const { data, error } = await supabase
     .from('guest_alert_subscribers')
-    .select('id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash')
+    .select(GUEST_SELECT)
     .eq('manage_token_hash', hashGuestToken(token))
     .maybeSingle()
 
