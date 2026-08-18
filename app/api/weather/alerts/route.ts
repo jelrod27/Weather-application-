@@ -5,7 +5,7 @@
  * or point-based queries for the warnings command center.
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import {
   alertsToGeoJsonFeatureCollection,
@@ -15,7 +15,11 @@ import {
   fetchActiveAlertsDetail,
   fetchHarmWarningAlerts,
 } from '@/lib/services/nws-alerts-service'
+import { loadCanonicalActiveAlerts } from '@/lib/bitwatch/ingest'
+import { isSevereMonitorAlert } from '@/lib/services/severe-alert-filter'
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { logRouteError } from '@/lib/error-utils'
+import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 function parsePoint(raw: string | null): { lat: number; lon: number } | null {
   if (!raw) return null
@@ -24,6 +28,27 @@ function parsePoint(raw: string | null): { lat: number; lon: number } | null {
   const [lat, lon] = parts
   if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null
   return { lat, lon }
+}
+
+async function loadDetails(input: {
+  harm: boolean
+  point: { lat: number; lon: number } | null
+}): Promise<{ details: NWSAlertDetail[]; freshness: string }> {
+  if (!input.point) {
+    const supabase = createServiceRoleSupabaseClient()
+    if (supabase) {
+      const canonical = await loadCanonicalActiveAlerts(supabase)
+      if (canonical) {
+        const details = input.harm ? canonical.alerts.filter(isSevereMonitorAlert) : canonical.alerts
+        return { details, freshness: canonical.freshness }
+      }
+    }
+  }
+
+  const live = input.harm
+    ? await fetchHarmWarningAlerts()
+    : await fetchActiveAlertsDetail(input.point ? { point: input.point } : undefined)
+  return { details: live, freshness: 'live-fallback' }
 }
 
 export async function GET(request: NextRequest) {
@@ -38,18 +63,14 @@ export async function GET(request: NextRequest) {
     if (pointParam != null && pointParam.trim() !== '' && !point) {
       return NextResponse.json(
         { error: 'Invalid point parameter; use lat,lon in decimal degrees (WGS84).' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    let details = harm
-      ? await fetchHarmWarningAlerts()
-      : await fetchActiveAlertsDetail(point ? { point } : undefined)
+    let { details, freshness } = await loadDetails({ harm, point })
 
     if (area) {
-      details = details.filter((a) =>
-        a.areaDesc.toLowerCase().includes(area.toLowerCase())
-      )
+      details = details.filter((a) => a.areaDesc.toLowerCase().includes(area.toLowerCase()))
     }
 
     const summaries = details.map((d) => ({
@@ -67,10 +88,12 @@ export async function GET(request: NextRequest) {
     const tiers = countNwsProductTiers(details)
     const wisMerged = { ...wis, ...tiers }
 
-    const cacheShort = geojson || detail
-    const cacheControl = cacheShort
-      ? 'public, s-maxage=120, stale-while-revalidate=60'
-      : 'public, s-maxage=300, stale-while-revalidate=60'
+    const cacheControl =
+      freshness === 'live-fallback'
+        ? geojson || detail
+          ? 'public, s-maxage=120, stale-while-revalidate=60'
+          : 'public, s-maxage=300, stale-while-revalidate=60'
+        : 'private, no-store'
 
     if (geojson) {
       const maxChars = point ? 12_000 : 2_500
@@ -84,19 +107,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (detail) {
-      const body = {
-        alerts: details,
-        wis: wisMerged,
-        total: details.length,
-      }
-      return NextResponse.json(body, {
-        headers: { 'Cache-Control': cacheControl },
-      })
+      return NextResponse.json(
+        { alerts: details, wis: wisMerged, total: details.length, freshness },
+        { headers: { 'Cache-Control': cacheControl } },
+      )
     }
 
     return NextResponse.json(
-      { alerts: summaries, wis: wisMerged, total: summaries.length },
-      { headers: { 'Cache-Control': cacheControl } }
+      { alerts: summaries, wis: wisMerged, total: summaries.length, freshness },
+      { headers: { 'Cache-Control': cacheControl } },
     )
   } catch (error) {
     logRouteError('Alerts API', error)

@@ -394,6 +394,99 @@ export interface Database {
           created_at?: string
         }
       }
+      bitwatch_ingest_state: {
+        Row: {
+          id: string
+          watermark_sent: string | null
+          last_success_at: string | null
+          last_error: string | null
+          lease_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          watermark_sent?: string | null
+          last_success_at?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          watermark_sent?: string | null
+          last_success_at?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          updated_at?: string
+        }
+      }
+      bitwatch_source_messages: {
+        Row: {
+          id: string
+          nws_id: string
+          sender: string
+          sent: string
+          message_type: string
+          event: string
+          content_hash: string
+          warning_event_id: string | null
+          payload: Json
+          observed_at: string
+        }
+        Insert: {
+          id?: string
+          nws_id: string
+          sender?: string
+          sent: string
+          message_type: string
+          event: string
+          content_hash: string
+          warning_event_id?: string | null
+          payload?: Json
+          observed_at?: string
+        }
+        Update: {
+          id?: string
+          nws_id?: string
+          sender?: string
+          sent?: string
+          message_type?: string
+          event?: string
+          content_hash?: string
+          warning_event_id?: string | null
+          payload?: Json
+          observed_at?: string
+        }
+      }
+      bitwatch_warning_events: {
+        Row: {
+          id: string
+          nws_id: string
+          event: string
+          status: string
+          ended_reason: string | null
+          display: Json
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          nws_id: string
+          event: string
+          status: string
+          ended_reason?: string | null
+          display?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nws_id?: string
+          event?: string
+          status?: string
+          ended_reason?: string | null
+          display?: Json
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
