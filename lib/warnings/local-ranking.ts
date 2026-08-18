@@ -1,3 +1,4 @@
+import { extractAreaStates } from '@/lib/bitwatch/coverage'
 import { distanceKmToNwsGeometry, pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
@@ -95,6 +96,37 @@ export function filterAlertsByQuery(alerts: NWSAlertDetail[], query: string): NW
     (a) =>
       a.event.toLowerCase().includes(q) ||
       a.areaDesc.toLowerCase().includes(q) ||
-      a.headline.toLowerCase().includes(q),
+      a.headline.toLowerCase().includes(q) ||
+      a.warningEventId?.toLowerCase().includes(q) ||
+      a.ugc?.some((code) => code.toLowerCase().includes(q)),
   )
+}
+
+export type DeskEventFilter = 'all' | 'Tornado Warning' | 'Severe Thunderstorm Warning' | 'Flash Flood Warning' | 'other'
+
+export function filterDeskAlerts(
+  alerts: NWSAlertDetail[],
+  input: { query: string; event: DeskEventFilter; state: string },
+): NWSAlertDetail[] {
+  const harm = new Set(['Tornado Warning', 'Severe Thunderstorm Warning', 'Flash Flood Warning'])
+  return filterAlertsByQuery(alerts, input.query).filter((alert) => {
+    if (input.event === 'other') {
+      if (harm.has(alert.event)) return false
+    } else if (input.event !== 'all' && alert.event !== input.event) {
+      return false
+    }
+    if (input.state && !extractStatesFromAlert(alert).includes(input.state)) return false
+    return true
+  })
+}
+
+function extractStatesFromAlert(alert: NWSAlertDetail): string[] {
+  const fromUgc = (alert.ugc ?? [])
+    .map((code) => code.slice(0, 2).toUpperCase())
+    .filter((code) => /^[A-Z]{2}$/.test(code))
+  return [...new Set([...extractAreaStates(alert.areaDesc), ...fromUgc])]
+}
+
+export function uniqueAlertStates(alerts: NWSAlertDetail[]): string[] {
+  return [...new Set(alerts.flatMap(extractStatesFromAlert))].sort()
 }

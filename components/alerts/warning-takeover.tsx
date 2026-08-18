@@ -11,7 +11,7 @@ import { getWarningDetailHref, warningIdSlug } from '@/lib/warnings/alert-links'
 import { splitLocalWarnings } from '@/lib/warnings/local-ranking'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 
-const POLL_MS = 60_000
+const POLL_MS = 15_000
 const DISMISS_PREFIX = 'warning-takeover-dismissed:'
 
 function dismissedKey(alertId: string): string {
@@ -44,7 +44,10 @@ export default function WarningTakeover() {
     async (signal?: AbortSignal) => {
       if (!pin) return
       try {
-        const res = await fetch('/api/weather/alerts?harm=1&detail=1', { signal })
+        const res = await fetch('/api/weather/alerts?harm=1&detail=1', {
+          signal,
+          cache: 'no-store',
+        })
         if (!res.ok) return
         const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
         if (signal?.aborted) return
@@ -121,7 +124,7 @@ export default function WarningTakeover() {
         </div>
         <p className="mt-4 text-[10px] text-muted-foreground">
           Supplemental heads-up. Does not replace Wireless Emergency Alerts, NOAA Weather Radio, or
-          local officials. A new warning id will interrupt again.
+          local officials. A new warning id will interrupt again. Ending is not an all-clear.
         </p>
       </div>
     </div>

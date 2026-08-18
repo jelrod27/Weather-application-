@@ -19,7 +19,8 @@ import { GuestAlertSignup } from '@/components/alerts/guest-alert-signup'
 import { PushOptIn } from '@/components/alerts/push-opt-in'
 import WarningPinSearch from '@/components/warnings/warning-pin-search'
 import { useActivePinState } from '@/hooks/use-active-pin'
-import { filterAlertsByQuery, splitLocalWarnings } from '@/lib/warnings/local-ranking'
+import { filterDeskAlerts, splitLocalWarnings, uniqueAlertStates, type DeskEventFilter } from '@/lib/warnings/local-ranking'
+import { warningDeskScore } from '@/lib/bitwatch/priority'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 import { getWarningDetailHref } from '@/lib/warnings/alert-links'
 
@@ -102,7 +103,9 @@ function AlertLane({
           >
             <div className="flex justify-between gap-2">
               <span className="font-bold text-sm">{a.event}</span>
-              <span className="text-muted-foreground shrink-0">{formatWarningTimeLeft(a.expires)}</span>
+              <span className="text-muted-foreground shrink-0">
+                {warningDeskScore(a).toFixed(1)} · {formatWarningTimeLeft(a.expires)}
+              </span>
             </div>
             <p className="text-muted-foreground truncate mt-1">{a.areaDesc}</p>
           </button>
@@ -127,23 +130,33 @@ export default function WarningsClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [eventFilter, setEventFilter] = useState<DeskEventFilter>('all')
+  const [stateFilter, setStateFilter] = useState('')
+  const [freshness, setFreshness] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError(null)
+  const load = useCallback(async (signal?: AbortSignal, silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setError(null)
+    }
     try {
       const [dRes, gRes, sRes, cRes] = await Promise.all([
-        fetch('/api/weather/alerts?detail=1', { signal }),
-        fetch('/api/weather/alerts?geojson=1', { signal }),
+        fetch('/api/weather/alerts?detail=1', { signal, cache: 'no-store' }),
+        fetch('/api/weather/alerts?geojson=1', { signal, cache: 'no-store' }),
         fetch('/api/weather/storm-reports?days=2', { signal }),
         fetch('/api/storm-reports', { signal }),
       ])
       if (!dRes.ok) throw new Error('alerts detail failed')
-      const dJson = (await dRes.json()) as { alerts: NWSAlertDetail[]; wis: WISScore }
+      const dJson = (await dRes.json()) as {
+        alerts: NWSAlertDetail[]
+        wis: WISScore
+        freshness?: string
+      }
       if (signal?.aborted) return
       setAlerts(dJson.alerts ?? [])
       setWis(dJson.wis ?? null)
+      setFreshness(dJson.freshness ?? null)
 
       if (gRes.ok) {
         const gj = (await gRes.json()) as AlertsFeatureCollection
@@ -167,9 +180,9 @@ export default function WarningsClient() {
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') return
       console.error('[warnings-client]', e)
-      setError('Could not load warnings data. Try again shortly.')
+      if (!silent) setError('Could not load warnings data. Try again shortly.')
     } finally {
-      if (!signal?.aborted) setLoading(false)
+      if (!signal?.aborted && !silent) setLoading(false)
     }
   }, [])
 
@@ -181,14 +194,18 @@ export default function WarningsClient() {
 
   useEffect(() => {
     const ctrl = new AbortController()
-    const t = setInterval(() => void load(ctrl.signal), 90_000)
+    const t = setInterval(() => void load(ctrl.signal, true), 15_000)
     return () => {
       clearInterval(t)
       ctrl.abort()
     }
   }, [load])
 
-  const filtered = useMemo(() => filterAlertsByQuery(alerts, search), [alerts, search])
+  const filtered = useMemo(
+    () => filterDeskAlerts(alerts, { query: search, event: eventFilter, state: stateFilter }),
+    [alerts, search, eventFilter, stateFilter],
+  )
+  const stateOptions = useMemo(() => uniqueAlertStates(alerts), [alerts])
   const { onYou, nearby, elsewhere } = useMemo(
     () => splitLocalWarnings(filtered, pin),
     [filtered, pin],
@@ -268,6 +285,11 @@ export default function WarningsClient() {
         <p className="text-sm font-mono text-muted-foreground tracking-wider">
           // YOUR PIN FIRST · NATIONAL BROWSE · NWS POLYGONS //
         </p>
+        {freshness ? (
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+            Feed {freshness === 'fresh' ? 'canonical store' : freshness}
+          </p>
+        ) : null}
         {pin ? (
           <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
             Pin: {pin.label} ({pin.lat.toFixed(3)}, {pin.lon.toFixed(3)})
@@ -381,6 +403,33 @@ export default function WarningsClient() {
       )}
 
       <div className="flex flex-wrap gap-2 items-center justify-end">
+        <select
+          aria-label="Filter by warning type"
+          data-testid="warning-event-filter"
+          className="font-mono text-xs border border-border bg-background rounded-md px-2 py-2"
+          value={eventFilter}
+          onChange={(e) => setEventFilter(e.target.value as DeskEventFilter)}
+        >
+          <option value="all">All types</option>
+          <option value="Tornado Warning">Tornado Warning</option>
+          <option value="Severe Thunderstorm Warning">Severe Thunderstorm Warning</option>
+          <option value="Flash Flood Warning">Flash Flood Warning</option>
+          <option value="other">Other NWS products</option>
+        </select>
+        <select
+          aria-label="Filter by state"
+          data-testid="warning-state-filter"
+          className="font-mono text-xs border border-border bg-background rounded-md px-2 py-2"
+          value={stateFilter}
+          onChange={(e) => setStateFilter(e.target.value)}
+        >
+          <option value="">All states</option>
+          {stateOptions.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
         <Input
           placeholder="Filter by event, area, headline…"
           className="font-mono w-64 max-w-[70vw]"

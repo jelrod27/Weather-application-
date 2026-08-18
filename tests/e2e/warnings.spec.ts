@@ -121,6 +121,10 @@ test.beforeEach(async ({ page }) => {
     route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng }),
   )
 
+  await page.route('**/api/weather/iowa-nexrad**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng }),
+  )
+
   await page.goto('/warnings', { waitUntil: 'domcontentloaded' })
 })
 
@@ -130,6 +134,8 @@ test('warning center exposes a pin setter and local lanes', async ({ page }) => 
     timeout: 30000,
   })
   await expect(main.getByTestId('warning-pin-search')).toBeVisible()
+  await expect(main.getByTestId('warning-event-filter')).toBeVisible()
+  await expect(main.getByTestId('warning-state-filter')).toBeVisible()
   await expect(main.getByTestId('warning-lane-on-you')).toBeVisible({ timeout: 20000 })
   await expect(main.getByTestId('warning-lane-nearby')).toBeVisible()
   await expect(main.getByTestId('warning-lane-elsewhere')).toBeVisible()

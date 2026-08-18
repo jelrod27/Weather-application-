@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { formatCoverageLabel } from '@/lib/bitwatch/coverage'
+import { warningDeskScore } from '@/lib/bitwatch/priority'
+import { warningRadarCropSrc } from '@/lib/bitwatch/radar-crop'
 import { getRadarHrefForGeometry, getWarningDetailHref } from '@/lib/warnings/alert-links'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
@@ -30,6 +33,11 @@ export function WarningDetailBody({
     damageThreat: null,
   }
   const hasHazards = Boolean(maxHail || maxWind || source || damageThreat)
+  const coverage = formatCoverageLabel(alert.geometry)
+  const priority = warningDeskScore(alert)
+  const cropSrc = warningRadarCropSrc(alert.geometry)
+  const zones = alert.ugc?.length ? alert.ugc : alert.affectedZones
+  const motion = alert.motion
 
   return (
     <div className="space-y-3 font-mono text-sm">
@@ -57,7 +65,41 @@ export function WarningDetailBody({
 
       <p className="text-xs text-muted-foreground">
         Issued {alert.sent || alert.effective || 'unknown'} · Expires {alert.expires}
+        {alert.warningEventId ? ` · VTEC ${alert.warningEventId}` : ''}
+        {alert.vtecAction ? ` · ${alert.vtecAction}` : ''}
       </p>
+
+      <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+        <div>
+          <dt className="uppercase text-muted-foreground">Priority</dt>
+          <dd className="font-bold">{priority.toFixed(1)}</dd>
+        </div>
+        {coverage ? (
+          <>
+            <div>
+              <dt className="uppercase text-muted-foreground">Coverage</dt>
+              <dd className="font-bold">{coverage.km2Label}</dd>
+            </div>
+            <div>
+              <dt className="uppercase text-muted-foreground">Population</dt>
+              <dd className="font-bold">{coverage.peopleLabel} approx</dd>
+            </div>
+          </>
+        ) : null}
+        {motion ? (
+          <div>
+            <dt className="uppercase text-muted-foreground">Motion</dt>
+            <dd className="font-bold">
+              {motion.speedKt} kt / {motion.headingDeg}°
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+      {coverage ? (
+        <p className="text-[10px] text-muted-foreground">
+          Population is polygon area × CONUS average density. Not a census count.
+        </p>
+      ) : null}
 
       {hasHazards ? (
         <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
@@ -86,6 +128,28 @@ export function WarningDetailBody({
             </div>
           ) : null}
         </dl>
+      ) : null}
+
+      {zones && zones.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          <span className="uppercase font-bold">Zones</span> {zones.slice(0, 12).join(', ')}
+          {zones.length > 12 ? ` +${zones.length - 12}` : ''}
+        </p>
+      ) : null}
+
+      {cropSrc && !compact ? (
+        <div>
+          <p className="text-xs uppercase text-muted-foreground font-bold mb-1">Radar crop</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cropSrc}
+            alt={`NEXRAD crop for ${alert.event}`}
+            data-testid="warning-radar-crop"
+            className="w-full max-w-xl rounded-md border border-border bg-black"
+            width={640}
+            height={480}
+          />
+        </div>
       ) : null}
 
       {alert.instruction ? (
