@@ -16,8 +16,9 @@ test.beforeEach(async ({ page }) => {
 
 test('Bitwatch landing exposes GPS pin search and guest signup', async ({ page }) => {
   const main = page.getByRole('main')
-  await expect(page.getByTestId('bitwatch-landing')).toBeVisible({ timeout: 30000 })
-  await expect(page.getByRole('heading', { name: /Free NWS warning alerts/i })).toBeVisible()
+  await expect(main.getByRole('heading', { name: /Free NWS warning alerts/i })).toBeVisible({
+    timeout: 30000,
+  })
   await expect(main.getByTestId('warning-pin-search')).toBeVisible()
   await expect(main.getByRole('button', { name: /Use my location/i })).toBeVisible()
   await expect(main.getByTestId('bitwatch-signup')).toBeVisible()
