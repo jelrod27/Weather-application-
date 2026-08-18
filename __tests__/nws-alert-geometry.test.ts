@@ -77,4 +77,22 @@ describe('distanceKmToNwsGeometry', () => {
   it('returns null when geometry is missing', () => {
     expect(distanceKmToNwsGeometry(39.74, -104.99, null)).toBeNull()
   })
+
+  it('measures distance to the closing edge of an unclosed ring', () => {
+    const unclosedWest = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-105.2, 39.6],
+          [-104.7, 39.6],
+          [-104.7, 39.9],
+          [-105.2, 39.9],
+        ],
+      ],
+    }
+    const km = distanceKmToNwsGeometry(39.75, -105.25, unclosedWest)
+    expect(km).not.toBeNull()
+    expect(km as number).toBeGreaterThan(3)
+    expect(km as number).toBeLessThan(8)
+  })
 })

@@ -95,8 +95,8 @@ function pointToSegmentKm(
 
 function minRingDistanceKm(lat: number, lon: number, ring: Array<[number, number]>): number {
   let min = minVertexDistanceKm(lat, lon, ring)
-  for (let i = 1; i < ring.length; i += 1) {
-    const km = pointToSegmentKm(lat, lon, ring[i - 1], ring[i])
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const km = pointToSegmentKm(lat, lon, ring[j], ring[i])
     if (km < min) min = km
   }
   return min

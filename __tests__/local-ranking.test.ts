@@ -126,4 +126,26 @@ describe('local-ranking', () => {
     expect(split.nearby.map((a) => a.id)).toEqual(['cover', 'near'])
     expect(split.elsewhere.map((a) => a.id)).toEqual(['far', 'unknown'])
   })
+
+  it('keeps a pin near an unclosed closing edge in nearby, not elsewhere', () => {
+    const unclosed = alert({
+      id: 'unclosed',
+      event: 'Severe Thunderstorm Warning',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-105.2, 39.6],
+            [-104.7, 39.6],
+            [-104.7, 39.9],
+            [-105.2, 39.9],
+          ],
+        ],
+      },
+    })
+    const pin = { lat: 39.75, lon: -105.25 }
+    expect(isLocalWarning(unclosed, pin)).toBe(false)
+    expect(isNearbyWarning(unclosed, pin)).toBe(true)
+    expect(splitLocalWarnings([unclosed], pin).nearby.map((a) => a.id)).toEqual(['unclosed'])
+  })
 })
