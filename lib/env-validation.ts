@@ -106,6 +106,18 @@ const envConfig: EnvConfig = {
       name: 'VAPID_SUBJECT',
       description: 'Web Push VAPID subject, mailto: or https: URL (optional).',
     },
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: {
+      name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
+      description: 'Cloudflare Turnstile site key (optional - guest Bitwatch signup and auth CAPTCHA).',
+    },
+    TURNSTILE_SECRET_KEY: {
+      name: 'TURNSTILE_SECRET_KEY',
+      description: 'Cloudflare Turnstile secret for siteverify (optional - required to enforce CAPTCHA on guest subscribe).',
+    },
+    BITWATCH_MANAGE_SECRET: {
+      name: 'BITWATCH_MANAGE_SECRET',
+      description: 'HMAC secret for stable guest manage/unsubscribe links (optional - falls back to the Supabase service role key).',
+    },
   },
 };
 

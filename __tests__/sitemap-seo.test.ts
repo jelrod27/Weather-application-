@@ -62,6 +62,7 @@ describe('Sitemap SEO', () => {
     })
 
     expect(sitemapPaths).toContain('/education/glossary')
+    expect(sitemapPaths).toContain('/alerts')
   })
 
   it('sitemap should not include noindex or redirect-only URLs', async () => {

@@ -15,10 +15,14 @@
  */
 
 
+import dynamic from "next/dynamic"
 import Navigation from "./navigation"
 import Link from "next/link"
 import { getFeaturedCities } from "@/lib/featured-city-links"
-import WarningTakeover from "@/components/alerts/warning-takeover"
+
+const WarningTakeover = dynamic(() => import("@/components/alerts/warning-takeover"), {
+  ssr: false,
+})
 
 interface PageWrapperProps {
   children: React.ReactNode

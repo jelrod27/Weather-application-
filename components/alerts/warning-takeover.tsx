@@ -8,10 +8,10 @@ import { useActivePin } from '@/hooks/use-active-pin'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { isSevereMonitorAlert } from '@/lib/services/severe-alert-filter'
 import { getWarningDetailHref, warningIdSlug } from '@/lib/warnings/alert-links'
-import { splitLocalWarnings } from '@/lib/warnings/local-ranking'
+import { compareWarningPriority } from '@/lib/warnings/local-ranking'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 
-const POLL_MS = 60_000
+const POLL_MS = 15_000
 const DISMISS_PREFIX = 'warning-takeover-dismissed:'
 
 function dismissedKey(alertId: string): string {
@@ -40,11 +40,20 @@ export default function WarningTakeover() {
   const [alerts, setAlerts] = useState<NWSAlertDetail[]>([])
   const [hiddenId, setHiddenId] = useState<string | null>(null)
 
+  const pinLat = pin?.lat
+  const pinLon = pin?.lon
+
   const load = useCallback(
     async (signal?: AbortSignal) => {
-      if (!pin) return
+      if (pinLat == null || pinLon == null) return
       try {
-        const res = await fetch('/api/weather/alerts?harm=1&detail=1', { signal })
+        const res = await fetch(
+          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pinLat},${pinLon}`)}`,
+          {
+            signal,
+            cache: 'no-store',
+          },
+        )
         if (!res.ok) return
         const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
         if (signal?.aborted) return
@@ -54,11 +63,15 @@ export default function WarningTakeover() {
         console.error('[warning-takeover]', error)
       }
     },
-    [pin],
+    [pinLat, pinLon],
   )
 
   useEffect(() => {
-    if (!pin) return
+    if (pinLat == null || pinLon == null) {
+      setAlerts([])
+      return
+    }
+    setAlerts([])
     const ctrl = new AbortController()
     void load(ctrl.signal)
     const timer = setInterval(() => void load(ctrl.signal), POLL_MS)
@@ -66,14 +79,11 @@ export default function WarningTakeover() {
       ctrl.abort()
       clearInterval(timer)
     }
-  }, [load, pin])
+  }, [load, pinLat, pinLon])
 
-  const covering = useMemo(() => {
-    if (!pin) return []
-    return splitLocalWarnings(alerts, pin).onYou
-  }, [alerts, pin])
+  const covering = useMemo(() => [...alerts].sort(compareWarningPriority), [alerts])
 
-  const active = covering[0] ?? null
+  const active = pin ? (covering[0] ?? null) : null
   const onDetailPage =
     active != null && pathname?.includes(encodeURIComponent(warningIdSlug(active.id)))
 
@@ -121,7 +131,7 @@ export default function WarningTakeover() {
         </div>
         <p className="mt-4 text-[10px] text-muted-foreground">
           Supplemental heads-up. Does not replace Wireless Emergency Alerts, NOAA Weather Radio, or
-          local officials. A new warning id will interrupt again.
+          local officials. A new warning id will interrupt again. Ending is not an all-clear.
         </p>
       </div>
     </div>

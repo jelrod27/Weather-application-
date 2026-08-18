@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-bitwatch.md](./PRD-bitwatch.md) | Bitwatch — US NWS warning parity (guest push+email, Warning Event store, desk) plus Scout auto-detection |
 | [PRD-radar-v2.md](./PRD-radar-v2.md) | Radar v2 — RainViewer-only tiles + RainViewer-style UX, bottom player dock, Severe preset, new `components/radar-v2/` (v2.0 drops Iowa/MRMS/GeoMet) |
 | [PRD-condition-alerts.md](./PRD-condition-alerts.md) | Location-scoped condition alerts — in-app alert center for stargazing windows at saved locations, daily Vercel cron evaluation, schema + RLS design |
 | [PRD-news-overhaul.md](./PRD-news-overhaul.md) | News — Phases 1–3 shipped; living amendment is Hard C hybrid + image honesty + weekly feed-health. Body below the amendment is historical. |

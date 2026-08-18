@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocationContext } from '@/components/location-context'
 import { useRemoteData } from '@/hooks/useRemoteData'
 import { PIN_CHANGE_EVENT, readPersistedPinLabel } from '@/lib/warnings/persist-pin'
@@ -56,13 +56,21 @@ export function useActivePinState(): ActivePinState {
     },
   })
 
-  if (!label) {
-    return { pin: null, label: '', isResolving: false }
-  }
-  if (!geocoded) {
-    return { pin: null, label, isResolving: isLoading }
-  }
-  return { pin: { lat: geocoded.lat, lon: geocoded.lon, label }, label, isResolving: false }
+  const pinState = useMemo<ActivePinState>(() => {
+    if (!label) {
+      return { pin: null, label: '', isResolving: false }
+    }
+    if (!geocoded) {
+      return { pin: null, label, isResolving: isLoading }
+    }
+    return {
+      pin: { lat: geocoded.lat, lon: geocoded.lon, label },
+      label,
+      isResolving: false,
+    }
+  }, [label, geocoded, isLoading])
+
+  return pinState
 }
 
 export function useActivePin(): ActivePin | null {

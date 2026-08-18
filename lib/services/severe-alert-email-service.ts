@@ -25,18 +25,42 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   html: string
 } {
   const warningsUrl = absoluteWarningsHref(payload.warningsHref)
+  const manageUrl = absoluteWarningsHref(payload.manageHref || '/dashboard')
   const tier: SevereAlertTier = payload.tier ?? 'standard'
+  const phase = payload.phase ?? 'new'
   const tierPrefix = tier === 'critical' ? '[CRITICAL] ' : tier === 'high' ? '[WARNING] ' : ''
-  const subject = `${tierPrefix}${payload.event} — ${payload.locationName}`
+  const upgradePrefix = phase === 'upgrade' ? '[UPGRADE] ' : ''
+  const subject =
+    phase === 'ended'
+      ? `Warning ended — ${payload.locationName}`
+      : phase === 'scout'
+        ? `Bitwatch Scout — ${payload.locationName}`
+        : `${upgradePrefix}${tierPrefix}${payload.event} — ${payload.locationName}`
 
   const instruction = payload.instruction?.trim()
+  const notAllClear =
+    phase === 'ended'
+      ? 'This is not an all-clear. Stay alert and follow local officials, Wireless Emergency Alerts, and NOAA Weather Radio.'
+      : null
+  const unofficial =
+    phase === 'scout'
+      ? 'This is unofficial radar/nowcast inference. It is not a National Weather Service warning for your pin.'
+      : null
   const text = [
-    `${severeAlertTierLabel(tier)} — ${payload.event} for ${payload.locationName}`,
+    phase === 'ended'
+      ? `Warning ended for ${payload.locationName}`
+      : phase === 'scout'
+        ? `Bitwatch Scout for ${payload.locationName}`
+        : `${severeAlertTierLabel(tier)} — ${payload.event} for ${payload.locationName}`,
     '',
     payload.headline,
     '',
     instruction ? `Official instructions:\n${instruction}` : null,
     instruction ? '' : null,
+    notAllClear,
+    notAllClear ? '' : null,
+    unofficial,
+    unofficial ? '' : null,
     `Area: ${payload.areaDesc}`,
     `Severity: ${payload.severity} · Urgency: ${payload.urgency}`,
     `Expires: ${payload.expires}`,
@@ -44,16 +68,18 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
     `Open the warnings command center: ${warningsUrl}`,
     '',
     'This is a supplemental heads-up. It does not replace Wireless Emergency Alerts, NOAA Weather Radio, or local officials.',
-    'You received this because severe weather notifications are enabled for your saved locations on 16 Bit Weather.',
-    'Manage preferences: ' + `${BASE_URL}/dashboard`,
+    'You received this because severe weather notifications are enabled for a Protected Place on 16-Bit Weather.',
+    'Manage or unsubscribe: ' + manageUrl,
   ]
     .filter((line) => line !== null)
     .join('\n')
 
   const html = `
-    <p><strong>${escapeHtml(severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
+    <p><strong>${escapeHtml(phase === 'ended' ? 'Warning ended' : phase === 'scout' ? 'Bitwatch Scout' : severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
     <p>${escapeHtml(payload.headline)}</p>
-    ${instruction ? `<p><strong>Official instructions:</strong> ${escapeHtml(instruction).replace(/\r\n|\n|\r/g, '<br />')}</p>` : ''}
+    ${instruction ? `<p><strong>${phase === 'scout' ? 'Scout note' : 'Official instructions'}:</strong> ${escapeHtml(instruction).replace(/\r\n|\n|\r/g, '<br />')}</p>` : ''}
+    ${notAllClear ? `<p><strong>${escapeHtml(notAllClear)}</strong></p>` : ''}
+    ${unofficial ? `<p><strong>${escapeHtml(unofficial)}</strong></p>` : ''}
     <ul>
       <li><strong>Area:</strong> ${escapeHtml(payload.areaDesc)}</li>
       <li><strong>Severity:</strong> ${escapeHtml(payload.severity)}</li>
@@ -63,8 +89,8 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
     <p><a href="${warningsUrl}">Open warnings command center</a></p>
     <p style="color:#666;font-size:12px;">
       This is a supplemental heads-up. It does not replace Wireless Emergency Alerts, NOAA Weather Radio, or local officials.
-      You received this because severe weather notifications are enabled for your saved locations.
-      <a href="${BASE_URL}/dashboard">Manage preferences</a>
+      You received this because severe weather notifications are enabled for a Protected Place.
+      <a href="${manageUrl}">Manage or unsubscribe</a>
     </p>
   `.trim()
 
@@ -81,6 +107,7 @@ export async function sendSevereAlertEmail(input: {
   }
 
   const { subject, text, html } = buildSevereAlertEmailContent(input.payload)
+  const manageUrl = absoluteWarningsHref(input.payload.manageHref || '/dashboard')
 
   try {
     const { error } = await config.resend.emails.send({
@@ -89,6 +116,9 @@ export async function sendSevereAlertEmail(input: {
       subject,
       text,
       html,
+      headers: {
+        'List-Unsubscribe': `<${manageUrl}>`,
+      },
     })
 
     if (error) {

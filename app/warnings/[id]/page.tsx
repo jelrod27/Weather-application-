@@ -3,8 +3,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import PageWrapper from '@/components/page-wrapper'
 import { WarningDetailBody } from '@/components/warnings/warning-detail-body'
+import { loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 import { findAlertByQueryParam } from '@/lib/home/hub-links'
 import { fetchActiveAlertsDetail } from '@/lib/services/nws-alerts-service'
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { warningIdSlug } from '@/lib/warnings/alert-links'
 
 const BASE_URL = 'https://www.16bitweather.co'
@@ -21,6 +23,11 @@ async function loadAlert(rawId: string) {
       return rawId
     }
   })()
+  const supabase = createServiceRoleSupabaseClient()
+  if (supabase) {
+    const stored = await loadCanonicalAlertBySlug(supabase, decoded)
+    if (stored) return stored
+  }
   const alerts = await fetchActiveAlertsDetail()
   const matchedId = findAlertByQueryParam(alerts, decoded) ?? findAlertByQueryParam(alerts, warningIdSlug(decoded))
   return alerts.find((alert) => alert.id === matchedId) ?? null

@@ -1,4 +1,9 @@
-import { hashGuestToken, newGuestToken } from '@/lib/alerts/guest-tokens'
+import {
+  hashGuestToken,
+  newGuestToken,
+  parseSignedGuestManageToken,
+  signGuestManageToken,
+} from '@/lib/alerts/guest-tokens'
 
 describe('guest-tokens', () => {
   it('hashes tokens as stable sha256 hex', () => {
@@ -12,5 +17,15 @@ describe('guest-tokens', () => {
     const token = newGuestToken()
     expect(token.length).toBeGreaterThan(20)
     expect(token).not.toMatch(/[+/=]/)
+  })
+
+  it('round-trips a signed manage token', () => {
+    const secret = 'bitwatch-test-secret'
+    const id = '11111111-2222-4333-8444-555555555555'
+    const token = signGuestManageToken(id, secret)
+    expect(token).toBeTruthy()
+    expect(parseSignedGuestManageToken(token!, secret)).toBe(id)
+    expect(parseSignedGuestManageToken(token!, 'other-secret')).toBeNull()
+    expect(parseSignedGuestManageToken('not-signed', secret)).toBeNull()
   })
 })

@@ -6,6 +6,8 @@
  */
 
 import { captureError } from '@/lib/error-utils'
+import { parseTimeMotLoc, type StormMotion } from '@/lib/bitwatch/motion'
+import { parseVtecFromParameters, provisionalWarningEventId } from '@/lib/bitwatch/vtec'
 import { HARM_WARNING_EVENTS } from '@/lib/services/severe-alert-filter'
 import {
   parseNwsHazardParameters,
@@ -18,6 +20,20 @@ const NWS_USER_AGENT =
 const NWS_ACCEPT = 'application/geo+json, application/json'
 
 const NWS_FETCH_TIMEOUT_MS = 25_000
+
+export function nwsContinuationUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== 'https:') return null
+    if (url.hostname !== 'api.weather.gov') return null
+    if (url.port) return null
+    if (url.username || url.password) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
 
 export interface AlertCounts {
   total: number
@@ -49,6 +65,13 @@ export interface NWSAlertDetail extends NWSAlert {
   geometry: NwsGeometry | null
   /** Hail / wind / source parsed from NWS CAP `parameters` with description fallbacks. */
   hazard: NwsHazardParameters
+  messageType: string
+  warningEventId: string
+  vtecAction: string | null
+  vtecRaw: string[]
+  ugc: string[]
+  affectedZones: string[]
+  motion: StormMotion | null
 }
 
 /** Subset of GeoJSON geometry returned by NWS api.weather.gov alerts. */
@@ -91,7 +114,13 @@ function asString(v: unknown): string {
   return ''
 }
 
-function mapNwsFeatureToDetail(feature: {
+function stringList(value: unknown): string[] {
+  if (typeof value === 'string' && value.trim()) return [value.trim()]
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+export function mapNwsFeatureToDetail(feature: {
   properties?: Record<string, unknown> | null
   geometry?: NwsGeometry | null
 }): NWSAlertDetail {
@@ -106,16 +135,25 @@ function mapNwsFeatureToDetail(feature: {
     p.parameters && typeof p.parameters === 'object' && !Array.isArray(p.parameters)
       ? (p.parameters as Record<string, unknown>)
       : null
+  const sent = asString(p.sent)
+  const nwsId = asString(p.id)
+  const vtecs = parseVtecFromParameters(rawParameters, description, sent)
+  const primary = vtecs[0] ?? null
+  const geocode =
+    p.geocode && typeof p.geocode === 'object' && !Array.isArray(p.geocode)
+      ? (p.geocode as Record<string, unknown>)
+      : null
+  const vtecRaw = stringList(rawParameters?.VTEC ?? rawParameters?.vtec)
 
   return {
-    id: asString(p.id),
+    id: nwsId,
     headline: asString(p.headline),
     event,
     severity,
     urgency: asString(p.urgency),
     expires: asString(p.expires),
     areaDesc: asString(p.areaDesc),
-    sent: asString(p.sent),
+    sent,
     effective: asString(p.effective),
     ends: asString(p.ends),
     description,
@@ -125,6 +163,13 @@ function mapNwsFeatureToDetail(feature: {
     sender: asString(p.sender),
     geometry,
     hazard: parseNwsHazardParameters(rawParameters, description),
+    messageType: asString(p.messageType) || 'Alert',
+    warningEventId: primary?.eventId ?? provisionalWarningEventId(nwsId),
+    vtecAction: primary?.action ?? null,
+    vtecRaw,
+    ugc: stringList(geocode?.UGC ?? geocode?.ugc),
+    affectedZones: stringList(p.affectedZones),
+    motion: parseTimeMotLoc(description),
   }
 }
 
@@ -171,6 +216,7 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
     properties?: Record<string, unknown> | null
     geometry?: NwsGeometry | null
   }>
+  paginationNext: string | null
 }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), NWS_FETCH_TIMEOUT_MS)
@@ -189,10 +235,12 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
   const data = (await response.json()) as {
     type?: string
     features?: unknown[]
+    pagination?: { next?: string }
   }
   if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-    return { type: 'FeatureCollection', features: [] }
+    return { type: 'FeatureCollection', features: [], paginationNext: null }
   }
+  const next = nwsContinuationUrl(data.pagination?.next)
   return {
     type: 'FeatureCollection',
     features: data.features as Array<{
@@ -200,20 +248,51 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
       properties?: Record<string, unknown> | null
       geometry?: NwsGeometry | null
     }>,
+    paginationNext: next,
   }
 }
 
+export async function fetchNwsAlertPages(startUrl: string, maxPages = 8): Promise<NWSAlertDetail[]> {
+  const details: NWSAlertDetail[] = []
+  const seen = new Set<string>()
+  let url: string | null = startUrl
+  let pages = 0
+  while (url && pages < maxPages) {
+    pages += 1
+    const fc = await fetchNwsFeatureCollection(url)
+    for (const feature of fc.features) {
+      const mapped = mapNwsFeatureToDetail(feature)
+      if (!mapped.id || seen.has(mapped.id)) continue
+      seen.add(mapped.id)
+      details.push(mapped)
+    }
+    url = fc.paginationNext
+  }
+  return details
+}
+
 export function nationalActiveAlertsUrl(): string {
-  return 'https://api.weather.gov/alerts/active?status=actual&message_type=alert'
+  return 'https://api.weather.gov/alerts/active?status=actual'
 }
 
 export function pointActiveAlertsUrl(lat: number, lon: number): string {
-  return `https://api.weather.gov/alerts/active?status=actual&message_type=alert&point=${lat},${lon}`
+  return `https://api.weather.gov/alerts/active?status=actual&point=${lat},${lon}`
 }
 
 export function harmWarningActiveAlertsUrl(): string {
   const event = HARM_WARNING_EVENTS.map((name) => encodeURIComponent(name)).join(',')
-  return `https://api.weather.gov/alerts/active?status=actual&message_type=alert&event=${event}`
+  return `https://api.weather.gov/alerts/active?status=actual&event=${event}`
+}
+
+export function harmWarningCollectionUrl(startIso?: string): string {
+  const params = new URLSearchParams({
+    status: 'actual',
+    message_type: 'alert,update,cancel',
+    event: HARM_WARNING_EVENTS.join(','),
+    limit: '500',
+  })
+  if (startIso) params.set('start', startIso)
+  return `https://api.weather.gov/alerts?${params.toString()}`
 }
 
 export async function fetchActiveAlertsDetail(options?: {

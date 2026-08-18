@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { stubHomeHubApis, stubWeatherApis } from '../fixtures/utils'
+import { dismissWarningTakeoverIfPresent, stubHomeHubApis, stubWeatherApis } from '../fixtures/utils'
 
 const transparentPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
@@ -121,6 +121,10 @@ test.beforeEach(async ({ page }) => {
     route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng }),
   )
 
+  await page.route('**/api/weather/iowa-nexrad**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng }),
+  )
+
   await page.goto('/warnings', { waitUntil: 'domcontentloaded' })
 })
 
@@ -130,6 +134,8 @@ test('warning center exposes a pin setter and local lanes', async ({ page }) => 
     timeout: 30000,
   })
   await expect(main.getByTestId('warning-pin-search')).toBeVisible()
+  await expect(main.getByTestId('warning-event-filter')).toBeVisible()
+  await expect(main.getByTestId('warning-state-filter')).toBeVisible()
   await expect(main.getByTestId('warning-lane-on-you')).toBeVisible({ timeout: 20000 })
   await expect(main.getByTestId('warning-lane-nearby')).toBeVisible()
   await expect(main.getByTestId('warning-lane-elsewhere')).toBeVisible()
@@ -140,12 +146,12 @@ test('setting a pin ranks covering warnings on you and close cells nearby', asyn
   const input = main.getByTestId('warning-pin-input')
   await expect(input).toBeVisible({ timeout: 30000 })
   await input.fill('New York, NY')
-  await main.getByRole('button', { name: /Set pin/i }).click()
+  await expect(input).toHaveValue('New York, NY')
+  const setPin = main.getByRole('button', { name: /Set pin/i })
+  await expect(setPin).toBeEnabled()
+  await setPin.click()
 
-  const takeover = page.getByRole('alertdialog')
-  if (await takeover.isVisible().catch(() => false)) {
-    await takeover.getByRole('button', { name: /Dismiss this warning/i }).click()
-  }
+  await dismissWarningTakeoverIfPresent(page)
 
   await expect(main.getByTestId('warning-pin-status')).toContainText(/^Pin: New York, NY/i, {
     timeout: 15000,
