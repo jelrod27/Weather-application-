@@ -22,5 +22,5 @@ test('Bitwatch landing exposes GPS pin search and guest signup', async ({ page }
   await expect(main.getByRole('button', { name: /Use my location/i })).toBeVisible()
   await expect(main.getByTestId('bitwatch-signup')).toBeVisible()
   await expect(main.getByText('Tornado Warning')).toBeVisible()
-  await expect(main.getByText(/not an all-clear/i)).toBeVisible()
+  await expect(main.getByTestId('bitwatch-signup')).toContainText(/not an all-clear/i)
 })
