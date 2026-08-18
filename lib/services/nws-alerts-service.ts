@@ -21,6 +21,20 @@ const NWS_ACCEPT = 'application/geo+json, application/json'
 
 const NWS_FETCH_TIMEOUT_MS = 25_000
 
+export function nwsContinuationUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== 'https:') return null
+    if (url.hostname !== 'api.weather.gov') return null
+    if (url.port) return null
+    if (url.username || url.password) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export interface AlertCounts {
   total: number
   severity: { extreme: number; severe: number; moderate: number; minor: number }
@@ -226,9 +240,7 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
   if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
     return { type: 'FeatureCollection', features: [], paginationNext: null }
   }
-  const next = typeof data.pagination?.next === 'string' && data.pagination.next.startsWith('https://')
-    ? data.pagination.next
-    : null
+  const next = nwsContinuationUrl(data.pagination?.next)
   return {
     type: 'FeatureCollection',
     features: data.features as Array<{

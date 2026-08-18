@@ -10,7 +10,7 @@ import {
 } from '@/lib/bitwatch/delivery-policy'
 import { loadCanonicalActiveAlerts, loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 import { coveringAlerts, eventKey, matchProtectedPlace } from '@/lib/bitwatch/match'
-import { claimDelivery } from '@/lib/bitwatch/outbox'
+import { claimDelivery, markDeliveryAccepted } from '@/lib/bitwatch/outbox'
 import { scoutApproachingPlace } from '@/lib/bitwatch/scout'
 import { pinNowcastIsWet } from '@/lib/bitwatch/scout-nowcast'
 import { guestManagePath } from '@/lib/alerts/guest-tokens'
@@ -283,9 +283,10 @@ async function claimPhaseChannels(
       payload,
     })
     if (inApp === null) return 'duplicate'
+    await markDeliveryAccepted(supabase, inApp)
     for (const channel of CHANNELS) {
       if (channel === 'in_app') continue
-      await claimDelivery(supabase, {
+      const claimedId = await claimDelivery(supabase, {
         warningEventId: input.warningEventId,
         lifecyclePhase: input.phase,
         channel,
@@ -294,6 +295,7 @@ async function claimPhaseChannels(
         protectedPlaceKey: input.protectedPlaceKey,
         payload,
       })
+      if (claimedId) await markDeliveryAccepted(supabase, claimedId)
     }
     return 'claimed'
   } catch (error) {
@@ -307,7 +309,9 @@ async function loadHarmAlerts(
 ): Promise<NWSAlertDetail[]> {
   try {
     const canonical = await loadCanonicalActiveAlerts(supabase)
-    if (canonical) return filterSevereMonitorAlerts(canonical.alerts)
+    if (canonical?.freshness === 'fresh') {
+      return filterSevereMonitorAlerts(canonical.alerts)
+    }
   } catch (error) {
     console.error('[bitwatch-monitor] canonical load failed', error)
   }
@@ -341,6 +345,30 @@ function coveringKeys(alerts: NWSAlertDetail[]): Set<string> {
     keys.add(alert.id)
   }
   return keys
+}
+
+function stillCoveredByCurrent(
+  lat: number,
+  lon: number,
+  resolved: NWSAlertDetail,
+  currentAlerts: NWSAlertDetail[],
+  pointActiveKeys: Set<string> | undefined,
+): boolean {
+  return (
+    matchProtectedPlace(lat, lon, resolved, pointActiveKeys).covered &&
+    currentAlerts.some((alert) => eventKey(alert) === eventKey(resolved))
+  )
+}
+
+function rememberEndedKeys(endedSeen: Set<string>, resolved: NWSAlertDetail, prevId: string): boolean {
+  const endedKey = eventKey(resolved)
+  if (endedSeen.has(endedKey) || endedSeen.has(resolved.id) || endedSeen.has(prevId)) {
+    return true
+  }
+  endedSeen.add(endedKey)
+  endedSeen.add(resolved.id)
+  endedSeen.add(prevId)
+  return false
 }
 
 function trackingIds(alerts: NWSAlertDetail[]): string[] {
@@ -509,6 +537,7 @@ async function processAccountPlace(
   const previousIds = await loadMonitorState(supabase, subscription.id)
   const previousSet = new Set(previousIds)
   const liveKeys = coveringKeys(currentAlerts)
+  const endedSeen = new Set<string>()
 
   for (const alert of currentAlerts) {
     const phase = alreadyTracked(previousSet, alert) ? 'upgrade' : 'new'
@@ -530,14 +559,15 @@ async function processAccountPlace(
     if (liveKeys.has(prevId)) continue
     const resolved = await resolveEndedAlert(supabase, prevId, nationalAlerts)
     if (liveKeys.has(eventKey(resolved)) || liveKeys.has(resolved.id)) continue
+    if (rememberEndedKeys(endedSeen, resolved, prevId)) continue
     if (
-      matchProtectedPlace(
+      stillCoveredByCurrent(
         subscription.latitude,
         subscription.longitude,
         resolved,
+        currentAlerts,
         pointActiveKeys,
-      ).covered &&
-      currentAlerts.some((alert) => eventKey(alert) === eventKey(resolved))
+      )
     ) {
       continue
     }
@@ -637,6 +667,7 @@ async function processGuestPlace(
   const previousIds = await loadGuestMonitorState(supabase, subscriber.id)
   const previousSet = new Set(previousIds)
   const liveKeys = coveringKeys(currentAlerts)
+  const endedSeen = new Set<string>()
 
   for (const alert of currentAlerts) {
     const phase = alreadyTracked(previousSet, alert) ? 'upgrade' : 'new'
@@ -660,6 +691,18 @@ async function processGuestPlace(
     if (liveKeys.has(prevId)) continue
     const resolved = await resolveEndedAlert(supabase, prevId, nationalAlerts)
     if (liveKeys.has(eventKey(resolved)) || liveKeys.has(resolved.id)) continue
+    if (rememberEndedKeys(endedSeen, resolved, prevId)) continue
+    if (
+      stillCoveredByCurrent(
+        subscriber.latitude,
+        subscriber.longitude,
+        resolved,
+        currentAlerts,
+        pointActiveKeys,
+      )
+    ) {
+      continue
+    }
     if (resolved.event !== 'Warning ended' && !wantsHazard(resolved.event, prefs)) continue
 
     const delivered = await deliverGuestPhase({

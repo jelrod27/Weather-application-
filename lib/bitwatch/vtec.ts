@@ -8,6 +8,7 @@ export const VTEC_ACTIONS = [
   'UPG',
   'EXP',
   'COR',
+  'ROU',
 ] as const
 
 export type VtecAction = (typeof VTEC_ACTIONS)[number]

@@ -8,6 +8,7 @@ import {
   fetchActiveAlerts,
   getWISScore,
   harmWarningActiveAlertsUrl,
+  nwsContinuationUrl,
   type AlertCounts,
 } from '@/lib/services/nws-alerts-service';
 
@@ -246,5 +247,20 @@ describe('harmWarningActiveAlertsUrl', () => {
     expect(url).toContain('Severe%20Thunderstorm%20Warning')
     expect(url).toContain('Flash%20Flood%20Warning')
     expect(url).not.toContain('Watch')
+  })
+})
+
+describe('nwsContinuationUrl', () => {
+  it('accepts https api.weather.gov URLs without an explicit port', () => {
+    expect(nwsContinuationUrl('https://api.weather.gov/alerts?cursor=1')).toBe(
+      'https://api.weather.gov/alerts?cursor=1',
+    )
+  })
+
+  it('rejects an external host, credentials, and a non-default port', () => {
+    expect(nwsContinuationUrl('https://evil.example/alerts')).toBeNull()
+    expect(nwsContinuationUrl('https://user:pass@api.weather.gov/alerts')).toBeNull()
+    expect(nwsContinuationUrl('https://api.weather.gov:8443/alerts')).toBeNull()
+    expect(nwsContinuationUrl('http://api.weather.gov/alerts')).toBeNull()
   })
 })

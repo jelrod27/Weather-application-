@@ -31,4 +31,17 @@ describe('verifyTurnstileToken', () => {
     await expect(verifyTurnstileToken('token-token-token')).resolves.toBe(true)
     expect(global.fetch).toHaveBeenCalled()
   })
+
+  it('treats a siteverify timeout as verification failure', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'secret'
+    global.fetch = jest.fn().mockImplementation((_url: unknown, init?: RequestInit) => {
+      const err = Object.assign(new Error('aborted'), { name: 'TimeoutError' })
+      if (init?.signal) {
+        init.signal.addEventListener('abort', () => undefined)
+      }
+      return Promise.reject(err)
+    }) as unknown as typeof fetch
+
+    await expect(verifyTurnstileToken('token-token-token')).resolves.toBe(false)
+  })
 })

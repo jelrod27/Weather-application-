@@ -2,6 +2,10 @@
  * Cloudflare Turnstile siteverify. Skips when TURNSTILE_SECRET_KEY is unset
  * so local/dev still works. Production guest subscribe should set the secret.
  */
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
+
+const SITEVERIFY_TIMEOUT_MS = 4_000
+
 export async function verifyTurnstileToken(
   token: string | undefined | null,
   remoteIp?: string | null,
@@ -17,10 +21,12 @@ export async function verifyTurnstileToken(
   if (remoteIp) body.set('remoteip', remoteIp)
 
   try {
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    const res = await fetchWithTimeout('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body,
+      timeoutMs: SITEVERIFY_TIMEOUT_MS,
+      maxRetries: 0,
     })
     if (!res.ok) return false
     const data = (await res.json()) as { success?: boolean }

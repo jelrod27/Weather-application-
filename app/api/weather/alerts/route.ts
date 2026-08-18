@@ -45,10 +45,13 @@ async function loadDetails(input: {
     }
   }
 
-  const live = input.harm
-    ? await fetchHarmWarningAlerts()
-    : await fetchActiveAlertsDetail(input.point ? { point: input.point } : undefined)
-  return { details: live, freshness: 'live-fallback' }
+  const live = input.point
+    ? await fetchActiveAlertsDetail({ point: input.point })
+    : input.harm
+      ? await fetchHarmWarningAlerts()
+      : await fetchActiveAlertsDetail()
+  const details = input.harm ? live.filter(isSevereMonitorAlert) : live
+  return { details, freshness: 'live-fallback' }
 }
 
 export async function GET(request: NextRequest) {

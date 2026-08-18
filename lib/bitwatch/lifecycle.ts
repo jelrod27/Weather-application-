@@ -61,12 +61,24 @@ function applyProvisional(events: Map<string, WarningEventRecord>, message: Sour
   })
 }
 
+function resolveVtecEventId(
+  events: Map<string, WarningEventRecord>,
+  vtec: ParsedVtec,
+): string {
+  if (!vtec.startRaw.startsWith('000000')) return vtec.eventId
+  const series = `${vtec.office}.${vtec.phenomenon}.${vtec.significance}.${vtec.etn}.`
+  const matches = [...events.keys()].filter((id) => id.startsWith(series))
+  if (matches.length === 0) return vtec.eventId
+  const active = matches.find((id) => events.get(id)?.status === 'active')
+  return active ?? matches[matches.length - 1] ?? vtec.eventId
+}
+
 function applyVtec(
   events: Map<string, WarningEventRecord>,
   message: SourceMessageInput,
   vtec: ParsedVtec,
 ): void {
-  const id = vtec.eventId
+  const id = resolveVtecEventId(events, vtec)
   const display: NWSAlertDetail = {
     ...message.display,
     warningEventId: id,

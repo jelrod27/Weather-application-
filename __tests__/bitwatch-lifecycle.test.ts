@@ -4,6 +4,7 @@ import {
   foldSourceMessages,
   nextWatermarkIso,
   overlapStartIso,
+  postgrestInList,
   reconcileWithActiveSnapshot,
 } from '@/lib/bitwatch/ingest'
 import { parseVtecFromParameters, provisionalWarningEventId } from '@/lib/bitwatch/vtec'
@@ -56,6 +57,18 @@ describe('parseVtecFromParameters', () => {
   it('uses sent year when VTEC start is the continuation placeholder', () => {
     const parsed = parseVtecFromParameters({ VTEC: [FORD_VTEC] }, '', '2026-08-07T02:25:00Z')
     expect(parsed[0]?.eventId.endsWith('.2026')).toBe(true)
+  })
+
+  it('parses ROU onto the same Warning Event identity fields', () => {
+    const parsed = parseVtecFromParameters(
+      { VTEC: ['/O.ROU.KLWX.TO.W.0023.000000T0000Z-260418T2200Z/'] },
+      '',
+      '2026-04-18T21:30:00Z',
+    )
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0]?.action).toBe('ROU')
+    expect(parsed[0]?.office).toBe('KLWX')
+    expect(parsed[0]?.etn).toBe('0023')
   })
 })
 
@@ -153,6 +166,78 @@ describe('applySourceMessage', () => {
     expect(cancelledOther.get('KDDC.SV.W.0237.2026')?.status).toBe('active')
     expect(cancelledOther.get('KDDC.FF.W.0001.2026')?.status).toBe('ended')
   })
+
+  it('closes a December Warning Event from a January cancellation with a zero start', () => {
+    const started = applySourceMessage(new Map(), {
+      nwsId: 'https://api.weather.gov/alerts/new-year',
+      sent: '2025-12-31T23:50:00Z',
+      capMessageType: 'Alert',
+      vtecs: parseVtecFromParameters(
+        { VTEC: ['/O.NEW.KLWX.TO.W.0099.251231T2350Z-260101T0030Z/'] },
+        '',
+        '2025-12-31T23:50:00Z',
+      ),
+      display: alert({
+        id: 'https://api.weather.gov/alerts/new-year',
+        event: 'Tornado Warning',
+        sent: '2025-12-31T23:50:00Z',
+      }),
+    })
+    expect(started.get('KLWX.TO.W.0099.2025')?.status).toBe('active')
+
+    const cancelled = applySourceMessage(started, {
+      nwsId: 'https://api.weather.gov/alerts/can-year',
+      sent: '2026-01-01T00:10:00Z',
+      capMessageType: 'Cancel',
+      vtecs: parseVtecFromParameters(
+        { VTEC: ['/O.CAN.KLWX.TO.W.0099.000000T0000Z-260101T0030Z/'] },
+        '',
+        '2026-01-01T00:10:00Z',
+      ),
+      display: alert({
+        id: 'https://api.weather.gov/alerts/can-year',
+        event: 'Tornado Warning',
+        sent: '2026-01-01T00:10:00Z',
+        messageType: 'Cancel',
+      }),
+    })
+    expect(cancelled.get('KLWX.TO.W.0099.2025')?.status).toBe('ended')
+    expect(cancelled.get('KLWX.TO.W.0099.2025')?.endedReason).toBe('cancelled')
+    expect(cancelled.has('KLWX.TO.W.0099.2026')).toBe(false)
+  })
+
+  it('applies a ROU follow-up to the existing Warning Event', () => {
+    const started = applySourceMessage(new Map(), {
+      nwsId: 'https://api.weather.gov/alerts/rou-new',
+      sent: '2026-04-18T21:00:00Z',
+      capMessageType: 'Alert',
+      vtecs: parseVtecFromParameters({ VTEC: [NEW_TOR] }, '', '2026-04-18T21:00:00Z'),
+      display: alert({
+        id: 'https://api.weather.gov/alerts/rou-new',
+        event: 'Tornado Warning',
+        sent: '2026-04-18T21:00:00Z',
+      }),
+    })
+    const routine = applySourceMessage(started, {
+      nwsId: 'https://api.weather.gov/alerts/rou',
+      sent: '2026-04-18T21:10:00Z',
+      capMessageType: 'Update',
+      vtecs: parseVtecFromParameters(
+        { VTEC: ['/O.ROU.KLWX.TO.W.0023.000000T0000Z-260418T2200Z/'] },
+        '',
+        '2026-04-18T21:10:00Z',
+      ),
+      display: alert({
+        id: 'https://api.weather.gov/alerts/rou',
+        event: 'Tornado Warning',
+        sent: '2026-04-18T21:10:00Z',
+        messageType: 'Update',
+      }),
+    })
+    expect(routine.size).toBe(1)
+    expect(routine.get('KLWX.TO.W.0023.2026')?.nwsId).toBe('https://api.weather.gov/alerts/rou')
+    expect(routine.get('KLWX.TO.W.0023.2026')?.status).toBe('active')
+  })
 })
 
 describe('ingest helpers', () => {
@@ -201,6 +286,45 @@ describe('ingest helpers', () => {
     ])
     const reconciled = reconcileWithActiveSnapshot(new Map(), [...current.values()].map((e) => e.display), Date.parse('2026-08-07T02:10:00Z'))
     expect(reconciled.get('KLWX.TO.W.0023.2026')?.status).toBe('active')
+  })
+
+  it('does not resurrect a Warning Event that VTEC already ended', () => {
+    const cancelled = applySourceMessage(new Map(), {
+      nwsId: 'https://api.weather.gov/alerts/can',
+      sent: '2026-08-07T02:10:00Z',
+      capMessageType: 'Cancel',
+      vtecs: parseVtecFromParameters(
+        { VTEC: ['/O.CAN.KLWX.TO.W.0023.260418T2100Z-260418T2200Z/'] },
+        '',
+        '2026-08-07T02:10:00Z',
+      ),
+      display: alert({
+        id: 'https://api.weather.gov/alerts/can',
+        event: 'Tornado Warning',
+        sent: '2026-08-07T02:10:00Z',
+        messageType: 'Cancel',
+        warningEventId: 'KLWX.TO.W.0023.2026',
+      }),
+    })
+    const snapshot = alert({
+      id: 'https://api.weather.gov/alerts/stale-active',
+      event: 'Tornado Warning',
+      sent: '2026-08-07T02:05:00Z',
+      warningEventId: 'KLWX.TO.W.0023.2026',
+      expires: '2026-08-07T03:00:00Z',
+    })
+    const reconciled = reconcileWithActiveSnapshot(
+      cancelled,
+      [snapshot],
+      Date.parse('2026-08-07T02:12:00Z'),
+    )
+    expect(reconciled.get('KLWX.TO.W.0023.2026')?.status).toBe('ended')
+  })
+
+  it('quotes PostgREST in-list values that contain periods and colons', () => {
+    expect(postgrestInList(['KDDC.SV.W.0237.2026', 'provisional:urn:oid:abc'])).toBe(
+      '("KDDC.SV.W.0237.2026","provisional:urn:oid:abc")',
+    )
   })
 })
 

@@ -33,6 +33,9 @@ const mockCanonicalBySlug = loadCanonicalAlertBySlug as jest.Mock
 const { fetchEnabledSevereSubscriptions } = jest.requireMock(
   '@/lib/services/severe-alert-subscriptions',
 )
+const { fetchEnabledGuestSubscribers } = jest.requireMock(
+  '@/lib/services/guest-alert-subscribers',
+)
 
 const DENVER_POLYGON = {
   type: 'Polygon',
@@ -98,14 +101,32 @@ function makeSupabaseMock(
         }
       }
 
-      if (table === 'guest_alert_monitor_state' || table === 'guest_alert_deliveries') {
+      if (table === 'guest_alert_monitor_state') {
+        return {
+          select: () => ({
+            eq: (_col: string, subscriberId: string) => ({
+              maybeSingle: async () => ({
+                data: state[subscriberId]
+                  ? { active_alert_ids: state[subscriberId] }
+                  : null,
+                error: null,
+              }),
+            }),
+          }),
+          upsert: async (row: { subscriber_id: string; active_alert_ids: string[] }) => {
+            state[row.subscriber_id] = row.active_alert_ids
+            return { error: null }
+          },
+        }
+      }
+
+      if (table === 'guest_alert_deliveries') {
         return {
           select: () => ({
             eq: () => ({
               maybeSingle: async () => ({ data: null, error: null }),
             }),
           }),
-          upsert: async () => ({ error: null }),
           insert: () => ({
             select: () => ({
               single: async () => ({ data: { id: 'guest-delivery' }, error: null }),
@@ -121,6 +142,9 @@ function makeSupabaseMock(
               single: async () => ({ data: { id: `outbox-${Date.now()}` }, error: null }),
             }),
           }),
+          update: () => ({
+            eq: async () => ({ error: null }),
+          }),
         }
       }
 
@@ -133,6 +157,7 @@ describe('runSevereAlertMonitor', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     fetchEnabledSevereSubscriptions.mockResolvedValue([denverSub])
+    fetchEnabledGuestSubscribers.mockResolvedValue([])
     mockCanonical.mockResolvedValue(null)
     mockCanonicalBySlug.mockResolvedValue(null)
     mockPointFetch.mockResolvedValue([])
@@ -505,5 +530,109 @@ describe('runSevereAlertMonitor', () => {
     const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never)
     expect(result.scoutAlerts).toBe(0)
     expect(result.newAlerts).toBe(1)
+  })
+
+  it('does not use delayed canonical alerts as the live national snapshot', async () => {
+    mockCanonical.mockResolvedValue({
+      freshness: 'delayed',
+      alerts: [],
+      observedAt: '2026-07-04T00:00:00Z',
+    })
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'alert-1',
+        event: 'Tornado Warning',
+        headline: 'Tornado Warning for Denver',
+        severity: 'Extreme',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Denver CO',
+        geometry: DENVER_POLYGON,
+      },
+    ])
+
+    const inserts: unknown[] = []
+    const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never)
+
+    expect(mockFetchAlerts).toHaveBeenCalledTimes(1)
+    expect(result.newAlerts).toBe(1)
+  })
+
+  it('pages an ended warning once when monitor state stored both VTEC and NWS ids', async () => {
+    mockFetchAlerts.mockResolvedValue([])
+    mockCanonicalBySlug.mockResolvedValue({
+      id: 'nws-1',
+      warningEventId: 'KOAX.SV.W.0100.2026',
+      event: 'Severe Thunderstorm Warning',
+      headline: 'Severe Thunderstorm Warning',
+      instruction: 'Take shelter.',
+      severity: 'Severe',
+      urgency: 'Immediate',
+      expires: '2026-07-04T00:00:00Z',
+      areaDesc: 'Denver CO',
+      geometry: DENVER_POLYGON,
+    })
+
+    const state: Record<string, string[]> = {
+      'sub-1': ['KOAX.SV.W.0100.2026', 'nws-1'],
+    }
+    const inserts: unknown[] = []
+    const result = await runSevereAlertMonitor(makeSupabaseMock(state, inserts) as never)
+
+    expect(result.endedAlerts).toBe(1)
+    expect(inserts).toHaveLength(1)
+  })
+
+  it('does not send guest ended Delivery while the same warning still covers the pin', async () => {
+    fetchEnabledSevereSubscriptions.mockResolvedValue([])
+    fetchEnabledGuestSubscribers.mockResolvedValue([
+      {
+        id: 'guest-1',
+        email: 'guest@example.com',
+        latitude: 39.74,
+        longitude: -104.99,
+        locationLabel: 'Denver, CO',
+        enabled: true,
+        verifiedAt: '2026-07-04T00:00:00Z',
+        notifyTornado: true,
+        notifySevereThunderstorm: true,
+        notifyFlashFlood: true,
+        notifyUpgrades: true,
+      },
+    ])
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'nws-con-2',
+        warningEventId: 'KOAX.SV.W.0100.2026',
+        event: 'Severe Thunderstorm Warning',
+        headline: 'Severe Thunderstorm Warning',
+        severity: 'Severe',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Denver CO',
+        geometry: DENVER_POLYGON,
+      },
+    ])
+
+    const state: Record<string, string[]> = {
+      'guest-1': ['KOAX.SV.W.0100.2026', 'old-nws-id'],
+    }
+    const inserts: unknown[] = []
+    mockCanonicalBySlug.mockResolvedValue({
+      id: 'old-nws-id',
+      warningEventId: 'KOAX.SV.W.0100.2026',
+      event: 'Severe Thunderstorm Warning',
+      headline: 'Severe Thunderstorm Warning',
+      severity: 'Severe',
+      urgency: 'Immediate',
+      expires: '2026-07-04T00:00:00Z',
+      areaDesc: 'Denver CO',
+      geometry: DENVER_POLYGON,
+    })
+
+    const result = await runSevereAlertMonitor(makeSupabaseMock(state, inserts) as never)
+
+    expect(result.guestEndedAlerts).toBe(0)
+    expect(inserts).toHaveLength(0)
   })
 })

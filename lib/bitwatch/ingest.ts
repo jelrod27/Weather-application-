@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { applySourceMessage, type WarningEventRecord } from '@/lib/bitwatch/lifecycle'
+import { activeWarningDetails, applySourceMessage, type WarningEventRecord } from '@/lib/bitwatch/lifecycle'
 import { parseVtecFromParameters } from '@/lib/bitwatch/vtec'
 import type { Database, Json } from '@/lib/supabase/types'
 import {
@@ -106,6 +106,8 @@ export function reconcileWithActiveSnapshot(
   }
   for (const alert of active) {
     const id = alert.warningEventId || alert.id
+    const existing = next.get(id)
+    if (existing?.status === 'ended') continue
     next.set(id, {
       id,
       status: 'active',
@@ -118,10 +120,52 @@ export function reconcileWithActiveSnapshot(
   return next
 }
 
+export function postgrestInList(ids: string[]): string {
+  return `(${ids.map((id) => `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')})`
+}
+
 type IngestStateRow = {
   watermark_sent: string | null
   last_success_at: string | null
   lease_until: string | null
+}
+
+async function claimIngestLease(
+  supabase: SupabaseClient<Database>,
+  state: IngestStateRow | null,
+  nowMs: number,
+  nowIso: string,
+): Promise<{ ok: true; skipped: boolean } | { ok: false; skipped: false; error: string }> {
+  const leaseUntil = new Date(nowMs + LEASE_MS).toISOString()
+  const leaseFields = {
+    last_error: null,
+    lease_until: leaseUntil,
+    updated_at: nowIso,
+  }
+
+  if (!state) {
+    const { error } = await supabase.from('bitwatch_ingest_state').insert({
+      id: INGEST_ID,
+      watermark_sent: null,
+      last_success_at: null,
+      ...leaseFields,
+    } as never)
+    if (error?.code === '23505') return { ok: true, skipped: true }
+    if (error) return { ok: false, skipped: false, error: error.message }
+    return { ok: true, skipped: false }
+  }
+
+  const { data, error } = await supabase
+    .from('bitwatch_ingest_state')
+    .update(leaseFields as never)
+    .eq('id', INGEST_ID)
+    .or(`lease_until.is.null,lease_until.lte."${nowIso}"`)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return { ok: false, skipped: false, error: error.message }
+  if (!(data as { id?: string } | null)?.id) return { ok: true, skipped: true }
+  return { ok: true, skipped: false }
 }
 
 export async function runBitwatchIngest(
@@ -140,8 +184,11 @@ export async function runBitwatchIngest(
   }
 
   const state = (stateRow as IngestStateRow | null) ?? null
-  const leaseUntil = state?.lease_until ? new Date(state.lease_until).getTime() : 0
-  if (leaseUntil > nowMs) {
+  const claimed = await claimIngestLease(supabase, state, nowMs, nowIso)
+  if (!claimed.ok) {
+    return { ok: false, skipped: false, messages: 0, activeEvents: 0, watermark: null, error: claimed.error }
+  }
+  if (claimed.skipped) {
     return {
       ok: true,
       skipped: true,
@@ -151,27 +198,12 @@ export async function runBitwatchIngest(
     }
   }
 
-  const { error: leaseError } = await supabase.from('bitwatch_ingest_state').upsert(
-    {
-      id: INGEST_ID,
-      watermark_sent: state?.watermark_sent ?? null,
-      last_success_at: state?.last_success_at ?? null,
-      last_error: null,
-      lease_until: new Date(nowMs + LEASE_MS).toISOString(),
-      updated_at: nowIso,
-    } as never,
-    { onConflict: 'id' },
-  )
-  if (leaseError) {
-    return { ok: false, skipped: false, messages: 0, activeEvents: 0, watermark: null, error: leaseError.message }
-  }
-
   try {
     const start = overlapStartIso(state?.watermark_sent ?? null, nowMs)
     const collection = await fetchNwsAlertPages(harmWarningCollectionUrl(start))
     const active = await fetchActiveAlertsDetail()
     const folded = reconcileWithActiveSnapshot(foldSourceMessages(collection), active, nowMs)
-    const activeEvents = [...folded.values()].filter((event) => event.status === 'active')
+    const activeEvents = activeWarningDetails(folded)
     const foldedIds = [...folded.keys()]
 
     for (const detail of collection) {
@@ -195,18 +227,12 @@ export async function runBitwatchIngest(
       }
     }
 
-    if (foldedIds.length > 0) {
+    if (active.length > 0 && foldedIds.length > 0) {
       const { error: clearError } = await supabase
         .from('bitwatch_warning_events')
         .update({ status: 'ended', ended_reason: 'reconciled', updated_at: nowIso } as never)
         .eq('status', 'active')
-        .filter('id', 'not.in', `(${foldedIds.join(',')})`)
-      if (clearError) throw new Error(clearError.message)
-    } else {
-      const { error: clearError } = await supabase
-        .from('bitwatch_warning_events')
-        .update({ status: 'ended', ended_reason: 'reconciled', updated_at: nowIso } as never)
-        .eq('status', 'active')
+        .filter('id', 'not.in', postgrestInList(foldedIds))
       if (clearError) throw new Error(clearError.message)
     }
 
