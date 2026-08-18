@@ -96,6 +96,7 @@ export async function sendSevereAlertEmail(input: {
   }
 
   const { subject, text, html } = buildSevereAlertEmailContent(input.payload)
+  const manageUrl = absoluteWarningsHref(input.payload.manageHref || '/dashboard')
 
   try {
     const { error } = await config.resend.emails.send({
@@ -104,6 +105,9 @@ export async function sendSevereAlertEmail(input: {
       subject,
       text,
       html,
+      headers: {
+        'List-Unsubscribe': `<${manageUrl}>`,
+      },
     })
 
     if (error) {

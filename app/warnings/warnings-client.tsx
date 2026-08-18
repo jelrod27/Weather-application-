@@ -483,7 +483,16 @@ export default function WarningsClient() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <GuestAlertSignup pin={pin} />
+        <div className="space-y-3">
+          <p className="text-xs font-mono text-muted-foreground">
+            Prefer the dedicated landing?{' '}
+            <Link href="/alerts" className="underline text-primary">
+              Open Bitwatch
+            </Link>
+            .
+          </p>
+          <GuestAlertSignup pin={pin} />
+        </div>
         <PushOptIn />
       </div>
 

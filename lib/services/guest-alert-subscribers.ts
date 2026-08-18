@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
-import { guestVerifyExpiry, hashGuestToken, newGuestToken } from '@/lib/alerts/guest-tokens'
+import { guestVerifyExpiry, hashGuestToken, newGuestToken, parseSignedGuestManageToken } from '@/lib/alerts/guest-tokens'
 
 import type { HazardDeliveryPrefs } from '@/lib/bitwatch/delivery-policy'
 import { hazardPrefsFrom } from '@/lib/bitwatch/delivery-policy'
@@ -70,7 +70,16 @@ export async function fetchEnabledGuestSubscribers(
 
 export async function upsertGuestSubscriber(
   supabase: SupabaseClient<Database>,
-  input: { email: string; latitude: number; longitude: number; locationLabel: string },
+  input: {
+    email: string
+    latitude: number
+    longitude: number
+    locationLabel: string
+    notifyTornado?: boolean
+    notifySevereThunderstorm?: boolean
+    notifyFlashFlood?: boolean
+    notifyUpgrades?: boolean
+  },
 ): Promise<{
   subscriber: GuestAlertSubscriber
   verifyToken: string | null
@@ -78,6 +87,13 @@ export async function upsertGuestSubscriber(
   alreadyVerified: boolean
 }> {
   const email = input.email.trim().toLowerCase()
+  const prefs = hazardPrefsFrom(input)
+  const dbPrefs = {
+    notify_tornado: prefs.notifyTornado,
+    notify_severe_thunderstorm: prefs.notifySevereThunderstorm,
+    notify_flash_flood: prefs.notifyFlashFlood,
+    notify_upgrades: prefs.notifyUpgrades,
+  }
   const { data: existing, error: lookupError } = await supabase
     .from('guest_alert_subscribers')
     .select(GUEST_SELECT)
@@ -101,6 +117,7 @@ export async function upsertGuestSubscriber(
         location_label: input.locationLabel,
         enabled: true,
         manage_token_hash: hashGuestToken(manageToken),
+        ...dbPrefs,
         updated_at: now,
       } as never)
       .eq('id', row.id)
@@ -114,6 +131,7 @@ export async function upsertGuestSubscriber(
         longitude: input.longitude,
         locationLabel: input.locationLabel,
         enabled: true,
+        ...prefs,
       },
       verifyToken: null,
       manageToken,
@@ -133,6 +151,7 @@ export async function upsertGuestSubscriber(
     verify_token_hash: hashGuestToken(verifyToken),
     verify_token_expires_at: guestVerifyExpiry(),
     manage_token_hash: hashGuestToken(manageToken),
+    ...dbPrefs,
     updated_at: now,
   }
 
@@ -205,6 +224,17 @@ export async function findGuestByManageToken(
   supabase: SupabaseClient<Database>,
   token: string,
 ): Promise<GuestAlertSubscriber | null> {
+  const signedId = parseSignedGuestManageToken(token)
+  if (signedId) {
+    const { data, error } = await supabase
+      .from('guest_alert_subscribers')
+      .select(GUEST_SELECT)
+      .eq('id', signedId)
+      .maybeSingle()
+    if (error) throw new Error(`Guest manage lookup failed: ${error.message}`)
+    return data ? mapRow(data as GuestRow) : null
+  }
+
   const { data, error } = await supabase
     .from('guest_alert_subscribers')
     .select(GUEST_SELECT)
@@ -213,6 +243,29 @@ export async function findGuestByManageToken(
 
   if (error) throw new Error(`Guest manage lookup failed: ${error.message}`)
   return data ? mapRow(data as GuestRow) : null
+}
+
+export async function updateGuestHazardPrefs(
+  supabase: SupabaseClient<Database>,
+  subscriberId: string,
+  prefs: {
+    notifyTornado: boolean
+    notifySevereThunderstorm: boolean
+    notifyFlashFlood: boolean
+    notifyUpgrades: boolean
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from('guest_alert_subscribers')
+    .update({
+      notify_tornado: prefs.notifyTornado,
+      notify_severe_thunderstorm: prefs.notifySevereThunderstorm,
+      notify_flash_flood: prefs.notifyFlashFlood,
+      notify_upgrades: prefs.notifyUpgrades,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq('id', subscriberId)
+  if (error) throw new Error(`Guest pref update failed: ${error.message}`)
 }
 
 export async function setGuestEnabled(

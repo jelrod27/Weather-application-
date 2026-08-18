@@ -10,6 +10,7 @@ import {
 import { loadCanonicalActiveAlerts, loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 import { coveringAlerts, eventKey, matchProtectedPlace } from '@/lib/bitwatch/match'
 import { claimDelivery } from '@/lib/bitwatch/outbox'
+import { guestManagePath } from '@/lib/alerts/guest-tokens'
 import { getHubAlertsHref } from '@/lib/home/hub-links'
 import type { Database, Json } from '@/lib/supabase/types'
 import {
@@ -613,7 +614,7 @@ async function deliverGuestPhase(input: {
     subscriber.id,
     alert,
     phase,
-    '/alerts/manage',
+    guestManagePath(subscriber.id),
   )
   const deliveryId = await insertGuestDelivery(supabase, {
     subscriberId: subscriber.id,

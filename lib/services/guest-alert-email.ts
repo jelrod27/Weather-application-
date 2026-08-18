@@ -16,24 +16,32 @@ export async function sendGuestVerifyEmail(input: {
   email: string
   locationLabel: string
   verifyToken: string
+  manageToken?: string
 }): Promise<{ sent: boolean; reason?: string }> {
   const config = getResendFromConfig()
   if (!config) return { sent: false, reason: 'Resend env vars not configured' }
 
   const url = `${BASE_URL}/alerts/verify?token=${encodeURIComponent(input.verifyToken)}`
-  const subject = 'Confirm severe weather alerts for your pin'
+  const manageUrl = input.manageToken
+    ? `${BASE_URL}/alerts/manage?token=${encodeURIComponent(input.manageToken)}`
+    : `${BASE_URL}/alerts`
+  const subject = 'Confirm Bitwatch alerts for your pin'
   const text = [
-    `Confirm email alerts for ${input.locationLabel} on 16 Bit Weather.`,
+    `Confirm Bitwatch email alerts for ${input.locationLabel} on 16-Bit Weather.`,
     '',
     `Verify this address: ${url}`,
     '',
-    'You will only get Tornado, Flash Flood, and Severe Thunderstorm warnings that cover this pin. Issuance only — no all-clear.',
-    'This link expires in 24 hours.',
+    'You will get Tornado, Flash Flood, and Severe Thunderstorm warnings that cover this pin, plus optional upgrades.',
+    'When a warning ends or no longer covers the pin, that is not an all-clear.',
+    'This verify link expires in 24 hours.',
+    '',
+    `Manage or unsubscribe: ${manageUrl}`,
   ].join('\n')
   const html = `
-    <p>Confirm email alerts for <strong>${escapeHtml(input.locationLabel)}</strong> on 16 Bit Weather.</p>
+    <p>Confirm Bitwatch email alerts for <strong>${escapeHtml(input.locationLabel)}</strong> on 16-Bit Weather.</p>
     <p><a href="${url}">Verify this address</a></p>
-    <p style="color:#666;font-size:12px;">You will only get Tornado, Flash Flood, and Severe Thunderstorm warnings that cover this pin. Issuance only — no all-clear. This link expires in 24 hours.</p>
+    <p style="color:#666;font-size:12px;">You will get Tornado, Flash Flood, and Severe Thunderstorm warnings that cover this pin, plus optional upgrades. When a warning ends or no longer covers the pin, that is not an all-clear. This verify link expires in 24 hours.</p>
+    <p style="color:#666;font-size:12px;"><a href="${manageUrl}">Manage or unsubscribe</a></p>
   `.trim()
 
   try {
@@ -64,15 +72,17 @@ export async function sendGuestManageEmail(input: {
   if (!config) return { sent: false, reason: 'Resend env vars not configured' }
 
   const url = `${BASE_URL}/alerts/manage?token=${encodeURIComponent(input.manageToken)}`
-  const subject = 'Manage your 16 Bit Weather alert pin'
+  const subject = 'Manage your Bitwatch alert pin'
   const text = [
-    `Manage severe weather email alerts for ${input.locationLabel}.`,
+    `Manage Bitwatch warning alerts for ${input.locationLabel}.`,
     '',
     `Open your manage link: ${url}`,
+    'Use this link to pause, change hazards, unsubscribe, or enable browser alerts.',
   ].join('\n')
   const html = `
-    <p>Manage severe weather email alerts for <strong>${escapeHtml(input.locationLabel)}</strong>.</p>
+    <p>Manage Bitwatch warning alerts for <strong>${escapeHtml(input.locationLabel)}</strong>.</p>
     <p><a href="${url}">Open manage link</a></p>
+    <p style="color:#666;font-size:12px;">Pause, change hazards, unsubscribe, or enable browser alerts.</p>
   `.trim()
 
   try {

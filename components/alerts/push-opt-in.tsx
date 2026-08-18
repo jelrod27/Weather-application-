@@ -89,8 +89,8 @@ export function PushOptIn({ guestToken }: { guestToken?: string }) {
     <div className="rounded-lg border border-border bg-card/50 p-4 font-mono text-sm space-y-3">
       <h3 className="font-bold uppercase tracking-wider text-base">Browser alerts</h3>
       <p className="text-xs text-muted-foreground">
-        Supplemental only. Same three warning types, issuance only. Install to Home Screen on iOS to
-        receive them.
+        Supplemental only. Same warning types and upgrades as email. Install to Home Screen on iOS
+        to receive them. A warning ending is not an all-clear.
       </p>
       <Button type="button" size="sm" className="font-mono" disabled={busy} onClick={() => void enable()}>
         {busy ? 'Enabling…' : 'Enable browser alerts'}
