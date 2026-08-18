@@ -33,17 +33,25 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
   const subject =
     phase === 'ended'
       ? `Warning ended — ${payload.locationName}`
-      : `${upgradePrefix}${tierPrefix}${payload.event} — ${payload.locationName}`
+      : phase === 'scout'
+        ? `Bitwatch Scout — ${payload.locationName}`
+        : `${upgradePrefix}${tierPrefix}${payload.event} — ${payload.locationName}`
 
   const instruction = payload.instruction?.trim()
   const notAllClear =
     phase === 'ended'
       ? 'This is not an all-clear. Stay alert and follow local officials, Wireless Emergency Alerts, and NOAA Weather Radio.'
       : null
+  const unofficial =
+    phase === 'scout'
+      ? 'This is unofficial radar/nowcast inference. It is not a National Weather Service warning for your pin.'
+      : null
   const text = [
     phase === 'ended'
       ? `Warning ended for ${payload.locationName}`
-      : `${severeAlertTierLabel(tier)} — ${payload.event} for ${payload.locationName}`,
+      : phase === 'scout'
+        ? `Bitwatch Scout for ${payload.locationName}`
+        : `${severeAlertTierLabel(tier)} — ${payload.event} for ${payload.locationName}`,
     '',
     payload.headline,
     '',
@@ -51,6 +59,8 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
     instruction ? '' : null,
     notAllClear,
     notAllClear ? '' : null,
+    unofficial,
+    unofficial ? '' : null,
     `Area: ${payload.areaDesc}`,
     `Severity: ${payload.severity} · Urgency: ${payload.urgency}`,
     `Expires: ${payload.expires}`,
@@ -65,10 +75,11 @@ export function buildSevereAlertEmailContent(payload: SevereWeatherAlertPayload)
     .join('\n')
 
   const html = `
-    <p><strong>${escapeHtml(phase === 'ended' ? 'Warning ended' : severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
+    <p><strong>${escapeHtml(phase === 'ended' ? 'Warning ended' : phase === 'scout' ? 'Bitwatch Scout' : severeAlertTierLabel(tier))}</strong> — <strong>${escapeHtml(payload.event)}</strong> for ${escapeHtml(payload.locationName)}</p>
     <p>${escapeHtml(payload.headline)}</p>
-    ${instruction ? `<p><strong>Official instructions:</strong> ${escapeHtml(instruction).replace(/\r\n|\n|\r/g, '<br />')}</p>` : ''}
+    ${instruction ? `<p><strong>${phase === 'scout' ? 'Scout note' : 'Official instructions'}:</strong> ${escapeHtml(instruction).replace(/\r\n|\n|\r/g, '<br />')}</p>` : ''}
     ${notAllClear ? `<p><strong>${escapeHtml(notAllClear)}</strong></p>` : ''}
+    ${unofficial ? `<p><strong>${escapeHtml(unofficial)}</strong></p>` : ''}
     <ul>
       <li><strong>Area:</strong> ${escapeHtml(payload.areaDesc)}</li>
       <li><strong>Severity:</strong> ${escapeHtml(payload.severity)}</li>

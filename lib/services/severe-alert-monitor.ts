@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
+  SCOUT_INSTRUCTION,
   WARNING_ENDED_INSTRUCTION,
   hazardPrefsFrom,
   isIbWUpgrade,
@@ -10,6 +11,8 @@ import {
 import { loadCanonicalActiveAlerts, loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 import { coveringAlerts, eventKey, matchProtectedPlace } from '@/lib/bitwatch/match'
 import { claimDelivery } from '@/lib/bitwatch/outbox'
+import { scoutApproachingPlace } from '@/lib/bitwatch/scout'
+import { pinNowcastIsWet } from '@/lib/bitwatch/scout-nowcast'
 import { guestManagePath } from '@/lib/alerts/guest-tokens'
 import { getHubAlertsHref } from '@/lib/home/hub-links'
 import type { Database, Json } from '@/lib/supabase/types'
@@ -47,8 +50,31 @@ function buildWarningPayload(
   alert: NWSAlertDetail,
   phase: DeliveryPhase,
   manageHref?: string,
+  scout?: { minutesAhead: number; nowcastWet: boolean },
 ): SevereWeatherAlertPayload {
   const key = eventKey(alert)
+  if (phase === 'scout' && scout) {
+    const rain = scout.nowcastWet
+      ? ' Nowcast rain is also increasing at the pin.'
+      : ''
+    return {
+      alertId: inboxAlertId(key, 'scout'),
+      event: 'Bitwatch Scout',
+      headline: `Unofficial: a ${alert.event} cell may approach ${locationName} in about ${scout.minutesAhead} minutes.${rain}`,
+      instruction: SCOUT_INSTRUCTION,
+      severity: alert.severity,
+      urgency: alert.urgency,
+      expires: alert.expires,
+      areaDesc: alert.areaDesc,
+      locationName,
+      savedLocationId,
+      warningsHref: getHubAlertsHref(alert.id),
+      tier: 'high',
+      warningEventId: key,
+      phase: 'scout',
+      manageHref,
+    }
+  }
   const tier = phase === 'ended' ? 'high' : classifySevereAlertTier(alert)
   return {
     alertId: inboxAlertId(key, phase),
@@ -376,6 +402,7 @@ export async function runSevereAlertMonitor(
     guestNewAlerts: 0,
     endedAlerts: 0,
     guestEndedAlerts: 0,
+    scoutAlerts: 0,
     allClears: 0,
     errors: [],
   }
@@ -400,6 +427,16 @@ export async function runSevereAlertMonitor(
 
   const needsPointFallback = nationalAlerts.some((alert) => !alert.geometry)
   const pointCache: PointKeyCache = new Map()
+  const nowcastCache = new Map<string, boolean>()
+
+  async function nowcastWet(lat: number, lon: number): Promise<boolean> {
+    const key = pointKey(lat, lon)
+    const cached = nowcastCache.get(key)
+    if (cached != null) return cached
+    const wet = await pinNowcastIsWet(lat, lon)
+    nowcastCache.set(key, wet)
+    return wet
+  }
 
   for (const subscription of subscriptions) {
     try {
@@ -410,7 +447,15 @@ export async function runSevereAlertMonitor(
         pointCache,
         result.errors,
       )
-      await processAccountPlace(supabase, subscription, nationalAlerts, pointKeys, result, hooks)
+      await processAccountPlace(
+        supabase,
+        subscription,
+        nationalAlerts,
+        pointKeys,
+        result,
+        hooks,
+        nowcastWet,
+      )
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'subscription monitor failed'
       result.errors.push(`${subscription.id}: ${msg}`)
@@ -426,7 +471,15 @@ export async function runSevereAlertMonitor(
         pointCache,
         result.errors,
       )
-      await processGuestPlace(supabase, subscriber, nationalAlerts, pointKeys, result, hooks)
+      await processGuestPlace(
+        supabase,
+        subscriber,
+        nationalAlerts,
+        pointKeys,
+        result,
+        hooks,
+        nowcastWet,
+      )
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'guest monitor failed'
       result.errors.push(`guest:${subscriber.id}: ${msg}`)
@@ -443,6 +496,7 @@ async function processAccountPlace(
   pointActiveKeys: Set<string> | undefined,
   result: SevereMonitorRunResult,
   hooks: SevereMonitorHooks,
+  nowcastWet: (lat: number, lon: number) => Promise<boolean>,
 ): Promise<void> {
   const prefs = hazardPrefsFrom(subscription)
   const currentAlerts = coveringAlerts(
@@ -500,6 +554,25 @@ async function processAccountPlace(
     if (delivered) result.endedAlerts += 1
   }
 
+  if (currentAlerts.length === 0) {
+    const hit = scoutApproachingPlace(subscription.latitude, subscription.longitude, nationalAlerts)
+    if (hit) {
+      const delivered = await deliverAccountPhase({
+        supabase,
+        subscription,
+        alert: hit.source,
+        phase: 'scout',
+        result,
+        hooks,
+        scout: {
+          minutesAhead: hit.minutesAhead,
+          nowcastWet: await nowcastWet(subscription.latitude, subscription.longitude),
+        },
+      })
+      if (delivered) result.scoutAlerts += 1
+    }
+  }
+
   await saveMonitorState(supabase, subscription.id, currentIds)
 }
 
@@ -510,14 +583,16 @@ async function deliverAccountPhase(input: {
   phase: DeliveryPhase
   result: SevereMonitorRunResult
   hooks: SevereMonitorHooks
+  scout?: { minutesAhead: number; nowcastWet: boolean }
 }): Promise<boolean> {
-  const { supabase, subscription, alert, phase, result, hooks } = input
+  const { supabase, subscription, alert, phase, result, hooks, scout } = input
   const payload = buildWarningPayload(
     subscription.locationLabel,
     subscription.saved_location_id,
     alert,
     phase,
     '/dashboard',
+    scout,
   )
   const userAlertId = await insertUserAlert(supabase, {
     userId: subscription.user_id,
@@ -549,6 +624,7 @@ async function processGuestPlace(
   pointActiveKeys: Set<string> | undefined,
   result: SevereMonitorRunResult,
   hooks: SevereMonitorHooks,
+  nowcastWet: (lat: number, lon: number) => Promise<boolean>,
 ): Promise<void> {
   const prefs: HazardDeliveryPrefs = hazardPrefsFrom(subscriber)
   const currentAlerts = coveringAlerts(
@@ -597,6 +673,25 @@ async function processGuestPlace(
     if (delivered) result.guestEndedAlerts += 1
   }
 
+  if (currentAlerts.length === 0) {
+    const hit = scoutApproachingPlace(subscriber.latitude, subscriber.longitude, nationalAlerts)
+    if (hit) {
+      const delivered = await deliverGuestPhase({
+        supabase,
+        subscriber,
+        alert: hit.source,
+        phase: 'scout',
+        result,
+        hooks,
+        scout: {
+          minutesAhead: hit.minutesAhead,
+          nowcastWet: await nowcastWet(subscriber.latitude, subscriber.longitude),
+        },
+      })
+      if (delivered) result.scoutAlerts += 1
+    }
+  }
+
   await saveGuestMonitorState(supabase, subscriber.id, currentIds)
 }
 
@@ -607,14 +702,16 @@ async function deliverGuestPhase(input: {
   phase: DeliveryPhase
   result: SevereMonitorRunResult
   hooks: SevereMonitorHooks
+  scout?: { minutesAhead: number; nowcastWet: boolean }
 }): Promise<boolean> {
-  const { supabase, subscriber, alert, phase, hooks } = input
+  const { supabase, subscriber, alert, phase, hooks, scout } = input
   const payload = buildWarningPayload(
     subscriber.locationLabel,
     subscriber.id,
     alert,
     phase,
     guestManagePath(subscriber.id),
+    scout,
   )
   const deliveryId = await insertGuestDelivery(supabase, {
     subscriberId: subscriber.id,

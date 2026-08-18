@@ -55,6 +55,27 @@ describe('severe-alert-email-service', () => {
     expect(text.toLowerCase()).not.toContain('all-clear for')
   })
 
+  it('labels Scout mail as unofficial', () => {
+    const { subject, text } = buildSevereAlertEmailContent({
+      alertId: 'id#scout',
+      event: 'Bitwatch Scout',
+      headline: 'Unofficial: a Severe Thunderstorm Warning cell may approach Denver, CO in about 30 minutes.',
+      severity: 'Severe',
+      urgency: 'Immediate',
+      expires: '2026-07-04T01:00:00Z',
+      areaDesc: 'Jefferson CO',
+      locationName: 'Denver, CO',
+      savedLocationId: 'loc-1',
+      warningsHref: '/warnings/id',
+      phase: 'scout',
+      instruction:
+        'Bitwatch Scout inferred an unofficial approaching storm from NWS cell motion (TIME...MOT...LOC) and optional nowcast rain. This is not a National Weather Service warning for your pin. It does not replace Wireless Emergency Alerts, NOAA Weather Radio, or local officials.',
+    })
+    expect(subject).toBe('Bitwatch Scout — Denver, CO')
+    expect(text.toLowerCase()).toContain('unofficial')
+    expect(text.toLowerCase()).toContain('not a national weather service warning')
+  })
+
   it('escapes HTML in email body fields', () => {
     const { html } = buildSevereAlertEmailContent({
       alertId: 'urn:oid:1',

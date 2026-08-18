@@ -20,6 +20,9 @@ export const DEFAULT_HAZARD_PREFS: HazardDeliveryPrefs = {
 export const WARNING_ENDED_INSTRUCTION =
   'This National Weather Service warning ended or no longer covers your pin. That is not an all-clear. Stay alert and follow local officials, Wireless Emergency Alerts, and NOAA Weather Radio.'
 
+export const SCOUT_INSTRUCTION =
+  'Bitwatch Scout inferred an unofficial approaching storm from NWS cell motion (TIME...MOT...LOC) and optional nowcast rain. This is not a National Weather Service warning for your pin. It does not replace Wireless Emergency Alerts, NOAA Weather Radio, or local officials.'
+
 export function hazardPrefsFrom(
   row?: {
     notifyTornado?: boolean | null

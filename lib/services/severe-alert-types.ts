@@ -60,6 +60,7 @@ export type SevereMonitorRunResult = {
   guestNewAlerts: number
   endedAlerts: number
   guestEndedAlerts: number
+  scoutAlerts: number
   allClears: number
   errors: string[]
 }

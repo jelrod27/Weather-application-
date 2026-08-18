@@ -14,6 +14,10 @@ jest.mock('@/lib/bitwatch/ingest', () => ({
   loadCanonicalAlertBySlug: jest.fn(),
 }))
 
+jest.mock('@/lib/bitwatch/scout-nowcast', () => ({
+  pinNowcastIsWet: jest.fn().mockResolvedValue(false),
+}))
+
 jest.mock('@/lib/services/severe-alert-subscriptions', () => ({
   fetchEnabledSevereSubscriptions: jest.fn(),
 }))
@@ -425,5 +429,81 @@ describe('runSevereAlertMonitor', () => {
 
     expect(result.newAlerts).toBe(0)
     expect(inserts).toHaveLength(0)
+  })
+
+  it('pages an unofficial Scout approach and never labels it as an NWS warning on the pin', async () => {
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'svr-west',
+        warningEventId: 'KBOU.SV.W.0099.2026',
+        event: 'Severe Thunderstorm Warning',
+        headline: 'Severe Thunderstorm Warning west of Denver',
+        severity: 'Severe',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Jefferson CO',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [-105.6, 39.6],
+              [-105.3, 39.6],
+              [-105.3, 39.9],
+              [-105.6, 39.9],
+              [-105.6, 39.6],
+            ],
+          ],
+        },
+        motion: {
+          timeZ: '0100Z',
+          headingDeg: 90,
+          speedKt: 50,
+          lat: 39.74,
+          lon: -105.4,
+        },
+      },
+    ])
+
+    const inserts: unknown[] = []
+    const onNewAlert = jest.fn()
+    const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never, { onNewAlert })
+
+    expect(result.newAlerts).toBe(0)
+    expect(result.scoutAlerts).toBe(1)
+    expect(inserts[0]).toMatchObject({
+      payload: expect.objectContaining({
+        event: 'Bitwatch Scout',
+        phase: 'scout',
+        instruction: expect.stringContaining('not a National Weather Service warning'),
+      }),
+    })
+    expect(onNewAlert).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not Scout when an official warning already covers the pin', async () => {
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'alert-1',
+        event: 'Tornado Warning',
+        headline: 'Tornado Warning for Denver',
+        severity: 'Extreme',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Denver CO',
+        geometry: DENVER_POLYGON,
+        motion: {
+          timeZ: '0100Z',
+          headingDeg: 90,
+          speedKt: 50,
+          lat: 39.74,
+          lon: -105.4,
+        },
+      },
+    ])
+
+    const inserts: unknown[] = []
+    const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never)
+    expect(result.scoutAlerts).toBe(0)
+    expect(result.newAlerts).toBe(1)
   })
 })
