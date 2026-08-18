@@ -1,4 +1,5 @@
 import { extractAreaStates } from '@/lib/bitwatch/coverage'
+import { matchProtectedPlace } from '@/lib/bitwatch/match'
 import { distanceKmToNwsGeometry, pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
@@ -57,6 +58,7 @@ export function isNearbyWarning(
 export function splitLocalWarnings(
   alerts: NWSAlertDetail[],
   pin: { lat: number; lon: number } | null | undefined,
+  pointActiveKeys?: Set<string>,
 ): { onYou: NWSAlertDetail[]; nearby: NWSAlertDetail[]; elsewhere: NWSAlertDetail[] } {
   const onYou: NWSAlertDetail[] = []
   const nearby: NWSAlertDetail[] = []
@@ -64,7 +66,7 @@ export function splitLocalWarnings(
   const nearbyDistance = new Map<string, number>()
 
   for (const alert of alerts) {
-    if (isLocalWarning(alert, pin)) {
+    if (pin && matchProtectedPlace(pin.lat, pin.lon, alert, pointActiveKeys).covered) {
       onYou.push(alert)
       continue
     }

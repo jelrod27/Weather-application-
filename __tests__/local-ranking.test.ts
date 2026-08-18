@@ -148,4 +148,11 @@ describe('local-ranking', () => {
     expect(isNearbyWarning(unclosed, pin)).toBe(true)
     expect(splitLocalWarnings([unclosed], pin).nearby.map((a) => a.id)).toEqual(['unclosed'])
   })
+
+  it('treats a null-geometry warning as on-you when the point-active feed includes it', () => {
+    const zone = alert({ id: 'zone-tor', event: 'Tornado Warning', geometry: null })
+    const split = splitLocalWarnings([zone], { lat: 39.74, lon: -104.99 }, new Set(['zone-tor']))
+    expect(split.onYou.map((a) => a.id)).toEqual(['zone-tor'])
+    expect(split.elsewhere.map((a) => a.id)).toEqual([])
+  })
 })

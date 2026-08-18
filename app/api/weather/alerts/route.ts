@@ -38,7 +38,7 @@ async function loadDetails(input: {
     const supabase = createServiceRoleSupabaseClient()
     if (supabase) {
       const canonical = await loadCanonicalActiveAlerts(supabase)
-      if (canonical) {
+      if (canonical?.freshness === 'fresh') {
         const details = input.harm ? canonical.alerts.filter(isSevereMonitorAlert) : canonical.alerts
         return { details, freshness: canonical.freshness }
       }

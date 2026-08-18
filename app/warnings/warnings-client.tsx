@@ -134,6 +134,7 @@ export default function WarningsClient() {
   const [stateFilter, setStateFilter] = useState('')
   const [freshness, setFreshness] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pointActiveKeys, setPointActiveKeys] = useState<Set<string> | undefined>(undefined)
 
   const load = useCallback(async (signal?: AbortSignal, silent = false) => {
     if (!silent) {
@@ -201,14 +202,47 @@ export default function WarningsClient() {
     }
   }, [load])
 
+  useEffect(() => {
+    if (!pin) {
+      setPointActiveKeys(undefined)
+      return
+    }
+    let cancelled = false
+    const run = async () => {
+      try {
+        const res = await fetch(
+          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pin.lat},${pin.lon}`)}`,
+          { cache: 'no-store' },
+        )
+        if (!res.ok || cancelled) return
+        const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
+        const keys = new Set<string>()
+        for (const alert of data.alerts ?? []) {
+          keys.add(alert.id)
+          if (alert.warningEventId) keys.add(alert.warningEventId)
+        }
+        if (!cancelled) setPointActiveKeys(keys)
+      } catch (error) {
+        if ((error as Error)?.name === 'AbortError') return
+        console.error('[warnings-client] point alerts', error)
+      }
+    }
+    void run()
+    const timer = setInterval(() => void run(), 15_000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [pin])
+
   const filtered = useMemo(
     () => filterDeskAlerts(alerts, { query: search, event: eventFilter, state: stateFilter }),
     [alerts, search, eventFilter, stateFilter],
   )
   const stateOptions = useMemo(() => uniqueAlertStates(alerts), [alerts])
   const { onYou, nearby, elsewhere } = useMemo(
-    () => splitLocalWarnings(filtered, pin),
-    [filtered, pin],
+    () => splitLocalWarnings(filtered, pin, pointActiveKeys),
+    [filtered, pin, pointActiveKeys],
   )
 
   const tickerAlerts = useMemo(

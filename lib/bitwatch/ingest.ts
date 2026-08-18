@@ -95,14 +95,19 @@ export function reconcileWithActiveSnapshot(
 ): Map<string, WarningEventRecord> {
   const activeIds = new Set(active.map((alert) => alert.warningEventId || alert.id))
   const next = new Map(events)
+  const snapshotTrusted = active.length > 0
   for (const [id, event] of next) {
     if (event.status !== 'active') continue
     if (activeIds.has(id) || activeIds.has(event.nwsId) || active.some((a) => a.id === event.nwsId)) {
       continue
     }
-    const expires = new Date(event.display.expires).getTime()
-    if (Number.isFinite(expires) && expires > nowMs) continue
-    next.set(id, { ...event, status: 'ended', endedReason: event.endedReason ?? 'expired' })
+    if (!snapshotTrusted) {
+      const expires = new Date(event.display.expires).getTime()
+      if (Number.isFinite(expires) && expires > nowMs) continue
+      next.set(id, { ...event, status: 'ended', endedReason: event.endedReason ?? 'expired' })
+      continue
+    }
+    next.set(id, { ...event, status: 'ended', endedReason: event.endedReason ?? 'reconciled' })
   }
   for (const alert of active) {
     const id = alert.warningEventId || alert.id

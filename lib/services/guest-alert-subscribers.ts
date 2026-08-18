@@ -112,12 +112,7 @@ export async function upsertGuestSubscriber(
     const { error } = await supabase
       .from('guest_alert_subscribers')
       .update({
-        latitude: input.latitude,
-        longitude: input.longitude,
-        location_label: input.locationLabel,
-        enabled: true,
         manage_token_hash: hashGuestToken(manageToken),
-        ...dbPrefs,
         updated_at: now,
       } as never)
       .eq('id', row.id)
@@ -125,14 +120,7 @@ export async function upsertGuestSubscriber(
     if (error) throw new Error(`Guest pin update failed: ${error.message}`)
 
     return {
-      subscriber: {
-        ...mapRow(row),
-        latitude: input.latitude,
-        longitude: input.longitude,
-        locationLabel: input.locationLabel,
-        enabled: true,
-        ...prefs,
-      },
+      subscriber: mapRow(row),
       verifyToken: null,
       manageToken,
       alreadyVerified: true,

@@ -288,6 +288,49 @@ describe('ingest helpers', () => {
     expect(reconciled.get('KLWX.TO.W.0023.2026')?.status).toBe('active')
   })
 
+  it('ends a folded event missing from a non-empty active snapshot even before expiry', () => {
+    const current = foldSourceMessages([
+      alert({
+        id: 'gone',
+        event: 'Tornado Warning',
+        sent: '2026-08-07T02:05:00Z',
+        vtecRaw: [NEW_TOR],
+        warningEventId: 'KLWX.TO.W.0023.2026',
+        expires: '2026-08-07T03:00:00Z',
+      }),
+    ])
+    const other = alert({
+      id: 'still-live',
+      event: 'Flash Flood Warning',
+      sent: '2026-08-07T02:08:00Z',
+      warningEventId: 'KLWX.FF.W.0001.2026',
+      expires: '2026-08-07T04:00:00Z',
+    })
+    const reconciled = reconcileWithActiveSnapshot(
+      current,
+      [other],
+      Date.parse('2026-08-07T02:10:00Z'),
+    )
+    expect(reconciled.get('KLWX.TO.W.0023.2026')?.status).toBe('ended')
+    expect(reconciled.get('KLWX.TO.W.0023.2026')?.endedReason).toBe('reconciled')
+    expect(reconciled.get('KLWX.FF.W.0001.2026')?.status).toBe('active')
+  })
+
+  it('does not mass-end future-expiry events when the active snapshot is empty', () => {
+    const current = foldSourceMessages([
+      alert({
+        id: 'live',
+        event: 'Tornado Warning',
+        sent: '2026-08-07T02:05:00Z',
+        vtecRaw: [NEW_TOR],
+        warningEventId: 'KLWX.TO.W.0023.2026',
+        expires: '2026-08-07T03:00:00Z',
+      }),
+    ])
+    const reconciled = reconcileWithActiveSnapshot(current, [], Date.parse('2026-08-07T02:10:00Z'))
+    expect(reconciled.get('KLWX.TO.W.0023.2026')?.status).toBe('active')
+  })
+
   it('does not resurrect a Warning Event that VTEC already ended', () => {
     const cancelled = applySourceMessage(new Map(), {
       nwsId: 'https://api.weather.gov/alerts/can',

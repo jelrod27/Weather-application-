@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({
           ok: true,
-          status: 'manage_link_sent',
-          message: 'This address is already verified. We sent a manage link.',
+          status: 'email_sent',
+          message: 'If this address can receive Bitwatch mail, we sent the next step.',
         })
       }
 
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         ok: true,
-        status: 'verify_sent',
-        message: 'Check your email to confirm alerts for this pin.',
+        status: 'email_sent',
+        message: 'If this address can receive Bitwatch mail, we sent the next step.',
       })
     },
     { context: 'alerts/guest-subscribe', errorMessage: 'Could not subscribe' },

@@ -571,7 +571,6 @@ async function processAccountPlace(
     ) {
       continue
     }
-    if (resolved.event !== 'Warning ended' && !wantsHazard(resolved.event, prefs)) continue
 
     const delivered = await deliverAccountPhase({
       supabase,
@@ -586,7 +585,7 @@ async function processAccountPlace(
 
   if (currentAlerts.length === 0) {
     const hit = scoutApproachingPlace(subscription.latitude, subscription.longitude, nationalAlerts)
-    if (hit) {
+    if (hit && wantsHazard(hit.source.event, prefs)) {
       const delivered = await deliverAccountPhase({
         supabase,
         subscription,
@@ -703,7 +702,6 @@ async function processGuestPlace(
     ) {
       continue
     }
-    if (resolved.event !== 'Warning ended' && !wantsHazard(resolved.event, prefs)) continue
 
     const delivered = await deliverGuestPhase({
       supabase,
@@ -718,7 +716,7 @@ async function processGuestPlace(
 
   if (currentAlerts.length === 0) {
     const hit = scoutApproachingPlace(subscriber.latitude, subscriber.longitude, nationalAlerts)
-    if (hit) {
+    if (hit && wantsHazard(hit.source.event, prefs)) {
       const delivered = await deliverGuestPhase({
         supabase,
         subscriber,

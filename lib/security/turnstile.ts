@@ -1,6 +1,7 @@
 /**
- * Cloudflare Turnstile siteverify. Skips when TURNSTILE_SECRET_KEY is unset
- * so local/dev still works. Production guest subscribe should set the secret.
+ * Cloudflare Turnstile siteverify. When neither site key nor secret is set,
+ * local/dev skips verification. If the public site key is set without a
+ * secret, verification fails closed.
  */
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 
@@ -11,7 +12,8 @@ export async function verifyTurnstileToken(
   remoteIp?: string | null,
 ): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
-  if (!secret) return true
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+  if (!secret) return !siteKey
   if (!token || token.trim().length < 10) return false
 
   const body = new URLSearchParams({

@@ -635,4 +635,77 @@ describe('runSevereAlertMonitor', () => {
     expect(result.guestEndedAlerts).toBe(0)
     expect(inserts).toHaveLength(0)
   })
+
+  it('still sends ended wording after the hazard toggle is turned off', async () => {
+    fetchEnabledSevereSubscriptions.mockResolvedValue([
+      { ...denverSub, notifyTornado: false },
+    ])
+    mockFetchAlerts.mockResolvedValue([])
+    mockCanonicalBySlug.mockResolvedValue({
+      id: 'alert-1',
+      warningEventId: 'KLWX.TO.W.0023.2026',
+      event: 'Tornado Warning',
+      headline: 'Tornado Warning for Denver',
+      instruction: 'Take shelter now.',
+      severity: 'Extreme',
+      urgency: 'Immediate',
+      expires: '2026-07-04T00:00:00Z',
+      areaDesc: 'Denver CO',
+      geometry: DENVER_POLYGON,
+    })
+
+    const state: Record<string, string[]> = { 'sub-1': ['alert-1'] }
+    const inserts: unknown[] = []
+    const result = await runSevereAlertMonitor(makeSupabaseMock(state, inserts) as never)
+
+    expect(result.endedAlerts).toBe(1)
+    expect(inserts[0]).toMatchObject({
+      payload: expect.objectContaining({
+        phase: 'ended',
+        instruction: expect.stringContaining('not an all-clear'),
+      }),
+    })
+  })
+
+  it('does not Scout a severe cell when the severe thunderstorm toggle is off', async () => {
+    fetchEnabledSevereSubscriptions.mockResolvedValue([
+      { ...denverSub, notifySevereThunderstorm: false },
+    ])
+    mockFetchAlerts.mockResolvedValue([
+      {
+        id: 'svr-west',
+        warningEventId: 'KBOU.SV.W.0099.2026',
+        event: 'Severe Thunderstorm Warning',
+        headline: 'Severe Thunderstorm Warning west of Denver',
+        severity: 'Severe',
+        urgency: 'Immediate',
+        expires: '2026-07-04T00:00:00Z',
+        areaDesc: 'Jefferson CO',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [-105.6, 39.6],
+              [-105.3, 39.6],
+              [-105.3, 39.9],
+              [-105.6, 39.9],
+              [-105.6, 39.6],
+            ],
+          ],
+        },
+        motion: {
+          timeZ: '0100Z',
+          headingDeg: 90,
+          speedKt: 50,
+          lat: 39.74,
+          lon: -105.4,
+        },
+      },
+    ])
+
+    const inserts: unknown[] = []
+    const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never)
+    expect(result.scoutAlerts).toBe(0)
+    expect(inserts).toHaveLength(0)
+  })
 })

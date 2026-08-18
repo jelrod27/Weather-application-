@@ -8,7 +8,7 @@ import { useActivePin } from '@/hooks/use-active-pin'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { isSevereMonitorAlert } from '@/lib/services/severe-alert-filter'
 import { getWarningDetailHref, warningIdSlug } from '@/lib/warnings/alert-links'
-import { splitLocalWarnings } from '@/lib/warnings/local-ranking'
+import { compareWarningPriority } from '@/lib/warnings/local-ranking'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 
 const POLL_MS = 15_000
@@ -44,10 +44,13 @@ export default function WarningTakeover() {
     async (signal?: AbortSignal) => {
       if (!pin) return
       try {
-        const res = await fetch('/api/weather/alerts?harm=1&detail=1', {
-          signal,
-          cache: 'no-store',
-        })
+        const res = await fetch(
+          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pin.lat},${pin.lon}`)}`,
+          {
+            signal,
+            cache: 'no-store',
+          },
+        )
         if (!res.ok) return
         const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
         if (signal?.aborted) return
@@ -71,10 +74,7 @@ export default function WarningTakeover() {
     }
   }, [load, pin])
 
-  const covering = useMemo(() => {
-    if (!pin) return []
-    return splitLocalWarnings(alerts, pin).onYou
-  }, [alerts, pin])
+  const covering = useMemo(() => [...alerts].sort(compareWarningPriority), [alerts])
 
   const active = covering[0] ?? null
   const onDetailPage =
