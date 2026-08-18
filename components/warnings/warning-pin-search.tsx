@@ -37,7 +37,7 @@ export default function WarningPinSearch({ label }: WarningPinSearchProps) {
     applyPin(query)
   }
 
-  async function useMyLocation(): Promise<void> {
+  async function locateDevice(): Promise<void> {
     setBusy(true)
     setError(null)
     try {
@@ -72,7 +72,7 @@ export default function WarningPinSearch({ label }: WarningPinSearchProps) {
             variant="outline"
             className="font-mono"
             disabled={busy}
-            onClick={() => void useMyLocation()}
+            onClick={() => void locateDevice()}
           >
             {busy ? 'Locating…' : 'Use my location'}
           </Button>
