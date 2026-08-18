@@ -47,7 +47,7 @@ export function GuestAlertSignup({ pin }: { pin: ActivePin | null }) {
         Confirm the address with a magic link.
       </p>
       {!pin ? (
-        <p className="text-xs text-muted-foreground">Set a location first so we know which pin to watch.</p>
+        <p className="text-xs text-muted-foreground">Set a pin so we know which location to watch.</p>
       ) : (
         <p className="text-xs text-muted-foreground">Pin: {pin.label}</p>
       )}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { happeningNowEmptyCopy } from '@/lib/home/hub-utils';
 import { getHubAlertsHref } from '@/lib/home/hub-links';
 
 export type HappeningNowCardProps = {
@@ -9,6 +10,8 @@ export type HappeningNowCardProps = {
   headline: string;
   severity: string | null;
   topAlertId: string | null;
+  nearbyCount?: number;
+  nearbyTopId?: string | null;
   accentColor: string;
   loading?: boolean;
 };
@@ -18,11 +21,14 @@ export default function HappeningNowCard({
   headline,
   severity,
   topAlertId,
+  nearbyCount = 0,
+  nearbyTopId = null,
   accentColor,
   loading = false,
 }: HappeningNowCardProps) {
-  const empty = (count ?? 0) === 0;
-  const href = getHubAlertsHref(topAlertId);
+  const covering = (count ?? 0) > 0;
+  const emptyCopy = happeningNowEmptyCopy(nearbyCount);
+  const href = getHubAlertsHref(covering ? topAlertId : nearbyTopId);
 
   return (
     <Link
@@ -38,7 +44,9 @@ export default function HappeningNowCard({
       <div className="mb-1 flex items-center gap-1.5">
         <span
           className="inline-block h-2 w-2 shrink-0 rounded-sm border border-border/60"
-          style={{ backgroundColor: empty ? '#64748b' : accentColor }}
+          style={{
+            backgroundColor: covering ? accentColor : nearbyCount > 0 ? '#eab308' : '#64748b',
+          }}
           aria-hidden
         />
         <p className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -50,16 +58,7 @@ export default function HappeningNowCard({
           <div className="h-4 w-4/5 rounded bg-muted/40" />
           <div className="h-3 w-full rounded bg-muted/30" />
         </div>
-      ) : empty ? (
-        <>
-          <p className="text-sm font-bold leading-tight text-foreground">
-            No active alerts for this pin
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Tornado, flash flood, and severe thunderstorm polygons only
-          </p>
-        </>
-      ) : (
+      ) : covering ? (
         <>
           <p className="text-sm font-bold leading-tight text-foreground group-hover:text-primary line-clamp-2">
             {headline}
@@ -68,6 +67,11 @@ export default function HappeningNowCard({
             {count} warning{count === 1 ? '' : 's'} on this pin
             {severity ? ` · ${severity}` : ''}
           </p>
+        </>
+      ) : (
+        <>
+          <p className="text-sm font-bold leading-tight text-foreground">{emptyCopy.headline}</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{emptyCopy.detail}</p>
         </>
       )}
     </Link>

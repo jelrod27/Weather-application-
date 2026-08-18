@@ -30,6 +30,8 @@ export interface HomeHubData {
     headline: string;
     severity: NWSAlertDetail['severity'] | null;
     topAlertId: string | null;
+    nearbyCount: number;
+    nearbyTopId: string | null;
     needsLocation: boolean;
   };
   stargazer: {
@@ -69,11 +71,15 @@ function hydrateNewsItems(items: RSSItem[]): RSSItem[] {
 
 export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubData {
   const [alertsLoading, setAlertsLoading] = useState(false);
-  const [alertSummary, setAlertSummary] = useState<ReturnType<typeof summarizeAlerts>>({
+  const [alertSummary, setAlertSummary] = useState<
+    ReturnType<typeof summarizeAlerts> & { nearbyCount: number; nearbyTopId: string | null }
+  >({
     count: 0,
-    headline: 'No active alerts nearby',
+    headline: 'No active alerts for this pin',
     severity: null,
     topAlertId: null,
+    nearbyCount: 0,
+    nearbyTopId: null,
   });
 
   const [spcLoading, setSpcLoading] = useState(false);
@@ -107,16 +113,34 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
             try {
               if (alertsRes.ok) {
                 const data = (await alertsRes.json()) as { alerts?: NWSAlertDetail[] };
-                const { onYou } = splitLocalWarnings(data.alerts ?? [], {
+                const { onYou, nearby } = splitLocalWarnings(data.alerts ?? [], {
                   lat: user.lat,
                   lon: user.lon,
                 });
-                setAlertSummary(summarizeAlerts(onYou));
+                setAlertSummary({
+                  ...summarizeAlerts(onYou),
+                  nearbyCount: nearby.length,
+                  nearbyTopId: nearby[0]?.id ?? null,
+                });
               } else {
-                setAlertSummary({ count: 0, headline: 'Alerts unavailable', severity: null, topAlertId: null });
+                setAlertSummary({
+                  count: 0,
+                  headline: 'Alerts unavailable',
+                  severity: null,
+                  topAlertId: null,
+                  nearbyCount: 0,
+                  nearbyTopId: null,
+                });
               }
             } catch {
-              setAlertSummary({ count: 0, headline: 'Alerts unavailable', severity: null, topAlertId: null });
+              setAlertSummary({
+                count: 0,
+                headline: 'Alerts unavailable',
+                severity: null,
+                topAlertId: null,
+                nearbyCount: 0,
+                nearbyTopId: null,
+              });
             } finally {
               if (!signal?.aborted) setAlertsLoading(false);
             }
@@ -208,6 +232,8 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
         headline: 'No active alerts for this pin',
         severity: null,
         topAlertId: null,
+        nearbyCount: 0,
+        nearbyTopId: null,
       });
       setStargazerScore(null);
       setHeadlineItem(null);
@@ -251,6 +277,8 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
       headline: alertSummary.headline,
       severity: alertSummary.severity,
       topAlertId: needsLocation ? null : alertSummary.topAlertId,
+      nearbyCount: needsLocation ? 0 : alertSummary.nearbyCount,
+      nearbyTopId: needsLocation ? null : alertSummary.nearbyTopId,
       needsLocation,
     },
     stargazer: {

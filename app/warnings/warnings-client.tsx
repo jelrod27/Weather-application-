@@ -17,7 +17,8 @@ import StormReportForm from '@/components/warnings/storm-report-form'
 import { WarningDetailBody } from '@/components/warnings/warning-detail-body'
 import { GuestAlertSignup } from '@/components/alerts/guest-alert-signup'
 import { PushOptIn } from '@/components/alerts/push-opt-in'
-import { useActivePin } from '@/hooks/use-active-pin'
+import WarningPinSearch from '@/components/warnings/warning-pin-search'
+import { useActivePinState } from '@/hooks/use-active-pin'
 import { filterAlertsByQuery, splitLocalWarnings } from '@/lib/warnings/local-ranking'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 import { getWarningDetailHref } from '@/lib/warnings/alert-links'
@@ -77,7 +78,7 @@ function AlertLane({
   empty: string
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid={`warning-lane-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold font-mono uppercase tracking-wider">{title}</h3>
         <span className="text-xs text-muted-foreground font-mono">{alerts.length}</span>
@@ -114,7 +115,7 @@ function AlertLane({
 export default function WarningsClient() {
   const searchParams = useSearchParams()
   const alertFromUrl = searchParams.get('alert')
-  const pin = useActivePin()
+  const { pin, label: pinLabel, isResolving: pinResolving } = useActivePinState()
   const detailRef = useRef<HTMLDivElement | null>(null)
   const initialAlertAppliedRef = useRef(false)
   const initialScrollAppliedRef = useRef(false)
@@ -188,12 +189,15 @@ export default function WarningsClient() {
   }, [load])
 
   const filtered = useMemo(() => filterAlertsByQuery(alerts, search), [alerts, search])
-  const { onYou, elsewhere } = useMemo(
+  const { onYou, nearby, elsewhere } = useMemo(
     () => splitLocalWarnings(filtered, pin),
     [filtered, pin],
   )
 
-  const tickerAlerts = useMemo(() => [...onYou, ...elsewhere].slice(0, 12), [onYou, elsewhere])
+  const tickerAlerts = useMemo(
+    () => [...onYou, ...nearby, ...elsewhere].slice(0, 12),
+    [onYou, nearby, elsewhere],
+  )
 
   const severityCounts = useMemo(() => {
     return alerts.reduce<Record<string, number>>((acc, a) => {
@@ -231,8 +235,8 @@ export default function WarningsClient() {
   }, [spcReports, community])
 
   const selected = useMemo(
-    () => alerts.find((a) => a.id === selectedId) ?? onYou[0] ?? null,
-    [alerts, selectedId, onYou],
+    () => alerts.find((a) => a.id === selectedId) ?? onYou[0] ?? nearby[0] ?? null,
+    [alerts, selectedId, onYou, nearby],
   )
 
   useEffect(() => {
@@ -245,8 +249,9 @@ export default function WarningsClient() {
   }, [alertFromUrl, alerts])
 
   useEffect(() => {
-    if (!selectedId && onYou[0]) setSelectedId(onYou[0].id)
-  }, [onYou, selectedId])
+    const next = onYou[0] ?? nearby[0]
+    if (!selectedId && next) setSelectedId(next.id)
+  }, [onYou, nearby, selectedId])
 
   useEffect(() => {
     if (!selected || !initialAlertAppliedRef.current || initialScrollAppliedRef.current) return
@@ -264,14 +269,19 @@ export default function WarningsClient() {
           // YOUR PIN FIRST · NATIONAL BROWSE · NWS POLYGONS //
         </p>
         {pin ? (
-          <p className="text-xs font-mono text-muted-foreground">
+          <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
             Pin: {pin.label} ({pin.lat.toFixed(3)}, {pin.lon.toFixed(3)})
           </p>
+        ) : pinResolving && pinLabel ? (
+          <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
+            Resolving pin: {pinLabel}
+          </p>
         ) : (
-          <p className="text-xs font-mono text-muted-foreground">
-            Set a location on the home page to rank warnings on your pin. Unknown geometry is never local.
+          <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
+            Set a pin to rank warnings on you. Unknown geometry is never local.
           </p>
         )}
+        <WarningPinSearch label={pinLabel} />
         <ShareButtons
           config={{
             title: 'Warning center',
@@ -412,8 +422,19 @@ export default function WarningsClient() {
                 onSelect={setSelectedId}
                 empty={
                   pin
-                    ? 'No active alerts for this pin. Unknown geometry is not treated as local.'
+                    ? 'No polygons cover this pin. Nearby storm cells are listed below.'
                     : 'Set a pin to see warnings covering your location.'
+                }
+              />
+              <AlertLane
+                title="Nearby"
+                alerts={nearby}
+                selectedId={selected?.id ?? null}
+                onSelect={setSelectedId}
+                empty={
+                  pin
+                    ? 'No other warnings within about 50 miles of this pin.'
+                    : 'Set a pin to see nearby warnings.'
                 }
               />
               <AlertLane

@@ -1,5 +1,6 @@
 import {
   formatUpdatedAgo,
+  happeningNowEmptyCopy,
   pickHappeningNowHeadline,
   shouldShowHubAlerts,
   shouldShowHubHeadline,
@@ -103,6 +104,18 @@ describe('hub-utils', () => {
         severity: null,
         topAlertId: null,
       });
+    });
+  });
+
+  describe('happeningNowEmptyCopy', () => {
+    it('points to nearby warnings when none cover the pin', () => {
+      expect(happeningNowEmptyCopy(1)).toEqual({
+        headline: 'No warnings covering this pin',
+        detail: '1 nearby warning — not covering this pin',
+      });
+      expect(happeningNowEmptyCopy(3).detail).toBe(
+        '3 nearby warnings — not covering this pin',
+      );
     });
   });
 

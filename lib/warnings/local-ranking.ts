@@ -1,5 +1,8 @@
-import { pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
+import { distanceKmToNwsGeometry, pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
+
+/** Storm cells near a city centroid, not covering it. About 50 miles. */
+export const NEARBY_WARNING_KM = 80
 
 const SEVERITY_ORDER: Record<string, number> = {
   Extreme: 0,
@@ -40,19 +43,49 @@ export function isLocalWarning(
   return pointInNwsGeometry(pin.lat, pin.lon, alert.geometry)
 }
 
+export function isNearbyWarning(
+  alert: Pick<NWSAlertDetail, 'geometry'>,
+  pin: { lat: number; lon: number } | null | undefined,
+  nearbyKm: number = NEARBY_WARNING_KM,
+): boolean {
+  if (!pin || isLocalWarning(alert, pin)) return false
+  const km = distanceKmToNwsGeometry(pin.lat, pin.lon, alert.geometry)
+  return km != null && km <= nearbyKm
+}
+
 export function splitLocalWarnings(
   alerts: NWSAlertDetail[],
   pin: { lat: number; lon: number } | null | undefined,
-): { onYou: NWSAlertDetail[]; elsewhere: NWSAlertDetail[] } {
+): { onYou: NWSAlertDetail[]; nearby: NWSAlertDetail[]; elsewhere: NWSAlertDetail[] } {
   const onYou: NWSAlertDetail[] = []
+  const nearby: NWSAlertDetail[] = []
   const elsewhere: NWSAlertDetail[] = []
+  const nearbyDistance = new Map<string, number>()
+
   for (const alert of alerts) {
-    if (isLocalWarning(alert, pin)) onYou.push(alert)
-    else elsewhere.push(alert)
+    if (isLocalWarning(alert, pin)) {
+      onYou.push(alert)
+      continue
+    }
+    if (pin) {
+      const km = distanceKmToNwsGeometry(pin.lat, pin.lon, alert.geometry)
+      if (km != null && km <= NEARBY_WARNING_KM) {
+        nearby.push(alert)
+        nearbyDistance.set(alert.id, km)
+        continue
+      }
+    }
+    elsewhere.push(alert)
   }
+
   onYou.sort(compareWarningPriority)
+  nearby.sort((a, b) => {
+    const rank = compareWarningPriority(a, b)
+    if (rank !== 0) return rank
+    return (nearbyDistance.get(a.id) ?? Infinity) - (nearbyDistance.get(b.id) ?? Infinity)
+  })
   elsewhere.sort(compareWarningPriority)
-  return { onYou, elsewhere }
+  return { onYou, nearby, elsewhere }
 }
 
 export function filterAlertsByQuery(alerts: NWSAlertDetail[], query: string): NWSAlertDetail[] {
