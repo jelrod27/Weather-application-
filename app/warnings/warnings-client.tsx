@@ -205,11 +205,12 @@ export default function WarningsClient() {
   useEffect(() => {
     setPointActiveKeys(undefined)
     if (!pin) return
+    const { lat, lon } = pin
     const ctrl = new AbortController()
     const run = async () => {
       try {
         const res = await fetch(
-          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pin.lat},${pin.lon}`)}`,
+          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${lat},${lon}`)}`,
           { cache: 'no-store', signal: ctrl.signal },
         )
         if (!res.ok) return
@@ -231,7 +232,7 @@ export default function WarningsClient() {
       clearInterval(timer)
       ctrl.abort()
     }
-  }, [pin])
+  }, [pin?.lat, pin?.lon])
 
   const filtered = useMemo(
     () => filterDeskAlerts(alerts, { query: search, event: eventFilter, state: stateFilter }),

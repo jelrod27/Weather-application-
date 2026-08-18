@@ -40,12 +40,15 @@ export default function WarningTakeover() {
   const [alerts, setAlerts] = useState<NWSAlertDetail[]>([])
   const [hiddenId, setHiddenId] = useState<string | null>(null)
 
+  const pinLat = pin?.lat
+  const pinLon = pin?.lon
+
   const load = useCallback(
     async (signal?: AbortSignal) => {
-      if (!pin) return
+      if (pinLat == null || pinLon == null) return
       try {
         const res = await fetch(
-          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pin.lat},${pin.lon}`)}`,
+          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pinLat},${pinLon}`)}`,
           {
             signal,
             cache: 'no-store',
@@ -60,11 +63,11 @@ export default function WarningTakeover() {
         console.error('[warning-takeover]', error)
       }
     },
-    [pin],
+    [pinLat, pinLon],
   )
 
   useEffect(() => {
-    if (!pin) {
+    if (pinLat == null || pinLon == null) {
       setAlerts([])
       return
     }
@@ -76,7 +79,7 @@ export default function WarningTakeover() {
       ctrl.abort()
       clearInterval(timer)
     }
-  }, [load, pin])
+  }, [load, pinLat, pinLon])
 
   const covering = useMemo(() => [...alerts].sort(compareWarningPriority), [alerts])
 

@@ -15,6 +15,18 @@ export function isRemotePreviewTarget(): boolean {
   }
 }
 
+/** Dismiss the Bitwatch takeover when a covering warning is already on screen. */
+export async function dismissWarningTakeoverIfPresent(page: Page): Promise<void> {
+  const takeover = page.getByRole('alertdialog')
+  try {
+    await takeover.waitFor({ state: 'visible', timeout: 8000 })
+  } catch {
+    return
+  }
+  await takeover.getByRole('button', { name: /Dismiss this warning/i }).click()
+  await expect(takeover).toBeHidden()
+}
+
 type StubOptions = {
   cityName?: string;
   country?: string;

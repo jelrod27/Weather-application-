@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { stubHomeHubApis, stubWeatherApis } from '../fixtures/utils';
+import { dismissWarningTakeoverIfPresent, stubHomeHubApis, stubWeatherApis } from '../fixtures/utils';
 
 test.beforeEach(async ({ page }) => {
   await stubWeatherApis(page);
@@ -46,7 +46,14 @@ test.beforeEach(async ({ page }) => {
     window.localStorage.setItem('bitweather_cache_timestamp', String(now));
   });
 
+  const pointAlerts = page.waitForResponse((res) => {
+    const url = res.url()
+    return url.includes('/api/weather/alerts') && url.includes('point=')
+  }, { timeout: 15000 }).catch(() => null)
+
   await page.reload({ waitUntil: 'domcontentloaded' });
+  await pointAlerts
+  await dismissWarningTakeoverIfPresent(page)
 });
 
 test('displays main weather search component', async ({ page }) => {
