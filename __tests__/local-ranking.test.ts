@@ -1,4 +1,4 @@
-import { compareWarningPriority, isLocalWarning, splitLocalWarnings } from '@/lib/warnings/local-ranking'
+import { compareWarningPriority, isLocalWarning, isNearbyWarning, splitLocalWarnings } from '@/lib/warnings/local-ranking'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 const DENVER_POLYGON = {
@@ -86,6 +86,66 @@ describe('local-ranking', () => {
 
     const split = splitLocalWarnings([elsewhere, unknown, onYou], { lat: 39.74, lon: -104.99 })
     expect(split.onYou.map((a) => a.id)).toEqual(['local'])
+    expect(split.nearby.map((a) => a.id)).toEqual([])
     expect(split.elsewhere.map((a) => a.id)).toEqual(['away', 'unknown'])
+  })
+
+  it('puts a close-but-not-covering cell in nearby, not on you', () => {
+    const covering = alert({
+      id: 'cover',
+      event: 'Tornado Warning',
+      geometry: DENVER_POLYGON,
+    })
+    const near = alert({
+      id: 'near',
+      event: 'Severe Thunderstorm Warning',
+      geometry: DENVER_POLYGON,
+    })
+    const far = alert({
+      id: 'far',
+      event: 'Flash Flood Warning',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-97.0, 32.6],
+            [-96.6, 32.6],
+            [-96.6, 32.9],
+            [-97.0, 32.9],
+            [-97.0, 32.6],
+          ],
+        ],
+      },
+    })
+    const unknown = alert({ id: 'unknown', event: 'Winter Storm Warning', geometry: null })
+
+    const split = splitLocalWarnings([far, unknown, covering, near], { lat: 40.0, lon: -104.95 })
+    expect(isNearbyWarning(covering, { lat: 40.0, lon: -104.95 })).toBe(true)
+    expect(isNearbyWarning(far, { lat: 40.0, lon: -104.95 })).toBe(false)
+    expect(split.onYou.map((a) => a.id)).toEqual([])
+    expect(split.nearby.map((a) => a.id)).toEqual(['cover', 'near'])
+    expect(split.elsewhere.map((a) => a.id)).toEqual(['far', 'unknown'])
+  })
+
+  it('keeps a pin near an unclosed closing edge in nearby, not elsewhere', () => {
+    const unclosed = alert({
+      id: 'unclosed',
+      event: 'Severe Thunderstorm Warning',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-105.2, 39.6],
+            [-104.7, 39.6],
+            [-104.7, 39.9],
+            [-105.2, 39.9],
+          ],
+        ],
+      },
+    })
+    const pin = { lat: 39.75, lon: -105.25 }
+    expect(isLocalWarning(unclosed, pin)).toBe(false)
+    expect(isNearbyWarning(unclosed, pin)).toBe(true)
+    expect(splitLocalWarnings([unclosed], pin).nearby.map((a) => a.id)).toEqual(['unclosed'])
   })
 })

@@ -3,13 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useLocationContext } from '@/components/location-context'
 import { useRemoteData } from '@/hooks/useRemoteData'
-import { LAST_LOCATION_KEY } from '@/lib/weather-session-cache'
-import { safeStorage } from '@/lib/safe-storage'
+import { PIN_CHANGE_EVENT, readPersistedPinLabel } from '@/lib/warnings/persist-pin'
 
 export type ActivePin = {
   lat: number
   lon: number
   label: string
+}
+
+export type ActivePinState = {
+  pin: ActivePin | null
+  label: string
+  isResolving: boolean
 }
 
 type Coords = { lat: number; lon: number }
@@ -21,17 +26,20 @@ const GEOCODE_CACHE_TTL_MS = 60 * 60 * 1000
  * then geocode the label. Weather cache strips coordinates, so this always
  * goes through geocoding unless the caller already has a lat/lon.
  */
-export function useActivePin(): ActivePin | null {
+export function useActivePinState(): ActivePinState {
   const { currentLocation, locationInput } = useLocationContext()
   const [storedLabel, setStoredLabel] = useState<string | null>(null)
 
   useEffect(() => {
-    setStoredLabel(safeStorage.getItem(LAST_LOCATION_KEY))
+    const read = () => setStoredLabel(readPersistedPinLabel())
+    read()
+    window.addEventListener(PIN_CHANGE_EVENT, read)
+    return () => window.removeEventListener(PIN_CHANGE_EVENT, read)
   }, [currentLocation, locationInput])
 
   const label = (currentLocation || locationInput || storedLabel || '').trim()
 
-  const { data: geocoded } = useRemoteData<Coords | null>({
+  const { data: geocoded, isLoading } = useRemoteData<Coords | null>({
     key: label ? `geocode:${label.toLowerCase()}` : null,
     cacheTtlMs: GEOCODE_CACHE_TTL_MS,
     fetcher: async (signal) => {
@@ -48,6 +56,15 @@ export function useActivePin(): ActivePin | null {
     },
   })
 
-  if (!label || !geocoded) return null
-  return { lat: geocoded.lat, lon: geocoded.lon, label }
+  if (!label) {
+    return { pin: null, label: '', isResolving: false }
+  }
+  if (!geocoded) {
+    return { pin: null, label, isResolving: isLoading }
+  }
+  return { pin: { lat: geocoded.lat, lon: geocoded.lon, label }, label, isResolving: false }
+}
+
+export function useActivePin(): ActivePin | null {
+  return useActivePinState().pin
 }

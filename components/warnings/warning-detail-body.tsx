@@ -23,7 +23,12 @@ export function WarningDetailBody({
   showDetailLink = false,
 }: WarningDetailBodyProps) {
   const radarHref = getRadarHrefForGeometry(alert.geometry)
-  const { maxHail, maxWind, source, damageThreat } = alert.hazard
+  const { maxHail, maxWind, source, damageThreat } = alert.hazard ?? {
+    maxHail: null,
+    maxWind: null,
+    source: null,
+    damageThreat: null,
+  }
   const hasHazards = Boolean(maxHail || maxWind || source || damageThreat)
 
   return (

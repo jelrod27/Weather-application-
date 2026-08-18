@@ -53,6 +53,25 @@ export function shouldShowHubHeadline(headline: {
 
 export { shouldShowStargazerCard };
 
+export function happeningNowEmptyCopy(nearbyCount: number): { headline: string; detail: string } {
+  if (nearbyCount === 1) {
+    return {
+      headline: 'No warnings covering this pin',
+      detail: '1 nearby warning — not covering this pin',
+    };
+  }
+  if (nearbyCount > 1) {
+    return {
+      headline: 'No warnings covering this pin',
+      detail: `${nearbyCount} nearby warnings — not covering this pin`,
+    };
+  }
+  return {
+    headline: 'No active alerts for this pin',
+    detail: 'Tornado, flash flood, and severe thunderstorm polygons only',
+  };
+}
+
 export function summarizeAlerts(alerts: NWSAlertDetail[]): {
   count: number;
   headline: string;

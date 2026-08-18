@@ -1,4 +1,4 @@
-import { pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
+import { distanceKmToNwsGeometry, pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
 
 const DENVER_POLYGON = {
   type: 'Polygon',
@@ -59,5 +59,40 @@ describe('pointInNwsGeometry', () => {
         ],
       }),
     ).toBe(true)
+  })
+})
+
+describe('distanceKmToNwsGeometry', () => {
+  it('is zero when the pin is inside the polygon', () => {
+    expect(distanceKmToNwsGeometry(39.74, -104.99, DENVER_POLYGON)).toBe(0)
+  })
+
+  it('measures distance to the nearest vertex when the pin is outside', () => {
+    const km = distanceKmToNwsGeometry(40.0, -104.95, DENVER_POLYGON)
+    expect(km).not.toBeNull()
+    expect(km as number).toBeGreaterThan(8)
+    expect(km as number).toBeLessThan(15)
+  })
+
+  it('returns null when geometry is missing', () => {
+    expect(distanceKmToNwsGeometry(39.74, -104.99, null)).toBeNull()
+  })
+
+  it('measures distance to the closing edge of an unclosed ring', () => {
+    const unclosedWest = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-105.2, 39.6],
+          [-104.7, 39.6],
+          [-104.7, 39.9],
+          [-105.2, 39.9],
+        ],
+      ],
+    }
+    const km = distanceKmToNwsGeometry(39.75, -105.25, unclosedWest)
+    expect(km).not.toBeNull()
+    expect(km as number).toBeGreaterThan(3)
+    expect(km as number).toBeLessThan(8)
   })
 })

@@ -115,6 +115,8 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
             headline={data.alerts.headline}
             severity={data.alerts.severity}
             topAlertId={data.alerts.topAlertId}
+            nearbyCount={data.alerts.nearbyCount}
+            nearbyTopId={data.alerts.nearbyTopId}
             accentColor={alertsAccent}
             loading={data.alerts.loading}
           />

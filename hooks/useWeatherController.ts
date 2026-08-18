@@ -7,12 +7,13 @@ import { locationService } from '@/lib/location-service'
 import { userCacheService } from '@/lib/user-cache-service'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
-import { weatherSessionCache } from '@/lib/weather-session-cache'
+import { LAST_LOCATION_KEY, weatherSessionCache } from '@/lib/weather-session-cache'
 import { resolveAutoLocation, resolveUnitSystem } from '@/lib/preferences/resolve'
 import { fetchWeatherData } from '@/lib/weather'
+import { pickHomeBootstrapSource } from '@/lib/weather/home-bootstrap'
+import { safeStorage } from '@/lib/safe-storage'
 import { useWeatherSession } from '@/hooks/useWeatherSession'
 
-const COORDS_LIKE = /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/
 const GEOLOCATION_TIMEOUT_MS = 5000
 
 export type UseWeatherControllerResult = {
@@ -84,24 +85,20 @@ export function useWeatherController(): UseWeatherControllerResult {
           userCacheService.getAutoLocationEnabled(),
         )
 
-        if (shouldAutoLocate === false) {
-          if (profile?.default_location) {
-            await handleSearch(profile.default_location, true)
-          }
+        const source = pickHomeBootstrapSource({
+          shouldAutoLocate,
+          profileDefault: profile?.default_location,
+          lastDisplayedCity: safeStorage.getItem(LAST_LOCATION_KEY),
+          cachedDisplayName: userCacheService.getLastLocation()?.displayName,
+        })
+
+        if (source.kind === 'search') {
+          await handleSearch(source.query, true)
           setAutoLocationAttempted(true)
           return
         }
 
-        if (profile?.default_location) {
-          await handleSearch(profile.default_location, true)
-          setAutoLocationAttempted(true)
-          return
-        }
-
-        const lastLocation = userCacheService.getLastLocation()
-        const cachedName = lastLocation?.displayName?.trim()
-        if (cachedName && !COORDS_LIKE.test(cachedName) && cachedName !== 'Current Location') {
-          await handleSearch(cachedName, true)
+        if (source.kind === 'none') {
           setAutoLocationAttempted(true)
           return
         }
