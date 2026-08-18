@@ -8,8 +8,10 @@ describe('verifyTurnstileToken', () => {
   const originalFetch = global.fetch
 
   afterEach(() => {
-    process.env.TURNSTILE_SECRET_KEY = originalSecret
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = originalSiteKey
+    if (originalSecret === undefined) delete process.env.TURNSTILE_SECRET_KEY
+    else process.env.TURNSTILE_SECRET_KEY = originalSecret
+    if (originalSiteKey === undefined) delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    else process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = originalSiteKey
     global.fetch = originalFetch
   })
 

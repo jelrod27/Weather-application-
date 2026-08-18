@@ -155,4 +155,11 @@ describe('local-ranking', () => {
     expect(split.onYou.map((a) => a.id)).toEqual(['zone-tor'])
     expect(split.elsewhere.map((a) => a.id)).toEqual([])
   })
+
+  it('does not keep a null-geometry warning on-you after point-active keys are cleared', () => {
+    const zone = alert({ id: 'zone-tor', event: 'Tornado Warning', geometry: null })
+    const split = splitLocalWarnings([zone], { lat: 39.74, lon: -104.99 })
+    expect(split.onYou.map((a) => a.id)).toEqual([])
+    expect(split.elsewhere.map((a) => a.id)).toEqual(['zone-tor'])
+  })
 })

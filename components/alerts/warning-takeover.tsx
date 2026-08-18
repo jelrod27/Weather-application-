@@ -64,7 +64,11 @@ export default function WarningTakeover() {
   )
 
   useEffect(() => {
-    if (!pin) return
+    if (!pin) {
+      setAlerts([])
+      return
+    }
+    setAlerts([])
     const ctrl = new AbortController()
     void load(ctrl.signal)
     const timer = setInterval(() => void load(ctrl.signal), POLL_MS)
@@ -76,7 +80,7 @@ export default function WarningTakeover() {
 
   const covering = useMemo(() => [...alerts].sort(compareWarningPriority), [alerts])
 
-  const active = covering[0] ?? null
+  const active = pin ? (covering[0] ?? null) : null
   const onDetailPage =
     active != null && pathname?.includes(encodeURIComponent(warningIdSlug(active.id)))
 

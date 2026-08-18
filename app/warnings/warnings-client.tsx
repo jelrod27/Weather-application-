@@ -203,25 +203,23 @@ export default function WarningsClient() {
   }, [load])
 
   useEffect(() => {
-    if (!pin) {
-      setPointActiveKeys(undefined)
-      return
-    }
-    let cancelled = false
+    setPointActiveKeys(undefined)
+    if (!pin) return
+    const ctrl = new AbortController()
     const run = async () => {
       try {
         const res = await fetch(
           `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${pin.lat},${pin.lon}`)}`,
-          { cache: 'no-store' },
+          { cache: 'no-store', signal: ctrl.signal },
         )
-        if (!res.ok || cancelled) return
+        if (!res.ok) return
         const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
         const keys = new Set<string>()
         for (const alert of data.alerts ?? []) {
           keys.add(alert.id)
           if (alert.warningEventId) keys.add(alert.warningEventId)
         }
-        if (!cancelled) setPointActiveKeys(keys)
+        setPointActiveKeys(keys)
       } catch (error) {
         if ((error as Error)?.name === 'AbortError') return
         console.error('[warnings-client] point alerts', error)
@@ -230,8 +228,8 @@ export default function WarningsClient() {
     void run()
     const timer = setInterval(() => void run(), 15_000)
     return () => {
-      cancelled = true
       clearInterval(timer)
+      ctrl.abort()
     }
   }, [pin])
 
