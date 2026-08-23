@@ -160,11 +160,14 @@ async function claimIngestLease(
     return { ok: true, skipped: false }
   }
 
+  // PostgREST `.or()` treats `:` in a quoted ISO timestamp as a value
+  // separator, so interpolating `nowIso` never matches an expired lease.
+  // `lte.now` is evaluated server-side and reclaim works after a crash.
   const { data, error } = await supabase
     .from('bitwatch_ingest_state')
     .update(leaseFields as never)
     .eq('id', INGEST_ID)
-    .or(`lease_until.is.null,lease_until.lte."${nowIso}"`)
+    .or('lease_until.is.null,lease_until.lte.now')
     .select('id')
     .maybeSingle()
 
@@ -211,25 +214,20 @@ export async function runBitwatchIngest(
     const activeEvents = activeWarningDetails(folded)
     const foldedIds = [...folded.keys()]
 
-    for (const detail of collection) {
-      const hash = contentHash(detail)
-      const { error } = await supabase.from('bitwatch_source_messages').upsert(
-        {
-          nws_id: detail.id,
-          sender: detail.sender,
-          sent: detail.sent || nowIso,
-          message_type: detail.messageType,
-          event: detail.event,
-          content_hash: hash,
-          warning_event_id: detail.warningEventId,
-          payload: toJson(detail),
-          observed_at: nowIso,
-        } as never,
-        { onConflict: 'nws_id,sent' },
-      )
-      if (error && error.code !== '23505') {
-        throw new Error(error.message)
-      }
+    const eventRows = [...folded.values()].map((event) => ({
+      id: event.id,
+      nws_id: event.nwsId,
+      event: event.event,
+      status: event.status,
+      ended_reason: event.endedReason,
+      display: toJson(event.display),
+      updated_at: nowIso,
+    }))
+    if (eventRows.length > 0) {
+      const { error } = await supabase
+        .from('bitwatch_warning_events')
+        .upsert(eventRows as never, { onConflict: 'id' })
+      if (error) throw new Error(error.message)
     }
 
     if (active.length > 0 && foldedIds.length > 0) {
@@ -241,20 +239,24 @@ export async function runBitwatchIngest(
       if (clearError) throw new Error(clearError.message)
     }
 
-    for (const event of folded.values()) {
-      const { error } = await supabase.from('bitwatch_warning_events').upsert(
-        {
-          id: event.id,
-          nws_id: event.nwsId,
-          event: event.event,
-          status: event.status,
-          ended_reason: event.endedReason,
-          display: toJson(event.display),
-          updated_at: nowIso,
-        } as never,
-        { onConflict: 'id' },
-      )
-      if (error) throw new Error(error.message)
+    const messageRows = collection.map((detail) => ({
+      nws_id: detail.id,
+      sender: detail.sender,
+      sent: detail.sent || nowIso,
+      message_type: detail.messageType,
+      event: detail.event,
+      content_hash: contentHash(detail),
+      warning_event_id: detail.warningEventId,
+      payload: toJson(detail),
+      observed_at: nowIso,
+    }))
+    if (messageRows.length > 0) {
+      const { error } = await supabase
+        .from('bitwatch_source_messages')
+        .upsert(messageRows as never, { onConflict: 'nws_id,sent' })
+      if (error && error.code !== '23505') {
+        throw new Error(error.message)
+      }
     }
 
     const watermark = nextWatermarkIso(

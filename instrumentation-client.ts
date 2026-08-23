@@ -7,6 +7,7 @@
 // Type-only import: erased at compile time, so the runtime module still
 // loads lazily via the dynamic import() in initSentryLazy below.
 import type * as SentryNextjs from '@sentry/nextjs';
+import { isValidSentryDsn } from '@/lib/sentry-utils';
 
 let sentryInitialized = false;
 let sentryModule: typeof SentryNextjs | null = null;
@@ -19,14 +20,9 @@ async function initSentryLazy() {
   if (sentryInitialized || typeof window === 'undefined') return;
 
   const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
-  if (!sentryDsn) return;
-
-  // Validate DSN is a valid URL (supports both sentry.io and self-hosted instances)
-  try {
-    new URL(sentryDsn);
-  } catch {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ Sentry client: Invalid DSN format:', sentryDsn);
+  if (!sentryDsn || !isValidSentryDsn(sentryDsn)) {
+    if (process.env.NODE_ENV === 'development' && sentryDsn) {
+      console.warn('⚠️ Sentry client: Invalid DSN host, skipping initialization');
     }
     return;
   }
@@ -35,6 +31,8 @@ async function initSentryLazy() {
     // Dynamic import - only loads Sentry when called
     const Sentry = await import('@sentry/nextjs');
 
+    // Do not pass `integrations: []`. That replaces the SDK defaults and
+    // drops GlobalHandlers, so window errors never reach Sentry.
     Sentry.init({
       dsn: sentryDsn,
       enableLogs: true,
@@ -43,7 +41,6 @@ async function initSentryLazy() {
       replaysOnErrorSampleRate: 0,
       debug: false,
       environment: process.env.NODE_ENV || 'development',
-      integrations: [],
     });
 
     // Only expose module reference after successful initialization
