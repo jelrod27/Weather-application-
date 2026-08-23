@@ -207,7 +207,7 @@ export default withBundleAnalyzer(withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: process.env.SENTRY_ORG || "16bitweather",
+  org: process.env.SENTRY_ORG || "justin-elrod",
   project: process.env.SENTRY_PROJECT || "javascript-nextjs",
 
   // Auth token for uploading source maps

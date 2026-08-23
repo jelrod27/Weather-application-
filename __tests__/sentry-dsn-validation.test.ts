@@ -12,6 +12,10 @@ describe('Sentry DSN validation', () => {
     expect(isValidSentryDsn('https://abc123@o123.ingest.sentry.io/456')).toBe(true);
   });
 
+  it('should accept the US ingest hostname used in production DSNs', () => {
+    expect(isValidSentryDsn('https://abc123@o123.ingest.us.sentry.io/456')).toBe(true);
+  });
+
   it('should reject DSN where sentry.io is a subdomain of another host', () => {
     expect(isValidSentryDsn('https://sentry.io.evil.com/123')).toBe(false);
   });

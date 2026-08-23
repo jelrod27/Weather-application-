@@ -39,7 +39,7 @@ const envConfig: EnvConfig = {
     },
     SENTRY_ORG: {
       name: 'SENTRY_ORG',
-      description: 'Sentry organization (optional - defaults to "16bitweather")',
+      description: 'Sentry organization (optional - defaults to "justin-elrod")',
     },
     SENTRY_PROJECT: {
       name: 'SENTRY_PROJECT',
