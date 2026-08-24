@@ -43,7 +43,7 @@ const envConfig: EnvConfig = {
     },
     SENTRY_PROJECT: {
       name: 'SENTRY_PROJECT',
-      description: 'Sentry project (optional - defaults to "javascript-nextjs")',
+      description: 'Sentry project (optional - defaults to "16bit-weather-web")',
     },
     AEROAPI_KEY: {
       name: 'AEROAPI_KEY',
