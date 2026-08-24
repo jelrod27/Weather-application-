@@ -129,6 +129,54 @@ export function postgrestInList(ids: string[]): string {
   return `(${ids.map((id) => `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')})`
 }
 
+/** Stay under Kong/PostgREST's ~8 KiB URL limit with headroom for the rest of the query. */
+export const POSTGREST_IN_FILTER_MAX_CHARS = 6000
+
+export function chunkIdsForPostgrestInFilter(
+  ids: string[],
+  maxChars = POSTGREST_IN_FILTER_MAX_CHARS,
+): string[][] {
+  const chunks: string[][] = []
+  let current: string[] = []
+  let encodedLength = 1
+  for (const id of ids) {
+    const encoded = `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+    const extra = (current.length === 0 ? 0 : 1) + encoded.length
+    if (current.length > 0 && encodedLength + extra + 1 > maxChars) {
+      chunks.push(current)
+      current = []
+      encodedLength = 1
+    }
+    current.push(id)
+    encodedLength += extra
+  }
+  if (current.length > 0) chunks.push(current)
+  return chunks
+}
+
+async function expireStaleActiveEvents(
+  supabase: SupabaseClient<Database>,
+  keepIds: string[],
+  nowIso: string,
+): Promise<void> {
+  const keep = new Set(keepIds)
+  const { data, error } = await supabase.from('bitwatch_warning_events').select('id').eq('status', 'active')
+  if (error) throw new Error(error.message)
+
+  const staleIds = ((data ?? []) as Array<{ id: string }>)
+    .map((row) => row.id)
+    .filter((id) => Boolean(id) && !keep.has(id))
+
+  for (const chunk of chunkIdsForPostgrestInFilter(staleIds)) {
+    const { error: updateError } = await supabase
+      .from('bitwatch_warning_events')
+      .update({ status: 'ended', ended_reason: 'reconciled', updated_at: nowIso } as never)
+      .eq('status', 'active')
+      .in('id', chunk)
+    if (updateError) throw new Error(updateError.message)
+  }
+}
+
 type IngestStateRow = {
   watermark_sent: string | null
   last_success_at: string | null
@@ -235,12 +283,11 @@ export async function runBitwatchIngest(
     }
 
     if (active.length > 0 && foldedIds.length > 0) {
-      const { error: clearError } = await supabase
-        .from('bitwatch_warning_events')
-        .update({ status: 'ended', ended_reason: 'reconciled', updated_at: nowIso } as never)
-        .eq('status', 'active')
-        .filter('id', 'not.in', postgrestInList(foldedIds))
-      if (clearError) throw new Error(clearError.message)
+      // `id=not.in.(...)` puts every keep-alive ID on the URL. A national
+      // snapshot is tens of thousands of characters, Kong returns 400, and
+      // ingest never writes last_success_at. Diff active rows in JS and
+      // PATCH the stale IDs with chunked `id=in.(...)` filters instead.
+      await expireStaleActiveEvents(supabase, foldedIds, nowIso)
     }
 
     const messageRows = collection.map((detail) => ({
