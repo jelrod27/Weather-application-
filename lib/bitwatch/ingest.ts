@@ -12,8 +12,11 @@ import {
 
 const INGEST_ID = 'nws-alerts'
 const OVERLAP_MS = 15 * 60 * 1000
+const COLD_LOOKBACK_MS = 2 * 60 * 60 * 1000
 const FRESH_MS = 3 * 60 * 1000
 const LEASE_MS = 50_000
+const SOURCE_MESSAGE_CHUNK = 50
+export const INGEST_SUPABASE_TIMEOUT_MS = 20_000
 
 export type BitwatchFreshness = 'fresh' | 'delayed' | 'unavailable'
 
@@ -26,11 +29,20 @@ export type IngestRunResult = {
   error?: string
 }
 
-export function overlapStartIso(watermarkSent: string | null, nowMs: number): string | undefined {
-  if (!watermarkSent) return undefined
+export function overlapStartIso(watermarkSent: string | null, nowMs: number): string {
+  if (!watermarkSent) return new Date(nowMs - COLD_LOOKBACK_MS).toISOString()
   const t = new Date(watermarkSent).getTime()
-  if (!Number.isFinite(t)) return undefined
+  if (!Number.isFinite(t)) return new Date(nowMs - COLD_LOOKBACK_MS).toISOString()
   return new Date(t - OVERLAP_MS).toISOString()
+}
+
+export function chunkRows<T>(rows: T[], size: number): T[][] {
+  if (size <= 0) return rows.length ? [rows] : []
+  const chunks: T[][] = []
+  for (let i = 0; i < rows.length; i += size) {
+    chunks.push(rows.slice(i, i + size))
+  }
+  return chunks
 }
 
 export function nextWatermarkIso(current: string | null, sentTimes: string[]): string | null {
@@ -310,31 +322,13 @@ export async function runBitwatchIngest(
       await expireStaleActiveEvents(supabase, foldedIds, nowIso)
     }
 
-    const messageRows = collection.map((detail) => ({
-      nws_id: detail.id,
-      sender: detail.sender,
-      sent: detail.sent || nowIso,
-      message_type: detail.messageType,
-      event: detail.event,
-      content_hash: contentHash(detail),
-      warning_event_id: detail.warningEventId,
-      payload: toJson(detail),
-      observed_at: nowIso,
-    }))
-    if (messageRows.length > 0) {
-      const { error } = await supabase
-        .from('bitwatch_source_messages')
-        .upsert(messageRows as never, { onConflict: 'nws_id,sent' })
-      if (error && error.code !== '23505') {
-        throw new Error(error.message)
-      }
-    }
-
     const watermark = nextWatermarkIso(
       state?.watermark_sent ?? null,
       collection.map((item) => item.sent),
     )
 
+    // Persist success before source messages. The desk only needs warning
+    // events + last_success_at; a fat message upsert must not block freshness.
     const { error: doneError } = await supabase.from('bitwatch_ingest_state').upsert(
       {
         id: INGEST_ID,
@@ -347,6 +341,26 @@ export async function runBitwatchIngest(
       { onConflict: 'id' },
     )
     if (doneError) throw new Error(doneError.message)
+
+    const messageRows = collection.map((detail) => ({
+      nws_id: detail.id,
+      sender: detail.sender,
+      sent: detail.sent || nowIso,
+      message_type: detail.messageType,
+      event: detail.event,
+      content_hash: contentHash(detail),
+      warning_event_id: detail.warningEventId,
+      payload: toJson(detail),
+      observed_at: nowIso,
+    }))
+    for (const chunk of chunkRows(messageRows, SOURCE_MESSAGE_CHUNK)) {
+      const { error } = await supabase
+        .from('bitwatch_source_messages')
+        .upsert(chunk as never, { onConflict: 'nws_id,sent' })
+      if (error && error.code !== '23505') {
+        console.error('[bitwatch-ingest]', error)
+      }
+    }
 
     return {
       ok: true,
