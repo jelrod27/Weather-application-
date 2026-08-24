@@ -2,7 +2,12 @@
  * @jest-environment node
  */
 
-import { runBitwatchIngest } from '@/lib/bitwatch/ingest'
+import {
+  chunkIdsForPostgrestInFilter,
+  listActiveWarningEventIds,
+  POSTGREST_IN_FILTER_MAX_CHARS,
+  runBitwatchIngest,
+} from '@/lib/bitwatch/ingest'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import {
   fetchActiveAlertsDetail,
@@ -47,21 +52,39 @@ function alert(
 }
 
 type UpsertCall = { table: string; rows: unknown[] }
+type EventStatus = 'active' | 'ended'
+type QueryResult = {
+  data: unknown
+  error: { message: string } | null
+  count: number | null
+}
 
-function createSupabase(state: {
-  watermark_sent: string | null
-  last_success_at: string | null
-  lease_until: string | null
-} | null) {
+function createSupabase(
+  state: {
+    watermark_sent: string | null
+    last_success_at: string | null
+    lease_until: string | null
+  } | null,
+  seedEvents: Array<{ id: string; status: EventStatus }> = [],
+) {
   const orFilters: string[] = []
   const upserts: UpsertCall[] = []
+  const inFilters: string[][] = []
+  const notInFilters: string[] = []
+  const ranges: Array<[number, number]> = []
+  const events = new Map(seedEvents.map((row) => [row.id, row.status]))
 
   const from = (table: string) => {
     let orFilter: string | undefined
     let selected: string | undefined
+    let op: 'select' | 'update' | null = null
+    let notInValue: string | undefined
+    let inValues: string[] | undefined
+    let rangeFrom: number | undefined
+    let rangeTo: number | undefined
     const builder: Record<string, unknown> = {}
     const self = () => builder
-    const leaseUpdateResult = () => {
+    const leaseUpdateResult = (): QueryResult => {
       // PostgREST re-applies `.or()` to the RETURNING CTE. Selecting `id`
       // makes `lease_until` missing on that CTE — the production outage.
       if (selected) {
@@ -80,23 +103,82 @@ function createSupabase(state: {
         Date.parse(state!.lease_until!) > Date.parse('2026-08-23T22:00:00.000Z')
       return { data: null, error: null, count: held ? 0 : 1 }
     }
+    const resolveQuery = (): QueryResult => {
+      if (table === 'bitwatch_ingest_state' && op === 'update') {
+        return leaseUpdateResult()
+      }
+      if (table === 'bitwatch_warning_events' && op === 'select') {
+        let rows = [...events.entries()]
+          .filter(([, status]) => status === 'active')
+          .map(([id]) => ({ id }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+        if (rangeFrom !== undefined && rangeTo !== undefined) {
+          rows = rows.slice(rangeFrom, rangeTo + 1)
+        }
+        return {
+          data: rows,
+          error: null,
+          count: null,
+        }
+      }
+      if (table === 'bitwatch_warning_events' && op === 'update') {
+        if (notInValue) {
+          notInFilters.push(notInValue)
+          if (notInValue.length > 8192) {
+            return { data: null, error: { message: 'Bad Request' }, count: null }
+          }
+        }
+        if (inValues) {
+          inFilters.push(inValues)
+          for (const id of inValues) {
+            if (events.get(id) === 'active') events.set(id, 'ended')
+          }
+        }
+        return { data: null, error: null, count: inValues?.length ?? 0 }
+      }
+      return { data: null, error: null, count: null }
+    }
     Object.assign(builder, {
       select: (columns?: string) => {
+        op = 'select'
         selected = columns ?? '*'
         return builder
       },
       eq: self,
-      filter: self,
+      filter: (_column: string, operator: string, value: string) => {
+        if (operator === 'not.in') notInValue = value
+        return builder
+      },
+      in: (_column: string, values: string[]) => {
+        inValues = values
+        return builder
+      },
+      order: self,
+      range: (from: number, to: number) => {
+        rangeFrom = from
+        rangeTo = to
+        ranges.push([from, to])
+        return builder
+      },
       or: (filter: string) => {
         orFilter = filter
         orFilters.push(filter)
         return builder
       },
       insert: () => Promise.resolve({ error: null }),
-      update: self,
+      update: () => {
+        op = 'update'
+        selected = undefined
+        return builder
+      },
       upsert: (payload: unknown) => {
         const rows = Array.isArray(payload) ? payload : [payload]
         upserts.push({ table, rows })
+        if (table === 'bitwatch_warning_events') {
+          for (const row of rows as Array<{ id?: string; status?: EventStatus }>) {
+            if (row.id && row.status) events.set(row.id, row.status)
+          }
+        }
         return Promise.resolve({ error: null })
       },
       maybeSingle: () => {
@@ -106,14 +188,14 @@ function createSupabase(state: {
         return Promise.resolve({ data: state, error: null })
       },
       then: (
-        resolve: (value: { data: null; error: { message: string } | null; count: number | null }) => unknown,
+        resolve: (value: QueryResult) => unknown,
         reject: (reason: unknown) => unknown,
-      ) => Promise.resolve(orFilter !== undefined ? leaseUpdateResult() : { data: null, error: null, count: null }).then(resolve, reject),
+      ) => Promise.resolve(resolveQuery()).then(resolve, reject),
     })
     return builder
   }
 
-  return { from, orFilters, upserts }
+  return { from, orFilters, upserts, inFilters, notInFilters, events, ranges }
 }
 
 describe('runBitwatchIngest', () => {
@@ -193,4 +275,77 @@ describe('runBitwatchIngest', () => {
     })
     expect(supabase.upserts).toHaveLength(0)
   })
+
+  it('expires stale active events without a PostgREST not.in URL over 8 KiB', async () => {
+    const live = Array.from({ length: 400 }, (_, i) => {
+      const etn = String(i + 1).padStart(4, '0')
+      return alert({
+        id: `https://api.weather.gov/alerts/urn:oid:tornado-${etn}`,
+        event: 'Tornado Warning',
+        sent: '2026-04-18T21:00:00Z',
+        vtecRaw: [`/O.NEW.KLWX.TO.W.${etn}.260418T2100Z-260418T2200Z/`],
+      })
+    })
+    jest.mocked(fetchNwsAlertPages).mockResolvedValue(live)
+    jest.mocked(fetchActiveAlertsDetail).mockResolvedValue(live)
+
+    const staleId = 'KOLD.SV.W.9999.2026'
+    const supabase = createSupabase(
+      {
+        watermark_sent: null,
+        last_success_at: null,
+        lease_until: null,
+      },
+      [{ id: staleId, status: 'active' }],
+    )
+
+    const result = await runBitwatchIngest(supabase as never, Date.parse('2026-08-23T22:00:00.000Z'))
+
+    expect(result.ok).toBe(true)
+    expect(result.error).toBeUndefined()
+    expect(supabase.notInFilters).toEqual([])
+    expect(supabase.inFilters.flat()).toContain(staleId)
+    expect(supabase.events.get(staleId)).toBe('ended')
+    expect(supabase.ranges[0]).toEqual([0, 999])
+  })
 })
+
+describe('listActiveWarningEventIds', () => {
+  it('pages past a PostgREST max-rows window so stale IDs are not dropped', async () => {
+    const seed = Array.from({ length: 5 }, (_, i) => ({
+      id: `KOLD.SV.W.${String(i + 1).padStart(4, '0')}.2026`,
+      status: 'active' as const,
+    }))
+    const supabase = createSupabase(
+      {
+        watermark_sent: null,
+        last_success_at: null,
+        lease_until: null,
+      },
+      seed,
+    )
+
+    const ids = await listActiveWarningEventIds(supabase as never, 2)
+
+    expect(ids).toEqual(seed.map((row) => row.id).sort())
+    expect(supabase.ranges).toEqual([
+      [0, 1],
+      [2, 3],
+      [4, 5],
+    ])
+  })
+})
+
+describe('chunkIdsForPostgrestInFilter', () => {
+  it('keeps each encoded in() list under the PostgREST URL budget', () => {
+    const ids = Array.from({ length: 400 }, (_, i) => `KLWX.TO.W.${String(i).padStart(4, '0')}.2026`)
+    const chunks = chunkIdsForPostgrestInFilter(ids)
+    expect(chunks.length).toBeGreaterThan(1)
+    expect(chunks.flat()).toEqual(ids)
+    for (const chunk of chunks) {
+      const encoded = `(${chunk.map((id) => `"${id}"`).join(',')})`
+      expect(encoded.length).toBeLessThanOrEqual(POSTGREST_IN_FILTER_MAX_CHARS)
+    }
+  })
+})
+
