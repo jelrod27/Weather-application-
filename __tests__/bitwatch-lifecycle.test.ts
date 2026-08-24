@@ -1,6 +1,7 @@
 import { applySourceMessage } from '@/lib/bitwatch/lifecycle'
 import { parseTimeMotLoc, projectMotion } from '@/lib/bitwatch/motion'
 import {
+  chunkRows,
   foldSourceMessages,
   nextWatermarkIso,
   overlapStartIso,
@@ -245,6 +246,15 @@ describe('ingest helpers', () => {
     expect(overlapStartIso('2026-08-07T02:25:00.000Z', Date.parse('2026-08-07T02:26:00Z'))).toBe(
       '2026-08-07T02:10:00.000Z',
     )
+  })
+
+  it('caps a missing watermark to a two-hour lookback instead of the full NWS archive', () => {
+    const now = Date.parse('2026-08-23T22:00:00.000Z')
+    expect(overlapStartIso(null, now)).toBe('2026-08-23T20:00:00.000Z')
+  })
+
+  it('chunks source-message rows so a bulk upsert cannot stall the cron', () => {
+    expect(chunkRows([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
   })
 
   it('does not advance a watermark when there are no new sent times', () => {

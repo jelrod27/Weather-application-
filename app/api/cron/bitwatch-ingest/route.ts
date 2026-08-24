@@ -1,5 +1,5 @@
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
-import { runBitwatchIngest } from '@/lib/bitwatch/ingest'
+import { INGEST_SUPABASE_TIMEOUT_MS, runBitwatchIngest } from '@/lib/bitwatch/ingest'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { logRouteError } from '@/lib/error-utils'
 import type { NextRequest } from 'next/server'
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: auth.message }, { status: auth.status })
   }
 
-  const supabase = createServiceRoleSupabaseClient()
+  const supabase = createServiceRoleSupabaseClient({ timeoutMs: INGEST_SUPABASE_TIMEOUT_MS })
   if (!supabase) {
     return Response.json({ error: 'Supabase not configured' }, { status: 500 })
   }

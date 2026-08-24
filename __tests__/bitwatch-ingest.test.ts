@@ -66,6 +66,7 @@ function createSupabase(
     lease_until: string | null
   } | null,
   seedEvents: Array<{ id: string; status: EventStatus }> = [],
+  options?: { failSourceMessages?: boolean },
 ) {
   const orFilters: string[] = []
   const upserts: UpsertCall[] = []
@@ -174,6 +175,11 @@ function createSupabase(
       upsert: (payload: unknown) => {
         const rows = Array.isArray(payload) ? payload : [payload]
         upserts.push({ table, rows })
+        if (options?.failSourceMessages && table === 'bitwatch_source_messages') {
+          return Promise.resolve({
+            error: { message: 'payload too large', code: '57014' },
+          })
+        }
         if (table === 'bitwatch_warning_events') {
           for (const row of rows as Array<{ id?: string; status?: EventStatus }>) {
             if (row.id && row.status) events.set(row.id, row.status)
@@ -307,6 +313,28 @@ describe('runBitwatchIngest', () => {
     expect(supabase.inFilters.flat()).toContain(staleId)
     expect(supabase.events.get(staleId)).toBe('ended')
     expect(supabase.ranges[0]).toEqual([0, 999])
+  })
+
+  it('records last_success_at even when source-message upserts fail', async () => {
+    const supabase = createSupabase(
+      {
+        watermark_sent: null,
+        last_success_at: null,
+        lease_until: null,
+      },
+      [],
+      { failSourceMessages: true },
+    )
+
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    const result = await runBitwatchIngest(supabase as never, Date.parse('2026-08-23T22:00:00.000Z'))
+
+    expect(result.ok).toBe(true)
+    const stateWrites = supabase.upserts.filter((call) => call.table === 'bitwatch_ingest_state')
+    expect(stateWrites.some((call) => (call.rows[0] as { last_success_at?: string }).last_success_at)).toBe(
+      true,
+    )
+    errorSpy.mockRestore()
   })
 })
 
