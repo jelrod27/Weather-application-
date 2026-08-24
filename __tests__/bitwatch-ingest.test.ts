@@ -48,11 +48,14 @@ function alert(
 
 type UpsertCall = { table: string; rows: unknown[] }
 
-function createSupabase(state: {
-  watermark_sent: string | null
-  last_success_at: string | null
-  lease_until: string | null
-} | null) {
+function createSupabase(
+  state: {
+    watermark_sent: string | null
+    last_success_at: string | null
+    lease_until: string | null
+  } | null,
+  options?: { failSourceMessages?: boolean },
+) {
   const orFilters: string[] = []
   const upserts: UpsertCall[] = []
 
@@ -97,6 +100,11 @@ function createSupabase(state: {
       upsert: (payload: unknown) => {
         const rows = Array.isArray(payload) ? payload : [payload]
         upserts.push({ table, rows })
+        if (options?.failSourceMessages && table === 'bitwatch_source_messages') {
+          return Promise.resolve({
+            error: { message: 'payload too large', code: '57014' },
+          })
+        }
         return Promise.resolve({ error: null })
       },
       maybeSingle: () => {
@@ -192,5 +200,24 @@ describe('runBitwatchIngest', () => {
       watermark: '2026-08-23T21:59:00.000Z',
     })
     expect(supabase.upserts).toHaveLength(0)
+  })
+
+  it('records last_success_at even when source-message upserts fail', async () => {
+    const supabase = createSupabase(
+      {
+        watermark_sent: null,
+        last_success_at: null,
+        lease_until: null,
+      },
+      { failSourceMessages: true },
+    )
+
+    const result = await runBitwatchIngest(supabase as never, Date.parse('2026-08-23T22:00:00.000Z'))
+
+    expect(result.ok).toBe(true)
+    const stateWrites = supabase.upserts.filter((call) => call.table === 'bitwatch_ingest_state')
+    expect(stateWrites.some((call) => (call.rows[0] as { last_success_at?: string }).last_success_at)).toBe(
+      true,
+    )
   })
 })
