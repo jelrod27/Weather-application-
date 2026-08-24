@@ -4,6 +4,7 @@
 
 import {
   chunkIdsForPostgrestInFilter,
+  listActiveWarningEventIds,
   POSTGREST_IN_FILTER_MAX_CHARS,
   runBitwatchIngest,
 } from '@/lib/bitwatch/ingest'
@@ -70,6 +71,7 @@ function createSupabase(
   const upserts: UpsertCall[] = []
   const inFilters: string[][] = []
   const notInFilters: string[] = []
+  const ranges: Array<[number, number]> = []
   const events = new Map(seedEvents.map((row) => [row.id, row.status]))
 
   const from = (table: string) => {
@@ -78,6 +80,8 @@ function createSupabase(
     let op: 'select' | 'update' | null = null
     let notInValue: string | undefined
     let inValues: string[] | undefined
+    let rangeFrom: number | undefined
+    let rangeTo: number | undefined
     const builder: Record<string, unknown> = {}
     const self = () => builder
     const leaseUpdateResult = (): QueryResult => {
@@ -104,10 +108,15 @@ function createSupabase(
         return leaseUpdateResult()
       }
       if (table === 'bitwatch_warning_events' && op === 'select') {
+        let rows = [...events.entries()]
+          .filter(([, status]) => status === 'active')
+          .map(([id]) => ({ id }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+        if (rangeFrom !== undefined && rangeTo !== undefined) {
+          rows = rows.slice(rangeFrom, rangeTo + 1)
+        }
         return {
-          data: [...events.entries()]
-            .filter(([, status]) => status === 'active')
-            .map(([id]) => ({ id })),
+          data: rows,
           error: null,
           count: null,
         }
@@ -142,6 +151,13 @@ function createSupabase(
       },
       in: (_column: string, values: string[]) => {
         inValues = values
+        return builder
+      },
+      order: self,
+      range: (from: number, to: number) => {
+        rangeFrom = from
+        rangeTo = to
+        ranges.push([from, to])
         return builder
       },
       or: (filter: string) => {
@@ -179,7 +195,7 @@ function createSupabase(
     return builder
   }
 
-  return { from, orFilters, upserts, inFilters, notInFilters, events }
+  return { from, orFilters, upserts, inFilters, notInFilters, events, ranges }
 }
 
 describe('runBitwatchIngest', () => {
@@ -290,6 +306,33 @@ describe('runBitwatchIngest', () => {
     expect(supabase.notInFilters).toEqual([])
     expect(supabase.inFilters.flat()).toContain(staleId)
     expect(supabase.events.get(staleId)).toBe('ended')
+    expect(supabase.ranges[0]).toEqual([0, 999])
+  })
+})
+
+describe('listActiveWarningEventIds', () => {
+  it('pages past a PostgREST max-rows window so stale IDs are not dropped', async () => {
+    const seed = Array.from({ length: 5 }, (_, i) => ({
+      id: `KOLD.SV.W.${String(i + 1).padStart(4, '0')}.2026`,
+      status: 'active' as const,
+    }))
+    const supabase = createSupabase(
+      {
+        watermark_sent: null,
+        last_success_at: null,
+        lease_until: null,
+      },
+      seed,
+    )
+
+    const ids = await listActiveWarningEventIds(supabase as never, 2)
+
+    expect(ids).toEqual(seed.map((row) => row.id).sort())
+    expect(supabase.ranges).toEqual([
+      [0, 1],
+      [2, 3],
+      [4, 5],
+    ])
   })
 })
 

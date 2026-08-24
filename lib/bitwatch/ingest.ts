@@ -154,18 +154,38 @@ export function chunkIdsForPostgrestInFilter(
   return chunks
 }
 
+/** PostgREST/Supabase default max-rows per request. Page past it or stale actives are skipped. */
+export const ACTIVE_EVENT_SCAN_PAGE_SIZE = 1000
+
+export async function listActiveWarningEventIds(
+  supabase: SupabaseClient<Database>,
+  pageSize = ACTIVE_EVENT_SCAN_PAGE_SIZE,
+): Promise<string[]> {
+  const ids: string[] = []
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1
+    const { data, error } = await supabase
+      .from('bitwatch_warning_events')
+      .select('id')
+      .eq('status', 'active')
+      .order('id', { ascending: true })
+      .range(from, to)
+    if (error) throw new Error(error.message)
+    const page = ((data ?? []) as Array<{ id: string }>).map((row) => row.id).filter(Boolean)
+    ids.push(...page)
+    if (page.length < pageSize) break
+  }
+  return ids
+}
+
 async function expireStaleActiveEvents(
   supabase: SupabaseClient<Database>,
   keepIds: string[],
   nowIso: string,
+  pageSize = ACTIVE_EVENT_SCAN_PAGE_SIZE,
 ): Promise<void> {
   const keep = new Set(keepIds)
-  const { data, error } = await supabase.from('bitwatch_warning_events').select('id').eq('status', 'active')
-  if (error) throw new Error(error.message)
-
-  const staleIds = ((data ?? []) as Array<{ id: string }>)
-    .map((row) => row.id)
-    .filter((id) => Boolean(id) && !keep.has(id))
+  const staleIds = (await listActiveWarningEventIds(supabase, pageSize)).filter((id) => !keep.has(id))
 
   for (const chunk of chunkIdsForPostgrestInFilter(staleIds)) {
     const { error: updateError } = await supabase
