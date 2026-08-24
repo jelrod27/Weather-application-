@@ -58,10 +58,33 @@ function createSupabase(state: {
 
   const from = (table: string) => {
     let orFilter: string | undefined
+    let selected: string | undefined
     const builder: Record<string, unknown> = {}
     const self = () => builder
+    const leaseUpdateResult = () => {
+      // PostgREST re-applies `.or()` to the RETURNING CTE. Selecting `id`
+      // makes `lease_until` missing on that CTE — the production outage.
+      if (selected) {
+        return {
+          data: null,
+          error: { message: 'column bitwatch_ingest_state.lease_until does not exist' },
+          count: null,
+        }
+      }
+      // Quoted ISO timestamps split on `:` and never match.
+      if (orFilter && (/lte\."/.test(orFilter) || /T\d{2}:\d{2}/.test(orFilter))) {
+        return { data: null, error: null, count: 0 }
+      }
+      const held =
+        Boolean(state?.lease_until) &&
+        Date.parse(state!.lease_until!) > Date.parse('2026-08-23T22:00:00.000Z')
+      return { data: null, error: null, count: held ? 0 : 1 }
+    }
     Object.assign(builder, {
-      select: self,
+      select: (columns?: string) => {
+        selected = columns ?? '*'
+        return builder
+      },
       eq: self,
       filter: self,
       or: (filter: string) => {
@@ -78,17 +101,14 @@ function createSupabase(state: {
       },
       maybeSingle: () => {
         if (orFilter !== undefined) {
-          // PostgREST `.or()` treats `:` inside a quoted ISO timestamp as a
-          // value separator, so the reclaim predicate never matches.
-          if (/lte\."/.test(orFilter) || /T\d{2}:\d{2}/.test(orFilter)) {
-            return Promise.resolve({ data: null, error: null })
-          }
-          return Promise.resolve({ data: { id: 'nws-alerts' }, error: null })
+          return Promise.resolve(leaseUpdateResult())
         }
         return Promise.resolve({ data: state, error: null })
       },
-      then: (resolve: (value: { error: null }) => unknown, reject: (reason: unknown) => unknown) =>
-        Promise.resolve({ error: null }).then(resolve, reject),
+      then: (
+        resolve: (value: { data: null; error: { message: string } | null; count: number | null }) => unknown,
+        reject: (reason: unknown) => unknown,
+      ) => Promise.resolve(orFilter !== undefined ? leaseUpdateResult() : { data: null, error: null, count: null }).then(resolve, reject),
     })
     return builder
   }
@@ -153,5 +173,24 @@ describe('runBitwatchIngest', () => {
     expect(messageCalls[0]?.rows).toHaveLength(2)
     expect(eventCalls).toHaveLength(1)
     expect(eventCalls[0]?.rows.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('skips when another worker still holds the lease', async () => {
+    const supabase = createSupabase({
+      watermark_sent: '2026-08-23T21:59:00.000Z',
+      last_success_at: '2026-08-23T21:59:00.000Z',
+      lease_until: '2026-08-23T22:00:50.000Z',
+    })
+
+    const result = await runBitwatchIngest(supabase as never, Date.parse('2026-08-23T22:00:00.000Z'))
+
+    expect(result).toEqual({
+      ok: true,
+      skipped: true,
+      messages: 0,
+      activeEvents: 0,
+      watermark: '2026-08-23T21:59:00.000Z',
+    })
+    expect(supabase.upserts).toHaveLength(0)
   })
 })

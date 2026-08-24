@@ -163,16 +163,20 @@ async function claimIngestLease(
   // PostgREST `.or()` treats `:` in a quoted ISO timestamp as a value
   // separator, so interpolating `nowIso` never matches an expired lease.
   // `lte.now` is evaluated server-side and reclaim works after a crash.
-  const { data, error } = await supabase
+  //
+  // Do not `.select()` after this UPDATE. PostgREST re-applies the `.or()`
+  // filter to the RETURNING CTE; selecting only `id` makes Postgres look
+  // for `lease_until` on a projection that does not have it. Even selecting
+  // `lease_until` would fail the predicate because the row's new lease is
+  // in the future. Count the updated rows instead.
+  const { error, count } = await supabase
     .from('bitwatch_ingest_state')
-    .update(leaseFields as never)
+    .update(leaseFields as never, { count: 'exact' })
     .eq('id', INGEST_ID)
     .or('lease_until.is.null,lease_until.lte.now')
-    .select('id')
-    .maybeSingle()
 
   if (error) return { ok: false, skipped: false, error: error.message }
-  if (!(data as { id?: string } | null)?.id) return { ok: true, skipped: true }
+  if (count === 0) return { ok: true, skipped: true }
   return { ok: true, skipped: false }
 }
 
