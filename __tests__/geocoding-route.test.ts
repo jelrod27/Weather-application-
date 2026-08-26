@@ -36,6 +36,7 @@ jest.mock('@/lib/services/weather-rate-limiter', () => ({
 }));
 
 import { GET } from '@/app/api/weather/geocoding/route';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import { NextRequest } from 'next/server';
 
 const originalFetch = global.fetch;
@@ -62,6 +63,7 @@ describe('GET /api/weather/geocoding', () => {
     const req = new NextRequest('http://localhost/api/weather/geocoding');
     const res = await GET(req);
     expect(res.status).toBe(400);
+    expect(rateLimitRequest).toHaveBeenCalledWith(expect.anything(), 'weather');
     const body = await res.json();
     expect(body.error).toMatch(/Missing required parameter/);
   });

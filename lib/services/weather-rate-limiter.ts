@@ -1,17 +1,15 @@
 /**
  * 16-Bit Weather Platform - Weather API Rate Limiter
- * 
- * Implements per-user and per-IP rate limiting for weather API endpoints.
- * Features:
- * - Prefer Supabase user ID when authenticated
- * - Fallback to IP address from x-forwarded-for header
- * - Dual window: 120 req/hour + 30 req/5min burst
- * - Returns 429 with Retry-After header when exceeded
- * 
- * Environment variables for tuning:
- * - WEATHER_RATE_LIMIT_HOURLY: Requests per hour (default: 120)
- * - WEATHER_RATE_LIMIT_BURST: Requests per burst window (default: 30)
- * - WEATHER_RATE_LIMIT_BURST_WINDOW_MS: Burst window in ms (default: 300000 = 5 min)
+ *
+ * Per-user / per-IP dual window. Buckets are isolated so hub reads (alerts,
+ * news) and account routes cannot starve city search.
+ *
+ * Weather defaults: 400/hour + 90/5min burst — one search fans out to
+ * geocode + forecast + AQ + pollen (and often a second geocode). Env overrides
+ * still apply to the weather bucket:
+ * - WEATHER_RATE_LIMIT_HOURLY
+ * - WEATHER_RATE_LIMIT_BURST
+ * - WEATHER_RATE_LIMIT_BURST_WINDOW_MS
  */
 
 import type { NextRequest} from 'next/server';
@@ -19,18 +17,39 @@ import { NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/supabase/server';
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 
-// Helper to safely parse env integers with validation
+export type RateLimitBucket = 'weather' | 'account' | 'content';
+
+type BucketLimits = {
+  hourly: number;
+  burst: number;
+  burstWindowMs: number;
+};
+
 function parseEnvInt(value: string | undefined, defaultValue: number): number {
   if (!value) return defaultValue;
   const parsed = parseInt(value, 10);
   return isNaN(parsed) || parsed <= 0 ? defaultValue : parsed;
 }
 
-// Rate limit configuration from env vars with sensible defaults
-const HOURLY_LIMIT = parseEnvInt(process.env.WEATHER_RATE_LIMIT_HOURLY, 120);
-const BURST_LIMIT = parseEnvInt(process.env.WEATHER_RATE_LIMIT_BURST, 30);
-const BURST_WINDOW_MS = parseEnvInt(process.env.WEATHER_RATE_LIMIT_BURST_WINDOW_MS, 300000); // 5 minutes
-const HOURLY_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const HOURLY_WINDOW_MS = 60 * 60 * 1000;
+const DEFAULT_BURST_WINDOW_MS = parseEnvInt(
+  process.env.WEATHER_RATE_LIMIT_BURST_WINDOW_MS,
+  300000,
+);
+
+const BUCKET_LIMITS: Record<RateLimitBucket, BucketLimits> = {
+  weather: {
+    hourly: parseEnvInt(process.env.WEATHER_RATE_LIMIT_HOURLY, 400),
+    burst: parseEnvInt(process.env.WEATHER_RATE_LIMIT_BURST, 90),
+    burstWindowMs: DEFAULT_BURST_WINDOW_MS,
+  },
+  account: { hourly: 240, burst: 60, burstWindowMs: DEFAULT_BURST_WINDOW_MS },
+  content: { hourly: 180, burst: 40, burstWindowMs: DEFAULT_BURST_WINDOW_MS },
+};
+
+function limitsFor(bucket: RateLimitBucket = 'weather'): BucketLimits {
+  return BUCKET_LIMITS[bucket] ?? BUCKET_LIMITS.weather;
+}
 
 // In-memory rate limit stores
 interface RateLimitEntry {
@@ -57,6 +76,8 @@ export interface RateLimitResult {
   resetTime: number;
   burstRemaining: number;
   burstResetTime: number;
+  limit: number;
+  burstLimit: number;
 }
 
 /**
@@ -83,70 +104,78 @@ export async function getClientIdentifier(request: NextRequest): Promise<string>
 }
 
 /**
- * Check rate limit for a client identifier
- * Implements dual window: hourly + burst
+ * Check rate limit for a client identifier.
+ * Buckets are isolated: weather search cannot be starved by alerts/news.
  */
-export function checkRateLimit(identifier: string): RateLimitResult {
+export function checkRateLimit(
+  identifier: string,
+  bucket: RateLimitBucket = 'weather',
+): RateLimitResult {
+  const { hourly: hourlyLimit, burst: burstLimit, burstWindowMs } = limitsFor(bucket);
   const now = Date.now();
-  // An expired entry reads as a miss, so this is the "new window" branch.
-  const entry = rateLimitStore.get(identifier);
+  const storeKey = `${bucket}:${identifier}`;
+  const entry = rateLimitStore.get(storeKey);
 
   if (!entry) {
     const newEntry: RateLimitEntry = {
       count: 1,
       resetTime: now + HOURLY_WINDOW_MS,
       burstCount: 1,
-      burstResetTime: now + BURST_WINDOW_MS,
+      burstResetTime: now + burstWindowMs,
     };
-    rateLimitStore.set(identifier, newEntry);
+    rateLimitStore.set(storeKey, newEntry);
 
     return {
       allowed: true,
-      remaining: HOURLY_LIMIT - 1,
+      remaining: hourlyLimit - 1,
       resetTime: newEntry.resetTime,
-      burstRemaining: BURST_LIMIT - 1,
+      burstRemaining: burstLimit - 1,
       burstResetTime: newEntry.burstResetTime,
+      limit: hourlyLimit,
+      burstLimit,
     };
   }
 
-  // Check if burst window has reset
   if (now > entry.burstResetTime) {
     entry.burstCount = 0;
-    entry.burstResetTime = now + BURST_WINDOW_MS;
+    entry.burstResetTime = now + burstWindowMs;
   }
 
-  // Check burst limit first (more restrictive)
-  if (entry.burstCount >= BURST_LIMIT) {
+  if (entry.burstCount >= burstLimit) {
     return {
       allowed: false,
-      remaining: Math.max(0, HOURLY_LIMIT - entry.count),
+      remaining: Math.max(0, hourlyLimit - entry.count),
       resetTime: entry.resetTime,
       burstRemaining: 0,
       burstResetTime: entry.burstResetTime,
+      limit: hourlyLimit,
+      burstLimit,
     };
   }
 
-  // Check hourly limit
-  if (entry.count >= HOURLY_LIMIT) {
+  if (entry.count >= hourlyLimit) {
     return {
       allowed: false,
       remaining: 0,
       resetTime: entry.resetTime,
-      burstRemaining: Math.max(0, BURST_LIMIT - entry.burstCount),
+      burstRemaining: Math.max(0, burstLimit - entry.burstCount),
       burstResetTime: entry.burstResetTime,
+      limit: hourlyLimit,
+      burstLimit,
     };
   }
 
-  // Increment counters
   entry.count++;
   entry.burstCount++;
 
   return {
     allowed: true,
-    remaining: HOURLY_LIMIT - entry.count,
+    remaining: hourlyLimit - entry.count,
     resetTime: entry.resetTime,
-    burstRemaining: BURST_LIMIT - entry.burstCount,
+    burstRemaining: burstLimit - entry.burstCount,
     burstResetTime: entry.burstResetTime,
+    limit: hourlyLimit,
+    burstLimit,
   };
 }
 
@@ -164,19 +193,19 @@ export function createRateLimitResponse(result: RateLimitResult): NextResponse {
       code: 'RATE_LIMIT_EXCEEDED',
       message: `Rate limit exceeded. Try again in ${effectiveRetryAfter} seconds.`,
       retryAfter: effectiveRetryAfter,
-      limit: HOURLY_LIMIT,
+      limit: result.limit,
       remaining: result.remaining,
-      burstLimit: BURST_LIMIT,
+      burstLimit: result.burstLimit,
       burstRemaining: result.burstRemaining,
     },
     {
       status: 429,
       headers: {
         'Retry-After': String(effectiveRetryAfter),
-        'X-RateLimit-Limit': String(HOURLY_LIMIT),
+        'X-RateLimit-Limit': String(result.limit),
         'X-RateLimit-Remaining': String(result.remaining),
         'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
-        'X-RateLimit-Burst-Limit': String(BURST_LIMIT),
+        'X-RateLimit-Burst-Limit': String(result.burstLimit),
         'X-RateLimit-Burst-Remaining': String(result.burstRemaining),
         'X-RateLimit-Burst-Reset': String(Math.ceil(result.burstResetTime / 1000)),
         'Cache-Control': 'no-store',
@@ -189,13 +218,16 @@ export function createRateLimitResponse(result: RateLimitResult): NextResponse {
  * Main rate limiting wrapper for weather API routes
  * Usage: Call this at the start of your route handler
  */
-export async function rateLimitRequest(request: NextRequest): Promise<
+export async function rateLimitRequest(
+  request: NextRequest,
+  bucket: RateLimitBucket = 'weather',
+): Promise<
   | { allowed: true; result: RateLimitResult; headers: Record<string, string> }
   | { allowed: false; response: NextResponse }
 > {
   try {
     const identifier = await getClientIdentifier(request);
-    const result = checkRateLimit(identifier);
+    const result = checkRateLimit(identifier, bucket);
 
     if (!result.allowed) {
       return { allowed: false, response: createRateLimitResponse(result) };
@@ -205,28 +237,28 @@ export async function rateLimitRequest(request: NextRequest): Promise<
       allowed: true,
       result,
       headers: {
-        'X-RateLimit-Limit': String(HOURLY_LIMIT),
+        'X-RateLimit-Limit': String(result.limit),
         'X-RateLimit-Remaining': String(result.remaining),
         'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
-        'X-RateLimit-Burst-Limit': String(BURST_LIMIT),
+        'X-RateLimit-Burst-Limit': String(result.burstLimit),
         'X-RateLimit-Burst-Remaining': String(result.burstRemaining),
         'X-RateLimit-Burst-Reset': String(Math.ceil(result.burstResetTime / 1000)),
       },
     };
   } catch (error) {
-    // Fail open: a limiter malfunction must never take a weather route down.
-    // Some routes call this gate before entering their try/catch, so an
-    // exception here would escape JSON error handling entirely.
     console.error('[weather-rate-limiter] Limiter failure, failing open:', error);
     const now = Date.now();
+    const { hourly: hourlyLimit, burst: burstLimit, burstWindowMs } = limitsFor(bucket);
     return {
       allowed: true,
       result: {
         allowed: true,
-        remaining: HOURLY_LIMIT,
+        remaining: hourlyLimit,
         resetTime: now + HOURLY_WINDOW_MS,
-        burstRemaining: BURST_LIMIT,
-        burstResetTime: now + BURST_WINDOW_MS,
+        burstRemaining: burstLimit,
+        burstResetTime: now + burstWindowMs,
+        limit: hourlyLimit,
+        burstLimit,
       },
       headers: {},
     };
@@ -239,34 +271,41 @@ export async function rateLimitRequest(request: NextRequest): Promise<
  */
 async function getRateLimitStatus(request: NextRequest): Promise<RateLimitResult> {
   const identifier = await getClientIdentifier(request);
+  const { hourly: hourlyLimit, burst: burstLimit, burstWindowMs } = limitsFor('weather');
   const now = Date.now();
-  const entry = rateLimitStore.get(identifier);
+  const entry = rateLimitStore.get(`weather:${identifier}`);
 
   if (!entry) {
     return {
       allowed: true,
-      remaining: HOURLY_LIMIT,
+      remaining: hourlyLimit,
       resetTime: now + HOURLY_WINDOW_MS,
-      burstRemaining: BURST_LIMIT,
-      burstResetTime: now + BURST_WINDOW_MS,
+      burstRemaining: burstLimit,
+      burstResetTime: now + burstWindowMs,
+      limit: hourlyLimit,
+      burstLimit,
     };
   }
 
   if (now > entry.burstResetTime) {
     return {
       allowed: true,
-      remaining: HOURLY_LIMIT - entry.count,
+      remaining: hourlyLimit - entry.count,
       resetTime: entry.resetTime,
-      burstRemaining: BURST_LIMIT,
-      burstResetTime: now + BURST_WINDOW_MS,
+      burstRemaining: burstLimit,
+      burstResetTime: now + burstWindowMs,
+      limit: hourlyLimit,
+      burstLimit,
     };
   }
 
   return {
-    allowed: entry.count < HOURLY_LIMIT && entry.burstCount < BURST_LIMIT,
-    remaining: Math.max(0, HOURLY_LIMIT - entry.count),
+    allowed: entry.count < hourlyLimit && entry.burstCount < burstLimit,
+    remaining: Math.max(0, hourlyLimit - entry.count),
     resetTime: entry.resetTime,
-    burstRemaining: Math.max(0, BURST_LIMIT - entry.burstCount),
+    burstRemaining: Math.max(0, burstLimit - entry.burstCount),
     burstResetTime: entry.burstResetTime,
+    limit: hourlyLimit,
+    burstLimit,
   };
 }
