@@ -118,6 +118,10 @@ const envConfig: EnvConfig = {
       name: 'BITWATCH_MANAGE_SECRET',
       description: 'HMAC secret for stable guest manage/unsubscribe links (optional - falls back to the Supabase service role key).',
     },
+    GOOGLE_POLLEN_API_KEY: {
+      name: 'GOOGLE_POLLEN_API_KEY',
+      description: 'Google Pollen API key (optional - required for US pollen; Open-Meteo CAMS is Europe-only).',
+    },
   },
 };
 

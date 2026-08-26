@@ -21,12 +21,32 @@ const unavailableBody = {
   source: 'unavailable' as const,
 };
 
+function readGooglePollenApiKey(): string | undefined {
+  // Bracket lookup so Vercel Sensitive/Secret values are read at runtime
+  // instead of being inlined as undefined at build time.
+  const value = process.env['GOOGLE_POLLEN_API_KEY']?.trim();
+  return value || undefined;
+}
+
+function pollenHeaders(
+  rateLimitHeaders: Record<string, string>,
+  googleStatus: string,
+  cacheControl?: string,
+): Record<string, string> {
+  return {
+    ...rateLimitHeaders,
+    'X-Pollen-Google': googleStatus,
+    ...(cacheControl ? { 'Cache-Control': cacheControl } : {}),
+  };
+}
+
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
     try {
       const searchParams = request.nextUrl.searchParams;
       const lat = searchParams.get('lat');
       const lon = searchParams.get('lon');
+      let googleStatus = 'missing';
 
       if (!lat || !lon) {
         return NextResponse.json(
@@ -52,7 +72,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const googlePollenApiKey = process.env.GOOGLE_POLLEN_API_KEY;
+      const googlePollenApiKey = readGooglePollenApiKey();
 
       if (googlePollenApiKey) {
         try {
@@ -61,8 +81,15 @@ export async function GET(request: NextRequest) {
             `&location.latitude=${latitude}&location.longitude=${longitude}&days=1`;
 
           const response = await fetchWithTimeout(googlePollenUrl, { signal: request.signal });
+          googleStatus = String(response.status);
 
-          if (response.ok) {
+          if (!response.ok) {
+            logRouteError('pollen', new Error('Google Pollen request failed'), {
+              upstream: 'pollen.googleapis.com',
+              googleStatus: response.status,
+            });
+            await response.body?.cancel?.().catch(() => {});
+          } else {
             const data = await response.json();
             const dailyInfo = data.dailyInfo?.[0];
 
@@ -164,10 +191,11 @@ export async function GET(request: NextRequest) {
                     source: 'google',
                   },
                   {
-                    headers: {
-                      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
-                      ...rateLimitHeaders,
-                    },
+                    headers: pollenHeaders(
+                      rateLimitHeaders,
+                      googleStatus,
+                      'public, s-maxage=3600, stale-while-revalidate=600',
+                    ),
                   },
                 );
               }
@@ -199,10 +227,11 @@ export async function GET(request: NextRequest) {
               source: mapped.source,
             },
             {
-              headers: {
-                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
-                ...rateLimitHeaders,
-              },
+              headers: pollenHeaders(
+                rateLimitHeaders,
+                googleStatus,
+                'public, s-maxage=3600, stale-while-revalidate=600',
+              ),
             },
           );
         }
@@ -214,17 +243,18 @@ export async function GET(request: NextRequest) {
             source: mapped.source,
           },
           {
-            headers: {
-              'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
-              ...rateLimitHeaders,
-            },
+            headers: pollenHeaders(
+              rateLimitHeaders,
+              googleStatus,
+              'public, s-maxage=3600, stale-while-revalidate=600',
+            ),
           },
         );
       } catch (error) {
         logRouteError('pollen', error);
         return NextResponse.json(unavailableBody, {
           status: 200,
-          headers: rateLimitHeaders,
+          headers: pollenHeaders(rateLimitHeaders, googleStatus),
         });
       }
     } catch (error) {
