@@ -123,6 +123,7 @@ describe('GET /api/stargazer — validation and upstream failures', () => {
   it('returns 400 when lat and lon are both missing', async () => {
     const res = await GET(makeRequest({}));
     expect(res.status).toBe(400);
+    expect(mockRateLimit).toHaveBeenCalledWith(expect.anything(), 'content');
     const body = await res.json();
     expect(body.error).toBe('lat and lon query parameters are required');
   });

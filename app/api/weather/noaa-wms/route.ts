@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         },
       })
     }
-  })
+  }, { rateLimit: false })
 }
 
 // Handle OPTIONS requests for CORS preflight
