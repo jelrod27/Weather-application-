@@ -7,9 +7,11 @@
  * Fetches Solar Flare data from NASA DONKI
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 interface NasaFlare {
   flrID: string;
@@ -58,7 +60,8 @@ function getSeverity(classLetter: string): number {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     // NASA DONKI API - free, no auth required for basic access
     // Get flares from last 7 days
@@ -72,7 +75,7 @@ export async function GET() {
     if (!apiKey) {
       return NextResponse.json(
         { error: 'NASA API key not configured', events: [], summary: { total: 0, byClass: { X: 0, M: 0, C: 0, B: 0 }, strongestFlare: 'None', withCME: 0 }, updatedAt: new Date().toISOString() },
-        { status: 503 }
+        { status: 503, headers: rateLimitHeaders }
       );
     }
     // NASA DONKI requires the key as a query param (no header auth). Keep the
@@ -139,7 +142,7 @@ export async function GET() {
       events: flareEvents.slice(0, 30), // Limit to most recent 30
       summary,
       updatedAt: new Date().toISOString(),
-    });
+    }, { headers: rateLimitHeaders });
   } catch (error) {
     logRouteError('flares', error);
 
@@ -156,4 +159,5 @@ export async function GET() {
       error: 'Failed to fetch flare data from NASA DONKI',
     }, { status: 500 });
   }
+  }, { context: 'flares' });
 }

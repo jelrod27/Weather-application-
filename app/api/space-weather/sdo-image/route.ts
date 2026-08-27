@@ -15,6 +15,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { withApiRoute } from '@/lib/api/with-api-route';
 
 export const runtime = 'edge';
 
@@ -87,13 +88,14 @@ function getContentType(response: Response, url: string): string {
  * since SUVI images come in a single resolution.
  */
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   const searchParams = request.nextUrl.searchParams;
   const wavelength = searchParams.get('wavelength');
 
   if (!wavelength || !WAVELENGTH_CONFIG[wavelength]) {
     return NextResponse.json(
       { error: `Invalid wavelength. Must be one of: ${Object.keys(WAVELENGTH_CONFIG).join(', ')}` },
-      { status: 400 }
+      { status: 400, headers: rateLimitHeaders }
     );
   }
 
@@ -117,6 +119,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': getContentType(response, url),
           'Cache-Control': 'public, max-age=300',
           'X-Source': upstreamHost === 'services.swpc.noaa.gov' ? 'NOAA SWPC SUVI' : 'NASA SDO',
+          ...rateLimitHeaders,
         },
       });
     } catch (error) {
@@ -129,6 +132,7 @@ export async function GET(request: NextRequest) {
   console.error(`[sdo-image] All sources failed for wavelength=${wavelength}`);
   return NextResponse.json(
     { error: 'Unable to reach solar imagery servers' },
-    { status: 502 }
+    { status: 502, headers: rateLimitHeaders }
   );
+  }, { context: 'sdo-image' });
 }

@@ -6,6 +6,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { fetchRtswFeeds } from '@/lib/services/swpc-solar-wind'
 import { SPACE_WEATHER_CACHE } from '@/lib/space-weather/series-route'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface PlasmaEntry {
   time: string
@@ -44,6 +45,7 @@ type MagRow = {
 }
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { searchParams } = request.nextUrl
     const rangeParam = searchParams.get('range')
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
     if (!Object.prototype.hasOwnProperty.call(RANGE_MS, range)) {
       return NextResponse.json(
         { error: 'Invalid range. Use one of: 30m, 1h, 2h, 6h, 24h, 7d' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       )
     }
     const rangeMs = RANGE_MS[range]!
@@ -120,7 +122,7 @@ export async function GET(request: NextRequest) {
     if (series.length === 0) {
       return NextResponse.json(
         { error: 'Unable to build plasma series from RTSW feeds', range },
-        { status: 502 },
+        { status: 502, headers: rateLimitHeaders },
       )
     }
 
@@ -134,6 +136,7 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           'Cache-Control': SPACE_WEATHER_CACHE.realtime,
+          ...rateLimitHeaders,
         },
       },
     )
@@ -145,4 +148,5 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     )
   }
+  }, { context: 'Plasma' })
 }
