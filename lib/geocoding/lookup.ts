@@ -46,6 +46,7 @@ interface NominatimResult {
   lat: string
   lon: string
   display_name?: string
+  extratags?: { population?: string }
   address?: {
     city?: string
     town?: string
@@ -217,4 +218,52 @@ export async function reverseGeocodingLookup(
   const data = (await res.json()) as NominatimResult
   const mapped = mapNominatimResult(data)
   return mapped ? [mapped] : []
+}
+
+export type StargazerPlace = {
+  locationName?: string
+  displayName?: string
+  population?: number
+}
+
+/**
+ * Reverse geocode for Stargazer: zoom 10 + extratags so Bortle can use population.
+ * Best-effort — never throws.
+ */
+export async function reverseGeocodingForStargazer(
+  lat: number,
+  lon: number,
+): Promise<StargazerPlace | null> {
+  try {
+    const url = `${NOMINATIM}/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&extratags=1`
+    const res = await fetchWithTimeout(url, {
+      next: { revalidate: 86400 },
+      headers: { 'User-Agent': USER_AGENT },
+    })
+    if (!res.ok) return null
+
+    const geoData = (await res.json()) as NominatimResult
+    if (!geoData?.address) return null
+
+    const addr = geoData.address
+    const locationName = addr.city || addr.town || addr.village || addr.hamlet
+    const state = addr.state
+    const country = addr.country_code?.toUpperCase()
+    const displayName = locationName && state
+      ? `${locationName}, ${state}`
+      : locationName && country
+        ? `${locationName}, ${country}`
+        : locationName
+
+    let population: number | undefined
+    const popStr = geoData.extratags?.population
+    if (popStr) {
+      const parsed = parseInt(popStr, 10)
+      if (!Number.isNaN(parsed)) population = parsed
+    }
+
+    return { locationName, displayName, population }
+  } catch {
+    return null
+  }
 }
