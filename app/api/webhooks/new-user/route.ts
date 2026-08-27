@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { notifyNewRegistration } from '@/lib/services/admin-notify-service'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -75,6 +76,7 @@ export function parseProfileInsertPayload(body: unknown): ProfileWebhookParseRes
 }
 
 export async function POST(request: NextRequest) {
+  return withApiRoute(request, async () => {
   const webhookSecret = process.env.SUPABASE_WEBHOOK_SECRET
   if (!webhookSecret) {
     console.error('[webhooks/new-user] SUPABASE_WEBHOOK_SECRET not configured')
@@ -117,4 +119,5 @@ export async function POST(request: NextRequest) {
     logRouteError('webhooks/new-user', error)
     return NextResponse.json({ error: 'Failed to send notifications' }, { status: 500 })
   }
+  }, { rateLimit: false, context: 'webhooks/new-user' })
 }
