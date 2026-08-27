@@ -22,6 +22,7 @@ import {
 } from '@/lib/pollen/open-meteo-pollen';
 import { normalizePollenCategories } from '@/lib/pollen/normalize-pollen-categories';
 import { isServerRuntime } from '@/lib/runtime-env';
+import { getAQIDescription } from '@/lib/air-quality-utils';
 import { getWMODescription, getWMOCondition } from '../wmo-codes';
 import {
   formatPressureByRegion,
@@ -60,15 +61,6 @@ function wmoCodeToConditionLabel(code: number): string {
     case 'snowy': return 'Snow';
     default: return 'Clear';
   }
-}
-
-function getAQICategory(aqi: number): string {
-  if (aqi <= 50) return 'Good';
-  if (aqi <= 100) return 'Moderate';
-  if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
-  if (aqi <= 200) return 'Unhealthy';
-  if (aqi <= 300) return 'Very Unhealthy';
-  return 'Hazardous';
 }
 
 function formatISOTimeToDisplay(isoString: string): string {
@@ -237,7 +229,7 @@ export async function buildWeatherDataFromOpenMeteo(
 
   const uvIndex = Math.round(current?.uv_index ?? 0);
   const aqi = airQuality?.current?.us_aqi ?? 0;
-  const aqiCategory = getAQICategory(aqi);
+  const aqiCategory = getAQIDescription(aqi);
   const moonPhase = calculateMoonPhase();
 
   // Build 7-day forecast
