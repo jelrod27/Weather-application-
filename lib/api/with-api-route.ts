@@ -36,7 +36,8 @@ export interface ApiRouteOptions {
   rateLimit?: boolean
   /**
    * Isolated quota. Default `weather`. Use `account` for user alerts/prefs,
-   * `content` for news, so those reads cannot 429 city search.
+   * `content` for news, `tiles` for radar/GFS image proxies, so those reads
+   * cannot 429 city search.
    */
   rateLimitBucket?: RateLimitBucket
   /** Body message when the handler throws. Default 'Internal server error'. */

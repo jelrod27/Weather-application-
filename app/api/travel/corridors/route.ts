@@ -20,6 +20,7 @@ import {
 } from '@/lib/services/travel-corridor-service';
 import interstateData from '@/public/data/us-interstates.json';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 interface InterstateCorridorData {
   name: string;
@@ -28,10 +29,11 @@ interface InterstateCorridorData {
 }
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const dayParam = request.nextUrl.searchParams.get('day') ?? '0';
     if (!/^[012]$/.test(dayParam)) {
-      return NextResponse.json({ error: 'day must be 0, 1, or 2' }, { status: 400 });
+      return NextResponse.json({ error: 'day must be 0, 1, or 2' }, { status: 400, headers: rateLimitHeaders });
     }
     const forecastDay = Number(dayParam);
 
@@ -102,7 +104,8 @@ export async function GET(request: NextRequest) {
       fetchedAt: new Date().toISOString(),
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=600',
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=600',
+          ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -112,4 +115,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  }, { context: 'Travel Corridors API' });
 }

@@ -19,6 +19,7 @@ import { loadCanonicalActiveAlerts } from '@/lib/bitwatch/ingest'
 import { isSevereMonitorAlert } from '@/lib/services/severe-alert-filter'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 function parsePoint(raw: string | null): { lat: number; lon: number } | null {
@@ -55,6 +56,7 @@ async function loadDetails(input: {
 }
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const url = request.nextUrl
     const area = url.searchParams.get('area') ?? undefined
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
     if (pointParam != null && pointParam.trim() !== '' && !point) {
       return NextResponse.json(
         { error: 'Invalid point parameter; use lat,lon in decimal degrees (WGS84).' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       )
     }
 
@@ -105,23 +107,24 @@ export async function GET(request: NextRequest) {
         maxInstructionChars: maxChars,
       })
       return NextResponse.json(fc, {
-        headers: { 'Cache-Control': cacheControl },
+        headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders },
       })
     }
 
     if (detail) {
       return NextResponse.json(
         { alerts: details, wis: wisMerged, total: details.length, freshness },
-        { headers: { 'Cache-Control': cacheControl } },
+        { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
       )
     }
 
     return NextResponse.json(
       { alerts: summaries, wis: wisMerged, total: summaries.length, freshness },
-      { headers: { 'Cache-Control': cacheControl } },
+      { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
     )
   } catch (error) {
     logRouteError('Alerts API', error)
     return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 })
   }
+  }, { context: 'Alerts API' })
 }

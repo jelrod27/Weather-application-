@@ -50,6 +50,7 @@ import {
 import { resolveGeocodingQuery } from '@/lib/geocoding/lookup'
 import interstateData from '@/public/data/us-interstates.json'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 /** SIGMETs within this radius of the flight midpoint count as en-route hazards. */
 const ENROUTE_HAZARD_RADIUS_KM = 500
@@ -439,6 +440,7 @@ async function handleFlyMode(
 }
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const sp = request.nextUrl.searchParams;
     const origin = sp.get('origin');
@@ -449,21 +451,21 @@ export async function GET(request: NextRequest) {
     if (!origin || !destination) {
       return NextResponse.json(
         { error: 'Missing required parameters: origin and destination' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       );
     }
 
     if (mode !== 'fly' && mode !== 'drive') {
       return NextResponse.json(
         { error: 'mode must be "fly" or "drive"' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       );
     }
 
     if (!/^[012]$/.test(dayParam)) {
       return NextResponse.json(
         { error: 'day must be 0, 1, or 2' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       );
     }
     const forecastDay = Number(dayParam);
@@ -476,7 +478,7 @@ export async function GET(request: NextRequest) {
     if (!resolvedOrigin || !resolvedDest) {
       return NextResponse.json(
         { error: 'Could not resolve origin/destination' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       )
     }
 
@@ -491,4 +493,5 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     );
   }
+  }, { context: 'trip-score' });
 }

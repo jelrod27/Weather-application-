@@ -10,8 +10,10 @@ import {
   formatStormReportValidationErrors,
 } from '@/lib/validations/storm-report'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const supabase = await createServerSupabaseClient()
     const { data, error } = await supabase
@@ -34,6 +36,7 @@ export async function GET() {
       {
         headers: {
           'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=60',
+          ...rateLimitHeaders,
         },
       }
     )
@@ -41,9 +44,11 @@ export async function GET() {
     logRouteError('storm-reports GET', e)
     return NextResponse.json({ error: 'Failed to load reports' }, { status: 500 })
   }
+  }, { context: 'storm-reports GET' })
 }
 
 export async function POST(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const supabase = await createServerSupabaseClient()
     const {
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: rateLimitHeaders })
     }
 
     let body: unknown
@@ -107,4 +112,5 @@ export async function POST(request: NextRequest) {
     logRouteError('storm-reports POST', e)
     return NextResponse.json({ error: 'Failed to save report' }, { status: 500 })
   }
+  }, { rateLimitBucket: 'account', context: 'storm-reports POST' })
 }

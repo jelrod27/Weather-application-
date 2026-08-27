@@ -2,7 +2,7 @@
  * 16-Bit Weather Platform - Weather API Rate Limiter
  *
  * Per-user / per-IP dual window. Buckets are isolated so hub reads (alerts,
- * news) and account routes cannot starve city search.
+ * news), account routes, and radar tiles cannot starve city search.
  *
  * Weather defaults: 400/hour + 90/5min burst — one search fans out to
  * geocode + forecast + AQ + pollen (and often a second geocode). Env overrides
@@ -17,7 +17,7 @@ import { NextResponse } from 'next/server';
 import { getServerUser } from '@/lib/supabase/server';
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 
-export type RateLimitBucket = 'weather' | 'account' | 'content';
+export type RateLimitBucket = 'weather' | 'account' | 'content' | 'tiles';
 
 type BucketLimits = {
   hourly: number;
@@ -45,6 +45,9 @@ const BUCKET_LIMITS: Record<RateLimitBucket, BucketLimits> = {
   },
   account: { hourly: 240, burst: 60, burstWindowMs: DEFAULT_BURST_WINDOW_MS },
   content: { hourly: 180, burst: 40, burstWindowMs: DEFAULT_BURST_WINDOW_MS },
+  // One radar pan + animation can request hundreds of tiles. Isolated so this
+  // traffic cannot 429 geocode / forecast on the weather bucket.
+  tiles: { hourly: 6000, burst: 1200, burstWindowMs: DEFAULT_BURST_WINDOW_MS },
 };
 
 function limitsFor(bucket: RateLimitBucket = 'weather'): BucketLimits {

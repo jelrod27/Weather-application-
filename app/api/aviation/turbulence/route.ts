@@ -15,6 +15,7 @@ import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export type TurbulenceSeverity =
   | 'smooth'
@@ -158,7 +159,8 @@ function parseGairmetFeatures(raw: unknown): TurbulencePolygon[] {
   return polygons;
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const res = await fetchWithTimeout(AWC_GAIRMET_URL, {
       timeoutMs: FETCH_TIMEOUT_MS,
@@ -178,7 +180,7 @@ export async function GET(_request: NextRequest) {
           },
           error: `Upstream NOAA AWC returned ${res.status}`,
         },
-        { status: 502 },
+        { status: 502, headers: rateLimitHeaders },
       );
     }
 
@@ -197,7 +199,8 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+          ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -216,4 +219,5 @@ export async function GET(_request: NextRequest) {
       { status: 500 },
     );
   }
+  }, { context: 'aviation-turbulence' });
 }

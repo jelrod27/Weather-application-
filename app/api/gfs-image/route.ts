@@ -11,6 +11,7 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export const runtime = 'edge';
 
@@ -21,6 +22,7 @@ export const runtime = 'edge';
  * This proxy is necessary because NOAA blocks direct browser access to /data/gfs/ directory.
  */
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   const searchParams = request.nextUrl.searchParams;
   const run = searchParams.get('run'); // e.g., "18z"
   const region = searchParams.get('region'); // e.g., "us", "wus", "eus", "tropatl", "epac"
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (!run || !region) {
     return NextResponse.json(
       { error: 'Missing required parameters: run and region' },
-      { status: 400 }
+      { status: 400, headers: rateLimitHeaders }
     );
   }
 
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
   if (!validRuns.includes(run)) {
     return NextResponse.json(
       { error: 'Invalid run. Must be one of: 00z, 06z, 12z, 18z' },
-      { status: 400 }
+      { status: 400, headers: rateLimitHeaders }
     );
   }
 
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
   if (!validRegions.includes(region)) {
     return NextResponse.json(
       { error: `Invalid region. Must be one of: ${validRegions.join(', ')}` },
-      { status: 400 }
+      { status: 400, headers: rateLimitHeaders }
     );
   }
 
@@ -84,6 +86,7 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'image/gif',
         'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=600',
         'X-Source': 'NOAA GFS',
+        ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -93,4 +96,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  }, { rateLimitBucket: 'tiles', context: 'gfs-image' });
 }
