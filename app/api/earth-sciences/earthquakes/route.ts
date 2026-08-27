@@ -13,6 +13,7 @@ import {
   type EarthquakeData,
 } from '@/lib/services/usgs-earthquake';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface EarthquakesApiResponse {
   earthquakes: Array<
@@ -27,6 +28,7 @@ export interface EarthquakesApiResponse {
 const ALLOWED_MIN_MAGS = new Set([0, 2.5, 4.5, 6]);
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   const { searchParams } = request.nextUrl;
 
   const rawMin = parseFloat(searchParams.get('minMagnitude') ?? '2.5');
@@ -55,7 +57,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(body, {
       headers: {
         // USGS data moves on the order of minutes; mirror the 5-min service cache
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+          ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -69,4 +72,5 @@ export async function GET(request: NextRequest) {
     };
     return NextResponse.json(body, { status: 500 });
   }
+  }, { context: 'Earth Sciences API' });
 }

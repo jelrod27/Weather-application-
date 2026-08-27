@@ -8,6 +8,7 @@ import {
 } from '@/lib/services/spc-outlook-service';
 import { getHighestSpcRiskAtPoint } from '@/lib/geo/spc-point-risk';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 const VALID_TYPES = new Set(['cat', 'torn', 'hail', 'wind']);
 
@@ -48,6 +49,7 @@ export function filterEmptyGeometries(geojson: SPCOutlookGeoJSON) {
 }
 
 export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const dayParam = request.nextUrl.searchParams.get('day') ?? '1';
     const typeParam = request.nextUrl.searchParams.get('type') ?? 'cat';
@@ -56,17 +58,17 @@ export async function GET(request: NextRequest) {
     if (pointParam != null && pointParam.trim() !== '' && !point) {
       return NextResponse.json(
         { error: 'Invalid point parameter; use lat,lon in decimal degrees (WGS84).' },
-        { status: 400 },
+        { status: 400, headers: rateLimitHeaders },
       );
     }
 
     if (!/^[123]$/.test(dayParam)) {
-      return NextResponse.json({ error: 'day must be 1, 2, or 3' }, { status: 400 });
+      return NextResponse.json({ error: 'day must be 1, 2, or 3' }, { status: 400, headers: rateLimitHeaders });
     }
     const day = Number(dayParam) as SPCOutlookDay;
 
     if (!VALID_TYPES.has(typeParam)) {
-      return NextResponse.json({ error: 'type must be cat, torn, hail, or wind' }, { status: 400 });
+      return NextResponse.json({ error: 'type must be cat, torn, hail, or wind' }, { status: 400, headers: rateLimitHeaders });
     }
 
     const rawGeojson = await fetchSPCOutlook(day, typeParam as SPCOutlookType);
@@ -76,6 +78,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ...geojson, noRiskLabel, pointRisk }, {
       headers: {
         'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=300',
+        ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -85,4 +88,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  }, { context: 'SPC Outlook API' });
 }

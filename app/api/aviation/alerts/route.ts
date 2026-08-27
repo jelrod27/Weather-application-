@@ -12,13 +12,16 @@
  * un-hardened mapSeverity that threw on non-string NOAA values.
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchAviationAlertsFromNOAA } from '@/lib/services/aviation-noaa-service';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 const SOURCE = 'NOAA Aviation Weather Center';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const alerts = await fetchAviationAlertsFromNOAA();
     return NextResponse.json(
@@ -31,6 +34,7 @@ export async function GET() {
       {
         headers: {
           'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+          ...rateLimitHeaders,
         },
       },
     );
@@ -52,4 +56,5 @@ export async function GET() {
       { status: 500 }
     );
   }
+  }, { context: 'aviation-alerts' });
 }

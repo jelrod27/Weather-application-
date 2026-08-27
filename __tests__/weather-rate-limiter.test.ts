@@ -108,7 +108,7 @@ describe('Weather Rate Limiter', () => {
       expect(result.burstRemaining).toBe(0);
     });
 
-    it('keeps account and content buckets independent of weather burst', () => {
+    it('keeps account, content, and tiles buckets independent of weather burst', () => {
       const clientId = 'bucket-isolation';
 
       for (let i = 0; i < 90; i++) {
@@ -117,6 +117,22 @@ describe('Weather Rate Limiter', () => {
       expect(checkRateLimit(clientId, 'weather').allowed).toBe(false);
       expect(checkRateLimit(clientId, 'account').allowed).toBe(true);
       expect(checkRateLimit(clientId, 'content').allowed).toBe(true);
+      expect(checkRateLimit(clientId, 'tiles').allowed).toBe(true);
+    });
+
+    it('does not 429 weather after a tiles flood', () => {
+      const clientId = 'tiles-isolation';
+
+      const first = checkRateLimit(clientId, 'tiles');
+      expect(first.allowed).toBe(true);
+      expect(first.remaining).toBe(5999);
+      expect(first.burstRemaining).toBe(1199);
+
+      for (let i = 0; i < 1199; i++) {
+        expect(checkRateLimit(clientId, 'tiles').allowed).toBe(true);
+      }
+      expect(checkRateLimit(clientId, 'tiles').allowed).toBe(false);
+      expect(checkRateLimit(clientId, 'weather').allowed).toBe(true);
     });
 
     it('allows three city-search weather fan-outs without hitting burst', () => {

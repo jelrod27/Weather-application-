@@ -8,6 +8,14 @@
  */
 
 jest.mock('next/server', () => ({
+  NextRequest: class MockNextRequest {
+    url: string
+    nextUrl: { pathname: string; searchParams: URLSearchParams }
+    constructor(url: string) {
+      this.url = url
+      this.nextUrl = { pathname: new URL(url).pathname, searchParams: new URL(url).searchParams }
+    }
+  },
   NextResponse: {
     json: jest.fn((body: unknown, init?: { status?: number; headers?: Record<string, string> }) => ({
       status: init?.status || 200,
@@ -17,12 +25,20 @@ jest.mock('next/server', () => ({
   },
 }));
 
+jest.mock('@/lib/services/weather-rate-limiter', () => ({
+  rateLimitRequest: jest.fn().mockResolvedValue({
+    allowed: true,
+    headers: {},
+  }),
+}));
+
 jest.mock('@/lib/services/aviation-noaa-service', () => ({
   fetchAviationAlertsFromNOAA: jest.fn(),
 }));
 
 import { GET } from '@/app/api/aviation/alerts/route';
 import { fetchAviationAlertsFromNOAA } from '@/lib/services/aviation-noaa-service';
+import { NextRequest } from 'next/server';
 
 const mockFetchAlerts = fetchAviationAlertsFromNOAA as jest.MockedFunction<
   typeof fetchAviationAlertsFromNOAA
@@ -48,7 +64,7 @@ describe('GET /api/aviation/alerts', () => {
       },
     ]);
 
-    const res = await GET();
+    const res = await GET(new NextRequest('http://localhost/api/aviation/alerts'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.source).toBe('NOAA Aviation Weather Center');
@@ -61,7 +77,7 @@ describe('GET /api/aviation/alerts', () => {
   it('degrades to an empty list with an error field if the service throws', async () => {
     mockFetchAlerts.mockRejectedValueOnce(new Error('NOAA exploded'));
 
-    const res = await GET();
+    const res = await GET(new NextRequest('http://localhost/api/aviation/alerts'));
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.alerts).toEqual([]);

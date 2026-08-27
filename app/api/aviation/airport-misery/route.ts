@@ -13,6 +13,7 @@
  * failed on Vercel when NEXT_PUBLIC_BASE_URL was misconfigured to localhost).
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
   MAJOR_US_AIRPORTS,
@@ -30,6 +31,7 @@ import {
 } from '@/lib/services/aviation-noaa-service';
 import type { MetarObservation } from '@/lib/aviation/metar'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface AirportMiseryRow {
   airport: MajorAirport;
@@ -142,7 +144,8 @@ function buildRow(
   };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const icaos = MAJOR_US_AIRPORTS.map((a) => a.icao);
 
@@ -162,7 +165,8 @@ export async function GET() {
 
     return NextResponse.json(payload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+          ...rateLimitHeaders,
       },
     });
   } catch (error) {
@@ -172,4 +176,5 @@ export async function GET() {
       { status: 500 },
     );
   }
+  }, { context: 'airport-misery' });
 }
