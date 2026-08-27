@@ -4,7 +4,7 @@
 
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { pickCategoryStockImage, resolveNhcOutlookImage, resolveNwsAlertImage } from '@/lib/news/stock-images';
-import type { RSSItem } from './rssAggregator';
+import type { RSSItem } from './parse-feed';
 import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
