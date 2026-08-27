@@ -13,8 +13,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Download, ExternalLink, Info, RefreshCw } from 'lucide-react';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { cn } from '@/lib/utils';
 
 interface PageProps {
@@ -47,8 +46,7 @@ const REGION_DESCRIPTIONS: Record<string, string> = {
 export default function GFSModelPage({ params }: PageProps) {
   const resolvedParams = React.use(params);
   const { region, run } = resolvedParams;
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const themeClasses = themeTokens.card;
 
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);

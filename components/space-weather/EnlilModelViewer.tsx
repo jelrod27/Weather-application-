@@ -21,8 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -51,8 +50,7 @@ const SPEED_OPTIONS: PlaybackSpeed[] = [0.5, 1, 2, 4];
 const BASE_INTERVAL_MS = 500;
 
 export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const [frames, setFrames] = useState<EnlilFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);

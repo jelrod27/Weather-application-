@@ -12,15 +12,13 @@
 import React from 'react';
 import { Cloud, Zap, BookOpen, BookMarked, Satellite } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
 import LearningCard from '@/components/learn/LearningCard';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function LearnPage() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const learningTopics = [
     {

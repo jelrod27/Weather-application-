@@ -7,8 +7,7 @@ import { Eye, EyeOff, Mail, Lock, Globe, Code, ChevronDown, ChevronUp } from 'lu
 import { signIn, signUp, signInWithProvider, signInWithMagicLink } from '@/lib/supabase/auth'
 import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,9 +40,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const router = useRouter()
-  const { theme } = useTheme()
-
-  const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
+  const themeClasses = themeTokens.auth
 
   const validatedNext = next ? validateRedirectPath(next) : undefined
 

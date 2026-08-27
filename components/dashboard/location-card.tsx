@@ -8,9 +8,8 @@ import { MapPin, Star, Trash2, RefreshCw, Thermometer, Droplets, Wind, Eye, Sun 
 import type { SavedLocation, UserPreferences } from '@/lib/supabase/types'
 import { toggleLocationFavorite, deleteSavedLocation, getUserPreferences } from '@/lib/supabase/database'
 import { getDashboardWeather, getWeatherIcon, getTemperatureColor } from '@/lib/dashboard-weather'
-import { useTheme } from '@/components/theme-provider'
 import { useAuth } from '@/lib/auth'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 interface LocationCardProps {
   location: SavedLocation
@@ -68,9 +67,8 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   const [detailedLoading, setDetailedLoading] = useState(false)
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
   const detailRequestKeyRef = useRef<string>('')
-  const { theme } = useTheme()
   const { user } = useAuth()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
+  const themeClasses = themeTokens.dashboard
 
   const tempUnit = tempUnitLabel(preferences?.temperature_unit)
   const windUnit = windUnitLabel(preferences?.wind_unit)

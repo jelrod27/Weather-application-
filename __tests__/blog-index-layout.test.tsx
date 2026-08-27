@@ -10,18 +10,6 @@ jest.mock('next/link', () => {
   }
 })
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'retro' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    accentText: 'text-accent',
-    glow: 'glow',
-    text: 'text-base',
-  }),
-}))
-
 jest.mock('@/components/page-wrapper', () => {
   return function MockPageWrapper({ children }: { children: React.ReactNode }) {
     return <div data-testid="page-wrapper">{children}</div>

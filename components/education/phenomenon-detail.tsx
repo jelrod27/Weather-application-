@@ -9,16 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { WeatherPhenomena } from '@/data/fun-facts'
 import { getEducationDetailHref } from '@/lib/education/entries'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 interface PhenomenonDetailProps {
   phenomenon: WeatherPhenomena
 }
 
 export default function PhenomenonDetail({ phenomenon }: PhenomenonDetailProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
   const url = `https://www.16bitweather.co${getEducationDetailHref('phenomenon', phenomenon.id)}`
 
   return (

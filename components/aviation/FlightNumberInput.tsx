@@ -14,8 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { Search, Plane, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { useDemoMode } from '@/hooks/useDemoMode';
 
 // Flight data interface matching the API response
@@ -58,8 +57,7 @@ export default function FlightNumberInput({
   onError,
   className,
 }: FlightNumberInputProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [demoMode, setDemoMode] = useDemoMode();
 
   const [flightNumber, setFlightNumber] = useState('');

@@ -7,8 +7,7 @@ import Navigation from '@/components/navigation'
 import AuthGateModal from '@/components/auth/auth-gate-modal'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 const FEATURES = [
   {
@@ -38,8 +37,7 @@ const FEATURES = [
  * bouncing anonymous visitors to the auth page.
  */
 export default function DashboardPreview() {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
+  const themeClasses = themeTokens.dashboard
   const [gateOpen, setGateOpen] = useState(false)
 
   return (

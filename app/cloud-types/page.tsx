@@ -16,11 +16,10 @@
 
 
 import React, { useState } from "react"
-import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import EducationBackLink from "@/components/education/education-back-link"
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 
 // Shadcn UI components
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
@@ -31,12 +30,11 @@ import { cloudDatabase } from "@/data/cloud-types"
 
 
 export default function CloudTypesPage() {
-  const { theme } = useTheme()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [expandedCloudId, setExpandedCloudId] = useState<number | null>(null)
   const [achievementUnlocked, setAchievementUnlocked] = useState<string>('')
 
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'card')
+  const themeClasses = themeTokens.card
 
   // All filter options including cloud type classifications
   type FilterValue = 'all' | 'high' | 'mid' | 'low' | 'vertical' | 'rare' | 'genus' | 'species' | 'variety' | 'feature' | 'special'

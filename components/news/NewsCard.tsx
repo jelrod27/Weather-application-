@@ -12,8 +12,7 @@ import { ExternalLink, Clock, MapPin, Activity } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import CategoryBadge, { getCategoryConfig } from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
@@ -26,8 +25,7 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ item, variant = 'default', className }: NewsCardProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [imageError, setImageError] = useState(false);
   const safeUrl = safeExternalUrl(item.url);
 

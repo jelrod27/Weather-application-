@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { Loader2 } from "lucide-react"
 import type { HourlyForecastData } from './hourly-forecast'
-import type { ThemeType } from '@/lib/theme-utils'
+import type { ThemeType } from '@/lib/theme-config'
 
 const HourlyForecast = dynamic(() => import('./hourly-forecast'), {
   loading: () => (

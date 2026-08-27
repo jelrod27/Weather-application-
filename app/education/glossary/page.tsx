@@ -2,8 +2,7 @@
 
 import React from "react"
 import PageWrapper from "@/components/page-wrapper"
-import { useTheme } from "@/components/theme-provider"
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getAllMetrics } from "@/lib/weather-definitions"
@@ -56,8 +55,7 @@ function JumpNav({
   items: { id: string; name: string }[]
   icons: Record<string, LucideIcon>
 }) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   return (
     <div className="mb-6">
@@ -85,8 +83,7 @@ function JumpNav({
 }
 
 export default function GlossaryPage() {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
   const metrics = getAllMetrics()
   const concepts = getAllConcepts()
 

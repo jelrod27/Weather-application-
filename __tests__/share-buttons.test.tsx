@@ -3,17 +3,6 @@
  */
 import { render, screen } from '@testing-library/react'
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' })
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    card: 'mock-card',
-    button: 'mock-button',
-  }),
-}))
-
 jest.mock('@/components/ui/use-toast', () => ({
   toast: jest.fn()
 }))

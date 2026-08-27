@@ -11,8 +11,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
 import type { AviationAlert } from '@/components/aviation';
 import { ShareButtons } from '@/components/share-buttons';
@@ -40,8 +39,7 @@ const LiveAircraftMap = dynamic(() => import('@/components/aviation/LiveAircraft
 type TrailPoint = { lat: number; lon: number; at: number };
 
 function AviationPageInner() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const searchParams = useSearchParams();
   const flightParam = searchParams.get('flight')?.trim().toUpperCase() ?? '';
 

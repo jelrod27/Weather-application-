@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { DeepSkyHighlight } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
@@ -27,8 +26,7 @@ const difficultyColors: Record<string, string> = {
 export default function DeepSkyHighlights({
   highlights,
 }: DeepSkyHighlightsProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   if (!highlights || highlights.length === 0) {
     return (

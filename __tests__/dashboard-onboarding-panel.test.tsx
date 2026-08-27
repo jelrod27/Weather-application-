@@ -1,22 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: 'bg-test',
-    text: 'text-test',
-    mutedText: 'text-muted',
-    borderColor: 'border-test',
-    accentBg: 'bg-accent',
-    accentText: 'text-accent',
-    glow: '',
-  }),
-}))
-
 const mockGetCurrentLocation = jest.fn()
 jest.mock('@/lib/location-service', () => ({
   LocationService: {

@@ -9,20 +9,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}));
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    headerText: '',
-    text: '',
-    accentText: '',
-    borderColor: '',
-  }),
-}));
-
 import NewsCard from '@/components/news/NewsCard';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 

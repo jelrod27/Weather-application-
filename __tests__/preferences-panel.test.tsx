@@ -5,20 +5,6 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    text: '',
-    mutedText: '',
-    borderColor: '',
-    accentBg: '',
-  }),
-}))
-
 // AI personality selector was removed alongside the chat feature in Phase 4.
 // The PreferencesPanel no longer renders or imports it.
 
