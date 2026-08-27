@@ -12,8 +12,7 @@ import { Cloud, CheckCircle, Search, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 
 interface NewsEmptyProps {
   type?: 'no-alerts' | 'no-results' | 'error' | 'no-news';
@@ -28,8 +27,7 @@ export default function NewsEmpty({
   onRetry,
   className,
 }: NewsEmptyProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const configs = {
     'no-alerts': {

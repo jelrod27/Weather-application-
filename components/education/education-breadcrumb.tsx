@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 export interface EducationBreadcrumbItem {
   label: string
@@ -17,8 +16,7 @@ interface EducationBreadcrumbProps {
 }
 
 export default function EducationBreadcrumb({ items, className }: EducationBreadcrumbProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   return (
     <nav

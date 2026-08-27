@@ -12,8 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, MapPin, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -73,8 +72,7 @@ function getKpColor(kp: number): string {
 }
 
 export default function AuroraForecastMap({ data, isLoading = false }: AuroraForecastMapProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [hemisphere, setHemisphere] = useState<'north' | 'south'>('north');
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);

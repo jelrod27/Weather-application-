@@ -26,8 +26,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -84,8 +83,7 @@ const FRAME_INTERVAL = 500;
 const MAX_FAILED_FRAMES = 3;
 
 export default function CoronagraphAnimation({ className }: CoronagraphAnimationProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const [camera, setCamera] = useState<Camera>('c2');
   const [viewMode, setViewMode] = useState<ViewMode>('animated');

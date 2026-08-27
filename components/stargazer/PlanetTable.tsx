@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { PlanetVisibility } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
@@ -11,8 +10,7 @@ interface PlanetTableProps {
 }
 
 export default function PlanetTable({ planets }: PlanetTableProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   if (!planets || planets.length === 0) return null;
 

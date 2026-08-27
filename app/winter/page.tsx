@@ -9,8 +9,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import PageWrapper from '@/components/page-wrapper';
 import type { NWSAlert } from '@/lib/services/nws-alerts-service';
 
@@ -32,8 +30,6 @@ function getTimeRemaining(expires: string): string {
 }
 
 export default function WinterPage() {
-  const { theme } = useTheme();
-  getComponentStyles((theme || 'nord') as ThemeType, 'weather');
   const [alerts, setAlerts] = useState<NWSAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

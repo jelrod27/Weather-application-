@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { CheckCircle2, MapPin, Navigation, Plus, Settings, Sparkles, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { LocationService } from '@/lib/location-service'
 import { dismissOnboarding } from '@/lib/dashboard/onboarding-state'
 import { saveUserLocation } from '@/lib/dashboard/save-user-location'
@@ -26,8 +25,7 @@ export default function DashboardOnboardingPanel({
   onLocationSaved,
   onDismiss,
 }: DashboardOnboardingPanelProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
+  const themeClasses = themeTokens.dashboard
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoError, setGeoError] = useState<string | null>(null)
 

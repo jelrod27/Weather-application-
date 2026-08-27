@@ -12,8 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface SunspotData {
@@ -69,8 +68,7 @@ function TrendIcon({ trend }: { trend: SunspotData['trend'] }) {
 }
 
 export default function SunspotDisplay({ data, isLoading = false }: SunspotDisplayProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   // Delay transition so the progress bar renders at full width on mount.
   // Without this, the bar animates from 0 when the collapsible section first
   // expands because the grid cell has 0 width during initial layout.

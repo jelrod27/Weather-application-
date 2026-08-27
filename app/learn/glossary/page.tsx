@@ -10,9 +10,8 @@
 
 import React from "react"
 import Link from "next/link"
-import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -49,8 +48,7 @@ const METRIC_ICONS: Record<string, LucideIcon> = {
 }
 
 export default function GlossaryPage() {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
   const metrics = getAllMetrics()
 
   return (

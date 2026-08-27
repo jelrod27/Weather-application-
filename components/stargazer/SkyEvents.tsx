@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { SkyEvent } from '@/lib/stargazer/types';
 
 interface SkyEventsProps {
@@ -40,8 +39,7 @@ function formatDate(date: Date): string {
 }
 
 export default function SkyEvents({ events }: SkyEventsProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   if (!events || events.length === 0) {
     return (

@@ -14,11 +14,11 @@
 
 "use client"
 
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
 import { ResponsiveGrid } from '@/components/responsive-container'
+import { themeTokens } from '@/lib/theme-tokens'
 
-export function WeatherSkeleton({ theme }: { theme?: ThemeType }) {
-  const themeClasses = getComponentStyles(theme || 'nord', 'weather')
+export function WeatherSkeleton() {
+  const themeClasses = themeTokens.weather
 
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">

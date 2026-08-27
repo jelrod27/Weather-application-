@@ -5,8 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import DashboardPreview from '@/components/dashboard/dashboard-preview'
 import { useSavedLocations } from '@/lib/supabase/hooks'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { Settings } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import AddLocationModal from '@/components/dashboard/add-location-modal'
@@ -50,8 +49,7 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user, profile } = useAuth()
   const { locations, loading, refetch } = useSavedLocations()
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
+  const themeClasses = themeTokens.dashboard
   const searchParams = useSearchParams()
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)

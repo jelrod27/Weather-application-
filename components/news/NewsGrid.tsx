@@ -9,8 +9,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import NewsCard from './NewsCard';
 import NewsSkeleton from './NewsSkeleton';
 import NewsEmpty from './NewsEmpty';
@@ -33,9 +31,6 @@ export default function NewsGrid({
   onRetry,
   className,
 }: NewsGridProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
-
   // Loading state
   if (isLoading) {
     return (

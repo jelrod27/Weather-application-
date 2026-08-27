@@ -10,16 +10,14 @@ import { Badge } from '@/components/ui/badge'
 import type { WeatherSystemData } from '@/data/weather-systems'
 import { getEducationDetailHref, systemSlug } from '@/lib/education/entries'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 interface WeatherSystemDetailProps {
   system: WeatherSystemData
 }
 
 export default function WeatherSystemDetail({ system }: WeatherSystemDetailProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
   const slug = systemSlug(system)
   const url = `https://www.16bitweather.co${getEducationDetailHref('weather-system', slug)}`
 

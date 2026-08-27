@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { catalogObjectAltAz } from '@/lib/stargazer/astronomy';
 
 interface TonightVisibilityProps {
@@ -22,8 +21,7 @@ const DEFAULT_LAT = 40.7128;
 const DEFAULT_LON = -74.006;
 
 export default function TonightVisibility({ ra, dec, objectName }: TonightVisibilityProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
   const [position, setPosition] = useState<{ altitude: number; azimuth: number } | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
 

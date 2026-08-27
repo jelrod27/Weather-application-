@@ -13,8 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import SpaceWeatherNav, { type SpaceWeatherTabId } from './SpaceWeatherNav';
@@ -80,8 +79,7 @@ export default function SolarCommandTerminal({
   auroraForecast,
   isLoading = false,
 }: SolarCommandTerminalProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<SpaceWeatherTabId>('command');
 

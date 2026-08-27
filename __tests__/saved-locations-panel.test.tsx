@@ -5,23 +5,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 
-// Mock the theme provider + theme-utils
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    text: '',
-    mutedText: '',
-    borderColor: '',
-    accentBg: '',
-    secondary: '',
-    glow: '',
-  }),
-}))
-
 // LocationCard hits Supabase + network — stub it out for this panel test
 jest.mock('@/components/dashboard/location-card', () => ({
   __esModule: true,

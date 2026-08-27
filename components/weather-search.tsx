@@ -258,7 +258,7 @@ export default function WeatherSearch({
                 "h-10 w-10",
                 themeClasses.secondaryText,
                 "hover:text-terminal-accent-warning",
-                theme !== 'daybreak' && themeClasses.glow
+                themeClasses.glow
               )}
               aria-label={isLoading ? "Searching..." : "Search for weather"}
             >
@@ -327,7 +327,7 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    theme !== 'daybreak' && themeClasses.glow
+                    themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >
@@ -340,7 +340,7 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    theme !== 'daybreak' && themeClasses.glow
+                    themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >
@@ -353,7 +353,7 @@ export default function WeatherSearch({
                     "justify-start h-auto py-2",
                     themeClasses.warningText,
                     "hover:text-terminal-accent",
-                    theme !== 'daybreak' && themeClasses.glow
+                    themeClasses.glow
                   )}
                   disabled={isDisabled}
                 >

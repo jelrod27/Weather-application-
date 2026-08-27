@@ -12,8 +12,7 @@
 import React from 'react';
 import { Activity, Wind, Zap, Sun, Sparkles, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { KpIndexData } from './KpIndexGauge';
 import type { SolarWindData } from './SolarWindStats';
 import type { XRayFluxData } from './XRayFluxChart';
@@ -68,8 +67,7 @@ export default function CurrentConditions({
   sunspots,
   auroraForecast,
 }: CurrentConditionsProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const kp = kpIndex?.current?.value ?? 0;
   const kpStatus = getKpLabel(kp);

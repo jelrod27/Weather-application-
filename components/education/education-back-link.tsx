@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 interface EducationBackLinkProps {
   href?: string
@@ -17,8 +16,7 @@ export default function EducationBackLink({
   label = 'Back to Education Hub',
   className,
 }: EducationBackLinkProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   return (
     <Link

@@ -17,26 +17,21 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import EducationBackLink from "@/components/education/education-back-link"
-import type { ThemeType} from "@/lib/theme-utils";
-import { getComponentStyles } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { weatherSystemsDatabase } from "@/data/weather-systems"
 import { getEducationDetailHref, systemSlug } from "@/lib/education/entries"
 
-
 export default function WeatherSystemsPage() {
-  const { theme } = useTheme()
-  const currentTheme = (theme || 'nord') as ThemeType
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [expandedSystemId, setExpandedSystemId] = useState<number | null>(null)
   const [achievementUnlocked, setAchievementUnlocked] = useState<string>('')
 
-  const themeClasses = getComponentStyles(currentTheme, 'weather')
+  const themeClasses = themeTokens.weather
 
   // Filter systems by category
   const filteredSystems = selectedCategory === 'all'

@@ -12,8 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plane, Wind, AlertTriangle, Clock, Radio, ChevronDown, ChevronUp, Map as MapIcon, Route } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AviationAlert } from './AlertTicker';
 import AlertTicker from './AlertTicker';
@@ -61,8 +60,7 @@ function formatAlertsAge(fetchedAt: number | null | undefined, now: number): str
 }
 
 export default function FlightConditionsTerminal({ alerts, isLoading = false, alertsFetchedAt = null }: FlightConditionsTerminalProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   // PRD Section 14.1: Map visible by default, alerts expanded by default
   const [expandedSection, setExpandedSection] = useState<string | null>('turbulence');
