@@ -7,9 +7,11 @@
  * Provides aurora forecast image URLs and viewline predictions from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface AuroraForecastData {
   timestamp: string;
@@ -58,7 +60,8 @@ function getActivityLevel(kp: number): AuroraForecastData['activity'] {
   return 'quiet';
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     // Fetch current Kp index for viewline estimation
     const kpResponse = await fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
@@ -100,7 +103,7 @@ export async function GET() {
       data: result,
       kpIndex: currentKp,
       source: 'NOAA Space Weather Prediction Center (OVATION Model)',
-    });
+    }, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/aurora', error);
@@ -123,4 +126,5 @@ export async function GET() {
       error: 'Unable to fetch live Kp data',
     }, { status: 500 });
   }
+  }, { context: 'space-weather/aurora' });
 }

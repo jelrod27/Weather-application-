@@ -7,9 +7,11 @@
  * Fetches GOES satellite X-ray flux data from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface XRayFluxData {
   timestamp: string;
@@ -52,7 +54,8 @@ function getFlareClass(flux: number): { class: string; fullClass: string } {
   return { class: 'A', fullClass: `A${classNum.toFixed(1)}` };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const response = await fetchSwpc('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
       headers: { Accept: 'application/json' },
@@ -126,7 +129,7 @@ export async function GET() {
     return NextResponse.json({
       data: result,
       source: 'NOAA Space Weather Prediction Center (GOES Satellite)',
-    });
+    }, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/xray-flux', error);
@@ -142,4 +145,5 @@ export async function GET() {
       error: 'Unable to fetch live data',
     }, { status: 500 });
   }
+  }, { context: 'space-weather/xray-flux' });
 }

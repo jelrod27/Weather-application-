@@ -12,9 +12,11 @@
  * here — they share the cache tiers and the SWPC fetch helpers instead.
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils';
+import { withApiRoute } from '@/lib/api/with-api-route';
 
 /** Attribution echoed back to clients for GOES instrument series. */
 export const SWPC_GOES_SOURCE = 'NOAA Space Weather Prediction Center (GOES)';
@@ -54,7 +56,7 @@ export interface SwpcSeriesConfig<Raw, Point> {
  */
 export function swpcSeriesRoute<Raw, Point>(
   config: SwpcSeriesConfig<Raw, Point>,
-): () => Promise<NextResponse> {
+): (request: NextRequest) => Promise<NextResponse> {
   const {
     context,
     url,
@@ -64,21 +66,30 @@ export function swpcSeriesRoute<Raw, Point>(
     toPoint,
   } = config;
 
-  return async function GET(): Promise<NextResponse> {
-    try {
-      const rows = await fetchSwpcJson<Raw[]>(url);
-      const data: Point[] = [];
+  return async function GET(request: NextRequest): Promise<NextResponse> {
+    return withApiRoute(
+      request,
+      async ({ rateLimitHeaders }) => {
+        try {
+          const rows = await fetchSwpcJson<Raw[]>(url);
+          const data: Point[] = [];
 
-      for (const row of rows) {
-        const point = toPoint(row);
-        if (point !== null) data.push(point);
-      }
+          for (const row of rows) {
+            const point = toPoint(row);
+            if (point !== null) data.push(point);
+          }
 
-      return NextResponse.json({ data, source }, { headers: { 'Cache-Control': cacheControl } });
-    } catch (error) {
-      logRouteError(context, error);
-      return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
+          return NextResponse.json(
+            { data, source },
+            { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
+          );
+        } catch (error) {
+          logRouteError(context, error);
+          return NextResponse.json({ error: errorMessage }, { status: 500 });
+        }
+      },
+      { context, errorMessage },
+    );
   };
 }
 

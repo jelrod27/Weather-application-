@@ -9,8 +9,10 @@
  * Secondary: Archive frames when available
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface CoronagraphFrame {
   timestamp: string;
@@ -85,9 +87,10 @@ function generateArchiveFrameUrls(camera: 'c2' | 'c3', count: number = 12): Coro
   return frames;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const cameraParam = searchParams.get('camera') as 'c2' | 'c3' | null;
     const frameParam = searchParams.get('frames');
     const parsedFrames = frameParam ? parseInt(frameParam, 10) : 12;
@@ -120,12 +123,12 @@ export async function GET(request: Request) {
       note: `LASCO ${camera.toUpperCase()} coronagraph. Individual archive frames may not be available in realtime - use animatedGif or fallbackGif for reliable animation. The animated GIF shows a 48-hour loop of actual coronagraph images.`,
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/coronagraph', error);
 
-    const cameraParam = new URL(request.url).searchParams.get('camera');
+    const cameraParam = request.nextUrl.searchParams.get('camera');
     const camera: 'c2' | 'c3' = cameraParam === 'c3' ? 'c3' : 'c2';
 
     // Return error response with fallback data
@@ -146,4 +149,5 @@ export async function GET(request: Request) {
 
     return NextResponse.json(errorResponse, { status: 500 });
   }
+  }, { context: 'space-weather/coronagraph' });
 }

@@ -7,10 +7,12 @@
  * Fetches Planetary K-index from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface KpIndexData {
   timestamp: string;
@@ -28,7 +30,8 @@ export interface KpIndexData {
   } | null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const [kpResponse, forecastResponse] = await Promise.allSettled([
       fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
@@ -84,14 +87,17 @@ export async function GET() {
           source: 'NOAA Space Weather Prediction Center',
           error: 'Unable to parse live Kp data',
         },
-        { status: 502 },
+        { status: 502, headers: rateLimitHeaders },
       );
     }
 
-    return NextResponse.json({
-      data: result,
-      source: 'NOAA Space Weather Prediction Center',
-    });
+    return NextResponse.json(
+      {
+        data: result,
+        source: 'NOAA Space Weather Prediction Center',
+      },
+      { headers: rateLimitHeaders },
+    );
   } catch (error) {
     logRouteError('kp-index', error);
 
@@ -109,4 +115,5 @@ export async function GET() {
       { status: 500 },
     );
   }
+  }, { context: 'kp-index' });
 }
