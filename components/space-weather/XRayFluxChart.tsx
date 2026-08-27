@@ -12,8 +12,7 @@
 import React from 'react';
 import { Zap, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface XRayFluxData {
@@ -116,8 +115,7 @@ function TrendIcon({ trend }: { trend: XRayFluxData['trend'] }) {
 }
 
 export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChartProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   if (isLoading) {
     return (

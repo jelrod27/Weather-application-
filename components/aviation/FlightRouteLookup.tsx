@@ -15,8 +15,7 @@ import { Plane, MapPin, Search, AlertTriangle, Route, ArrowRight, RefreshCw, Inf
 import { LoadingSpinner } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import dynamic from 'next/dynamic';
 
 // Lazy load FlightNumberInput for performance
@@ -139,8 +138,7 @@ function getTurbulenceSeverityVar(intensity: string | null): string {
 }
 
 export default function FlightRouteLookup({ initialFlight, onRouteSearch }: FlightRouteLookupProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   // Form state
   const [departureCode, setDepartureCode] = useState('');

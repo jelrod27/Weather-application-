@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { DeepSkyObject } from '@/lib/stargazer/types';
 import TonightVisibility from '@/components/stargazer/TonightVisibility';
 
@@ -37,8 +36,7 @@ const difficultyColors: Record<string, string> = {
 };
 
 export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4 font-mono">

@@ -9,8 +9,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 
 interface LegendItem {
   label: string;
@@ -25,8 +24,7 @@ const ITEMS: LegendItem[] = [
 ];
 
 export default function TurbulenceLegend() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   return (
     <div

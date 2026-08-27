@@ -17,8 +17,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Plane, AlertTriangle, Clock, Mountain, X } from 'lucide-react';
 import {
   useTurbulenceData,
@@ -100,8 +99,7 @@ export default function TurbulenceMap({
   initialAltitude = 'all',
   initialHours = 2,
 }: TurbulenceMapProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<OLMap | null>(null);

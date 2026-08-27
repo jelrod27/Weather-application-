@@ -12,8 +12,7 @@
 import React from 'react';
 import { Activity, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface KpIndexData {
@@ -69,8 +68,7 @@ function getAuroraVisibility(kp: number): string {
 }
 
 export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugeProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   if (isLoading) {
     return (

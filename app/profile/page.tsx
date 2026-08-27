@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { ProtectedRoute } from '@/lib/auth'
 import { useAuth } from '@/lib/auth'
 import { updateProfile } from '@/lib/supabase/database'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { User, Mail, Save, Loader2 } from 'lucide-react'
 import Navigation from '@/components/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -24,8 +23,7 @@ export default function ProfilePage() {
 
 function ProfileContent() {
   const { user, profile, profileLoading, refreshProfile } = useAuth()
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
+  const themeClasses = themeTokens.auth
 
   const [editing, setEditing] = useState(false)
   const [username, setUsername] = useState('')

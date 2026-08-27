@@ -4,8 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Mail, ArrowLeft } from 'lucide-react'
 import { resetPassword } from '@/lib/supabase/auth'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import TurnstileWidget, { isTurnstileEnabled } from '@/components/auth/turnstile-widget'
 
 export default function ResetPasswordPage() {
@@ -15,9 +14,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaResetKey, setCaptchaResetKey] = useState(0)
-  const { theme } = useTheme()
-
-  const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
+  const themeClasses = themeTokens.auth
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

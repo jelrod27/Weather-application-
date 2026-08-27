@@ -19,8 +19,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X, Home, Map, GraduationCap, Newspaper, Sun, ChevronDown, Cloud, CloudLightning, Snowflake, CloudRain, Route, Info, FileText, Star, Activity, BellRing, Plane, Mail } from "lucide-react"
-import { useTheme } from "@/components/theme-provider"
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
 import { formatHeaderLocation } from "@/lib/format-header-location"
 import AuthButton from "@/components/auth/auth-button"
 import { Button } from "@/components/ui/button"
@@ -45,11 +43,6 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
   const [weatherMenuOpen, setWeatherMenuOpen] = useState(false)
   const toggleWeatherMenu = () => setWeatherMenuOpen(prev => !prev)
   const pathname = usePathname()
-  const { theme } = useTheme()
-
-  // Use centralized theme system
-  const themeClasses = getComponentStyles(theme as ThemeType, 'navigation')
-
   const topNavItems = [
     { href: "/", label: "HOME", icon: Home },
   ]

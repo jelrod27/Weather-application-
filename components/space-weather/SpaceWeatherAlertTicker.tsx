@@ -13,8 +13,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AlertTriangle, Info, Zap, Radio, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -66,8 +65,7 @@ function getSeverityColors(severity: SpaceWeatherAlert['severity']): string {
 }
 
 export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: SpaceWeatherAlertTickerProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);

@@ -8,8 +8,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // All mocks must be declared before the component import.
 jest.mock('next/navigation', () => ({ usePathname: () => '/' }));
-jest.mock('@/components/theme-provider', () => ({ useTheme: () => ({ theme: 'dark' }) }));
-jest.mock('@/lib/theme-utils', () => ({ getComponentStyles: () => ({}) }));
 jest.mock('@/components/auth/auth-button', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/components/wis-badge', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/components/alerts/alert-bell', () => ({ __esModule: true, default: () => null }));

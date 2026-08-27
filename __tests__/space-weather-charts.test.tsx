@@ -5,21 +5,6 @@
 import React from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 
-// Mock the theme provider
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}));
-
-// Mock theme-utils
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    headerText: '',
-    text: '',
-    accentText: '',
-  }),
-}));
-
 // Mock recharts to avoid rendering issues in jsdom
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (

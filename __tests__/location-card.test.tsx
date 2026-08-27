@@ -6,26 +6,6 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SavedLocation } from '@/lib/supabase/types'
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'dark' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    text: '',
-    mutedText: '',
-    accentText: '',
-    accentBg: '',
-    borderColor: '',
-    border: '',
-    cardBg: '',
-    hoverBg: '',
-    glow: '',
-    secondary: '',
-  }),
-}))
-
 jest.mock('@/lib/auth', () => ({
   useAuth: () => ({ user: { id: 'u1' } }),
 }))

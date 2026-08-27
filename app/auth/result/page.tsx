@@ -3,14 +3,12 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 function AuthResultContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
-    const { theme } = useTheme()
-    const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
+    const themeClasses = themeTokens.auth
     const [countdown, setCountdown] = useState(3)
 
     const success = searchParams.get('success') === 'true'

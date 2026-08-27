@@ -10,20 +10,15 @@
 
 import React, { Suspense } from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
 import { ShareButtons } from '@/components/share-buttons';
 import { formatTonightDate } from '@/lib/stargazer/bortle';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 
-function StargazerShell({
-  children,
-  themeClasses,
-}: {
-  children: React.ReactNode;
-  themeClasses: ReturnType<typeof getComponentStyles>;
-}) {
+function StargazerShell({ children }: { children: React.ReactNode }) {
+  const themeClasses = themeTokens.weather;
+
   return (
     <PageWrapper>
       <div className={cn('container mx-auto px-4 py-8', themeClasses.background)}>
@@ -63,11 +58,8 @@ function StargazerShell({
 }
 
 export default function StargazerPage() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
-
   return (
-    <StargazerShell themeClasses={themeClasses}>
+    <StargazerShell>
       <Suspense
         fallback={
           <p className="font-mono text-sm text-muted-foreground animate-pulse">Loading location…</p>

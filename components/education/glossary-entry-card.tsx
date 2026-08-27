@@ -8,8 +8,7 @@ import React from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { BarChart3, Lightbulb, Ruler } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { WeatherMetricDefinition } from '@/lib/weather-definitions'
@@ -20,8 +19,7 @@ interface GlossaryEntryCardProps {
 }
 
 export function GlossaryEntryCard({ metric, icon: Icon }: GlossaryEntryCardProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   return (
     <section id={metric.id} className="scroll-mt-24">
