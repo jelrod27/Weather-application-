@@ -23,10 +23,10 @@ import { fromLonLat } from 'ol/proj';
 import { Style, Fill, Stroke } from 'ol/style';
 import type { FeatureLike } from 'ol/Feature';
 
+import { CARTO_VOYAGER_XYZ_URL } from '@/lib/maps/carto-basemap';
 import { RISK_LABELS, OUTLOOK_TYPE_LABELS } from '@/lib/services/spc-outlook-service';
 import type { SPCOutlookDay, SPCOutlookType } from '@/lib/services/spc-outlook-service';
 
-const CARTO_VOYAGER_URL = 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 const CONUS_CENTER: [number, number] = [-98.5795, 39.8283];
 const CONUS_ZOOM = 4;
 
@@ -75,7 +75,7 @@ export default function SPCOutlookMap({ day, type }: SPCOutlookMapProps) {
 
     const baseLayer = new TileLayer({
       source: new XYZ({
-        url: CARTO_VOYAGER_URL,
+        url: CARTO_VOYAGER_XYZ_URL,
         attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
         crossOrigin: 'anonymous',
       }),

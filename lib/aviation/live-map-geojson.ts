@@ -1,5 +1,6 @@
 import { sampleGreatCircle } from '@/lib/aviation/route-corridor'
 import type { Aircraft } from '@/lib/aviation/aircraft-types'
+import { cartoVoyagerTileUrls } from '@/lib/maps/carto-basemap'
 import type { MapOptions } from 'maplibre-gl'
 
 type MapStyleSpec = Exclude<NonNullable<MapOptions['style']>, string>
@@ -26,8 +27,8 @@ export const DEFAULT_CENTER: [number, number] = [-98.35, 39.5]
 export const DEFAULT_ZOOM = 5
 
 /**
- * Same light Carto Voyager basemap as radar (components/radar-v2/radar-constants.ts).
- * Glyphs still come from OpenFreeMap for callsign / airport labels.
+ * Same light Carto Voyager basemap as radar. Glyphs still come from
+ * OpenFreeMap for callsign / airport labels.
  * CSP: connect-src must allow *.basemaps.cartocdn.com + tiles.openfreemap.org.
  */
 export const CARTO_VOYAGER_STYLE: MapStyleSpec = {
@@ -35,12 +36,7 @@ export const CARTO_VOYAGER_STYLE: MapStyleSpec = {
   sources: {
     carto: {
       type: 'raster',
-      tiles: [
-        'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-        'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-      ],
+      tiles: cartoVoyagerTileUrls(),
       tileSize: 256,
       attribution: '© CARTO © OpenStreetMap contributors',
     },

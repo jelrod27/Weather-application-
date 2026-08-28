@@ -1,4 +1,4 @@
-export const CARTO_VOYAGER_URL = 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+export { CARTO_VOYAGER_XYZ_URL as CARTO_VOYAGER_URL } from '@/lib/maps/carto-basemap'
 
 export const BASE_ANIMATION_INTERVAL_MS = 500
 export const URL_SYNC_DEBOUNCE_MS = 300
