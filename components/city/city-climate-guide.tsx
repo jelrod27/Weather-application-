@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { CitySeoEnrichment } from '@/lib/city-metadata';
+import type { CitySeoEnrichment } from '@/lib/cities';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

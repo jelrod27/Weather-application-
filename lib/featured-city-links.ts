@@ -1,4 +1,4 @@
-import { cityData } from '@/lib/city-metadata'
+import { cityData } from '@/lib/cities'
 
 /** Stable slugs for crawlable internal links — aligned with GSC query demand. */
 export const FEATURED_CITY_SLUGS = [

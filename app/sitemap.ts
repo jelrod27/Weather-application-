@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { cityData as cityMetadata } from '@/lib/city-metadata'
+import { cityData as cityMetadata } from '@/lib/cities'
 import { getAllPosts } from '@/lib/blog'
 import { FEATURED_DETAIL_SLUGS, getAllWeatherSystemSlugs, getEducationDetailHref } from '@/lib/education/entries'
 
