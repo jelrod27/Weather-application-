@@ -126,8 +126,8 @@ function HomePageShell() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Large header — LCP element; fetchPriority is not valid on h1 and has no effect here */}
-        <h1
+        {/* LCP text only — document h1 lives on HomePage so the fallback is not a second heading */}
+        <p
           className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-8 text-primary glow"
           style={{
             fontFamily: 'var(--theme-font), monospace',
@@ -136,7 +136,7 @@ function HomePageShell() {
           }}
         >
           16 BIT WEATHER
-        </h1>
+        </p>
 
         {/* Search placeholder */}
         <div className="w-full max-w-2xl mx-auto mb-6">

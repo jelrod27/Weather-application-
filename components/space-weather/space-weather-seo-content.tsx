@@ -41,13 +41,10 @@ export function formatSwpcTimeTag(timeTag: string): { iso: string; label: string
   const trimmed = timeTag.trim()
   if (!trimmed) return null
   const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)
-  const normalized = /T/.test(trimmed)
-    ? trimmed
-    : `${trimmed.replace(' ', 'T')}${hasZone ? '' : 'Z'}`
+  const withT = /T/.test(trimmed) ? trimmed : trimmed.replace(' ', 'T')
+  const normalized = hasZone ? withT : `${withT}Z`
   const ms = Date.parse(normalized)
-  if (Number.isNaN(ms)) {
-    return { iso: trimmed, label: trimmed }
-  }
+  if (Number.isNaN(ms)) return null
   const iso = new Date(ms).toISOString()
   return { iso, label: `${iso.slice(0, 16).replace('T', ' ')} UTC` }
 }

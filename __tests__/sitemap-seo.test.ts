@@ -119,18 +119,24 @@ describe('Sitemap SEO', () => {
       '@/lib/seo/sitemap-lastmod'
     )
     const { default: sitemap } = await import('../app/sitemap')
-    const entries = await sitemap()
-    const byPath = new Map(
-      entries.map((e: { url: string; lastModified?: Date | string }) => {
-        const pathname = new URL(e.url).pathname
-        const lastModified = e.lastModified instanceof Date ? e.lastModified : new Date(String(e.lastModified))
-        return [pathname, lastModified]
-      }),
-    )
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-08-27T21:17:44.123Z'))
+    try {
+      const entries = await sitemap()
+      const byPath = new Map(
+        entries.map((e: { url: string; lastModified?: Date | string }) => {
+          const pathname = new URL(e.url).pathname
+          const lastModified = e.lastModified instanceof Date ? e.lastModified : new Date(String(e.lastModified))
+          return [pathname, lastModified]
+        }),
+      )
 
-    expect(byPath.get('/')?.toISOString()).toBe(startOfUtcDay().toISOString())
-    expect(byPath.get('/space-weather')?.toISOString()).toBe(startOfUtcHour().toISOString())
-    expect(byPath.get('/education/glossary')?.toISOString()).toBe(startOfUtcMonth().toISOString())
-    expect(byPath.get('/weather/boston-ma')?.toISOString()).toBe(startOfUtcWeek().toISOString())
+      expect(byPath.get('/')?.toISOString()).toBe(startOfUtcDay().toISOString())
+      expect(byPath.get('/space-weather')?.toISOString()).toBe(startOfUtcHour().toISOString())
+      expect(byPath.get('/education/glossary')?.toISOString()).toBe(startOfUtcMonth().toISOString())
+      expect(byPath.get('/weather/boston-ma')?.toISOString()).toBe(startOfUtcWeek().toISOString())
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })

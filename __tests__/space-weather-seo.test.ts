@@ -50,7 +50,9 @@ describe('Space Weather SEO', () => {
 
   it('parses SWPC time tags without throwing', () => {
     expect(formatSwpcTimeTag('2026-08-27 21:00:00.000')?.iso).toBe('2026-08-27T21:00:00.000Z')
+    expect(formatSwpcTimeTag('2026-08-27T21:00:00.000')?.iso).toBe('2026-08-27T21:00:00.000Z')
     expect(formatSwpcTimeTag('')).toBeNull()
+    expect(formatSwpcTimeTag('not-a-timestamp')).toBeNull()
   })
 
   it('layout metadata includes high-intent keywords', () => {
