@@ -4,6 +4,18 @@ import type { MapOptions } from 'maplibre-gl'
 
 type MapStyleSpec = Exclude<NonNullable<MapOptions['style']>, string>
 
+type FeatureCollection = {
+  type: 'FeatureCollection'
+  features: Array<{
+    type: 'Feature'
+    id?: string
+    properties: Record<string, string | number>
+    geometry:
+      | { type: 'Point'; coordinates: [number, number] }
+      | { type: 'LineString'; coordinates: Array<[number, number]> }
+  }>
+}
+
 export const AIRCRAFT_ICON_ID = 'aircraft-plane'
 export const AIRCRAFT_LAYER_ID = 'aircraft-icon'
 export const AIRCRAFT_LABEL_LAYER_ID = 'aircraft-label'
@@ -48,7 +60,7 @@ export type RouteMapEndpoints = {
   destination: { lat: number; lon: number; label?: string }
 }
 
-export function toFeatureCollection(aircraft: Aircraft[]): GeoJSON.FeatureCollection {
+export function toFeatureCollection(aircraft: Aircraft[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: aircraft.map((a) => ({
@@ -76,13 +88,13 @@ export function radiusForZoom(zoom: number): number {
   return 40
 }
 
-export function emptyLineCollection(): GeoJSON.FeatureCollection {
+export function emptyLineCollection(): FeatureCollection {
   return { type: 'FeatureCollection', features: [] }
 }
 
 export function routeLineCollection(
   endpoints: RouteMapEndpoints | null | undefined,
-): GeoJSON.FeatureCollection {
+): FeatureCollection {
   if (!endpoints) return emptyLineCollection()
   const samples = sampleGreatCircle(
     { lat: endpoints.origin.lat, lon: endpoints.origin.lon },
@@ -106,7 +118,7 @@ export function routeLineCollection(
 
 export function airportPointsCollection(
   endpoints: RouteMapEndpoints | null | undefined,
-): GeoJSON.FeatureCollection {
+): FeatureCollection {
   if (!endpoints) return emptyLineCollection()
   return {
     type: 'FeatureCollection',
@@ -133,7 +145,7 @@ export function airportPointsCollection(
 
 export function trailLineCollection(
   trail: Array<{ lat: number; lon: number }> | undefined,
-): GeoJSON.FeatureCollection {
+): FeatureCollection {
   if (!trail || trail.length < 2) return emptyLineCollection()
   return {
     type: 'FeatureCollection',
