@@ -10,70 +10,74 @@
  *     "prior":   { "month": "2026-04", "queryCount": 462 } }
  */
 
-import type { NextRequest } from 'next/server';
-import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client';
-import { AEROAPI_DEFAULT_MONTHLY_CAP } from '@/lib/services/aeroapi-usage';
-import { verifyCronBearer } from '@/lib/cron/verify-cron-auth';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
+import { AEROAPI_DEFAULT_MONTHLY_CAP } from '@/lib/services/aeroapi-usage'
+import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 function utcMonthKey(d: Date): string {
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
 }
 
 function priorUtcMonthKey(d: Date): string {
-  const prior = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1));
-  return utcMonthKey(prior);
+  const prior = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1))
+  return utcMonthKey(prior)
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const auth = verifyCronBearer(request);
-    if (!auth.ok) {
-      return Response.json({ error: auth.message }, { status: auth.status });
+  return withApiRoute(request, async () => {
+    try {
+      const auth = verifyCronBearer(request)
+      if (!auth.ok) {
+        return NextResponse.json({ error: auth.message }, { status: auth.status })
+      }
+
+      const supabase = createServiceRoleSupabaseClient()
+      if (!supabase) {
+        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+      }
+
+      const now = new Date()
+      const currentMonth = utcMonthKey(now)
+      const priorMonth = priorUtcMonthKey(now)
+
+      const { data, error } = await supabase
+        .from('aeroapi_usage')
+        .select('month, query_count, updated_at')
+        .in('month', [currentMonth, priorMonth])
+
+      if (error) {
+        logRouteError('cron/aeroapi-usage', error, { stage: 'query' })
+        return NextResponse.json({ error: 'Query failed' }, { status: 503 })
+      }
+
+      const rows = (data ?? []) as Array<{ month: string; query_count: number; updated_at: string }>
+      const currentRow = rows.find((r) => r.month === currentMonth) ?? null
+      const priorRow = rows.find((r) => r.month === priorMonth) ?? null
+
+      const capRaw = process.env.AEROAPI_MONTHLY_CAP
+      const cap = capRaw ? Number.parseInt(capRaw, 10) : AEROAPI_DEFAULT_MONTHLY_CAP
+
+      return NextResponse.json({
+        cap: Number.isFinite(cap) && cap > 0 ? cap : AEROAPI_DEFAULT_MONTHLY_CAP,
+        current: currentRow
+          ? { month: currentMonth, queryCount: currentRow.query_count, updatedAt: currentRow.updated_at }
+          : { month: currentMonth, queryCount: 0, updatedAt: null },
+        prior: priorRow
+          ? { month: priorMonth, queryCount: priorRow.query_count, updatedAt: priorRow.updated_at }
+          : { month: priorMonth, queryCount: 0, updatedAt: null },
+      })
+    } catch (error) {
+      logRouteError('cron/aeroapi-usage', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-
-    const supabase = createServiceRoleSupabaseClient();
-    if (!supabase) {
-      return Response.json({ error: 'Supabase not configured' }, { status: 500 });
-    }
-
-    const now = new Date();
-    const currentMonth = utcMonthKey(now);
-    const priorMonth = priorUtcMonthKey(now);
-
-    const { data, error } = await supabase
-      .from('aeroapi_usage')
-      .select('month, query_count, updated_at')
-      .in('month', [currentMonth, priorMonth]);
-
-    if (error) {
-      logRouteError('cron/aeroapi-usage', error, { stage: 'query' });
-      return Response.json({ error: 'Query failed' }, { status: 503 });
-    }
-
-    const rows = (data ?? []) as Array<{ month: string; query_count: number; updated_at: string }>;
-    const currentRow = rows.find((r) => r.month === currentMonth) ?? null;
-    const priorRow = rows.find((r) => r.month === priorMonth) ?? null;
-
-    const capRaw = process.env.AEROAPI_MONTHLY_CAP;
-    const cap = capRaw ? Number.parseInt(capRaw, 10) : AEROAPI_DEFAULT_MONTHLY_CAP;
-
-    return Response.json({
-      cap: Number.isFinite(cap) && cap > 0 ? cap : AEROAPI_DEFAULT_MONTHLY_CAP,
-      current: currentRow
-        ? { month: currentMonth, queryCount: currentRow.query_count, updatedAt: currentRow.updated_at }
-        : { month: currentMonth, queryCount: 0, updatedAt: null },
-      prior: priorRow
-        ? { month: priorMonth, queryCount: priorRow.query_count, updatedAt: priorRow.updated_at }
-        : { month: priorMonth, queryCount: 0, updatedAt: null },
-    });
-  } catch (error) {
-    logRouteError('cron/aeroapi-usage', error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  }, { rateLimit: false, context: 'cron/aeroapi-usage' })
 }

@@ -12,6 +12,7 @@ const mockFetchPollenData = jest.fn().mockResolvedValue({
   grass: { Grass: 'No Data' },
   weed: { Weed: 'No Data' },
 });
+const mockFetchPollenForLocation = jest.fn();
 const mockIsServerRuntime = jest.fn(() => false);
 
 jest.mock('@/lib/open-meteo', () => ({
@@ -21,6 +22,10 @@ jest.mock('@/lib/open-meteo', () => ({
 
 jest.mock('@/lib/weather/weather-forecast', () => ({
   fetchPollenData: (...args: unknown[]) => mockFetchPollenData(...args),
+}));
+
+jest.mock('@/lib/pollen/fetch-pollen', () => ({
+  fetchPollenForLocation: (...args: unknown[]) => mockFetchPollenForLocation(...args),
 }));
 
 jest.mock('@/lib/runtime-env', () => ({
@@ -344,12 +349,13 @@ describe('buildWeatherDataFromOpenMeteo (server runtime)', () => {
     expect(result.aqi).toBe(42);
   });
 
-  it('should use pollen API on server when GOOGLE_POLLEN_API_KEY is set', async () => {
+  it('should fetch pollen from lib on server when GOOGLE_POLLEN_API_KEY is set', async () => {
     process.env.GOOGLE_POLLEN_API_KEY = 'test-key';
-    mockFetchPollenData.mockResolvedValueOnce({
+    mockFetchPollenForLocation.mockResolvedValueOnce({
       tree: { Oak: 'High' },
       grass: { Grass: 'Low' },
       weed: { Ragweed: 'Moderate' },
+      source: 'google',
     });
 
     const result = await buildWeatherDataFromOpenMeteo(
@@ -357,7 +363,9 @@ describe('buildWeatherDataFromOpenMeteo (server runtime)', () => {
     );
 
     expect(mockFetchOpenMeteoForecast).toHaveBeenCalled();
-    expect(mockFetchPollenData).toHaveBeenCalledWith(40.71, -74.01);
+    expect(mockFetchPollenForLocation).toHaveBeenCalledWith(40.71, -74.01);
+    expect(mockFetchPollenData).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
     expect(result.pollen).toEqual({
       tree: { Oak: 'High' },
       grass: { Grass: 'Low' },

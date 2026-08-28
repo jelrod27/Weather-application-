@@ -31,6 +31,7 @@ import {
   getApiUrl,
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
+import { fetchPollenForLocation } from '@/lib/pollen/fetch-pollen';
 
 /** Format Open-Meteo city wall-clock hour ("…T14:00") as "2 PM" without runtime TZ. */
 function formatHourlyLabel(naiveLocalTime: string): string {
@@ -173,11 +174,17 @@ export async function buildWeatherDataFromOpenMeteo(
   const precipitationUnit = unitSystem === 'metric' ? 'mm' as const : 'inch' as const;
   const onServer = isServerRuntime();
 
-  // Client / Google path: pollen API in parallel with forecast+AQ.
+  // Client keeps same-origin /api/weather/pollen (CSP + rate limit).
+  // Server with Google key calls lib directly — no HTTP self-proxy.
   // Server without Google: derive pollen from the AQ payload after it returns.
-  const pollenPromise =
-    !onServer || process.env.GOOGLE_POLLEN_API_KEY
-      ? fetchPollenData(lat, lon)
+  const pollenPromise = !onServer
+    ? fetchPollenData(lat, lon)
+    : process.env.GOOGLE_POLLEN_API_KEY
+      ? fetchPollenForLocation(lat, lon).then(({ tree, grass, weed }) => ({
+          tree,
+          grass,
+          weed,
+        }))
       : null;
 
   // Client must keep same-origin /api proxies (CSP + rate limit).

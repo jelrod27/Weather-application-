@@ -14,7 +14,7 @@ import {
   cityData as cityMetadata,
   getCityEnrichment,
   getNearbyCities,
-} from '@/lib/city-metadata'
+} from '@/lib/cities'
 import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
 import { buildCityPageMetadata } from '@/lib/seo/city-page-seo'
 
