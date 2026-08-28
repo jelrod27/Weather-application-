@@ -46,16 +46,20 @@ export async function GET(request: NextRequest) {
         signal: request.signal,
       })
 
-      return NextResponse.json(
-        pollen.source === 'unavailable' ? UNAVAILABLE_POLLEN_BODY : pollen,
-        {
+      if (pollen.source === 'unavailable') {
+        return NextResponse.json(UNAVAILABLE_POLLEN_BODY, {
           status: 200,
-          headers: {
-            'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
-            ...rateLimitHeaders,
-          },
+          headers: rateLimitHeaders,
+        })
+      }
+
+      return NextResponse.json(pollen, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+          ...rateLimitHeaders,
         },
-      )
+      })
     } catch (error) {
       logRouteError('pollen', error)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -57,5 +57,5 @@ export async function POST(request: NextRequest) {
     skipped: result.skipped,
     reason: result.reason,
   })
-  }, { rateLimit: false, context: 'auth/welcome-email' })
+  }, { rateLimitBucket: 'account', context: 'auth/welcome-email' })
 }

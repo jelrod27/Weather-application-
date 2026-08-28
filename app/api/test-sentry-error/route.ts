@@ -17,5 +17,5 @@ export async function GET(request: NextRequest) {
       logRouteError('test-sentry-error', error)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-  }, { rateLimit: false, context: 'test-sentry-error' })
+  }, { context: 'test-sentry-error' })
 }
