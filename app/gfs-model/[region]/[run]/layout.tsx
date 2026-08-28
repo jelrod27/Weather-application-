@@ -39,7 +39,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `${BASE_URL}/gfs-model/${region}/${run}` },
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description,

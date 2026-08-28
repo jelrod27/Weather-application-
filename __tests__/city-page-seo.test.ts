@@ -36,4 +36,9 @@ describe('city-page-seo', () => {
     expect(PRIORITY_SEO_CITY_SLUGS).toContain('boston-ma')
     expect(PRIORITY_SEO_CITY_SLUGS).toContain('pittsburgh-pa')
   })
+
+  it('does not sell retro styling in city descriptions', () => {
+    const description = buildCityPageDescription({ name: 'Boise', state: 'ID' }, 'boise-id')
+    expect(description.toLowerCase()).not.toContain('retro terminal')
+  })
 })

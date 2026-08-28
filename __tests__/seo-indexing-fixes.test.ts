@@ -43,6 +43,8 @@ describe('SEO Indexing Fixes', () => {
 
     expect(content).toContain('FeaturedCityLinks')
     expect(content).toContain('Weather by city')
+    expect(content).toContain('HOMEPAGE_TITLE')
+    expect(content).not.toContain('Retro Terminal Weather Forecast App')
   })
 
   it('glossary layout should include breadcrumb and featured city links', () => {
@@ -51,6 +53,8 @@ describe('SEO Indexing Fixes', () => {
 
     expect(content).toContain('BreadcrumbList')
     expect(content).toContain('FeaturedCityLinks')
+    expect(content).toContain('English Weather Glossary')
+    expect(content).toContain("inLanguage: 'en'")
   })
 
   it('sitemap should not include /ai route', async () => {
@@ -77,5 +81,38 @@ describe('SEO Indexing Fixes', () => {
 
     expect(content).toContain('revalidate')
     expect(content).not.toContain("dynamic = 'force-dynamic'")
+    expect(content).toContain('defaultOpen')
+    expect(content).toContain('PRIORITY_SEO_CITY_SLUGS')
+  })
+
+  it('hourly layout should noindex and omit JSON-LD', () => {
+    const layoutPath = path.join(process.cwd(), 'app', 'hourly', 'layout.tsx')
+    const content = fs.readFileSync(layoutPath, 'utf-8')
+
+    expect(content).toContain('index: false')
+    expect(content).not.toContain('application/ld+json')
+  })
+
+  it('GFS run pages should repeat parent noindex', async () => {
+    const layoutPath = path.join(
+      process.cwd(),
+      'app',
+      'gfs-model',
+      '[region]',
+      '[run]',
+      'layout.tsx',
+    )
+    const content = fs.readFileSync(layoutPath, 'utf-8')
+
+    expect(content).toContain('index: false')
+    expect(content).not.toContain('alternates')
+  })
+
+  it('blog missing posts should noindex', () => {
+    const pagePath = path.join(process.cwd(), 'app', 'blog', '[slug]', 'page.tsx')
+    const content = fs.readFileSync(pagePath, 'utf-8')
+
+    expect(content).toContain("title: 'Post Not Found'")
+    expect(content).toContain('index: false')
   })
 })

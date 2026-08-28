@@ -7,6 +7,7 @@ import path from 'path'
 import {
   buildSpaceWeatherAppJsonLd,
   buildSpaceWeatherFaqJsonLd,
+  formatSwpcTimeTag,
   SPACE_WEATHER_FAQS,
 } from '@/components/space-weather/space-weather-seo-content'
 
@@ -41,9 +42,15 @@ describe('Space Weather SEO', () => {
     expect(faq['@type']).toBe('FAQPage')
     expect(faq.mainEntity).toHaveLength(SPACE_WEATHER_FAQS.length)
 
-    const app = buildSpaceWeatherAppJsonLd()
+    const app = buildSpaceWeatherAppJsonLd('2026-08-27T21:00:00.000Z')
     expect(app['@type']).toBe('WebApplication')
     expect(app.url).toBe('https://www.16bitweather.co/space-weather')
+    expect(app.dateModified).toBe('2026-08-27T21:00:00.000Z')
+  })
+
+  it('parses SWPC time tags without throwing', () => {
+    expect(formatSwpcTimeTag('2026-08-27 21:00:00.000')?.iso).toBe('2026-08-27T21:00:00.000Z')
+    expect(formatSwpcTimeTag('')).toBeNull()
   })
 
   it('layout metadata includes high-intent keywords', () => {

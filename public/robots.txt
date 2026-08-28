@@ -19,7 +19,6 @@ Allow: /space-weather
 Allow: /stargazer
 Allow: /warnings
 Allow: /travel
-Allow: /extremes
 Allow: /about
 Allow: /cloud-types
 Allow: /weather-systems

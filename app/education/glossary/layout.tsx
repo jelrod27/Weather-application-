@@ -9,15 +9,15 @@ import FeaturedCityLinks from '@/components/featured-city-links'
 const GLOSSARY_URL = 'https://www.16bitweather.co/education/glossary'
 
 export const metadata: Metadata = {
-  title: 'Weather Glossary: UV Index, Humidity, Pressure & More Explained | 16 Bit Weather',
+  title: 'English Weather Glossary: UV Index, Humidity, Pressure & Forecast Terms | 16 Bit Weather',
   description:
-    'Clear definitions of weather metrics — UV Index, humidity, barometric pressure, wind, visibility, feels-like temperature, precipitation, and pollen — with practical tips for reading a forecast.',
+    'English-language weather glossary for forecast metrics — UV Index, humidity, barometric pressure, wind, visibility, feels-like temperature, precipitation, and pollen — not a live city forecast.',
   keywords:
-    'weather glossary, weather terms explained, UV index explained, humidity definition, barometric pressure meaning, wind speed, visibility weather, feels like temperature, precipitation measurement, pollen count, meteorology glossary',
+    'english weather glossary, weather terms explained, UV index explained, humidity definition, barometric pressure meaning, meteorology glossary, forecast metrics',
   openGraph: {
-    title: 'Weather Glossary — Metrics Explained | 16 Bit Weather',
+    title: 'English Weather Glossary — Forecast Terms Explained | 16 Bit Weather',
     description:
-      'UV Index, humidity, pressure, wind, and more — weather metric definitions with practical tips.',
+      'English definitions of UV Index, humidity, pressure, wind, and other forecast metrics. Not a live city forecast.',
     url: GLOSSARY_URL,
     siteName: '16 Bit Weather',
     images: [
@@ -33,12 +33,16 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Weather Glossary — Metrics Explained | 16 Bit Weather',
-    description: 'UV Index, humidity, pressure, wind, and more explained with practical tips',
+    title: 'English Weather Glossary — Forecast Terms | 16 Bit Weather',
+    description: 'English definitions of UV Index, humidity, pressure, wind, and other forecast metrics.',
     images: ['/api/og?title=Weather+Glossary&subtitle=UV%2C+Humidity%2C+Pressure+%26+More'],
   },
   alternates: {
     canonical: GLOSSARY_URL,
+    languages: {
+      en: GLOSSARY_URL,
+      'x-default': GLOSSARY_URL,
+    },
   },
 }
 
@@ -82,10 +86,11 @@ const glossarySchema = {
     },
     {
       '@type': 'WebPage',
-      name: 'Weather Glossary: UV Index, Humidity, Pressure & More Explained',
+      name: 'English Weather Glossary: UV Index, Humidity, Pressure & Forecast Terms',
       url: GLOSSARY_URL,
+      inLanguage: 'en',
       description:
-        'Clear definitions of weather metrics with practical tips for reading a forecast',
+        'English-language definitions of forecast metrics — not a live city weather page',
       isPartOf: { '@id': 'https://www.16bitweather.co/#website' },
       about: { '@type': 'DefinedTermSet', url: GLOSSARY_URL },
     },

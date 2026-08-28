@@ -26,7 +26,7 @@ describe('Sitemap SEO', () => {
       : nextConfig.redirects || []
 
     const permanentRedirectSources = redirects
-      .filter((r: { permanent: boolean }) => r.permanent)
+      .filter((r: { permanent: boolean; has?: unknown }) => r.permanent && !r.has)
       .map((r: { source: string }) => r.source)
 
     const { default: sitemap } = await import('../app/sitemap')
@@ -63,6 +63,7 @@ describe('Sitemap SEO', () => {
 
     expect(sitemapPaths).toContain('/education/glossary')
     expect(sitemapPaths).toContain('/alerts')
+    expect(sitemapPaths).not.toContain('/llms.txt')
   })
 
   it('sitemap should not include noindex or redirect-only URLs', async () => {
@@ -111,5 +112,25 @@ describe('Sitemap SEO', () => {
     for (const path of expectedPaths) {
       expect(sitemapPaths).toContain(path)
     }
+  })
+
+  it('sitemap lastmod values are bucketed, not request-time now()', async () => {
+    const { startOfUtcHour, startOfUtcDay, startOfUtcWeek, startOfUtcMonth } = await import(
+      '@/lib/seo/sitemap-lastmod'
+    )
+    const { default: sitemap } = await import('../app/sitemap')
+    const entries = await sitemap()
+    const byPath = new Map(
+      entries.map((e: { url: string; lastModified?: Date | string }) => {
+        const pathname = new URL(e.url).pathname
+        const lastModified = e.lastModified instanceof Date ? e.lastModified : new Date(String(e.lastModified))
+        return [pathname, lastModified]
+      }),
+    )
+
+    expect(byPath.get('/')?.toISOString()).toBe(startOfUtcDay().toISOString())
+    expect(byPath.get('/space-weather')?.toISOString()).toBe(startOfUtcHour().toISOString())
+    expect(byPath.get('/education/glossary')?.toISOString()).toBe(startOfUtcMonth().toISOString())
+    expect(byPath.get('/weather/boston-ma')?.toISOString()).toBe(startOfUtcWeek().toISOString())
   })
 })

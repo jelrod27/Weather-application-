@@ -1,6 +1,6 @@
 ---
 slug: tropical-on-august-19-2026-super-typhoon-bavi-crossed-the-northern
-title: "Tropical Systems: On August 19, 2026, Super Typhoon Bavi crossed the Northern Mariana Islands with sustained w"
+title: "Super Typhoon Bavi Crossed the Northern Marianas at 180 mph (August 19, 2026)"
 date: 2026-07-10T03:50:17.127Z
 author: 16bitbot
 summary: "On August 19, 2026, Super Typhoon Bavi crossed the Northern Mariana Islands with sustained winds estimated at 180 mph — "
