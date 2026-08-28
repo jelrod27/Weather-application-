@@ -21,9 +21,9 @@ import { Style, Stroke } from 'ol/style';
 import Feature from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 
+import { CARTO_DARK_XYZ_URL } from '@/lib/maps/carto-basemap';
 import { SEVERITY_COLORS, type SeverityLevel } from '@/lib/services/travel-corridor-service';
 
-const CARTO_DARK_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 const CONUS_CENTER: [number, number] = [-98.5795, 39.8283];
 const CONUS_ZOOM = 4;
 
@@ -54,7 +54,7 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
 
     const baseLayer = new TileLayer({
       source: new XYZ({
-        url: CARTO_DARK_URL,
+        url: CARTO_DARK_XYZ_URL,
         attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
         crossOrigin: 'anonymous',
       }),

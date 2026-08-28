@@ -106,6 +106,10 @@ const envConfig: EnvConfig = {
       name: 'VAPID_SUBJECT',
       description: 'Web Push VAPID subject, mailto: or https: URL (optional).',
     },
+    NEXT_PUBLIC_CARTO_API_KEY: {
+      name: 'NEXT_PUBLIC_CARTO_API_KEY',
+      description: 'CARTO raster basemap key (optional - maps show an API-key watermark until set). Public by design: the browser appends ?key= on cartocdn tile URLs.',
+    },
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: {
       name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
       description: 'Cloudflare Turnstile site key (optional - guest Bitwatch signup and auth CAPTCHA).',
