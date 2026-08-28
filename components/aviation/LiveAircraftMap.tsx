@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   LngLatBounds,
-  Map as MapLibreMap,
+  type Map as MapLibreMap,
   type GeoJSONSource,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';

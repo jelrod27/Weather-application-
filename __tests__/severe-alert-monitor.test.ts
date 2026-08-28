@@ -757,6 +757,7 @@ describe('runSevereAlertMonitor', () => {
     const result = await runSevereAlertMonitor(supabase as never)
 
     expect(result.subscriptionsChecked).toBe(12)
+    expect(result.errors).toEqual([])
     expect(max).toBeGreaterThan(1)
     expect(max).toBeLessThanOrEqual(SEVERE_MONITOR_CONCURRENCY)
   })
