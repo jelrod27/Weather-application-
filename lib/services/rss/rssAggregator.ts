@@ -12,7 +12,6 @@
 import { clearCache } from './aggregate-cache';
 import { __testing as parseTesting } from './parse-feed';
 
-export type { AggregatedResult } from './aggregate-cache';
 export type { RSSItem } from './parse-feed';
 export {
   aggregateFeeds,
@@ -20,7 +19,6 @@ export {
   getCategoryConfig,
   getFeaturedItem,
 } from './aggregate-cache';
-export { MISSING_ITEM_TIMESTAMP } from './parse-feed';
 
 /**
  * Internal helpers exposed for unit testing only (PRD §14). Not part of the
