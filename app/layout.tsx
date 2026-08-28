@@ -16,6 +16,12 @@ import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
 import { IBM_Plex_Sans, Inconsolata, VT323 } from "next/font/google"
+import {
+  HOMEPAGE_DESCRIPTION,
+  HOMEPAGE_OG_IMAGE,
+  HOMEPAGE_OG_TITLE,
+  HOMEPAGE_TITLE,
+} from "@/lib/seo/homepage"
 // PERFORMANCE: Analytics lazy loaded via client component wrapper
 import AnalyticsWrapper from "@/components/analytics-wrapper"
 import AppThemeProvider from "@/app/providers/ThemeProvider"
@@ -50,9 +56,9 @@ const vt323 = VT323({
 })
 
 export const metadata: Metadata = {
-  title: "16 Bit Weather - Retro Terminal Weather Forecast App",
-  description: "Real-time weather forecasts with authentic 16-bit terminal aesthetics. Check current conditions, 7-day forecasts, weather radar, and air quality for any city worldwide. Features Dark Terminal, Miami Vice, and Tron Grid themes.",
-  keywords: "16-bit weather, terminal weather, retro weather forecast, pixel weather, weather app, real-time weather, 7-day forecast, weather data, weather conditions, meteorology education, cloud types, weather systems",
+  title: HOMEPAGE_TITLE,
+  description: HOMEPAGE_DESCRIPTION,
+  keywords: "live weather, weather radar, space weather, kp index, solar flares, nws warnings, city climate, weather glossary, 16 bit weather",
   generator: 'Next.js',
   applicationName: '16 Bit Weather',
   authors: [{ name: '16 Bit Weather' }],
@@ -68,16 +74,16 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: '16 Bit Weather - Retro Terminal Weather Forecast',
-    description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics. Check weather for any city worldwide.',
+    title: HOMEPAGE_OG_TITLE,
+    description: HOMEPAGE_DESCRIPTION,
     url: 'https://www.16bitweather.co',
     siteName: '16 Bit Weather',
     images: [
       {
-        url: '/api/og?title=16+Bit+Weather&subtitle=Retro+Terminal+Weather+Forecast',
+        url: HOMEPAGE_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: '16 Bit Weather Terminal Interface',
+        alt: '16 Bit Weather — live forecasts, radar, and space weather',
       },
     ],
     locale: 'en_US',
@@ -85,9 +91,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '16 Bit Weather - Retro Terminal Weather',
-    description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics.',
-    images: ['/api/og?title=16+Bit+Weather&subtitle=Retro+Terminal+Weather+Forecast'],
+    title: HOMEPAGE_OG_TITLE,
+    description: HOMEPAGE_DESCRIPTION,
+    images: [HOMEPAGE_OG_IMAGE],
     creator: '@16bitweather',
   },
   robots: {

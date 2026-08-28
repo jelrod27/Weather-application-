@@ -14,6 +14,12 @@ import dynamic from 'next/dynamic'
 import { safeJsonLd } from '@/lib/utils'
 import { WeatherCardsSkeleton } from '@/components/home-shell'
 import FeaturedCityLinks from '@/components/featured-city-links'
+import {
+  HOMEPAGE_DESCRIPTION,
+  HOMEPAGE_OG_IMAGE,
+  HOMEPAGE_OG_TITLE,
+  HOMEPAGE_TITLE,
+} from '@/lib/seo/homepage'
 
 // PERFORMANCE: Use next/dynamic for proper SSR streaming with fallback
 // This enables the server-rendered shell to display immediately as LCP
@@ -22,20 +28,20 @@ const HomeClient = dynamic(() => import('./home-client'), {
 })
 
 export const metadata: Metadata = {
-  title: '16 Bit Weather - Retro Terminal Weather Forecast App',
-  description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics. Check current conditions, 7-day forecasts, weather radar, and air quality for any city worldwide. Features Dark Terminal, Miami Vice, and Tron Grid themes.',
-  keywords: '16-bit weather, retro weather app, terminal weather, pixel weather, weather forecast, real-time weather, 7-day forecast, weather radar, air quality, weather map, hourly forecast, weather conditions, meteorology',
+  title: HOMEPAGE_TITLE,
+  description: HOMEPAGE_DESCRIPTION,
+  keywords: 'live weather, weather radar, space weather, kp index, solar flares, nws warnings, city climate, weather glossary, 16 bit weather',
   openGraph: {
-    title: '16 Bit Weather - Retro Terminal Weather Forecast',
-    description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics. Check weather for any city worldwide.',
+    title: HOMEPAGE_OG_TITLE,
+    description: HOMEPAGE_DESCRIPTION,
     url: 'https://www.16bitweather.co',
     siteName: '16 Bit Weather',
     images: [
       {
-        url: '/api/og?title=16+Bit+Weather&subtitle=Retro+Terminal+Weather+Forecast',
+        url: HOMEPAGE_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: '16 Bit Weather - Retro Terminal Interface',
+        alt: '16 Bit Weather — live forecasts, radar, and space weather',
       },
     ],
     locale: 'en_US',
@@ -43,9 +49,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '16 Bit Weather - Retro Terminal Weather',
-    description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics.',
-    images: ['/api/og?title=16+Bit+Weather&subtitle=Retro+Terminal+Weather+Forecast'],
+    title: HOMEPAGE_OG_TITLE,
+    description: HOMEPAGE_DESCRIPTION,
+    images: [HOMEPAGE_OG_IMAGE],
     creator: '@16bitweather',
   },
   alternates: {
@@ -71,7 +77,7 @@ const jsonLd = {
       '@id': `${SITE_URL}/#website`,
       url: SITE_URL,
       name: '16 Bit Weather',
-      description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics',
+      description: HOMEPAGE_DESCRIPTION,
       publisher: { '@id': `${SITE_URL}/#organization` },
       potentialAction: {
         '@type': 'SearchAction',
@@ -86,7 +92,7 @@ const jsonLd = {
       '@type': 'WebApplication',
       '@id': `${SITE_URL}/#webapp`,
       name: '16 Bit Weather',
-      description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics',
+      description: HOMEPAGE_DESCRIPTION,
       url: SITE_URL,
       applicationCategory: 'WeatherApplication',
       operatingSystem: 'Web',
@@ -104,7 +110,7 @@ const jsonLd = {
         'Pollen count',
         'UV index',
         'Hourly forecast',
-        'Multiple retro themes',
+        'Space weather monitor',
         'City weather search',
       ],
     },
@@ -120,8 +126,8 @@ function HomePageShell() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Large header — LCP element; fetchPriority is not valid on h1 and has no effect here */}
-        <h1
+        {/* LCP text only — document h1 lives on HomePage so the fallback is not a second heading */}
+        <p
           className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-8 text-primary glow"
           style={{
             fontFamily: 'var(--theme-font), monospace',
@@ -130,7 +136,7 @@ function HomePageShell() {
           }}
         >
           16 BIT WEATHER
-        </h1>
+        </p>
 
         {/* Search placeholder */}
         <div className="w-full max-w-2xl mx-auto mb-6">
@@ -164,6 +170,7 @@ export default function HomePage() {
   return (
     <>
       {/* JSON-LD structured data - safe as jsonLd is a static constant */}
+      <h1 className="sr-only">Live weather, radar, and space weather from 16 Bit Weather</h1>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}

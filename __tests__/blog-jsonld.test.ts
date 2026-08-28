@@ -68,6 +68,7 @@ describe('Blog post JSON-LD structured data', () => {
     })
 
     expect(metadata.title).toBe('Post Not Found')
+    expect(metadata.robots).toEqual({ index: false, follow: false })
     expect(metadata.other).toBeUndefined()
   })
 })

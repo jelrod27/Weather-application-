@@ -37,7 +37,29 @@ export function buildSpaceWeatherFaqJsonLd() {
   }
 }
 
-export function buildSpaceWeatherAppJsonLd() {
+export function formatSwpcTimeTag(timeTag: string): { iso: string; label: string } | null {
+  const trimmed = timeTag.trim()
+  if (!trimmed) return null
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)
+  const withT = /T/.test(trimmed) ? trimmed : trimmed.replace(' ', 'T')
+  const normalized = hasZone ? withT : `${withT}Z`
+  const ms = Date.parse(normalized)
+  if (Number.isNaN(ms)) return null
+  const iso = new Date(ms).toISOString()
+  return { iso, label: `${iso.slice(0, 16).replace('T', ' ')} UTC` }
+}
+
+export function buildSpaceWeatherAppJsonLd(dateModified?: string): {
+  '@context': string
+  '@type': 'WebApplication'
+  name: string
+  description: string
+  url: string
+  applicationCategory: string
+  operatingSystem: string
+  dateModified?: string
+  offers: { '@type': 'Offer'; price: string; priceCurrency: string }
+} {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -47,6 +69,7 @@ export function buildSpaceWeatherAppJsonLd() {
     url: `${BASE_URL}/space-weather`,
     applicationCategory: 'WeatherApplication',
     operatingSystem: 'Any',
+    ...(dateModified ? { dateModified } : {}),
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -55,17 +78,36 @@ export function buildSpaceWeatherAppJsonLd() {
   }
 }
 
+interface SpaceWeatherSeoContentProps {
+  kp?: number | null
+  kpTimeTag?: string | null
+}
+
 /**
  * Server-rendered crawlable copy for /space-weather. Renders below the
  * interactive terminal so Google can index monitor/tracker intent copy.
  */
-export default function SpaceWeatherSeoContent() {
+export default function SpaceWeatherSeoContent({
+  kp = null,
+  kpTimeTag = null,
+}: SpaceWeatherSeoContentProps) {
+  const updated = kpTimeTag ? formatSwpcTimeTag(kpTimeTag) : null
+
   return (
     <article
       className="mx-auto max-w-3xl px-4 py-10 text-sm leading-relaxed text-weather-muted font-mono"
       aria-label="About the space weather monitor"
       data-testid="space-weather-seo-content"
     >
+      {kp != null && updated ? (
+        <p className="mb-4 text-weather-text">
+          Last NOAA SWPC Kp reading:{' '}
+          <strong className="text-weather-primary">{kp.toFixed(1)}</strong>
+          {' '}at{' '}
+          <time dateTime={updated.iso}>{updated.label}</time>
+          .
+        </p>
+      ) : null}
       <h2 className="mb-4 text-xl font-bold text-weather-primary uppercase tracking-wide">
         Solar Flare Monitor &amp; Space Weather Tracker
       </h2>

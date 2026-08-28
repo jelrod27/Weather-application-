@@ -107,9 +107,13 @@ export default function GlossaryPage() {
           >
             WEATHER GLOSSARY
           </h1>
+          <p className={cn('text-sm font-mono uppercase tracking-widest mb-3', themeClasses.accentText)}>
+            English forecast terms — not a live city forecast
+          </p>
           <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
-            Dashboard metrics and storm-spotter concepts in one reference. Each entry explains what it
-            means, how it is measured, what values indicate, and practical tips you can use every day.
+            English-language definitions of dashboard metrics and storm-spotter concepts. Each entry
+            explains what it means, how it is measured, what values indicate, and practical tips for
+            reading a forecast. For current conditions, open a city page.
           </p>
         </div>
 

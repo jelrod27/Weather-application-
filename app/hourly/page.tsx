@@ -1,19 +1,7 @@
-import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import HourlyClient from './hourly-client'
 
-const BASE_URL = 'https://www.16bitweather.co'
-
-export const metadata: Metadata = {
-  title: '48-Hour Forecast | 16 Bit Weather',
-  description: 'Hour-by-hour weather forecast for the next 48 hours — temperature, precipitation chance, wind, and conditions in a retro terminal UI.',
-  alternates: { canonical: `${BASE_URL}/hourly` },
-  // Depends on ?lat/?lon query params — no stable canonical content for indexing.
-  robots: { index: false, follow: true },
-}
-
-// Depends on runtime searchParams, not static content.
 export const dynamic = 'force-dynamic'
 
 export default function HourlyPage() {
