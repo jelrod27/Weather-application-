@@ -23,7 +23,7 @@ const HomeClient = dynamic(() => import('./home-client'), {
 
 export const metadata: Metadata = {
   title: '16 Bit Weather - Retro Terminal Weather Forecast App',
-  description: 'Real-time weather forecasts with authentic 16-bit terminal aesthetics. Check current conditions, 7-day forecasts, weather radar, and air quality for any city worldwide. Features Dark Terminal, Miami Vice, and Tron Grid themes.',
+  description: 'Real-time forecasts, radar, and air quality for any city worldwide, in a retro terminal interface with six themes including Nord, Daybreak, and Dracula.',
   keywords: '16-bit weather, retro weather app, terminal weather, pixel weather, weather forecast, real-time weather, 7-day forecast, weather radar, air quality, weather map, hourly forecast, weather conditions, meteorology',
   openGraph: {
     title: '16 Bit Weather - Retro Terminal Weather Forecast',
