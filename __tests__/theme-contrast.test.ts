@@ -63,8 +63,14 @@ function token(theme: string, name: string): [number, number, number] {
 
 describe('theme contrast', () => {
   it.each(THEME_LIST)('%s: accent text is legible on the page background', (theme) => {
-    // WCAG AA for large/bold text, which is what accentText is used for.
-    expect(contrast(token(theme, 'primary'), token(theme, 'background'))).toBeGreaterThanOrEqual(3)
+    // Full AA, not the 3:1 large-text allowance: 51 of the 110 accentText call
+    // sites are regular-weight body text, including text-sm links
+    // (app/auth/reset-password/page.tsx) and text-xs ones
+    // (components/auth/auth-form.tsx). A 3:1 bar would let a palette pass here
+    // while failing WCAG AA for half its consumers.
+    expect(contrast(token(theme, 'primary'), token(theme, 'background'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
   })
 
   it.each(THEME_LIST)('%s: body text meets WCAG AA', (theme) => {
