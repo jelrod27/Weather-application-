@@ -21,6 +21,25 @@ const unavailableBody = {
   source: 'unavailable' as const,
 };
 
+/**
+ * Google is optional here, so a missing key is a supported configuration rather
+ * than a defect — warn once per lambda instead of opening a Sentry issue per
+ * request. It still reaches the runtime logs, which is what separates "the env
+ * var never got to this deployment" from "Google rejected the key".
+ */
+let warnedMissingGoogleKey = false;
+
+/**
+ * The same reasoning, applied to Google actually answering and refusing. A
+ * broken key fails on every request, and `weather-forecast.ts` passes
+ * full-precision coordinates, so each user location is its own cache key and
+ * this branch runs on most requests — un-deduped, one misconfigured key becomes
+ * a continuous stream of identical Sentry issues that buries everything else.
+ * Report each distinct failure shape once per lambda: enough to see it, not
+ * enough to drown in it.
+ */
+const reportedGoogleFailures = new Set<string>();
+
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
     try {
@@ -53,6 +72,14 @@ export async function GET(request: NextRequest) {
       }
 
       const googlePollenApiKey = process.env.GOOGLE_POLLEN_API_KEY;
+
+      if (!googlePollenApiKey && !warnedMissingGoogleKey) {
+        warnedMissingGoogleKey = true;
+        console.warn(
+          '[pollen] GOOGLE_POLLEN_API_KEY is not set in this environment; ' +
+            'falling back to Open-Meteo CAMS (Europe only).',
+        );
+      }
 
       if (googlePollenApiKey) {
         try {
@@ -171,6 +198,31 @@ export async function GET(request: NextRequest) {
                   },
                 );
               }
+            }
+          } else {
+            // A rejected key and an absent key both fall through to Open-Meteo
+            // and render identically, which made this failure invisible.
+            // Google's own `error.status` separates them: PERMISSION_DENIED (bad
+            // or restricted key) vs SERVICE_DISABLED (Pollen API not enabled on
+            // the project). Never log the URL — it carries the key, same
+            // reasoning as the catch below.
+            let googleStatus: string | undefined;
+            try {
+              const errorBody = (await response.json()) as {
+                error?: { status?: string };
+              };
+              googleStatus = errorBody.error?.status;
+            } catch {
+              // Non-JSON error body; the HTTP status alone still narrows it.
+            }
+            const failureShape = `${response.status}:${googleStatus ?? 'unknown'}`;
+            if (!reportedGoogleFailures.has(failureShape)) {
+              reportedGoogleFailures.add(failureShape);
+              logRouteError('pollen', new Error('Google Pollen returned a non-OK response'), {
+                upstream: 'pollen.googleapis.com',
+                status: response.status,
+                googleStatus,
+              });
             }
           }
         } catch (error) {
