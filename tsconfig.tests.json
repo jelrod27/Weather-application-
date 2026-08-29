@@ -15,7 +15,8 @@
     "__tests__/preferences-resolve.test.ts",
     "__tests__/weather-session-cache.test.ts",
     "__tests__/useWeatherSession.city.test.tsx",
-    "__tests__/education-guides.test.ts"
+    "__tests__/education-guides.test.ts",
+    "__tests__/theme-contrast.test.ts"
   ],
   "exclude": [
     "node_modules",

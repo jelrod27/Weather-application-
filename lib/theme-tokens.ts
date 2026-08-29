@@ -30,7 +30,13 @@ const BASE: ThemeStyles = {
   borderColor: 'border-transparent',
   border: 'border-0',
   accentBg: 'bg-primary',
-  accentText: 'text-primary-foreground',
+  // Accent-coloured text on the page background. NOT --primary-foreground:
+  // that token is the text colour for content sitting ON a primary fill, so it
+  // is ~equal to the background in every theme and renders at ~1:1 contrast
+  // when used as standalone text. It looked fine on the five dark themes only
+  // because `.glow` painted a primary-coloured text-shadow behind it; daybreak
+  // suppresses glow (globals.css) and the text vanished entirely.
+  accentText: 'text-primary',
   cardBg: 'bg-card',
   hoverBg: 'hover:bg-primary/20',
   glow: 'glow',
