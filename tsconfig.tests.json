@@ -14,7 +14,8 @@
     "__tests__/verify-cron-auth.test.ts",
     "__tests__/preferences-resolve.test.ts",
     "__tests__/weather-session-cache.test.ts",
-    "__tests__/useWeatherSession.city.test.tsx"
+    "__tests__/useWeatherSession.city.test.tsx",
+    "__tests__/education-guides.test.ts"
   ],
   "exclude": [
     "node_modules",
