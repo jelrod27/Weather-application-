@@ -19,6 +19,19 @@
 
     font-family: var(--font-body, var(--font-ui), ui-sans-serif, system-ui, sans-serif);
     font-weight: 400;
+
+    /* Reading typography for long-form Guides. Declared here rather than on
+       :root because next/font defines --font-ui via a class on <body>
+       (app/layout.tsx) — at :root it is undefined, and a var() with no
+       fallback would make this property invalid at computed-value time, so
+       every Guide would silently inherit whatever font sat above it. That is
+       the exact failure planning/adr/0003 exists to prevent.
+
+       Never set per theme: four of the six themes set --font-body to a
+       monospace face and two set it to VT323, which is survivable at 84 words
+       and unreadable at 900. Themes colour the page; they do not decide
+       legibility. */
+    --font-reading: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
   }
 
   /* Universal severity tokens — meaning is universal (red = danger),
@@ -46,12 +59,6 @@
     --notation-ink: var(--text);
     --notation-grid: rgba(var(--theme-accent-rgb), 0.16);
     --notation-paper: var(--bg-elev);
-
-    /* Reading typography for long-form Guides. Defined once here, never per
-       theme: four of the six themes set --font-body to a monospace face and
-       two set it to VT323, which is survivable at 84 words and unreadable at
-       900. Themes colour the page; they do not decide legibility. */
-    --font-reading: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
   }
 }
 

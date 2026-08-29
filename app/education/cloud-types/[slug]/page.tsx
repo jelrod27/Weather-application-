@@ -18,8 +18,14 @@ interface PageProps {
 export function generateStaticParams() {
   // Featured Entries plus anything that has a Guide, so a new markdown file is
   // statically rendered without also being added to the featured list.
+  //
+  // Filtered to slugs that actually resolve to an Entry: the page calls
+  // notFound() when getCloudBySlug misses, so a mistyped filename would
+  // otherwise prerender a 404 and the author would never learn their Guide is
+  // unreachable. education-guides.test.ts asserts the correspondence so the
+  // typo fails CI rather than being quietly filtered away here.
   const slugs = new Set([...FEATURED_DETAIL_SLUGS.cloud, ...getGuideSlugs('cloud')])
-  return [...slugs].map((slug) => ({ slug }))
+  return [...slugs].filter((slug) => getCloudBySlug(slug)).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

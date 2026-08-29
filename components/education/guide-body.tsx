@@ -19,6 +19,9 @@ import { buildGuideSegments } from '@/lib/education/guide-layout'
 function GuideFigure({ id, context }: { id: string; context: DiagramContext }) {
   const diagram = getDiagram(id)
   if (!diagram) return null
+  // Resolving an id is not the same as being able to draw: a diagram that would
+  // render nothing must not leave its caption stranded.
+  if (diagram.isRenderable && !diagram.isRenderable(context)) return null
 
   const { Component, caption } = diagram
   return (

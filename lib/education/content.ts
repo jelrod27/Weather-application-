@@ -24,15 +24,33 @@ const KIND_DIRECTORY: Record<EducationEntryKind, string> = {
   phenomenon: 'phenomena',
 }
 
-/** Guides may cite only official meteorological authorities. */
+/**
+ * Guides may cite only official meteorological authorities. Exact hostnames
+ * rather than a suffix match, because `endsWith('weather.gov')` would also
+ * accept `notweather.gov`. Add hosts here as Guides need them — a citation on
+ * an unlisted host is dropped, and `readSources` warns so that shows up at
+ * build time rather than as a quietly missing entry in the Sources section.
+ */
 const ALLOWED_SOURCE_HOSTS: ReadonlySet<string> = new Set([
+  'weather.gov',
   'www.weather.gov',
+  'forecast.weather.gov',
   'www.noaa.gov',
   'www.spc.noaa.gov',
   'www.nhc.noaa.gov',
   'www.nssl.noaa.gov',
-  'forecast.weather.gov',
 ])
+
+/** Whether a Guide may cite this URL. Exported so tests assert the real rule. */
+export function isAllowedSourceUrl(url: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  return parsed.protocol === 'https:' && ALLOWED_SOURCE_HOSTS.has(parsed.hostname)
+}
 
 /** Slugs address files on disk, so they are restricted rather than sanitised. */
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -66,14 +84,12 @@ function readSources(raw: unknown): GuideSource[] {
     if (!item || typeof item !== 'object') return []
     const { label, url } = item as Record<string, unknown>
     if (typeof label !== 'string' || typeof url !== 'string') return []
-    let parsed: URL
-    try {
-      parsed = new URL(url)
-    } catch {
+    if (!isAllowedSourceUrl(url)) {
+      // Loud, because a silently dropped citation vanishes from both the
+      // Sources section and the JSON-LD with a green build.
+      console.warn(`[education] Guide citation dropped, host not allowed: ${url}`)
       return []
     }
-    if (parsed.protocol !== 'https:') return []
-    if (!ALLOWED_SOURCE_HOSTS.has(parsed.hostname)) return []
     return [{ label, url }]
   })
 }

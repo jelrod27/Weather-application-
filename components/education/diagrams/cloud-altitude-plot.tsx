@@ -41,6 +41,7 @@ export default function CloudAltitudePlot({ context }: { context: DiagramContext
 
   const columnTop = yFor(range.topFt)
   const columnBottom = yFor(range.baseFt)
+  const columnHeight = Math.max(columnBottom - columnTop, 2)
   const titleId = `altitude-plot-${cloud.id}-title`
   const descId = `altitude-plot-${cloud.id}-desc`
 
@@ -55,6 +56,7 @@ export default function CloudAltitudePlot({ context }: { context: DiagramContext
       <desc id={descId}>
         {`${cloud.name.toLowerCase()} occupies ${cloud.altitudeRange}, shown against the standard low `}
         {'(surface to 6,500 ft), mid (6,500 to 20,000 ft) and high (20,000 to 40,000 ft) cloud bands.'}
+        {range.openTop ? ' The top edge is dashed because this cloud can climb past the value shown.' : ''}
       </desc>
 
       {BANDS.map((band) => {
@@ -106,24 +108,39 @@ export default function CloudAltitudePlot({ context }: { context: DiagramContext
         )
       })}
 
-      {/* This cloud's extent */}
-      <rect
-        x={430}
-        y={columnTop}
-        width={120}
-        height={Math.max(columnBottom - columnTop, 2)}
-        fill="var(--notation-warm)"
-        opacity={0.22}
-      />
-      <rect
-        x={430}
-        y={columnTop}
-        width={120}
-        height={Math.max(columnBottom - columnTop, 2)}
-        fill="none"
-        stroke="var(--notation-warm)"
-        strokeWidth={2}
-      />
+      {/* This cloud's extent. An open top ("60,000+ ft") is drawn as a dashed
+          edge, because the source means a floor rather than a ceiling — a
+          closed box would contradict prose that says the top can pass it. */}
+      <rect x={430} y={columnTop} width={120} height={columnHeight} fill="var(--notation-warm)" opacity={0.22} />
+      {range.openTop ? (
+        <>
+          <path
+            d={`M 430 ${columnTop} L 430 ${columnTop + columnHeight} L 550 ${columnTop + columnHeight} L 550 ${columnTop}`}
+            fill="none"
+            stroke="var(--notation-warm)"
+            strokeWidth={2}
+          />
+          <line
+            x1={430}
+            y1={columnTop}
+            x2={550}
+            y2={columnTop}
+            stroke="var(--notation-warm)"
+            strokeWidth={2}
+            strokeDasharray="5 4"
+          />
+        </>
+      ) : (
+        <rect
+          x={430}
+          y={columnTop}
+          width={120}
+          height={columnHeight}
+          fill="none"
+          stroke="var(--notation-warm)"
+          strokeWidth={2}
+        />
+      )}
       <text
         x={566}
         y={columnTop + 14}

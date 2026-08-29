@@ -1,8 +1,9 @@
 import { parseAltitudeRange } from '@/lib/education/altitude'
-import { getGuideContent, getGuideSlugs } from '@/lib/education/content'
+import { getGuideContent, getGuideSlugs, isAllowedSourceUrl } from '@/lib/education/content'
 import { getDiagram, getDiagramIds, isKnownDiagramId } from '@/lib/education/diagrams'
 import { buildGuideSegments } from '@/lib/education/guide-layout'
 import { cloudDatabase } from '@/data/cloud-types'
+import { getCloudBySlug } from '@/lib/education/entries'
 
 describe('parseAltitudeRange', () => {
   it('parses every altitudeRange in the cloud database', () => {
@@ -61,6 +62,19 @@ describe('diagram registry', () => {
       expect(getDiagram(id)?.caption).toBeTruthy()
     }
   })
+
+  it('reports a diagram as unrenderable when it would draw nothing', () => {
+    // Otherwise the <figure> and its caption are committed before the component
+    // returns null, stranding a caption with no diagram above it.
+    const plot = getDiagram('cloud-altitude-plot')!
+    const cumulonimbus = getCloudBySlug('cumulonimbus')!
+
+    expect(plot.isRenderable!({})).toBe(false)
+    expect(plot.isRenderable!({ cloud: cumulonimbus })).toBe(true)
+    expect(plot.isRenderable!({ cloud: { ...cumulonimbus, altitudeRange: 'high altitude' } })).toBe(
+      false,
+    )
+  })
 })
 
 describe('getGuideContent', () => {
@@ -85,13 +99,13 @@ describe('getGuideContent', () => {
     expect(getGuideContent('cloud', '')).toBeNull()
   })
 
-  it('accepts only citations from official meteorological hosts', () => {
+  it('keeps every citation the loader is willing to accept', () => {
     const guide = getGuideContent('cloud', 'cumulonimbus')
-    expect(guide!.sources.length).toBeGreaterThan(0)
+    expect(guide!.sources.length).toBe(6)
+    // Asserted against the loader's own rule rather than a looser restatement
+    // of it, so a citation the loader silently drops cannot pass here.
     for (const source of guide!.sources) {
-      const url = new URL(source.url)
-      expect(url.protocol).toBe('https:')
-      expect(url.hostname.endsWith('.noaa.gov') || url.hostname.endsWith('weather.gov')).toBe(true)
+      expect(isAllowedSourceUrl(source.url)).toBe(true)
     }
   })
 
@@ -149,5 +163,31 @@ describe('buildGuideSegments', () => {
     ])
     expect(segments.map((s) => s.diagramId)).toEqual(['a', 'b', null])
     expect(segments[1].markdown).toBe('')
+  })
+})
+
+describe('isAllowedSourceUrl', () => {
+  it('accepts official meteorological hosts over https', () => {
+    expect(isAllowedSourceUrl('https://www.weather.gov/safety/thunderstorm')).toBe(true)
+    expect(isAllowedSourceUrl('https://forecast.weather.gov/glossary.php?word=anvil')).toBe(true)
+    expect(isAllowedSourceUrl('https://www.spc.noaa.gov/faq/')).toBe(true)
+  })
+
+  it('refuses lookalikes, unlisted hosts and plaintext', () => {
+    // A suffix match would let this through, which is why the rule is exact.
+    expect(isAllowedSourceUrl('https://notweather.gov/safety')).toBe(false)
+    expect(isAllowedSourceUrl('https://weather.gov.example.com/safety')).toBe(false)
+    expect(isAllowedSourceUrl('http://www.weather.gov/safety')).toBe(false)
+    expect(isAllowedSourceUrl('https://en.wikipedia.org/wiki/Cumulonimbus')).toBe(false)
+    expect(isAllowedSourceUrl('not a url')).toBe(false)
+  })
+})
+
+describe('Guide slugs correspond to Entries', () => {
+  it('resolves every cloud Guide filename to a cloud Entry', () => {
+    // A mistyped filename would otherwise be filtered out of
+    // generateStaticParams and the Guide would be silently unreachable.
+    const orphans = getGuideSlugs('cloud').filter((slug) => !getCloudBySlug(slug))
+    expect(orphans).toEqual([])
   })
 })

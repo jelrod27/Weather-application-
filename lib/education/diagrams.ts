@@ -12,6 +12,7 @@
 
 import CloudAltitudePlot from '@/components/education/diagrams/cloud-altitude-plot'
 import StormCrossSection from '@/components/education/diagrams/storm-cross-section'
+import { parseAltitudeRange } from '@/lib/education/altitude'
 import type { DiagramDefinition } from '@/lib/education/diagram-types'
 
 const REGISTRY: Record<string, DiagramDefinition> = {
@@ -26,6 +27,8 @@ const REGISTRY: Record<string, DiagramDefinition> = {
     caption:
       'Vertical extent against the standard cloud bands. Most genera sit inside one band; clouds of vertical development cross all three.',
     Component: CloudAltitudePlot,
+    isRenderable: (context) =>
+      Boolean(context.cloud && parseAltitudeRange(context.cloud.altitudeRange)),
   },
 }
 
