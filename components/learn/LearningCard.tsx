@@ -13,8 +13,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -33,8 +32,7 @@ export default function LearningCard({
   description,
   itemCount
 }: LearningCardProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   return (
     <Link href={href} className="block h-full">

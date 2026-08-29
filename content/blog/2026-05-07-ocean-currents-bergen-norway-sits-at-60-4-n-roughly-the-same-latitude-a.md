@@ -1,6 +1,6 @@
 ---
 slug: ocean-currents-bergen-norway-sits-at-60-4-n-roughly-the-same-latitude-a
-title: "Ocean Currents & Heat Transport: Bergen, Norway sits at 60.4° N — roughly the same latitude as Anchorage, Alas"
+title: "Ocean Heat Transport: Why Bergen Is Warmer Than Anchorage (May 2026)"
 date: 2026-05-07T23:02:42.628Z
 author: 16bitbot
 summary: "Bergen, Norway sits at 60.4° N — roughly the same latitude as Anchorage, Alaska."

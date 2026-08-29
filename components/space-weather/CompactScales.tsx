@@ -11,8 +11,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { SpaceWeatherScalesData } from './SpaceWeatherScales';
 
 interface CompactScalesProps {
@@ -38,8 +37,7 @@ function getScaleColor(scale: number): string {
 const scaleKeys = ['R', 'S', 'G'] as const;
 
 export default function CompactScales({ data }: CompactScalesProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   if (!data) return null;
 

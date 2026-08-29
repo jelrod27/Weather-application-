@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createTtlCache } from '@/lib/cache/ttl-cache'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 const RAINVIEWER_TILE_HOST = 'https://tilecache.rainviewer.com'
 const TILE_CACHE_TTL_MS = 10 * 60 * 1000
@@ -26,11 +27,17 @@ const tileCache = createTtlCache<CachedTile>({
   maxEntries: MAX_TILE_CACHE_ENTRIES,
 })
 
-function tileResponse(body: ArrayBuffer, contentType: string, cacheControl: string): NextResponse {
+function tileResponse(
+  body: ArrayBuffer,
+  contentType: string,
+  cacheControl: string,
+  extraHeaders: Record<string, string> = {},
+): NextResponse {
   return new NextResponse(body, {
     headers: {
       'Content-Type': contentType,
       'Cache-Control': cacheControl,
+      ...extraHeaders,
     },
   })
 }
@@ -67,15 +74,16 @@ async function fetchTileFromRainViewer(joined: string): Promise<CachedTile> {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { path } = await context.params
     const joined = path.join('/')
 
     if (!TILE_PATH.test(joined)) {
-      return NextResponse.json({ error: 'Invalid radar tile path' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid radar tile path' }, { status: 400, headers: rateLimitHeaders })
     }
 
     try {
@@ -84,11 +92,21 @@ export async function GET(
       const { body, contentType } = await tileCache.load(joined, () =>
         fetchTileFromRainViewer(joined),
       )
-      return tileResponse(body, contentType, 'public, max-age=300, s-maxage=600, stale-while-revalidate=120')
+      return tileResponse(
+        body,
+        contentType,
+        'public, max-age=300, s-maxage=600, stale-while-revalidate=120',
+        rateLimitHeaders,
+      )
     } catch (error) {
       const stale = tileCache.getStale(joined)
       if (stale) {
-        return tileResponse(stale.body, stale.contentType, 'public, max-age=60, stale-while-revalidate=300')
+        return tileResponse(
+          stale.body,
+          stale.contentType,
+          'public, max-age=60, stale-while-revalidate=300',
+          rateLimitHeaders,
+        )
       }
       logRouteError('radar-tile', error, { tile: joined })
       return NextResponse.json({ error: 'Failed to fetch radar tile' }, { status: 502 })
@@ -97,4 +115,5 @@ export async function GET(
     logRouteError('radar-tile', error)
     return NextResponse.json({ error: 'Failed to process radar tile request' }, { status: 500 })
   }
+  }, { rateLimitBucket: 'tiles', context: 'radar-tile' })
 }

@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/components/theme-provider";
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils";
+import { themeTokens } from '@/lib/theme-tokens';
 import { toast } from "@/components/ui/use-toast";
 import {
   Share2,
@@ -52,8 +51,7 @@ function ShareWeatherModal({
   onClose,
   weatherData,
 }: ShareWeatherModalProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || "nord") as ThemeType, "modal");
+  const themeClasses = themeTokens.modal;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -416,8 +414,7 @@ export function ShareButton({
   className,
 }: ShareButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || "nord") as ThemeType, "button");
+  const themeClasses = themeTokens.button;
 
   const handleClick = () => {
     setIsModalOpen(true);

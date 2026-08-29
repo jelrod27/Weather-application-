@@ -14,8 +14,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, RefreshCw, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -105,8 +104,7 @@ interface SunImageViewerProps {
 }
 
 export default function SunImageViewer({ className }: SunImageViewerProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [selectedWavelength, setSelectedWavelength] = useState<Wavelength>(WAVELENGTHS[0]);
   const [isLoading, setIsLoading] = useState(true);
   // Initialize to null to avoid hydration mismatch

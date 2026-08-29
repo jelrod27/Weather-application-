@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { MoonInfo } from '@/lib/stargazer/types';
 import { moonScore, getSubScoreLabel } from '@/lib/stargazer/score';
 import { formatTime, formatDate } from '@/lib/stargazer/format';
@@ -18,8 +17,7 @@ function daysUntil(target: Date): number {
 }
 
 export default function MoonIntel({ moon }: MoonIntelProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
   const impactScore = moonScore(moon.illumination, moon.moonUpDuringDarkWindowPercent);
   const impactLabel = getSubScoreLabel('moon', impactScore);
   const impactColor = impactScore >= 75 ? 'text-green-500' : impactScore >= 50 ? 'text-yellow-500' : impactScore >= 25 ? 'text-orange-500' : 'text-red-500';

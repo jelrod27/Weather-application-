@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { X, MapPin, Search, Plus, Star } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,8 +17,7 @@ interface AddLocationModalProps {
 
 export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: AddLocationModalProps) {
   const { user } = useAuth()
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'modal')
+  const themeClasses = themeTokens.modal
 
   const [searchTerm, setSearchTerm] = useState('')
   const [customName, setCustomName] = useState('')

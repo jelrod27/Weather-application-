@@ -14,8 +14,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Satellite } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import {
   ResponsiveContainer,
   LineChart,
@@ -395,8 +394,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function SpaceWeatherCharts() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const [range, setRange] = useState<TimeRange>('2H');
   const [datasets, setDatasets] = useState<ChartDataSets>({

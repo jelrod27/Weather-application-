@@ -14,8 +14,6 @@ import {
   Globe, Database, Shield, Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
 import PageWrapper from '@/components/page-wrapper';
 
 function Accordion({ title, icon: Icon, children, defaultOpen = false }: {
@@ -56,9 +54,6 @@ const modules = [
 ];
 
 export default function AboutPage() {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
-
   return (
     <PageWrapper>
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">

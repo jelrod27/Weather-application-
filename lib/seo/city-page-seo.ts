@@ -39,7 +39,7 @@ export function buildCityPageDescription(city: CityMeta, citySlug?: string): str
   if (citySlug && (PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
     return `${city.name}, ${city.state} climate averages, monthly weather patterns, and year-round temperature guide. Live forecast, 7-day outlook, and best time to visit.`
   }
-  return `${city.name}, ${city.state} climate averages, monthly weather patterns, and best time to visit. Live forecast, 7-day outlook, and year-round temperature data with retro terminal style.`
+  return `${city.name}, ${city.state} climate averages, monthly weather patterns, and best time to visit. Live forecast, 7-day outlook, and year-round temperature data.`
 }
 
 export function buildCityPageKeywords(city: CityMeta): string {

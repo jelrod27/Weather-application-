@@ -144,6 +144,18 @@ const nextConfig = {
         destination: '/education',
         permanent: true,
       },
+      {
+        source: '/',
+        has: [{ type: 'host', value: '16bitweather.co' }],
+        destination: 'https://www.16bitweather.co/',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: '16bitweather.co' }],
+        destination: 'https://www.16bitweather.co/:path*',
+        permanent: true,
+      },
     ]
   },
 

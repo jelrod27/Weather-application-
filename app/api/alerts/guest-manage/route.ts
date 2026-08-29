@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       if (!subscriber) throw new ApiError(404, 'Manage link is invalid')
       return NextResponse.json({ ok: true, subscriber: publicSubscriber(subscriber) })
     },
-    { context: 'alerts/guest-manage', errorMessage: 'Could not load subscription' },
+    { context: 'alerts/guest-manage', errorMessage: 'Could not load subscription', rateLimitBucket: 'account' },
   )
 }
 
@@ -89,6 +89,6 @@ export async function POST(request: NextRequest) {
         status: parsed.data.action === 'resume' ? 'enabled' : 'paused',
       })
     },
-    { context: 'alerts/guest-manage', errorMessage: 'Could not update subscription' },
+    { context: 'alerts/guest-manage', errorMessage: 'Could not update subscription', rateLimitBucket: 'account' },
   )
 }

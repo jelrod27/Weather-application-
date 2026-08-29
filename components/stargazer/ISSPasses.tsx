@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { ISSPass } from '@/lib/stargazer/types';
 import { formatTime, formatDate } from '@/lib/stargazer/format';
 
@@ -11,8 +10,7 @@ interface ISSPassesProps {
 }
 
 export default function ISSPasses({ passes }: ISSPassesProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   return (
     <div

@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import { useAuth } from '@/lib/auth'
 import { updateProfile } from '@/lib/supabase/database'
 import { updateUserPreferencesAPI } from '@/lib/services/preferences-service'
@@ -29,8 +28,7 @@ const WIND_UNIT_OPTIONS: Array<{ value: WindUnit; label: string }> = [
 ]
 
 export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'dashboard')
+  const themeClasses = themeTokens.dashboard
   const { user, profile, preferences, refreshPreferences, refreshProfile } = useAuth()
 
   const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('fahrenheit')

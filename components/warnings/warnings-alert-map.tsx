@@ -15,8 +15,8 @@ import { fromLonLat } from 'ol/proj'
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
 import type { FeatureLike } from 'ol/Feature'
 import type OlFeature from 'ol/Feature'
+import { CARTO_VOYAGER_XYZ_URL } from '@/lib/maps/carto-basemap'
 
-const CARTO_VOYAGER_URL = 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const CONUS_CENTER: [number, number] = [-98.5795, 39.8283]
 
 export interface MapPoint {
@@ -79,7 +79,7 @@ export default function WarningsAlertMap({
 
     const baseLayer = new TileLayer({
       source: new XYZ({
-        url: CARTO_VOYAGER_URL,
+        url: CARTO_VOYAGER_XYZ_URL,
         attributions:
           '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
         crossOrigin: 'anonymous',

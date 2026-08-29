@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }
 
 // PUT /api/user/preferences - Update user preferences
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }
 
 // POST /api/user/preferences - Create initial user preferences
@@ -195,5 +195,5 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }

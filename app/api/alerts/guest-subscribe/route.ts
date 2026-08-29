@@ -90,6 +90,6 @@ export async function POST(request: NextRequest) {
         message: 'If this address can receive Bitwatch mail, we sent the next step.',
       })
     },
-    { context: 'alerts/guest-subscribe', errorMessage: 'Could not subscribe' },
+    { context: 'alerts/guest-subscribe', errorMessage: 'Could not subscribe', rateLimitBucket: 'account' },
   )
 }

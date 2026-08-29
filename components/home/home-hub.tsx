@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { getCategoryConfig } from '@/components/news/CategoryBadge';
 import HomeHubCard from '@/components/home/home-hub-card';
 import HappeningNowCard from '@/components/home/happening-now-card';
@@ -37,8 +36,7 @@ function stargazerAccent(score: number | null): string {
 }
 
 export default function HomeHub({ userLocation, className }: HomeHubProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const data = useHomeHubData(userLocation);
 
   if (!userLocation) return null;

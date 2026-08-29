@@ -19,6 +19,7 @@ npm-debug.log*
 
 # Local agent workspace state
 .hermes/
+.firecrawl/
 
 # Generated security scan outputs
 security-reports/

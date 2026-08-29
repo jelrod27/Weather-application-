@@ -74,5 +74,5 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-  })
+  }, { rateLimitBucket: 'content' })
 }

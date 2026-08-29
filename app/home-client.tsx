@@ -19,7 +19,6 @@ import React, { memo } from "react"
 import { useRouter } from "next/navigation"
 import { LoadingSpinner } from "@/components/ui/loading-state"
 import { useTheme } from '@/components/theme-provider'
-import { type ThemeType } from '@/lib/theme-utils'
 import PageWrapper from "@/components/page-wrapper"
 import WeatherSearch from "@/components/weather-search"
 import dynamic from 'next/dynamic'
@@ -144,7 +143,7 @@ function WeatherApp() {
 
           {(loading || isAutoDetecting) && !weather && (
             <div className="mt-8">
-              <WeatherSkeleton theme={theme as ThemeType} />
+              <WeatherSkeleton />
             </div>
           )}
 

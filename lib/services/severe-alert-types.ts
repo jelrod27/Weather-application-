@@ -52,6 +52,11 @@ export type MonitorNewGuestAlert = {
   payload: SevereWeatherAlertPayload
 }
 
+export type SevereMonitorHooks = {
+  onNewAlert?: (item: MonitorNewAlert) => Promise<void>
+  onNewGuestAlert?: (item: MonitorNewGuestAlert) => Promise<void>
+}
+
 export type SevereMonitorRunResult = {
   subscriptionsChecked: number
   guestSubscribersChecked: number

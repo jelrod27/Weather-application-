@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import { runSevereAlertMonitor } from '@/lib/services/severe-alert-monitor'
+import { SEVERE_MONITOR_CONCURRENCY } from '@/lib/services/severe-alert-monitor-concurrency'
 import { fetchActiveAlertsDetail, fetchHarmWarningAlerts } from '@/lib/services/nws-alerts-service'
 import { loadCanonicalActiveAlerts, loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 
@@ -707,5 +708,57 @@ describe('runSevereAlertMonitor', () => {
     const result = await runSevereAlertMonitor(makeSupabaseMock({}, inserts) as never)
     expect(result.scoutAlerts).toBe(0)
     expect(inserts).toHaveLength(0)
+  })
+
+  it('processes many subscriptions without exceeding bounded concurrency', async () => {
+    const subs = Array.from({ length: 12 }, (_, i) => ({
+      ...denverSub,
+      id: `sub-${i}`,
+      saved_location_id: `loc-${i}`,
+      latitude: 39.74 + i * 0.01,
+    }))
+    fetchEnabledSevereSubscriptions.mockResolvedValue(subs)
+    mockFetchAlerts.mockResolvedValue([])
+
+    let current = 0
+    let max = 0
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'alert_monitor_state') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => {
+                  current += 1
+                  max = Math.max(max, current)
+                  await new Promise((resolve) => setTimeout(resolve, 20))
+                  current -= 1
+                  return { data: null, error: null }
+                },
+              }),
+            }),
+            upsert: async () => ({ error: null }),
+          }
+        }
+        if (table === 'bitwatch_deliveries') {
+          return {
+            insert: () => ({
+              select: () => ({
+                single: async () => ({ data: { id: 'outbox' }, error: null }),
+              }),
+            }),
+            update: () => ({ eq: async () => ({ error: null }) }),
+          }
+        }
+        throw new Error(`Unexpected table ${table}`)
+      },
+    }
+
+    const result = await runSevereAlertMonitor(supabase as never)
+
+    expect(result.subscriptionsChecked).toBe(12)
+    expect(result.errors).toEqual([])
+    expect(max).toBeGreaterThan(1)
+    expect(max).toBeLessThanOrEqual(SEVERE_MONITOR_CONCURRENCY)
   })
 })

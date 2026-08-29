@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { Launch } from '@/lib/stargazer/types';
 import { safeExternalUrl } from '@/lib/safe-url';
 import { formatDate } from '@/lib/stargazer/format';
@@ -34,8 +33,7 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
 }
 
 export default function LaunchSchedule({ launches }: LaunchScheduleProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (

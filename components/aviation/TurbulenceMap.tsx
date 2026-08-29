@@ -17,8 +17,8 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
+import { CARTO_DARK_XYZ_URL } from '@/lib/maps/carto-basemap';
 import { Plane, AlertTriangle, Clock, Mountain, X } from 'lucide-react';
 import {
   useTurbulenceData,
@@ -87,7 +87,6 @@ function getPirepColor(intensity: string | null): string {
   return SEVERITY_HEX[getPirepSeverity(intensity)];
 }
 
-const CARTO_DARK_URL = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 const CONUS_CENTER = [-98.5795, 39.8283];
 const CONUS_ZOOM = 4;
 
@@ -100,8 +99,7 @@ export default function TurbulenceMap({
   initialAltitude = 'all',
   initialHours = 2,
 }: TurbulenceMapProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<OLMap | null>(null);
@@ -152,7 +150,7 @@ export default function TurbulenceMap({
 
     const baseLayer = new TileLayer({
       source: new XYZ({
-        url: CARTO_DARK_URL,
+        url: CARTO_DARK_XYZ_URL,
         attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
         crossOrigin: 'anonymous',
       }),

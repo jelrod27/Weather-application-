@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }
 
 export async function GET(request: NextRequest) {
@@ -242,5 +242,5 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }

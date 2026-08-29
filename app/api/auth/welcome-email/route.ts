@@ -1,14 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import type { Database } from '@/lib/supabase/types'
 import { maybeSendWelcomeEmail } from '@/lib/services/welcome-email-service'
 import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  return withApiRoute(request, async () => {
   const cookieStore = await cookies()
 
   const supabase = createServerClient<Database>(
@@ -54,4 +57,5 @@ export async function POST() {
     skipped: result.skipped,
     reason: result.reason,
   })
+  }, { rateLimitBucket: 'account', context: 'auth/welcome-email' })
 }

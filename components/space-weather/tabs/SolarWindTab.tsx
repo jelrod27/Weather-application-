@@ -12,8 +12,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 
@@ -58,8 +57,7 @@ export default function SolarWindTab({
   solarWind,
   isLoading = false
 }: SolarWindTabProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   return (
     <div className={cn('space-y-4', themeClasses.background)}>

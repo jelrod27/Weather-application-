@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { CitySeoEnrichment } from '@/lib/city-metadata';
+import type { CitySeoEnrichment } from '@/lib/cities';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -13,11 +13,12 @@ export interface CityClimateGuideProps {
   };
   enrichment: CitySeoEnrichment | null;
   nearbyCities: Array<{ slug: string; name: string; state: string }>;
+  defaultOpen?: boolean;
 }
 
 /**
- * Optional climate / SEO reading for curated city pages.
- * Collapsed by default — live forecast stays primary for every visitor.
+ * Climate / SEO reading for curated city pages.
+ * Priority cities render expanded so monthly averages stay in the initial HTML.
  */
 export default function CityClimateGuide({
   fullLocation,
@@ -25,20 +26,24 @@ export default function CityClimateGuide({
   content,
   enrichment,
   nearbyCities,
+  defaultOpen = false,
 }: CityClimateGuideProps) {
   return (
     <details
       id="city-climate-guide"
       className="mx-auto max-w-4xl border-t border-weather-border/40 pt-6 font-mono text-weather-text group"
+      open={defaultOpen}
     >
       <summary className="cursor-pointer list-none px-2 py-3 rounded-md border border-weather-border/60 bg-weather-bg-elev/50 hover:border-weather-primary/50 transition-colors [&::-webkit-details-marker]:hidden">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-bold uppercase tracking-wider text-weather-primary">
             Climate guide &amp; monthly averages — {fullLocation}
           </span>
-          <span className="text-[10px] uppercase tracking-widest text-weather-muted">
-            Optional reading · tap to expand
-          </span>
+          {defaultOpen ? null : (
+            <span className="text-[10px] uppercase tracking-widest text-weather-muted">
+              Optional reading · tap to expand
+            </span>
+          )}
         </div>
       </summary>
 

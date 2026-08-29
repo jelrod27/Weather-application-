@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { Lock, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { updatePassword } from '@/lib/supabase/auth'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 
 const MIN_PASSWORD_LENGTH = 10
 
@@ -20,9 +19,7 @@ export default function UpdatePasswordPage() {
   // null = checking, true = recovery session present, false = no session
   const [hasSession, setHasSession] = useState<boolean | null>(null)
   const router = useRouter()
-  const { theme } = useTheme()
-
-  const themeClasses = getComponentStyles(theme as ThemeType, 'auth')
+  const themeClasses = themeTokens.auth
 
   useEffect(() => {
     let cancelled = false

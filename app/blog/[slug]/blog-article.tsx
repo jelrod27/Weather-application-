@@ -7,8 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme-provider'
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import { themeTokens } from '@/lib/theme-tokens'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
@@ -22,8 +21,7 @@ interface BlogArticleProps {
 }
 
 export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles(theme as ThemeType, 'card')
+  const themeClasses = themeTokens.card
 
   const shareConfig = {
     title: post.title,

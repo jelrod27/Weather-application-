@@ -11,8 +11,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { CATEGORY_CONFIG, type FeedCategory } from '@/lib/services/rss/feedSources';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import NewsCard from './NewsCard';
@@ -33,8 +32,7 @@ interface NewsCategorySectionsProps {
 }
 
 export default function NewsCategorySections({ sections, className }: NewsCategorySectionsProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   return (
     <div className={cn('space-y-8', className)}>

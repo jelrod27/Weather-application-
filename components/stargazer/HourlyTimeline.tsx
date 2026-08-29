@@ -1,8 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { HourlyCondition, DarkWindow } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
@@ -114,8 +113,7 @@ export default function HourlyTimeline({
   conditions,
   darkWindow,
 }: HourlyTimelineProps) {
-  const { theme } = useTheme();
-  const styles = getComponentStyles((theme || 'nord') as ThemeType, 'card');
+  const styles = themeTokens.card;
 
   if (!conditions || conditions.length === 0) {
     return (

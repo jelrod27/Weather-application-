@@ -3,7 +3,7 @@
  */
 
 import { generateMetadata } from '@/app/weather/[city]/page'
-import { cityData } from '@/lib/city-metadata'
+import { cityData } from '@/lib/cities'
 
 describe('weather/[city]/page generateMetadata', () => {
   const makeParams = (city: string) => Promise.resolve({ city })

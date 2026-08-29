@@ -2,6 +2,7 @@
  * Solar Wind API — current + trend from NOAA SWPC RTSW feeds.
  */
 
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import {
   fetchRtswFeeds,
@@ -9,6 +10,7 @@ import {
   type SolarWindCurrent,
 } from '@/lib/services/swpc-solar-wind'
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface SolarWindData {
   timestamp: string
@@ -22,7 +24,8 @@ export interface SolarWindData {
   }>
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { windJson, magJson } = await fetchRtswFeeds({
       headers: { Accept: 'application/json' },
@@ -45,14 +48,17 @@ export async function GET() {
           source: 'NOAA Space Weather Prediction Center (RTSW)',
           error: 'Unable to fetch live solar wind data',
         },
-        { status: 502 },
+        { status: 502, headers: rateLimitHeaders },
       )
     }
 
-    return NextResponse.json({
-      data: result,
-      source: 'NOAA Space Weather Prediction Center (RTSW)',
-    })
+    return NextResponse.json(
+      {
+        data: result,
+        source: 'NOAA Space Weather Prediction Center (RTSW)',
+      },
+      { headers: rateLimitHeaders },
+    )
   } catch (error) {
     logRouteError('solar-wind', error)
 
@@ -70,4 +76,5 @@ export async function GET() {
       { status: 500 },
     )
   }
+  }, { context: 'solar-wind' })
 }

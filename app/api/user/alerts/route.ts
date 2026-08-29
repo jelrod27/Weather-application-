@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       logRouteError('user/alerts', error)
       return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 })
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }
 
 export async function PATCH(request: NextRequest) {
@@ -107,5 +107,5 @@ export async function PATCH(request: NextRequest) {
       logRouteError('user/alerts', error)
       return NextResponse.json({ error: 'Failed to update alerts' }, { status: 500 })
     }
-  })
+  }, { rateLimitBucket: 'account' })
 }

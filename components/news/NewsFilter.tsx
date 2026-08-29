@@ -24,8 +24,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { CATEGORY_CONFIG, type FeedCategory } from '@/lib/services/rss/feedSources';
 
 type FilterCategory = FeedCategory | 'all';
@@ -60,8 +59,7 @@ export default function NewsFilter({
   isLoading = false,
   className,
 }: NewsFilterProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'navigation');
+  const themeClasses = themeTokens.navigation;
 
   const [localSearch, setLocalSearch] = React.useState(searchQuery);
 

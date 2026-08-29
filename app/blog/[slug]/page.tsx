@@ -10,7 +10,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const post = getPostBySlug(slug)
-  if (!post) return { title: 'Post Not Found' }
+  if (!post) return { title: 'Post Not Found', robots: { index: false, follow: false } }
 
   const ogImage = `/api/og/blog?title=${encodeURIComponent(post.title)}&subtitle=16bitbot+Weekly+Dispatch`
 

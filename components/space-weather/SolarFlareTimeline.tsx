@@ -13,8 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -87,8 +86,7 @@ function formatDate(dateStr: string): string {
 }
 
 export default function SolarFlareTimeline({ className }: SolarFlareTimelineProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   const [events, setEvents] = useState<FlareEvent[]>([]);
   const [summary, setSummary] = useState<FlareSummary | null>(null);

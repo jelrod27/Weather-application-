@@ -16,23 +16,18 @@
 
 
 import { useState } from "react"
-import { useTheme } from "@/components/theme-provider"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import EducationBackLink from "@/components/education/education-back-link"
 import { ChevronDown, ChevronUp } from "lucide-react"
-import type { ThemeType} from "@/lib/theme-utils";
-import { getComponentStyles } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { weatherPhenomena } from "@/data/fun-facts"
 
-
 export default function FunFactsPage() {
-  const { theme } = useTheme()
-  const currentTheme = (theme || 'nord') as ThemeType
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
 
-  const themeClasses = getComponentStyles(currentTheme, 'weather')
+  const themeClasses = themeTokens.weather
 
   const toggleCard = (id: string) => {
     const newExpanded = new Set(expandedCards)

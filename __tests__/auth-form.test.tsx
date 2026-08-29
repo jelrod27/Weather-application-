@@ -12,21 +12,6 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
 }))
 
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}))
-
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: 'bg-test',
-    text: 'text-test',
-    mutedText: 'text-muted',
-    borderColor: 'border-test',
-    accentBg: 'bg-accent',
-    accentText: 'text-accent',
-  }),
-}))
-
 const mockSignUp = jest.fn()
 const mockSignIn = jest.fn()
 const mockSignInWithProvider = jest.fn()

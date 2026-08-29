@@ -8,6 +8,16 @@
  * than a hand-rolled stand-in for it.
  */
 
+/**
+ * @jest-environment node
+ *
+ * The space-weather group had no tests at all. One mocked SWPC adapter now
+ * covers the shared series handler and both routes built on it.
+ *
+ * Runs in the node environment so the real NextResponse is exercised rather
+ * than a hand-rolled stand-in for it.
+ */
+
 jest.mock('@/lib/services/swpc-proxy', () => ({
   fetchSwpcJson: jest.fn(),
   fetchSwpc: jest.fn(),
@@ -17,8 +27,17 @@ jest.mock('@/lib/error-utils', () => ({
   logRouteError: jest.fn(),
 }));
 
+jest.mock('@/lib/services/weather-rate-limiter', () => ({
+  rateLimitRequest: jest.fn().mockResolvedValue({
+    allowed: true,
+    headers: { 'X-RateLimit-Remaining': '99' },
+  }),
+}));
+
+import { NextRequest } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils';
+import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 import {
   finiteRounded,
   SPACE_WEATHER_CACHE,
@@ -27,9 +46,18 @@ import {
 } from '@/lib/space-weather/series-route';
 
 const mockFetch = fetchSwpcJson as jest.MockedFunction<typeof fetchSwpcJson>;
+const mockedRateLimit = rateLimitRequest as jest.MockedFunction<typeof rateLimitRequest>;
+
+function makeRequest(path = '/api/space-weather/test'): NextRequest {
+  return new NextRequest(`http://localhost${path}`);
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockedRateLimit.mockResolvedValue({
+    allowed: true,
+    headers: { 'X-RateLimit-Remaining': '99' },
+  } as Awaited<ReturnType<typeof rateLimitRequest>>);
 });
 
 describe('finiteRounded', () => {
@@ -69,7 +97,7 @@ describe('swpcSeriesRoute', () => {
       { t: '2026-08-01T01:00Z', v: 4.2 },
     ]);
 
-    const res = await handler();
+    const res = await handler(makeRequest());
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       data: [
@@ -88,7 +116,7 @@ describe('swpcSeriesRoute', () => {
       { t: 'c', v: 3 },
     ]);
 
-    const body = await (await handler()).json();
+    const body = await (await handler(makeRequest())).json();
     expect(body.data).toEqual([
       { time: 'a', value: 1 },
       { time: 'c', value: 3 },
@@ -97,7 +125,7 @@ describe('swpcSeriesRoute', () => {
 
   it('returns an empty series rather than failing when upstream has no rows', async () => {
     mockFetch.mockResolvedValue([]);
-    const res = await handler();
+    const res = await handler(makeRequest());
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ data: [], source: SWPC_GOES_SOURCE });
   });
@@ -105,7 +133,7 @@ describe('swpcSeriesRoute', () => {
   it('logs and returns 500 with the route wording when upstream fails', async () => {
     mockFetch.mockRejectedValue(new Error('SWPC 503'));
 
-    const res = await handler();
+    const res = await handler(makeRequest());
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({ error: 'Failed to fetch test data' });
     expect(logRouteError).toHaveBeenCalledWith('Test Series', expect.any(Error));
@@ -121,8 +149,20 @@ describe('swpcSeriesRoute', () => {
       toPoint: (row) => ({ value: row.v }),
     });
     mockFetch.mockResolvedValue([{ v: 1 }]);
-    const res = await realtime();
+    const res = await realtime(makeRequest());
     expect(res.headers.get('Cache-Control')).toBe(SPACE_WEATHER_CACHE.realtime);
+  });
+
+  it('returns the rate-limit response without fetching when denied', async () => {
+    const denied = { status: 429, json: async () => ({ error: 'Too Many Requests' }) };
+    mockedRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      response: denied as never,
+    });
+
+    const res = await handler(makeRequest());
+    expect(res).toBe(denied);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });
 
@@ -134,7 +174,7 @@ describe('magnetometer route', () => {
       { time_tag: 't2', satellite: '18', He: 1, Hp: null as unknown as number, Hn: 1, total: 1 },
     ]);
 
-    const body = await (await GET()).json();
+    const body = await (await GET(makeRequest('/api/space-weather/magnetometer'))).json();
     expect(body.data).toEqual([{ time: 't1', hp: 12.35 }]);
     expect(body.source).toBe(SWPC_GOES_SOURCE);
   });
@@ -154,7 +194,7 @@ describe('proton-flux route', () => {
       { time_tag: 't1', satellite: '18', flux: 0.7, energy: '>=100 MeV' },
     ]);
 
-    const body = await (await GET()).json();
+    const body = await (await GET(makeRequest('/api/space-weather/proton-flux'))).json();
     expect(body.data).toEqual([{ time: 't1', flux: 0.5 }]);
   });
 
@@ -165,7 +205,7 @@ describe('proton-flux route', () => {
       { time_tag: 't2', satellite: '18', flux: 0.9, energy: '5 MeV' },
     ]);
 
-    const body = await (await GET()).json();
+    const body = await (await GET(makeRequest('/api/space-weather/proton-flux'))).json();
     expect(body.data).toEqual([{ time: 't1', flux: 0.5 }]);
   });
 
@@ -173,7 +213,7 @@ describe('proton-flux route', () => {
     const { GET } = await import('@/app/api/space-weather/proton-flux/route');
     mockFetch.mockRejectedValue(new Error('boom'));
 
-    const res = await GET();
+    const res = await GET(makeRequest('/api/space-weather/proton-flux'));
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({ error: 'Failed to fetch proton flux data' });
   });

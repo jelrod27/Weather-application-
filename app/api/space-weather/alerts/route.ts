@@ -7,9 +7,11 @@
  * Fetches Space Weather alerts from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 interface NOAAAlert {
   product_id: string;
@@ -105,7 +107,8 @@ function extractSummary(message: string): string {
   return summary.slice(0, 300) + (summary.length > 300 ? '...' : '');
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const response = await fetchSwpc('https://services.swpc.noaa.gov/products/alerts.json', {
       headers: { Accept: 'application/json' },
@@ -144,7 +147,7 @@ export async function GET() {
       count: alerts.length,
       timestamp: new Date().toISOString(),
       source: 'NOAA Space Weather Prediction Center',
-    });
+    }, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/alerts', error);
@@ -157,4 +160,5 @@ export async function GET() {
       error: 'Unable to fetch live data',
     }, { status: 500 });
   }
+  }, { context: 'space-weather/alerts' });
 }

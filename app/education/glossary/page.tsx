@@ -2,8 +2,7 @@
 
 import React from "react"
 import PageWrapper from "@/components/page-wrapper"
-import { useTheme } from "@/components/theme-provider"
-import { getComponentStyles, type ThemeType } from "@/lib/theme-utils"
+import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getAllMetrics } from "@/lib/weather-definitions"
@@ -56,8 +55,7 @@ function JumpNav({
   items: { id: string; name: string }[]
   icons: Record<string, LucideIcon>
 }) {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   return (
     <div className="mb-6">
@@ -85,8 +83,7 @@ function JumpNav({
 }
 
 export default function GlossaryPage() {
-  const { theme } = useTheme()
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
   const metrics = getAllMetrics()
   const concepts = getAllConcepts()
 
@@ -110,9 +107,13 @@ export default function GlossaryPage() {
           >
             WEATHER GLOSSARY
           </h1>
+          <p className={cn('text-sm font-mono uppercase tracking-widest mb-3', themeClasses.accentText)}>
+            English forecast terms — not a live city forecast
+          </p>
           <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
-            Dashboard metrics and storm-spotter concepts in one reference. Each entry explains what it
-            means, how it is measured, what values indicate, and practical tips you can use every day.
+            English-language definitions of dashboard metrics and storm-spotter concepts. Each entry
+            explains what it means, how it is measured, what values indicate, and practical tips for
+            reading a forecast. For current conditions, open a city page.
           </p>
         </div>
 

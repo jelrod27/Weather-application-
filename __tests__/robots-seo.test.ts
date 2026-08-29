@@ -84,5 +84,6 @@ describe('robots.txt AI crawler policy', () => {
     expect(defaultBlock).not.toContain('Allow: /situation')
     expect(defaultBlock).not.toContain('Allow: /map')
     expect(defaultBlock).not.toContain('Allow: /hourly')
+    expect(defaultBlock).not.toContain('Allow: /extremes')
   })
 })

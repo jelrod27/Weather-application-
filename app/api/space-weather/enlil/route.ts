@@ -7,9 +7,11 @@
  * Fetches ENLIL model animation frames from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 const ENLIL_BASE_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/';
 const ENLIL_LATEST_URL = 'https://services.swpc.noaa.gov/images/animations/enlil/latest.jpg';
@@ -17,7 +19,8 @@ const ENLIL_LATEST_URL = 'https://services.swpc.noaa.gov/images/animations/enlil
 // Pattern: enlil_com2_NNNNN_YYYYMMDDTHHMMSS.jpg
 const FRAME_PATTERN = /enlil_com2_\d+_\d{8}T\d{6}\.jpg/g;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const response = await fetchSwpc(ENLIL_BASE_URL);
 
@@ -54,6 +57,7 @@ export async function GET() {
       {
         headers: {
           'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=120',
+          ...rateLimitHeaders,
         },
       }
     );
@@ -65,4 +69,5 @@ export async function GET() {
       { status: 500 }
     );
   }
+  }, { context: 'ENLIL' });
 }

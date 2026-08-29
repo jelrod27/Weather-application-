@@ -5,21 +5,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-// Mock the theme provider
-jest.mock('@/components/theme-provider', () => ({
-  useTheme: () => ({ theme: 'nord' }),
-}));
-
-// Mock theme-utils
-jest.mock('@/lib/theme-utils', () => ({
-  getComponentStyles: () => ({
-    background: '',
-    headerText: '',
-    text: '',
-    accentText: '',
-  }),
-}));
-
 // Mock next/dynamic to render a simple placeholder
 jest.mock('next/dynamic', () => {
   return (loader: () => Promise<any>) => {

@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils'
+import type { ThemeType } from '@/lib/theme-config'
+import { themeTokens } from '@/lib/theme-tokens'
 import { HeroWeatherCard } from "@/components/hero-weather-card"
 import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
 import { AirQualityDisplay } from "@/components/air-quality-display"
@@ -70,7 +71,7 @@ export function WeatherDisplay({
   precipitation,
   showRadar = true
 }: WeatherDisplayProps) {
-  const themeClasses = getComponentStyles(theme as ThemeType, 'weather')
+  const themeClasses = themeTokens.weather
 
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
@@ -109,7 +110,7 @@ export function WeatherDisplay({
         windSpeed={weather.wind?.speed}
         windUnit={weather.unit === '°C' ? 'km/h' : 'mph'}
         precipChance={weather.forecast?.[0]?.details?.precipitationChance}
-        glowClass={theme === 'daybreak' ? undefined : themeClasses.glow}
+        glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
 

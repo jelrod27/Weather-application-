@@ -12,8 +12,7 @@
 import React, { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { AlertTriangle, Info, Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 import type { AviationAlert } from '@/lib/services/aviation-service';
 
 export type { AviationAlert };
@@ -39,8 +38,7 @@ function severityStyle(severity: AviationAlert['severity']): CSSProperties {
 }
 
 export default function AlertTicker({ alerts, isLoading = false }: AlertTickerProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(true);

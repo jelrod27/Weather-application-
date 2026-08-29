@@ -65,6 +65,6 @@ export async function POST(request: NextRequest) {
       if (error) throw new ApiError(500, 'Could not save push subscription')
       return NextResponse.json({ ok: true })
     },
-    { context: 'push/subscribe', errorMessage: 'Could not subscribe to push' },
+    { context: 'push/subscribe', errorMessage: 'Could not subscribe to push', rateLimitBucket: 'account' },
   )
 }

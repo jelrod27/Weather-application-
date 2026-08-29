@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-08-16
-title: "This Week in Weather — August 16, 2026"
+title: "This Week in Weather: Storm Reports and the August 16 Forecast"
 date: 2026-08-16T14:37:58.274Z
 author: 16bitbot
-summary: "Severe weather rearview, storm reports, and the forecast pattern for the week of August 16, 2026."
+summary: "Storm reports, severe weather rearview, and the forecast pattern for the week of August 16, 2026."
 tags:
   - weekly-recap
   - forecast

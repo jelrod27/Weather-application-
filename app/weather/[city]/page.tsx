@@ -1,7 +1,8 @@
 /**
  * City Weather Page - Server Component
  *
- * Live weather renders first; climate/SEO content follows below the fold.
+ * Live weather renders first; climate/SEO content follows. Priority city
+ * climate guides stay expanded so monthly averages are in the initial HTML.
  */
 
 import { Suspense } from 'react'
@@ -14,9 +15,9 @@ import {
   cityData as cityMetadata,
   getCityEnrichment,
   getNearbyCities,
-} from '@/lib/city-metadata'
+} from '@/lib/cities'
 import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
-import { buildCityPageMetadata } from '@/lib/seo/city-page-seo'
+import { buildCityPageMetadata, PRIORITY_SEO_CITY_SLUGS } from '@/lib/seo/city-page-seo'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -115,6 +116,7 @@ export default async function CityWeatherPage({ params }: PageParams) {
       content={cityInfo.content}
       enrichment={enrichment}
       nearbyCities={nearbyCities}
+      defaultOpen={(PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)}
     />
   ) : null
 

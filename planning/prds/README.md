@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | Travel turbulence forecast — **not started**. Stargazer-style command center at `/travel/turbulence`; v1 scores existing AWC G-AIRMET + PIREPs (ops map already ships on `/aviation`) |
 | [PRD-bitwatch.md](./PRD-bitwatch.md) | Bitwatch — US NWS warning parity (guest push+email, Warning Event store, desk) plus Scout auto-detection |
 | [PRD-radar-v2.md](./PRD-radar-v2.md) | Radar v2 — RainViewer-only tiles + RainViewer-style UX, bottom player dock, Severe preset, new `components/radar-v2/` (v2.0 drops Iowa/MRMS/GeoMet) |
 | [PRD-condition-alerts.md](./PRD-condition-alerts.md) | Location-scoped condition alerts — in-app alert center for stargazing windows at saved locations, daily Vercel cron evaluation, schema + RLS design |
@@ -20,7 +21,7 @@ These paths appear in local automation (for example `.claude/ralph-loop.local.md
 | Historical path | Topic (from references) |
 |-----------------|-------------------------|
 | `docs/PRD-sun-forecast-space-weather.md` | Sun forecast, space weather dashboard, news + AI context |
-| `docs/PRD-aviation-turbulence.md` | Aviation / turbulence UI (e.g. Section 14 nitpicks) |
+| `docs/PRD-aviation-turbulence.md` | Aviation / turbulence UI nitpicks. **Superseded in-repo by** [`planning/aviation-uplift.md`](../aviation-uplift.md) (G-AIRMET ops map shipped 2026-05) and [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) (passenger forecast, not started) |
 
 ## GitHub
 

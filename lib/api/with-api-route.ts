@@ -13,7 +13,7 @@
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
+import { rateLimitRequest, type RateLimitBucket } from '@/lib/services/weather-rate-limiter'
 import { logRouteError } from '@/lib/error-utils'
 
 export type RateLimitHeaders = Record<string, string>
@@ -34,6 +34,12 @@ export interface ApiRouteOptions {
    * and must not be limited by caller identity.
    */
   rateLimit?: boolean
+  /**
+   * Isolated quota. Default `weather`. Use `account` for user alerts/prefs,
+   * `content` for news, `tiles` for radar/GFS image proxies, so those reads
+   * cannot 429 city search.
+   */
+  rateLimitBucket?: RateLimitBucket
   /** Body message when the handler throws. Default 'Internal server error'. */
   errorMessage?: string
   /** Status when the handler throws. Default 500. */
@@ -63,6 +69,7 @@ export async function withApiRoute(
   const {
     context = request.nextUrl?.pathname ?? 'api',
     rateLimit = true,
+    rateLimitBucket = 'weather',
     errorMessage = 'Internal server error',
     errorStatus = 500,
   } = options
@@ -70,7 +77,7 @@ export async function withApiRoute(
   let rateLimitHeaders: RateLimitHeaders = {}
 
   if (rateLimit) {
-    const result = await rateLimitRequest(request)
+    const result = await rateLimitRequest(request, rateLimitBucket)
     if (!result.allowed) return result.response
     rateLimitHeaders = result.headers
   }

@@ -7,9 +7,11 @@
  * Fetches solar cycle and sunspot data from NOAA SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 export interface SunspotData {
   timestamp: string;
@@ -27,7 +29,8 @@ export interface SunspotData {
   trend: 'increasing' | 'decreasing' | 'stable';
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const response = await fetchSwpc('https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json', {
       headers: { Accept: 'application/json' },
@@ -129,7 +132,7 @@ export async function GET() {
     return NextResponse.json({
       data: result,
       source: 'NOAA Space Weather Prediction Center',
-    });
+    }, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/sunspots', error);
@@ -146,4 +149,5 @@ export async function GET() {
       error: 'Unable to fetch live data',
     }, { status: 500 });
   }
+  }, { context: 'space-weather/sunspots' });
 }

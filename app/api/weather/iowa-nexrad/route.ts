@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
         },
       })
     }
-  })
+  }, { rateLimitBucket: 'tiles' })
 }
 
 // Handle OPTIONS requests for CORS preflight

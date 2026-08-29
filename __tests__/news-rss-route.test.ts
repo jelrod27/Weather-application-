@@ -70,6 +70,7 @@ describe('GET /api/news/rss', () => {
     const res = await GET(new NextRequest('http://localhost/api/news/rss'))
     expect(res.status).toBe(200)
     expect(mockedRateLimit).toHaveBeenCalled()
+    expect(mockedRateLimit).toHaveBeenCalledWith(expect.anything(), 'content')
     expect(mockedAggregate).toHaveBeenCalled()
   })
 })

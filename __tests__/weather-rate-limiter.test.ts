@@ -74,8 +74,8 @@ describe('Weather Rate Limiter', () => {
       const result = checkRateLimit('test-client-1');
       
       expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(119); // 120 - 1
-      expect(result.burstRemaining).toBe(29); // 30 - 1
+      expect(result.remaining).toBe(399); // 400 - 1
+      expect(result.burstRemaining).toBe(89); // 90 - 1
       expect(result.resetTime).toBeGreaterThan(Date.now());
       expect(result.burstResetTime).toBeGreaterThan(Date.now());
     });
@@ -89,33 +89,64 @@ describe('Weather Rate Limiter', () => {
         expect(result.allowed).toBe(true);
       }
       
-      // 6th request should show remaining 114
       const result = checkRateLimit(clientId);
       expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(114); // 120 - 6
-      expect(result.burstRemaining).toBe(24); // 30 - 6
+      expect(result.remaining).toBe(394); // 400 - 6
+      expect(result.burstRemaining).toBe(84); // 90 - 6
     });
 
-    it('should block when burst limit exceeded', () => {
+    it('should block when weather burst limit exceeded', () => {
       const clientId = 'test-client-3';
-      
-      // Make 30 requests (burst limit)
-      for (let i = 0; i < 30; i++) {
+
+      for (let i = 0; i < 90; i++) {
         const result = checkRateLimit(clientId);
         expect(result.allowed).toBe(true);
       }
-      
-      // 31st request should be blocked
+
       const result = checkRateLimit(clientId);
       expect(result.allowed).toBe(false);
       expect(result.burstRemaining).toBe(0);
     });
 
+    it('keeps account, content, and tiles buckets independent of weather burst', () => {
+      const clientId = 'bucket-isolation';
+
+      for (let i = 0; i < 90; i++) {
+        expect(checkRateLimit(clientId, 'weather').allowed).toBe(true);
+      }
+      expect(checkRateLimit(clientId, 'weather').allowed).toBe(false);
+      expect(checkRateLimit(clientId, 'account').allowed).toBe(true);
+      expect(checkRateLimit(clientId, 'content').allowed).toBe(true);
+      expect(checkRateLimit(clientId, 'tiles').allowed).toBe(true);
+    });
+
+    it('does not 429 weather after a tiles flood', () => {
+      const clientId = 'tiles-isolation';
+
+      const first = checkRateLimit(clientId, 'tiles');
+      expect(first.allowed).toBe(true);
+      expect(first.remaining).toBe(5999);
+      expect(first.burstRemaining).toBe(1199);
+
+      for (let i = 0; i < 1199; i++) {
+        expect(checkRateLimit(clientId, 'tiles').allowed).toBe(true);
+      }
+      expect(checkRateLimit(clientId, 'tiles').allowed).toBe(false);
+      expect(checkRateLimit(clientId, 'weather').allowed).toBe(true);
+    });
+
+    it('allows three city-search weather fan-outs without hitting burst', () => {
+      const clientId = 'three-city-search';
+      // Home load ~12 weather calls, then 3 searches × 8 (geocode+forecast+aq+pollen+dup geocode+hub leftovers)
+      for (let i = 0; i < 12 + 3 * 8; i++) {
+        expect(checkRateLimit(clientId, 'weather').allowed).toBe(true);
+      }
+    });
+
     it('should reset burst window after it expires', () => {
       const clientId = 'test-client-4';
       
-      // Make 30 requests
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 90; i++) {
         checkRateLimit(clientId);
       }
       
@@ -140,8 +171,8 @@ describe('Weather Rate Limiter', () => {
       // Client 2 should still have full limits
       const result = checkRateLimit(client2);
       expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(119);
-      expect(result.burstRemaining).toBe(29);
+      expect(result.remaining).toBe(399);
+      expect(result.burstRemaining).toBe(89);
     });
   });
 
@@ -156,8 +187,8 @@ describe('Weather Rate Limiter', () => {
       
       const result = checkRateLimit('env-test-client');
       expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(119); // Default 120 - 1
-      expect(result.burstRemaining).toBe(29); // Default 30 - 1
+      expect(result.remaining).toBe(399); // Default 400 - 1
+      expect(result.burstRemaining).toBe(89); // Default 90 - 1
     });
   });
 
@@ -181,8 +212,7 @@ describe('Weather Rate Limiter', () => {
     it('should return correct structure for blocked request', () => {
       const clientId = 'blocked-structure-test';
       
-      // Exhaust burst limit
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 90; i++) {
         checkRateLimit(clientId);
       }
       

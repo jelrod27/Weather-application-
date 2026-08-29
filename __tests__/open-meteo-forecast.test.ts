@@ -42,13 +42,13 @@ describe('processDailyForecastFromOpenMeteo', () => {
     const result = processDailyForecastFromOpenMeteo(daily);
 
     expect(result[0].condition).toBe('sunny');
-    expect(result[0].description).toBe('Clear sky');
+    expect(result[0].description).toBe('Clear Sky');
     expect(result[1].condition).toBe('cloudy');
     expect(result[1].description).toBe('Overcast');
     expect(result[2].condition).toBe('rainy');
-    expect(result[2].description).toBe('Slight rain');
+    expect(result[2].description).toBe('Slight Rain');
     expect(result[3].condition).toBe('snowy');
-    expect(result[3].description).toBe('Moderate snow fall');
+    expect(result[3].description).toBe('Moderate Snowfall');
     expect(result[4].condition).toBe('rainy');
     expect(result[4].description).toBe('Thunderstorm');
   });

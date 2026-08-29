@@ -7,9 +7,11 @@
  * Fetches NOAA Space Weather Scales (R, S, G) from SWPC
  */
 
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpc } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
+import { withApiRoute } from '@/lib/api/with-api-route'
 
 interface NOAAScalesResponse {
   '0': {
@@ -65,7 +67,8 @@ const G_DESCRIPTIONS: Record<number, string> = {
   5: 'Extreme: Possible grid collapse, aurora visible at ~40° latitude',
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const response = await fetchSwpc('https://services.swpc.noaa.gov/products/noaa-scales.json', {
       headers: { Accept: 'application/json' },
@@ -113,7 +116,7 @@ export async function GET() {
     return NextResponse.json({
       scales,
       source: 'NOAA Space Weather Prediction Center',
-    });
+    }, { headers: rateLimitHeaders });
 
   } catch (error) {
     logRouteError('space-weather/scales', error);
@@ -131,4 +134,5 @@ export async function GET() {
       error: 'Unable to fetch live data',
     }, { status: 500 });
   }
+  }, { context: 'space-weather/scales' });
 }

@@ -22,6 +22,7 @@ import {
 } from '@/lib/pollen/open-meteo-pollen';
 import { normalizePollenCategories } from '@/lib/pollen/normalize-pollen-categories';
 import { isServerRuntime } from '@/lib/runtime-env';
+import { getAQIDescription } from '@/lib/air-quality-utils';
 import { getWMODescription, getWMOCondition } from '../wmo-codes';
 import {
   formatPressureByRegion,
@@ -30,6 +31,7 @@ import {
   getApiUrl,
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
+import { fetchPollenForLocation } from '@/lib/pollen/fetch-pollen';
 
 /** Format Open-Meteo city wall-clock hour ("…T14:00") as "2 PM" without runtime TZ. */
 function formatHourlyLabel(naiveLocalTime: string): string {
@@ -60,15 +62,6 @@ function wmoCodeToConditionLabel(code: number): string {
     case 'snowy': return 'Snow';
     default: return 'Clear';
   }
-}
-
-function getAQICategory(aqi: number): string {
-  if (aqi <= 50) return 'Good';
-  if (aqi <= 100) return 'Moderate';
-  if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
-  if (aqi <= 200) return 'Unhealthy';
-  if (aqi <= 300) return 'Very Unhealthy';
-  return 'Hazardous';
 }
 
 function formatISOTimeToDisplay(isoString: string): string {
@@ -181,11 +174,17 @@ export async function buildWeatherDataFromOpenMeteo(
   const precipitationUnit = unitSystem === 'metric' ? 'mm' as const : 'inch' as const;
   const onServer = isServerRuntime();
 
-  // Client / Google path: pollen API in parallel with forecast+AQ.
+  // Client keeps same-origin /api/weather/pollen (CSP + rate limit).
+  // Server with Google key calls lib directly — no HTTP self-proxy.
   // Server without Google: derive pollen from the AQ payload after it returns.
-  const pollenPromise =
-    !onServer || process.env.GOOGLE_POLLEN_API_KEY
-      ? fetchPollenData(lat, lon)
+  const pollenPromise = !onServer
+    ? fetchPollenData(lat, lon)
+    : process.env.GOOGLE_POLLEN_API_KEY
+      ? fetchPollenForLocation(lat, lon).then(({ tree, grass, weed }) => ({
+          tree,
+          grass,
+          weed,
+        }))
       : null;
 
   // Client must keep same-origin /api proxies (CSP + rate limit).
@@ -237,7 +236,7 @@ export async function buildWeatherDataFromOpenMeteo(
 
   const uvIndex = Math.round(current?.uv_index ?? 0);
   const aqi = airQuality?.current?.us_aqi ?? 0;
-  const aqiCategory = getAQICategory(aqi);
+  const aqiCategory = getAQIDescription(aqi);
   const moonPhase = calculateMoonPhase();
 
   // Build 7-day forecast

@@ -10,8 +10,7 @@
 import React from 'react';
 import { Clock, Mountain, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme-provider';
-import { getComponentStyles, type ThemeType } from '@/lib/theme-utils';
+import { themeTokens } from '@/lib/theme-tokens';
 
 export type AltitudeFilter = 'all' | 'low' | 'mid' | 'high';
 
@@ -48,8 +47,7 @@ export default function TurbulenceControls({
   onAltitudeChange,
   onRefresh,
 }: TurbulenceControlsProps) {
-  const { theme } = useTheme();
-  const themeClasses = getComponentStyles((theme || 'nord') as ThemeType, 'weather');
+  const themeClasses = themeTokens.weather;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
