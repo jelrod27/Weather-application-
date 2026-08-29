@@ -51,3 +51,33 @@ _Avoid_: Generated advice, alert copy
 **Delivery**:
 One attempt to communicate a Warning Event lifecycle change to a Subscriber through a channel.
 _Avoid_: Alert, message, notification
+
+## Education Language
+
+**Entry**:
+One row in a source encyclopedia database describing a single cloud, weather system, or phenomenon. An Entry exists whether or not anything has been published about it.
+_Avoid_: Record, item, topic
+
+**Guide**:
+A published, URL-addressable long-form page written about one or more Entries. Guides are the education surface's search assets.
+_Avoid_: Detail page, article, featured entry
+
+**Entry Guide**:
+A Guide about exactly one Entry.
+_Avoid_: Detail page, entry page
+
+**Collection Guide**:
+A Guide about several Entries that share a theme, written when no single Entry warrants a page of its own.
+_Avoid_: Roundup, category page, listicle
+
+**Atlas**:
+A browsable index over one set of Entries. An Atlas lists Entries; it does not explain them at depth.
+_Avoid_: Encyclopedia, section, library
+
+**Hub**:
+The single landing page for the education surface.
+_Avoid_: Learn page, index, education home
+
+**Notation**:
+The standardized meteorological symbol and color system used to draw weather — frontal symbols, isobars, wind barbs, station models. Notation carries meaning, so it does not vary with presentation.
+_Avoid_: Chart style, diagram theme, icon set
