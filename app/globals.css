@@ -19,6 +19,19 @@
 
     font-family: var(--font-body, var(--font-ui), ui-sans-serif, system-ui, sans-serif);
     font-weight: 400;
+
+    /* Reading typography for long-form Guides. Declared here rather than on
+       :root because next/font defines --font-ui via a class on <body>
+       (app/layout.tsx) — at :root it is undefined, and a var() with no
+       fallback would make this property invalid at computed-value time, so
+       every Guide would silently inherit whatever font sat above it. That is
+       the exact failure planning/adr/0003 exists to prevent.
+
+       Never set per theme: four of the six themes set --font-body to a
+       monospace face and two set it to VT323, which is survivable at 84 words
+       and unreadable at 900. Themes colour the page; they do not decide
+       legibility. */
+    --font-reading: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
   }
 
   /* Universal severity tokens — meaning is universal (red = danger),
@@ -33,6 +46,19 @@
     --severity-moderate-bg: hsl(48 96% 53% / 0.12);
     --severity-severe-bg: hsl(25 95% 53% / 0.12);
     --severity-extreme-bg: hsl(0 84% 60% / 0.12);
+
+    /* Meteorological notation. Standardized chart symbols carry meaning the
+       same way the severity scale above does — a cold front is blue because
+       that is what a cold front IS, not because it suits the palette — so
+       these do not vary with theme. Substrate (paper, ink, grid) follows the
+       theme tokens instead. See planning/adr/0003. */
+    --notation-cold: hsl(211 89% 54%);
+    --notation-warm: hsl(2 76% 56%);
+    --notation-occluded: hsl(287 54% 60%);
+    --notation-precip: hsl(202 62% 52%);
+    --notation-ink: var(--text);
+    --notation-grid: rgba(var(--theme-accent-rgb), 0.16);
+    --notation-paper: var(--bg-elev);
   }
 }
 
@@ -82,6 +108,114 @@ body {
    ═══════════════════════════════════════════════════════════ */
 
 @layer components {
+
+  /* ── Education Guides ──────────────────────────────────────────────
+     Long-form reading typography, invariant across themes. Monospace is
+     kept where it is correct — eyebrows, captions, data — so Guides stay
+     visually related to the rest of the site. See planning/adr/0003. */
+
+  .guide-prose {
+    font-family: var(--font-reading);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text);
+    max-width: 68ch;
+  }
+
+  .guide-prose p {
+    margin: 0 0 1.25em;
+  }
+
+  .guide-prose h2 {
+    font-family: var(--font-reading);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    color: var(--text);
+    margin: 2.25em 0 0.6em;
+  }
+
+  .guide-prose h3 {
+    font-family: var(--font-reading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text);
+    margin: 1.75em 0 0.5em;
+  }
+
+  .guide-prose ul,
+  .guide-prose ol {
+    margin: 0 0 1.25em;
+    padding-left: 1.35em;
+  }
+
+  .guide-prose li + li {
+    margin-top: 0.4em;
+  }
+
+  .guide-prose li::marker {
+    color: var(--weather-accent);
+  }
+
+  .guide-prose a {
+    color: var(--weather-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  .guide-prose > *:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Values and units stay monospace inside prose. */
+  .guide-prose code {
+    font-family: var(--theme-font, ui-monospace, monospace);
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    background: rgba(var(--theme-accent-rgb), 0.10);
+  }
+
+  .guide-title {
+    font-family: var(--font-reading);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.05;
+    color: var(--text);
+  }
+
+  .guide-eyebrow {
+    font-family: var(--theme-font, ui-monospace, monospace);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .guide-figure {
+    margin: 2.25em 0;
+    max-width: 68ch;
+  }
+
+  .guide-figure figcaption {
+    font-family: var(--theme-font, ui-monospace, monospace);
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin-top: 0.85em;
+    padding-left: 0.8em;
+    border-left: 2px solid rgba(var(--theme-accent-rgb), 0.35);
+  }
+
+  /* Structured Entry fields — always monospace, always tabular. */
+  .guide-data {
+    font-family: var(--theme-font, ui-monospace, monospace);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
 
   /* Weather-specific card styling (use .weather-card class) */
   .weather-card {
