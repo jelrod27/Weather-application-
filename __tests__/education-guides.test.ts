@@ -117,6 +117,14 @@ describe('getGuideContent', () => {
     }
   })
 
+  it('keeps the review date that YAML hands back as a Date', () => {
+    // `reviewed: 2026-08-29` is a YAML timestamp, so gray-matter returns a Date
+    // and a string-only read dropped it — the page lost its "Checked against
+    // sources" line and its JSON-LD lost dateModified, with a green build.
+    const guide = getGuideContent('cloud', 'cumulonimbus')
+    expect(guide!.reviewed).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
   it('lists slugs that have Guides', () => {
     expect(getGuideSlugs('cloud')).toContain('cumulonimbus')
     expect(getGuideSlugs('phenomenon')).toEqual([])

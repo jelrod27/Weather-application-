@@ -21,6 +21,10 @@ const REGISTRY: Record<string, DiagramDefinition> = {
     caption:
       'Cross-section of a mature cumulonimbus. The updraft feeds the tower until the tropopause stops it and the anvil spreads downwind; the downdraft carries rain-cooled air to the surface, where it spreads out as a gust front.',
     Component: StormCrossSection,
+    // It draws a storm, so it belongs only to clouds of vertical development.
+    // The check has to live here rather than in an author's head now that
+    // scripts/education/ offers the registry to a drafting model by id.
+    isRenderable: (context) => context.cloud?.category === 'vertical',
   },
   'cloud-altitude-plot': {
     id: 'cloud-altitude-plot',
