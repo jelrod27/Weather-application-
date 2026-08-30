@@ -9,17 +9,10 @@
 
 import type { DiagramContext } from '@/lib/education/diagram-types';
 import { getDiagram, getDiagramIds } from '@/lib/education/diagrams';
-import { getCloudBySlug } from '@/lib/education/entries';
-import type { EducationEntryKind } from '@/lib/education/entries';
 
-/** What a diagram is allowed to know about this Entry. */
-export function diagramContextFor(kind: EducationEntryKind, slug: string): DiagramContext {
-  if (kind === 'cloud') {
-    const cloud = getCloudBySlug(slug);
-    return cloud ? { cloud } : {};
-  }
-  return {};
-}
+// Re-exported rather than redefined: the pages that render Guides use the same
+// function, so the generator cannot offer a diagram the page will not draw.
+export { diagramContextFor } from '@/lib/education/diagram-context';
 
 /**
  * Registry diagrams that can actually draw something for this Entry.
