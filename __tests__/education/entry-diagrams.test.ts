@@ -1,4 +1,3 @@
-import { getCloudBySlug } from '@/lib/education/entries';
 import {
   diagramContextFor,
   offeredDiagramsFor,
@@ -61,5 +60,14 @@ describe('validateGuideFile', () => {
     const result = validateGuideFile('content/blog/anything.md');
     expect(result.ok).toBe(false);
     expect(result.errors.join(' ')).toMatch(/not a Guide directory/);
+  });
+
+  it('refuses a path that is not the canonical Guide location', () => {
+    // The loader addresses a Guide by kind and slug, so a path elsewhere on
+    // disk would otherwise be reported on using the canonical Guide's content —
+    // a pass for a file that was never opened.
+    const result = validateGuideFile('/tmp/clouds/cumulonimbus.md');
+    expect(result.ok).toBe(false);
+    expect(result.errors.join(' ')).toMatch(/not the canonical Guide path/);
   });
 });

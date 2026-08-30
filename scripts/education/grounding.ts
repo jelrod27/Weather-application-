@@ -59,24 +59,46 @@ export interface SourceFetchResult {
   text?: string;
 }
 
-/** Strips markup and collapses whitespace. Not a parser — a reading pass. */
+const ENTITIES: Record<string, string> = {
+  nbsp: ' ',
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+};
+
+/**
+ * Strips markup and collapses whitespace. Not a parser — a reading pass.
+ *
+ * Two details that a chain of naive replaces gets wrong, and this text is fed
+ * to a model, so it is the indirect-injection surface ADR-0002 is about:
+ *
+ * Closing tags may carry whitespace before the `>`. `</script >` is valid HTML,
+ * and a regex anchored on `</script>` leaves the script body behind as prose.
+ *
+ * Entities are decoded in one pass rather than one replace per entity. Chained
+ * replaces re-scan their own output, so `&amp;lt;` became `&lt;` and then `<` —
+ * text that should read as the literal `&lt;` was unescaped twice.
+ */
 export function htmlToText(html: string): string {
   return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style\s*>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript\s*>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<\/(p|div|li|h[1-6]|tr|section)>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|tr|section)\s*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
+    .replace(/&(?:([a-z]+)|#(\d+));/gi, (match, name: string | undefined, code: string | undefined) => {
+      if (name) return ENTITIES[name.toLowerCase()] ?? match;
+      return code ? String.fromCodePoint(Number(code)) : match;
+    })
     .replace(/[ \t]+/g, ' ')
     .replace(/\n\s*\n\s*/g, '\n')
+    // An opening tag on the far side of a block boundary leaves a space at the
+    // head of the line. Harmless to read, but it is prompt text.
+    .replace(/\n[ \t]+/g, '\n')
     .trim();
 }
 

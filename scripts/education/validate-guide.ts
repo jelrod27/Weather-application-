@@ -53,6 +53,18 @@ export function validateGuideFile(filePath: string): GuideValidationResult {
     };
   }
 
+  // The loader below addresses a Guide by kind and slug, not by path, so it
+  // reads the canonical file. Without this check a path anywhere on disk would
+  // be reported on using the canonical Guide's body, citations and anchors —
+  // a pass for a file that was never opened.
+  const canonical = path.join(process.cwd(), 'content', 'education', directory, `${slug}.md`);
+  if (absolute !== canonical) {
+    return {
+      ok: false,
+      errors: [`${filePath} is not the canonical Guide path. Expected ${path.relative(process.cwd(), canonical)}.`],
+    };
+  }
+
   const raw = matter(fs.readFileSync(absolute, 'utf8'));
   const guide = getGuideContent(kind, slug);
   if (!guide) {

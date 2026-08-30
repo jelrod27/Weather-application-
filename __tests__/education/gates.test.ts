@@ -48,6 +48,13 @@ describe('checkBody', () => {
     expect(checkBody(`${exemplar.content.trim()}\n\n${link}`).join(' ')).toMatch(/markdown link/);
   });
 
+  it('rejects a reference-style link and its definition', () => {
+    // `[x][cirrus]` plus a `[cirrus]: /education/...` definition renders a live
+    // anchor just as an inline link does.
+    const body = `${exemplar.content.trim()}\n\nSee [the glossary][cirrus].\n\n[cirrus]: /education/cloud-types/cirrus`;
+    expect(checkBody(body).join(' ')).toMatch(/markdown link/);
+  });
+
   it('rejects a draft that is too short to be a Guide', () => {
     expect(checkBody('## A section\n\nToo little to publish.').join(' ')).toMatch(/words/);
   });

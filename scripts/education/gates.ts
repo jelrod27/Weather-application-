@@ -64,11 +64,13 @@ export function checkBody(body: string): string[] {
     errors.push('The draft embeds an image. Guides carry diagrams from the registry instead; remove the image markdown.');
   }
 
-  // Any link at all, not just an absolute one. A relative destination
+  // Any link at all, in either markdown spelling. A relative destination
   // (`[x](cirrus)`, `[x](#how-it-forms)`) is still a live anchor once
-  // rehype-sanitize is done with it, and both READMEs promise no links.
-  if (/\]\(/.test(body)) {
-    errors.push('The draft contains a markdown link. Citations belong in frontmatter sources, so write the body without links of any kind, relative ones included.');
+  // rehype-sanitize is done with it, and so is the reference form
+  // (`[x][cirrus]` with a `[cirrus]: /education/...` definition further down).
+  // Both READMEs promise a Guide body carries no links.
+  if (/\]\(/.test(body) || /\]\[/.test(body) || /^\s*\[[^\]]+\]:\s*\S/m.test(body)) {
+    errors.push('The draft contains a markdown link. Citations belong in frontmatter sources, so write the body without links of any kind — relative and reference-style included.');
   }
 
   if (/\bhttps?:\/\//i.test(body) || /\bwww\.[a-z0-9-]+\.[a-z]{2,}/i.test(body)) {
