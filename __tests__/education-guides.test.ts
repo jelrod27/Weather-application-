@@ -89,7 +89,13 @@ describe('getGuideContent', () => {
   })
 
   it('returns null for an Entry with no Guide', () => {
-    expect(getGuideContent('cloud', 'cirrus')).toBeNull()
+    // Cirrostratus, not one of the 29 published Guides: planning/adr/0001 keeps
+    // it an Atlas row, so it is the one kind of Entry guaranteed never to gain
+    // a Guide. This assertion used to name cirrus, which the generator then
+    // wrote a Guide for — the test asserted the exact state the pipeline
+    // exists to change. Do not swap this back to a featured slug.
+    expect(getCloudBySlug('cirrostratus')).toBeDefined()
+    expect(getGuideContent('cloud', 'cirrostratus')).toBeNull()
   })
 
   it('refuses slugs that could escape the content directory', () => {
@@ -127,7 +133,10 @@ describe('getGuideContent', () => {
 
   it('lists slugs that have Guides', () => {
     expect(getGuideSlugs('cloud')).toContain('cumulonimbus')
-    expect(getGuideSlugs('phenomenon')).toEqual([])
+    // Shape, not count. A kind whose content directory does not exist yet
+    // returns [] rather than throwing; asserting emptiness would break on the
+    // first phenomenon Guide, which is expected work rather than a regression.
+    expect(Array.isArray(getGuideSlugs('phenomenon'))).toBe(true)
   })
 })
 
