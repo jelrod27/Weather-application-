@@ -22,6 +22,8 @@
     "knip": "knip",
     "knip:fix": "knip --fix",
     "validate:images": "tsx scripts/newsletter/validate-images.ts",
+    "validate:education-sources": "tsx scripts/education/validate-sources.ts",
+    "education:guide": "tsx scripts/education/index.ts",
     "prepare": "husky || true"
   },
   "dependencies": {

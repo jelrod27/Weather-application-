@@ -107,6 +107,21 @@ function readDiagrams(raw: unknown): GuideDiagram[] {
 }
 
 /**
+ * The review date, as a `YYYY-MM-DD` string.
+ *
+ * `reviewed: 2026-08-29` is a YAML timestamp, and js-yaml hands gray-matter a
+ * Date for it — the same coercion `lib/blog/index.ts` documents for a post's
+ * `date`. A plain `typeof === 'string'` test therefore threw the value away,
+ * and the Guide rendered with no "Checked against sources" line and no
+ * `dateModified` in its JSON-LD, on a green build.
+ */
+function readReviewed(raw: unknown): string {
+  if (typeof raw === 'string') return raw.trim()
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw.toISOString().slice(0, 10)
+  return ''
+}
+
+/**
  * Returns the Guide for one Entry, or null when the Entry has no Guide, the
  * slug is not a safe slug, or required frontmatter is missing.
  */
@@ -126,7 +141,7 @@ export function getGuideContent(kind: EducationEntryKind, slug: string): GuideCo
     slug,
     title,
     summary,
-    reviewed: typeof data.reviewed === 'string' ? data.reviewed : '',
+    reviewed: readReviewed(data.reviewed),
     sources: readSources(data.sources),
     diagrams: readDiagrams(data.diagrams),
     body: content.trim(),

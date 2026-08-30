@@ -104,6 +104,10 @@ Six themes (`lib/theme-config.ts`): `nord`, `daybreak` (default), `synthwave84`,
 
 `scripts/newsletter/` generates posts into `content/blog/` and opens a PR, run by `.github/workflows/newsletter-{sunday,wednesday}.yml` (also `workflow_dispatch` with a `dry_run` input). It calls the Anthropic API (`ANTHROPIC_API_KEY`, model from `NEWSLETTER_MODEL`). These workflows push from CI, which is why the pre-push type-check is CI-skipped but the secret scan is not. Image sourcing is constrained by `lib/blog/allowed-hosts.ts` and validated by `npm run validate:images`.
 
+### Education Guide generation
+
+`scripts/education/` drafts one long-form Entry Guide into `content/education/` and opens a PR — manual dispatch only (`.github/workflows/education-guide.yml`), because the queue is finite. It shares the newsletter's `callAnthropic`, voice spec and `NEWSLETTER_MODEL`. Two hard rules it enforces, both easy to "fix" wrongly: the eligible set is the **29 Entries already published as Guide URLs**, never the other 47 (ADR-0001), and it only generates for kinds whose route actually calls `getGuideContent` — today `cloud` alone. Citations come from the catalog in `scripts/education/sources.ts` by id (`npm run validate:education-sources`), diagrams from the registry by id, and the body gate rejects links, URLs, images and raw HTML outright. `npm run education:guide -- --list` shows the queue. See `scripts/education/README.md`.
+
 ## Testing
 
 - Unit tests: `__tests__/**/*.test.[tj]s?(x)` (Jest + jsdom, `jest.config.mjs`). CSS, images, `react-markdown`, `rehype-sanitize`, and `remark-gfm` are mocked via `moduleNameMapper` — importing markdown libs in a test needs no extra setup.
