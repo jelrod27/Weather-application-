@@ -16,6 +16,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { WeatherSystemData } from '@/data/weather-systems'
 import type { GuideContent } from '@/lib/education/content'
+import { diagramContextFor } from '@/lib/education/diagram-context'
 import { getEducationDetailHref } from '@/lib/education/entries'
 
 interface WeatherSystemGuideProps {
@@ -23,16 +24,38 @@ interface WeatherSystemGuideProps {
   guide: GuideContent
 }
 
-/** Structured Entry fields worth showing beside the prose, in reading order. */
-function specs(system: WeatherSystemData): { label: string; value: string }[] {
+interface Spec {
+  label: string
+  value: string
+}
+
+/**
+ * Measured values, for the two-column right-aligned list.
+ *
+ * `classification` is deliberately absent — it is already the eyebrow above the
+ * title, the same way `cloud-guide.tsx` keeps its eyebrow fields out of specs.
+ */
+function measurements(system: WeatherSystemData): Spec[] {
   return [
-    { label: 'Classification', value: system.classification },
     ...(system.pressureRange ? [{ label: 'Pressure', value: system.pressureRange }] : []),
     { label: 'Winds', value: system.windSpeed },
     ...(system.temperatureRange ? [{ label: 'Temperature', value: system.temperatureRange }] : []),
-    ...(system.rotation ? [{ label: 'Rotation', value: system.rotation }] : []),
     ...(system.diameter ? [{ label: 'Diameter', value: system.diameter }] : []),
     ...(system.duration ? [{ label: 'Duration', value: system.duration }] : []),
+  ]
+}
+
+/**
+ * Fields the data stores as sentences, which get a full-width block each.
+ *
+ * `rotation` runs to 71 characters and `weatherImpact` to 69 — right-aligning
+ * those in half a column against a one-word label gives ragged paragraphs.
+ * `weather-system-detail.tsx` renders `weatherImpact` as a full-width card for
+ * the same reason.
+ */
+function notes(system: WeatherSystemData): Spec[] {
+  return [
+    ...(system.rotation ? [{ label: 'Rotation', value: system.rotation }] : []),
     ...(system.seasonalOccurrence ? [{ label: 'Season', value: system.seasonalOccurrence }] : []),
     { label: 'Regions', value: system.geographicRegions },
     { label: 'Impact', value: system.weatherImpact },
@@ -69,18 +92,32 @@ export default function WeatherSystemGuide({ system, guide }: WeatherSystemGuide
           />
         </header>
 
-        {/* No diagram in the registry draws a weather system yet, so the context
-            is empty and any id in frontmatter resolves to nothing rather than
-            rendering a cloud diagram here. */}
-        <GuideBody body={guide.body} diagrams={guide.diagrams} context={{}} />
+        <GuideBody
+          body={guide.body}
+          diagrams={guide.diagrams}
+          context={diagramContextFor('weather-system', guide.slug)}
+        />
 
         <section className="mt-12 pt-6 border-t border-subtle">
           <h2 className="guide-eyebrow">At a glance</h2>
           <dl className="guide-data mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-            {specs(system).map(({ label, value }) => (
+            {measurements(system).map(({ label, value }) => (
               <div key={label} className="flex justify-between gap-4 py-1 border-b border-subtle">
                 <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>
                 <dd className="text-right">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <dl className="mt-6 space-y-4">
+            {notes(system).map(({ label, value }) => (
+              <div key={label}>
+                <dt className="guide-eyebrow">{label}</dt>
+                <dd
+                  className="mt-1 leading-relaxed"
+                  style={{ fontFamily: 'var(--font-reading)' }}
+                >
+                  {value}
+                </dd>
               </div>
             ))}
           </dl>

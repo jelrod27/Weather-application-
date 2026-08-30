@@ -29,10 +29,10 @@ import {
  * Entry kinds whose detail route renders long-form Guides today.
  *
  * A Guide written for a kind that is not here would sit in `content/education/`
- * unread — `getGuideContent` is only called from the cloud route. The
- * correspondence is asserted in `__tests__/education/queue.test.ts`, so wiring a
- * route without adding its kind here (or the reverse) fails CI rather than
- * quietly producing content nobody can reach.
+ * unread, because its detail route would never call `getGuideContent`. The
+ * correspondence is asserted in `__tests__/education/queue.test.ts`, which reads
+ * all three route files, so wiring a route without adding its kind here (or the
+ * reverse) fails CI rather than quietly producing content nobody can reach.
  */
 export const KINDS_WITH_GUIDE_RENDERING: readonly EducationEntryKind[] = [
   'cloud',

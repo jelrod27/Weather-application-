@@ -60,7 +60,9 @@ export default async function PhenomenonDetailPage({ params }: PageProps) {
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `${guide.title} — Weather Phenomena`,
+    // Matches the <title> and og:title above; a headline naming a section
+    // that appears nowhere on the page is worse than no headline.
+    headline: `${guide.title} — 16-Bit Takes`,
     description: guide.summary,
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },

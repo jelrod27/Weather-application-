@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       images: [
         {
-          url: `/api/og?title=${encodeURIComponent(system.name)}&subtitle=${encodeURIComponent('Weather Systems Guide')}`,
+          url: `/api/og?title=${encodeURIComponent(guide?.title ?? system.name)}&subtitle=${encodeURIComponent('Weather Systems Guide')}`,
           width: 1200,
           height: 630,
           alt: title,
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       images: [
-        `/api/og?title=${encodeURIComponent(system.name)}&subtitle=${encodeURIComponent('Weather Systems Guide')}`,
+        `/api/og?title=${encodeURIComponent(guide?.title ?? system.name)}&subtitle=${encodeURIComponent('Weather Systems Guide')}`,
       ],
     },
   }
