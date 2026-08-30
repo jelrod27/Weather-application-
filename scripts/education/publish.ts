@@ -18,7 +18,7 @@ import path from 'node:path';
 
 import { isAllowedSourceUrl } from '@/lib/education/content';
 
-import type { DiagramPlacement } from './gates';
+import { checkBody, type DiagramPlacement } from './gates';
 import { guideFilePath, type EligibleEntry } from './queue';
 import { getSourceById } from './sources';
 
@@ -70,6 +70,8 @@ function yamlScalar(value: string): string {
 }
 
 export class UnknownSourceError extends Error {}
+
+export class UnpublishableGuideError extends Error {}
 
 /** Renders the Guide file. Exported so tests assert the text, not the write. */
 export function buildGuideMarkdown(input: PublishGuideInput): string {
@@ -126,6 +128,19 @@ export function publishGuide(
   input: PublishGuideInput,
   opts: { dryRun?: boolean } = {},
 ): PublishGuideResult {
+  // `generate.ts` has already gated this body, so in the normal path these
+  // checks pass twice. They are repeated here because this is the function that
+  // touches the filesystem, and the prose reaching it is model output — the
+  // untrusted input planning/adr/0002 is about. A second caller (a re-publish
+  // tool, a fixture script) should not be able to write an ungated Guide just
+  // by not knowing the convention.
+  const bodyErrors = checkBody(input.body);
+  if (bodyErrors.length > 0) {
+    throw new UnpublishableGuideError(
+      `Refusing to write a Guide that fails its prose gate:\n- ${bodyErrors.join('\n- ')}`,
+    );
+  }
+
   const markdown = buildGuideMarkdown(input);
   const filePath = guideFilePath(input.entry);
 

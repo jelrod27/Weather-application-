@@ -74,8 +74,12 @@ const ENTITIES: Record<string, string> = {
  * Two details that a chain of naive replaces gets wrong, and this text is fed
  * to a model, so it is the indirect-injection surface ADR-0002 is about:
  *
- * Closing tags may carry whitespace before the `>`. `</script >` is valid HTML,
- * and a regex anchored on `</script>` leaves the script body behind as prose.
+ * An end tag is not just `</name>`. The HTML parser accepts whitespace and
+ * even attributes before the `>` and discards them, so `</script foo="bar">`
+ * and `</script\t\n bar>` both close a script. A regex anchored on `</script>`,
+ * or on `</script\s*>`, leaves the script body behind as prose. Matching runs
+ * to the `>` with a word boundary after the tag name, which still refuses
+ * `</scriptfoo>` as the different tag it is.
  *
  * Entities are decoded in one pass rather than one replace per entity. Chained
  * replaces re-scan their own output, so `&amp;lt;` became `&lt;` and then `<` —
@@ -83,11 +87,11 @@ const ENTITIES: Record<string, string> = {
  */
 export function htmlToText(html: string): string {
   return html
-    .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style\s*>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript\s*>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<\/(p|div|li|h[1-6]|tr|section)\s*>/gi, '\n')
+    .replace(/<\/(?:p|div|li|h[1-6]|tr|section)\b[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]*>/g, ' ')
     .replace(/&(?:([a-z]+)|#(\d+));/gi, (match, name: string | undefined, code: string | undefined) => {

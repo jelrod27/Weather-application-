@@ -3,11 +3,22 @@ import { htmlToText } from '../../scripts/education/grounding';
 describe('htmlToText', () => {
   // Fetched page text is fed to a drafting model, so what survives stripping is
   // the indirect-injection surface planning/adr/0002 is about.
-  it('removes a script block whose closing tag carries whitespace', () => {
-    // `</script >` is valid HTML; a regex anchored on `</script>` leaves the
-    // script body behind as prose and sends it to the model.
-    expect(htmlToText('<p>real text</p><script >alert(1)</script >')).toBe('real text');
-    expect(htmlToText('<p>real text</p><style >body{}</style >')).toBe('real text');
+  // The HTML parser accepts whitespace and attributes inside an end tag and
+  // discards them, so all of these close the script. A regex anchored on
+  // `</script>` — or on `</script\s*>` — leaves the body behind as prose.
+  it.each([
+    ['plain', '<script>alert(1)</script>'],
+    ['space before the bracket', '<script >alert(1)</script >'],
+    ['attributes in the end tag', '<script>alert(1)</script foo="bar">'],
+    ['tab and newline in the end tag', '<script>alert(1)</script\t\n bar>'],
+    ['attributes in the open tag', '<script type="text/javascript">alert(1)</script>'],
+    ['style rather than script', '<style media="x">body{}</style x>'],
+  ])('removes a script block with %s', (_label, block) => {
+    expect(htmlToText(`<p>real text</p>${block}`)).toBe('real text');
+  });
+
+  it('does not treat a longer tag name as a script end tag', () => {
+    expect(htmlToText('<p>a</p><scriptfoo>b</scriptfoo>')).toBe('a\nb');
   });
 
   it('decodes each entity once', () => {

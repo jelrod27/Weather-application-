@@ -2,7 +2,16 @@ import matter from 'gray-matter';
 
 import { isAllowedSourceUrl } from '@/lib/education/content';
 import { isKnownDiagramId } from '@/lib/education/diagrams';
-import { buildGuideMarkdown, UnknownSourceError } from '../../scripts/education/publish';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import {
+  buildGuideMarkdown,
+  publishGuide,
+  UnknownSourceError,
+  UnpublishableGuideError,
+} from '../../scripts/education/publish';
 import type { EligibleEntry } from '../../scripts/education/queue';
 
 const entry: EligibleEntry = {
@@ -105,5 +114,24 @@ describe('buildGuideMarkdown', () => {
     const tricky = 'Cirrus: the cloud that forecasts, and why a halo means the ice is hexagonal rather than round.';
     const reparsed = matter(buildGuideMarkdown({ ...base, summary: tricky }));
     expect(reparsed.data.summary).toBe(tricky);
+  });
+});
+
+describe('publishGuide', () => {
+  // The write is the sink for model output. generate.ts gates the body before
+  // it gets here, but the guard belongs at the filesystem too — a caller that
+  // does not know the convention should not be able to write past it.
+  it('refuses to write a body that fails the prose gate', () => {
+    expect(() => publishGuide({ ...base, body: '## Thin\n\nToo short to publish.' })).toThrow(
+      UnpublishableGuideError,
+    );
+  });
+
+  it('writes nothing to disk when the gate rejects the body, even on a dry run', () => {
+    const before = fs.existsSync(path.join(os.tmpdir(), 'never-written.md'));
+    expect(() =>
+      publishGuide({ ...base, body: 'no headings, far too short' }, { dryRun: true }),
+    ).toThrow(UnpublishableGuideError);
+    expect(fs.existsSync(path.join(os.tmpdir(), 'never-written.md'))).toBe(before);
   });
 });
