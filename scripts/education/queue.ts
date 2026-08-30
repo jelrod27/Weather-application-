@@ -34,7 +34,11 @@ import {
  * route without adding its kind here (or the reverse) fails CI rather than
  * quietly producing content nobody can reach.
  */
-export const KINDS_WITH_GUIDE_RENDERING: readonly EducationEntryKind[] = ['cloud'];
+export const KINDS_WITH_GUIDE_RENDERING: readonly EducationEntryKind[] = [
+  'cloud',
+  'weather-system',
+  'phenomenon',
+];
 
 /** Route segment for each kind, matching `app/education/<segment>/[slug]`. */
 export const KIND_ROUTE_SEGMENT: Record<EducationEntryKind, string> = {

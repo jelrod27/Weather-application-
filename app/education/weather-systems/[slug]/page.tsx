@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import WeatherSystemDetail from '@/components/education/weather-system-detail'
+import WeatherSystemGuide from '@/components/education/weather-system-guide'
+import { getGuideContent } from '@/lib/education/content'
 import {
   getAllWeatherSystemSlugs,
   getEducationDetailHref,
@@ -25,9 +27,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const system = getWeatherSystemBySlug(slug)
   if (!system) return { title: 'Weather System Not Found' }
 
+  const guide = getGuideContent('weather-system', slug)
   const url = `https://www.16bitweather.co${getEducationDetailHref('weather-system', slug)}`
-  const title = `${system.name} — Weather Systems Guide`
-  const description = guideDescription(system)
+  const title = `${guide?.title ?? system.name} — Weather Systems Guide`
+  // A Guide summary is written to be read in a search result; formationProcess
+  // is a data field truncated at 160 characters.
+  const description = guide?.summary ?? guideDescription(system)
 
   return {
     title: `${title} | 16 Bit Weather`,
@@ -63,18 +68,21 @@ export default async function WeatherSystemDetailPage({ params }: PageProps) {
   const system = getWeatherSystemBySlug(slug)
   if (!system) notFound()
 
+  const guide = getGuideContent('weather-system', slug)
   const url = `https://www.16bitweather.co${getEducationDetailHref('weather-system', slug)}`
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `${system.name} — Weather Systems Guide`,
-    description: guideDescription(system),
+    headline: `${guide?.title ?? system.name} — Weather Systems Guide`,
+    description: guide?.summary ?? guideDescription(system),
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     author: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
     publisher: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    about: { '@type': 'Thing', name: system.name },
+    about: { '@type': 'Thing', name: guide?.title ?? system.name },
     keywords: system.classification,
+    ...(guide ? { citation: guide.sources.map((source) => source.url) } : {}),
+    ...(guide?.reviewed ? { dateModified: guide.reviewed } : {}),
   }
 
   return (
@@ -83,7 +91,11 @@ export default async function WeatherSystemDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
       />
-      <WeatherSystemDetail system={system} />
+      {guide ? (
+        <WeatherSystemGuide system={system} guide={guide} />
+      ) : (
+        <WeatherSystemDetail system={system} />
+      )}
     </>
   )
 }

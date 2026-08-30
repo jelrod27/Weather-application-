@@ -3,7 +3,11 @@ import { getGuideContent, getGuideSlugs, isAllowedSourceUrl } from '@/lib/educat
 import { getDiagram, getDiagramIds, isKnownDiagramId } from '@/lib/education/diagrams'
 import { buildGuideSegments } from '@/lib/education/guide-layout'
 import { cloudDatabase } from '@/data/cloud-types'
-import { getCloudBySlug } from '@/lib/education/entries'
+import {
+  getCloudBySlug,
+  getPhenomenonBySlug,
+  getWeatherSystemBySlug,
+} from '@/lib/education/entries'
 
 describe('parseAltitudeRange', () => {
   it('parses every altitudeRange in the cloud database', () => {
@@ -201,10 +205,20 @@ describe('isAllowedSourceUrl', () => {
 })
 
 describe('Guide slugs correspond to Entries', () => {
+  // A mistyped filename would otherwise be filtered out of generateStaticParams
+  // and the Guide would be silently unreachable. All three kinds render Guides
+  // now, so all three are checked.
   it('resolves every cloud Guide filename to a cloud Entry', () => {
-    // A mistyped filename would otherwise be filtered out of
-    // generateStaticParams and the Guide would be silently unreachable.
-    const orphans = getGuideSlugs('cloud').filter((slug) => !getCloudBySlug(slug))
-    expect(orphans).toEqual([])
+    expect(getGuideSlugs('cloud').filter((slug) => !getCloudBySlug(slug))).toEqual([])
+  })
+
+  it('resolves every weather-system Guide filename to a weather-system Entry', () => {
+    expect(
+      getGuideSlugs('weather-system').filter((slug) => !getWeatherSystemBySlug(slug)),
+    ).toEqual([])
+  })
+
+  it('resolves every phenomenon Guide filename to a phenomenon Entry', () => {
+    expect(getGuideSlugs('phenomenon').filter((slug) => !getPhenomenonBySlug(slug))).toEqual([])
   })
 })
