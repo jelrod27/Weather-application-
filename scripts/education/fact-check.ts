@@ -49,7 +49,17 @@ export interface FactCheckClaim {
   hasNumber: boolean;
   /** Names an agency — an unsupported one is a misattribution. */
   hasAttribution: boolean;
+  /** The judge never produced a verdict covering this figure. */
+  unexamined?: boolean;
 }
+
+/**
+ * Raised when the judge returns nothing usable — no claims, or a `claims` field
+ * of the wrong shape. A 900-word Guide always contains checkable assertions, so
+ * an empty verdict is a broken judge rather than a clean draft, and the gate has
+ * to fail closed. Retrying the writer would not help; this is for the operator.
+ */
+export class JudgeUnusableError extends Error {}
 
 export interface FactCheckResult {
   claims: FactCheckClaim[];
@@ -59,6 +69,44 @@ export interface FactCheckResult {
   highRisk: FactCheckClaim[];
   /** Claims where the judge's quote was not in the source it named. */
   quoteFailures: FactCheckClaim[];
+}
+
+/** Digits as they appear in prose, commas removed so 20,000 matches 20000. */
+function numbersIn(text: string): string[] {
+  return (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, ''));
+}
+
+/**
+ * Numbers the judge never mentioned.
+ *
+ * The gate's whole value is that a passing Guide has had its numbers checked, so
+ * a number the judge silently skipped cannot be treated as fine. Each sentence
+ * carrying an unexamined figure becomes an unsupported high-risk claim, which
+ * means it either gets grounded on the retry or stops the run.
+ */
+export function unexaminedNumericClaims(body: string, claims: FactCheckClaim[]): FactCheckClaim[] {
+  const examined = new Set(claims.flatMap((claim) => numbersIn(claim.text)));
+  const sentences = body
+    .replace(/^#{1,6} .*$/gm, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const seen = new Set<string>();
+  return sentences.flatMap((sentence): FactCheckClaim[] => {
+    const missing = numbersIn(sentence).filter((n) => !examined.has(n));
+    if (missing.length === 0 || seen.has(sentence)) return [];
+    seen.add(sentence);
+    return [
+      {
+        text: `Not examined by the fact check: "${sentence}"`,
+        verdict: 'unsupported',
+        hasNumber: true,
+        hasAttribution: ATTRIBUTION.test(sentence),
+        unexamined: true,
+      },
+    ];
+  });
 }
 
 function normalize(value: string): string {
@@ -193,7 +241,14 @@ ${body}`;
     ];
   });
 
-  return summarize(verifyAgainstSources(claims, sources));
+  if (claims.length === 0) {
+    throw new JudgeUnusableError(
+      'The fact-check judge returned no claims. Refusing to treat that as a clean draft; re-run.',
+    );
+  }
+
+  const verified = verifyAgainstSources(claims, sources);
+  return summarize([...verified, ...unexaminedNumericClaims(body, verified)]);
 }
 
 /** The correction fed back to the writer when high-risk claims are unsupported. */
@@ -207,11 +262,14 @@ export function buildFactCorrection(highRisk: FactCheckClaim[]): string {
 
 /** Markdown for the PR body, so a reviewer reads flagged lines instead of 900 words. */
 export function formatFactCheck(result: FactCheckResult): string {
-  const supported = result.claims.length - result.unsupported.length;
+  // Misattributed claims are grounded, but not in the source they name, so they
+  // are counted separately rather than folded into "the cited source".
+  const misattributed = result.claims.filter((claim) => claim.misattributed);
+  const supported = result.claims.length - result.unsupported.length - misattributed.length;
   const lines = [
     '## Fact check',
     '',
-    `${supported} of ${result.claims.length} checkable claims are backed by a verbatim quote from the cited source.`,
+    `${supported} of ${result.claims.length} checkable claims are backed by a verbatim quote from the source they cite.`,
   ];
 
   if (result.quoteFailures.length > 0) {
@@ -221,7 +279,6 @@ export function formatFactCheck(result: FactCheckResult): string {
     );
   }
 
-  const misattributed = result.claims.filter((claim) => claim.misattributed);
   if (misattributed.length > 0) {
     lines.push('', '### Grounded, but cited to the wrong source', '');
     for (const claim of misattributed) {

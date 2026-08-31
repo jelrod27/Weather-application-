@@ -147,6 +147,7 @@ async function main(): Promise<void> {
       factCheck: {
         claims: result.factCheck.claims.length,
         unsupported: result.factCheck.unsupported.length,
+        highRisk: result.factCheck.highRisk.length,
         flagged: result.factCheck.unsupported.map((claim) => claim.text),
       },
     },

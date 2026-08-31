@@ -1,6 +1,7 @@
 import {
   buildFactCorrection,
   formatFactCheck,
+  unexaminedNumericClaims,
   verifyAgainstSources,
   type FactCheckClaim,
 } from '../../scripts/education/fact-check';
@@ -132,5 +133,53 @@ describe('buildFactCorrection', () => {
     ]);
     expect(correction).toMatch(/Hail must exceed 2 inches/);
     expect(correction).toMatch(/Do not replace a number with a different invented number/);
+  });
+});
+
+describe('unexaminedNumericClaims', () => {
+  // A judge that silently skips a number would otherwise leave it certified by
+  // omission, which is the fail-open this whole gate exists to avoid.
+  it('flags a sentence whose figure no claim mentions', () => {
+    const body = 'The tower reaches 60,000 feet before the tropopause stops it.';
+    const out = unexaminedNumericClaims(body, [
+      { text: 'Storms need moisture', verdict: 'supported', hasNumber: false, hasAttribution: false },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].verdict).toBe('unsupported');
+    expect(out[0].hasNumber).toBe(true);
+    expect(out[0].unexamined).toBe(true);
+    expect(out[0].text).toMatch(/60,000 feet/);
+  });
+
+  it('accepts a figure the judge examined, across comma formatting', () => {
+    const body = 'The tower reaches 60,000 feet.';
+    const out = unexaminedNumericClaims(body, [
+      { text: 'Tops reach 60000 feet', verdict: 'supported', hasNumber: true, hasAttribution: false },
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  it('ignores prose with no figures at all', () => {
+    expect(unexaminedNumericClaims('Cirrus is made of ice rather than water.', [])).toEqual([]);
+  });
+
+  it('marks an unexamined sentence naming an agency as an attribution too', () => {
+    const out = unexaminedNumericClaims('The National Weather Service uses 58 mph.', []);
+    expect(out[0].hasAttribution).toBe(true);
+  });
+});
+
+describe('formatFactCheck counts misattributed claims honestly', () => {
+  it('does not describe a wrong-source quote as support from the cited source', () => {
+    const ok = claim({});
+    const wrongSource = claim({ misattributed: 'jetstream-clouds', sourceId: 'spc-faq' });
+    const report = formatFactCheck({
+      claims: [ok, wrongSource],
+      unsupported: [],
+      highRisk: [],
+      quoteFailures: [],
+    });
+    expect(report).toMatch(/1 of 2 checkable claims/);
+    expect(report).toMatch(/cited to the wrong source/);
   });
 });

@@ -102,15 +102,22 @@ const ENTITIES: Record<string, string> = {
  * text that should read as the literal `&lt;` was unescaped twice.
  */
 export function htmlToText(html: string): string {
-  return readableRegion(html)
+  // Non-rendered content goes first, and only then is <main> selected. The other
+  // order is exploitable: a <script> holding a string like "<main>…</main>"
+  // matches before the real one, and once that fragment is extracted its script
+  // wrapper is gone, so no later pass can remove it. Script text would become
+  // grounding text, which is the injection surface planning/adr/0002 is about.
+  const withoutNonContent = html
     .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+
+  return readableRegion(withoutNonContent)
     .replace(/<nav\b[^>]*>[\s\S]*?<\/nav\b[^>]*>/gi, ' ')
     .replace(/<header\b[^>]*>[\s\S]*?<\/header\b[^>]*>/gi, ' ')
     .replace(/<footer\b[^>]*>[\s\S]*?<\/footer\b[^>]*>/gi, ' ')
     .replace(/<aside\b[^>]*>[\s\S]*?<\/aside\b[^>]*>/gi, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
-    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<\/(?:p|div|li|h[1-6]|tr|section)\b[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]*>/g, ' ')
