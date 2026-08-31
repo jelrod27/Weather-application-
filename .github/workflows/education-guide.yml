@@ -77,9 +77,16 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         run: |
           set -euo pipefail
+          # --untracked-files=all because git collapses a wholly-untracked
+          # directory to `?? content/education/weather-systems/` and names no
+          # file inside it. The first Guide of a kind always creates that
+          # directory, so without this the validator is handed a directory path
+          # and refuses it. Clouds never hit this: content/education/clouds/
+          # was already tracked by the time the generator ran for cirrus.
+          #
           # NR==1 rather than `| head -1`: under `set -o pipefail` a SIGPIPE'd
           # awk would fail the step.
-          new_file=$(git status --porcelain content/education/ | awk 'NR==1{print $2}')
+          new_file=$(git status --porcelain --untracked-files=all content/education/ | awk 'NR==1{print $2}')
           if [ -n "$new_file" ]; then
             echo "new_guide=true" >> "$GITHUB_OUTPUT"
             echo "new_file=$new_file" >> "$GITHUB_OUTPUT"
