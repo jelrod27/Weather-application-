@@ -31,6 +31,8 @@ export interface PublishGuideInput {
   modelUsed: string;
   retries: number;
   wordCount: number;
+  /** Fact-check tally, so the file records what was verified and what was not. */
+  factCheck?: { claims: number; unsupported: number; flagged: string[] };
   /** Run date, for the `generated` field. Injectable so tests are stable. */
   now?: Date;
 }
@@ -105,12 +107,27 @@ export function buildGuideMarkdown(input: PublishGuideInput): string {
     `model_used: ${yamlScalar(input.modelUsed)}`,
     `generation_retries: ${input.retries}`,
     `word_count: ${input.wordCount}`,
+    ...(input.factCheck
+      ? [
+          `fact_check_claims: ${input.factCheck.claims}`,
+          `fact_check_unsupported: ${input.factCheck.unsupported}`,
+        ]
+      : []),
     'sources:',
     ...sources.flatMap((source) => [
       `  - label: ${yamlScalar(source.label)}`,
       `    url: ${yamlScalar(source.url)}`,
     ]),
   ];
+
+  // The claims the sources did not state, recorded on the page itself rather
+  // than only in a PR comment that scrolls away. Capped, because this is
+  // provenance, not a transcript.
+  const flagged = input.factCheck?.flagged.slice(0, 10) ?? [];
+  if (flagged.length > 0) {
+    lines.push('fact_check_flagged:');
+    for (const claim of flagged) lines.push(`  - ${yamlScalar(claim)}`);
+  }
 
   if (input.diagrams.length > 0) {
     lines.push('diagrams:');

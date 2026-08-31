@@ -131,13 +131,21 @@ jobs:
           NWS text the run fetched; the citations and diagram ids come from the catalog and
           the registry, so they resolve by construction.
 
+          $(cat fact-check.md)
+
+          Every claim above that is not flagged was matched to a verbatim quote in the
+          source it cites, and the quote was checked against the fetched page rather than
+          taken on the model's word. The run fails outright if a number or an agency
+          attribution cannot be grounded, so anything left here is prose-level.
+
           Before merging:
 
-          - [ ] Read the prose against the cited sources. Every number should be in them.
+          - [ ] Check any flagged claims above. If there are none, the numbers are grounded.
           - [ ] Check the diagrams land where the prose sets them up.
-          - [ ] Add \`reviewed: YYYY-MM-DD\` to the frontmatter — the generator deliberately
-                does not write it, because it means a person checked the prose against the
-                sources. The page prints it and the JSON-LD uses it for \`dateModified\`.
+          - [ ] Add \`reviewed: YYYY-MM-DD\` to the frontmatter once you have read it — the
+                generator deliberately does not write it, because it means a person checked
+                the prose against the sources. The page prints it and the JSON-LD uses it
+                for \`dateModified\`.
           EOF
           )
           BODY=$(printf '%s\n' "$BODY" | sed 's/^          //')

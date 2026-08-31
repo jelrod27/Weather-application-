@@ -10,6 +10,7 @@
 
 import { DEFAULT_MODEL } from '../newsletter/repetition';
 import { draftBody, finalizeGuide } from './draft';
+import { buildFactCorrection, factCheck, type FactCheckResult } from './fact-check';
 import { diagramContextFor, offeredDiagramsFor } from './entry-diagrams';
 import {
   buildCorrection,
@@ -36,6 +37,20 @@ export class GuideGateError extends Error {
 
 export class MissingBriefError extends Error {}
 
+/**
+ * Raised when the prose still asserts a number or an agency claim the fetched
+ * sources do not state. Everything else the fact check finds is reported and
+ * shipped; this class of claim is not, because the whole point of the pipeline
+ * is that a Guide can be trusted without someone reading all 900 words.
+ */
+export class UnsupportedClaimError extends Error {
+  constructor(claims: string[]) {
+    super(
+      `The sources do not support ${claims.length} numeric or attributed claim(s):\n- ${claims.join('\n- ')}`,
+    );
+  }
+}
+
 export interface GenerateGuideOptions {
   model?: string;
 }
@@ -48,6 +63,7 @@ export interface GenerateGuideResult {
   diagrams: DiagramPlacement[];
   retries: number;
   wordCount: number;
+  factCheck: FactCheckResult;
   modelUsed: string;
 }
 
@@ -85,6 +101,36 @@ export async function generateGuide(
     correction = buildCorrection(bodyErrors);
   }
   if (bodyErrors.length > 0) throw new GuideGateError('prose', bodyErrors);
+
+  // Form is clean; now ask whether the prose says only what the sources say.
+  // One retry, because a writer told which numbers are unsupported usually
+  // grounds or drops them; a second pass rarely adds anything.
+  let facts = await factCheck({ body, sources, model });
+  console.log(
+    `[education] fact check: ${facts.claims.length - facts.unsupported.length}/${facts.claims.length} claims quoted from source` +
+      (facts.quoteFailures.length > 0 ? `, ${facts.quoteFailures.length} fabricated quote(s)` : ''),
+  );
+
+  if (facts.highRisk.length > 0) {
+    retries += 1;
+    console.log(`[education] retry ${retries} — ${facts.highRisk.length} unsupported number/attribution`);
+    body = (await draftBody({
+      entry,
+      brief,
+      sources,
+      correction: buildFactCorrection(facts.highRisk),
+      model,
+    })).trim();
+
+    // The rewrite is a fresh draft, so it has to clear the form gates again.
+    const reboundErrors = checkBody(body);
+    if (reboundErrors.length > 0) throw new GuideGateError('prose', reboundErrors);
+    facts = await factCheck({ body, sources, model });
+  }
+
+  if (facts.highRisk.length > 0) {
+    throw new UnsupportedClaimError(facts.highRisk.map((claim) => claim.text));
+  }
 
   const diagramContext = diagramContextFor(entry.kind, entry.slug);
   const offeredDiagrams = offeredDiagramsFor(diagramContext);
@@ -128,6 +174,7 @@ export async function generateGuide(
     diagrams: finalized.diagrams,
     retries,
     wordCount: wordCount(body),
+    factCheck: facts,
     modelUsed: model,
   };
 }

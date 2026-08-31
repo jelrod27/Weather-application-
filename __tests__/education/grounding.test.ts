@@ -33,6 +33,30 @@ describe('htmlToText', () => {
     expect(htmlToText('<p>&notanentity; stays</p>')).toBe('&notanentity; stays');
   });
 
+  // Every noaa.gov article opens with the same government banner and main menu.
+  // That chrome is byte-identical across pages, so a fact-check quote drawn from
+  // it verifies against any source — an unsupported claim could be "grounded" in
+  // a navigation menu.
+  it('narrows to <main> when the page marks it', () => {
+    const html =
+      '<body><nav>Home Weather Climate</nav><main><p>Ice crystals form above 20,000 feet.</p></main><footer>Contact us</footer></body>'
+    const text = htmlToText(html)
+    expect(text).toBe('Ice crystals form above 20,000 feet.')
+    expect(text).not.toMatch(/Climate|Contact/)
+  });
+
+  it('strips chrome landmarks on a page with no <main>', () => {
+    const html = '<header>Skip to content</header><p>Halo: refraction through ice.</p><aside>Related</aside>'
+    expect(htmlToText(html)).toBe('Halo: refraction through ice.')
+  });
+
+  it('keeps the whole page when there is no <main> and no landmarks', () => {
+    // The NWS Glossary is already just the definition.
+    expect(htmlToText('<p>Graupel Same as snow pellets or small hail.</p>')).toBe(
+      'Graupel Same as snow pellets or small hail.',
+    )
+  });
+
   it('keeps block boundaries as newlines and collapses the rest', () => {
     expect(htmlToText('<h2>Title</h2><p>One</p><p>Two</p>')).toBe('Title\nOne\nTwo');
   });

@@ -59,6 +59,22 @@ export interface SourceFetchResult {
   text?: string;
 }
 
+/**
+ * The part of the page that is the page, when it says so.
+ *
+ * Every noaa.gov article opens with the same government banner and main menu —
+ * "Skip to main content", "Main Menu", "Home", "Weather", "Climate" — and that
+ * chrome is byte-identical across pages. It costs prompt budget, and worse, it
+ * gives the fact check a way to pass: a quote drawn from shared navigation
+ * verifies against any source, so an unsupported claim could be "grounded" in a
+ * menu. Narrowing to <main> removes both problems. Pages without <main> (the
+ * NWS Glossary) are already just the definition.
+ */
+function readableRegion(html: string): string {
+  const main = /<main\b[^>]*>([\s\S]*?)<\/main\b[^>]*>/i.exec(html);
+  return main ? main[1] : html;
+}
+
 const ENTITIES: Record<string, string> = {
   nbsp: ' ',
   amp: '&',
@@ -86,8 +102,12 @@ const ENTITIES: Record<string, string> = {
  * text that should read as the literal `&lt;` was unescaped twice.
  */
 export function htmlToText(html: string): string {
-  return html
+  return readableRegion(html)
     .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, ' ')
+    .replace(/<nav\b[^>]*>[\s\S]*?<\/nav\b[^>]*>/gi, ' ')
+    .replace(/<header\b[^>]*>[\s\S]*?<\/header\b[^>]*>/gi, ' ')
+    .replace(/<footer\b[^>]*>[\s\S]*?<\/footer\b[^>]*>/gi, ' ')
+    .replace(/<aside\b[^>]*>[\s\S]*?<\/aside\b[^>]*>/gi, ' ')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
