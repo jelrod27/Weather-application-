@@ -63,11 +63,37 @@ scripts/education/
    links, URLs, images, raw HTML or code fences. Failures are fed back as a correction,
    twice. A draft that still fails raises — a Guide is evergreen and indexed, so
    publishing a broken one is worse than failing the run.
-4. **Finalize.** A second call writes the search summary, picks which offered sources
+4. **Fact-check.** `fact-check.ts` asks whether the prose says only what the sources
+   say — the one thing no other gate checks. See below.
+5. **Finalize.** A second call writes the search summary, picks which offered sources
    the prose rests on, and places diagrams by registry id with a verbatim anchor. Every
    anchor is resolved through `buildGuideSegments`, the same function the page uses, so
    a diagram cannot be promised in frontmatter and silently dropped at render.
-5. **Publish.** `publish.ts` resolves source ids to citations and writes the file.
+6. **Publish.** `publish.ts` resolves source ids to citations and writes the file.
+
+## The fact check, and why the judge is not trusted
+
+Every other gate checks form. A confident wrong number clears all of them, on a page
+that lists NWS and NOAA underneath it — which turns a mistake into a misattribution.
+
+Asking a model "is this supported?" and believing the yes is a rubber stamp. So a claim
+counts as supported only when the judge returns a **verbatim span from the fetched
+source**, and that span is then found in the source text by exact match in code. A
+fabricated justification fails mechanically rather than persuasively — the same move the
+diagram registry and the source catalog make elsewhere: the model names something, and
+code resolves it.
+
+Risk is graded in code, not by the judge. An unsupported sentence about storms needing
+moisture is a wording problem. An unsupported number, or an unsupported claim naming an
+agency, is not: those trigger one retry naming the offending claims, and if they survive
+it the run raises `UnsupportedClaimError` rather than shipping. Everything else is
+recorded — in `fact_check_*` frontmatter on the page itself, and as a checklist in the
+PR body, so a reviewer reads flagged lines instead of 900 words.
+
+Grounding is narrowed to `<main>` for this reason too. Every noaa.gov article opens with
+the same banner and menu, and that chrome is byte-identical across pages — a quote drawn
+from it would verify against any source, letting a claim be "grounded" in a navigation
+menu. Narrowing also cut the average page from ~7,500 to ~3,200 characters.
 
 ## Why the model never writes a URL
 
@@ -109,6 +135,9 @@ Keep both halves.
   reachable. Do not draft without them.
 - **Gates still failing after 2 retries** → `GuideGateError`, naming every check. Nothing
   is written.
+- **A number or agency claim the sources do not state** → `UnsupportedClaimError` after
+  one retry, naming each claim. Nothing is written. Usually means the source catalog is
+  missing a page the Guide needs; add it and re-run rather than loosening the gate.
 - **Entry not in the eligible 29** → `IneligibleEntryError` pointing at ADR-0001.
 - **No brief for the Entry** → add its tags and focus line to `topics.ts`.
 - **Anthropic 429 / 5xx** → the shared wrapper bubbles the status up. Re-run after a

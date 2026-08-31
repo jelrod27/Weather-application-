@@ -59,6 +59,22 @@ export interface SourceFetchResult {
   text?: string;
 }
 
+/**
+ * The part of the page that is the page, when it says so.
+ *
+ * Every noaa.gov article opens with the same government banner and main menu —
+ * "Skip to main content", "Main Menu", "Home", "Weather", "Climate" — and that
+ * chrome is byte-identical across pages. It costs prompt budget, and worse, it
+ * gives the fact check a way to pass: a quote drawn from shared navigation
+ * verifies against any source, so an unsupported claim could be "grounded" in a
+ * menu. Narrowing to <main> removes both problems. Pages without <main> (the
+ * NWS Glossary) are already just the definition.
+ */
+function readableRegion(html: string): string {
+  const main = /<main\b[^>]*>([\s\S]*?)<\/main\b[^>]*>/i.exec(html);
+  return main ? main[1] : html;
+}
+
 const ENTITIES: Record<string, string> = {
   nbsp: ' ',
   amp: '&',
@@ -86,11 +102,22 @@ const ENTITIES: Record<string, string> = {
  * text that should read as the literal `&lt;` was unescaped twice.
  */
 export function htmlToText(html: string): string {
-  return html
+  // Non-rendered content goes first, and only then is <main> selected. The other
+  // order is exploitable: a <script> holding a string like "<main>…</main>"
+  // matches before the real one, and once that fragment is extracted its script
+  // wrapper is gone, so no later pass can remove it. Script text would become
+  // grounding text, which is the injection surface planning/adr/0002 is about.
+  const withoutNonContent = html
     .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, ' ')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+
+  return readableRegion(withoutNonContent)
+    .replace(/<nav\b[^>]*>[\s\S]*?<\/nav\b[^>]*>/gi, ' ')
+    .replace(/<header\b[^>]*>[\s\S]*?<\/header\b[^>]*>/gi, ' ')
+    .replace(/<footer\b[^>]*>[\s\S]*?<\/footer\b[^>]*>/gi, ' ')
+    .replace(/<aside\b[^>]*>[\s\S]*?<\/aside\b[^>]*>/gi, ' ')
     .replace(/<\/(?:p|div|li|h[1-6]|tr|section)\b[^>]*>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]*>/g, ' ')

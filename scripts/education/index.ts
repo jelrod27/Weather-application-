@@ -13,7 +13,10 @@
 
 import type { EducationEntryKind } from '@/lib/education/entries';
 
+import fs from 'node:fs';
+
 import { DEFAULT_MODEL } from '../newsletter/repetition';
+import { formatFactCheck } from './fact-check';
 import { generateGuide } from './generate';
 import { publishGuide } from './publish';
 import {
@@ -121,7 +124,15 @@ async function main(): Promise<void> {
     retries: result.retries,
     sources: result.sourceIds.length,
     diagrams: result.diagrams.map((d) => d.id),
+    claims: result.factCheck.claims.length,
+    unsupported: result.factCheck.unsupported.length,
   });
+
+  // Written for the workflow to fold into the PR body, the way the newsletter
+  // tees its image audit. A reviewer reads flagged lines, not the whole Guide.
+  const report = formatFactCheck(result.factCheck);
+  fs.writeFileSync('fact-check.md', `${report}\n`, 'utf8');
+  console.log(`\n${report}\n`);
 
   publishGuide(
     {
@@ -133,6 +144,12 @@ async function main(): Promise<void> {
       modelUsed: result.modelUsed,
       retries: result.retries,
       wordCount: result.wordCount,
+      factCheck: {
+        claims: result.factCheck.claims.length,
+        unsupported: result.factCheck.unsupported.length,
+        highRisk: result.factCheck.highRisk.length,
+        flagged: result.factCheck.unsupported.map((claim) => claim.text),
+      },
     },
     { dryRun: args.dryRun },
   );

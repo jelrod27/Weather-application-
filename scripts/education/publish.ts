@@ -31,6 +31,12 @@ export interface PublishGuideInput {
   modelUsed: string;
   retries: number;
   wordCount: number;
+  /**
+   * Fact-check outcome. Required, not optional: this is the function that writes
+   * to disk, and a caller that simply omitted the field would otherwise publish
+   * an unverified Guide while passing every other check.
+   */
+  factCheck: { claims: number; unsupported: number; highRisk: number; flagged: string[] };
   /** Run date, for the `generated` field. Injectable so tests are stable. */
   now?: Date;
 }
@@ -105,12 +111,23 @@ export function buildGuideMarkdown(input: PublishGuideInput): string {
     `model_used: ${yamlScalar(input.modelUsed)}`,
     `generation_retries: ${input.retries}`,
     `word_count: ${input.wordCount}`,
+    `fact_check_claims: ${input.factCheck.claims}`,
+    `fact_check_unsupported: ${input.factCheck.unsupported}`,
     'sources:',
     ...sources.flatMap((source) => [
       `  - label: ${yamlScalar(source.label)}`,
       `    url: ${yamlScalar(source.url)}`,
     ]),
   ];
+
+  // The claims the sources did not state, recorded on the page itself rather
+  // than only in a PR comment that scrolls away. Capped, because this is
+  // provenance, not a transcript.
+  const flagged = input.factCheck.flagged.slice(0, 10);
+  if (flagged.length > 0) {
+    lines.push('fact_check_flagged:');
+    for (const claim of flagged) lines.push(`  - ${yamlScalar(claim)}`);
+  }
 
   if (input.diagrams.length > 0) {
     lines.push('diagrams:');
@@ -138,6 +155,17 @@ export function publishGuide(
   if (bodyErrors.length > 0) {
     throw new UnpublishableGuideError(
       `Refusing to write a Guide that fails its prose gate:\n- ${bodyErrors.join('\n- ')}`,
+    );
+  }
+
+  // generate.ts already raises on unresolved high-risk claims, so this repeats
+  // in the normal path. It is here because this is the filesystem boundary: a
+  // number or agency claim the sources do not state must not reach a published
+  // page through any caller, including one written later that does not know the
+  // convention.
+  if (input.factCheck.highRisk > 0) {
+    throw new UnpublishableGuideError(
+      `Refusing to write a Guide with ${input.factCheck.highRisk} unsupported numeric or attributed claim(s):\n- ${input.factCheck.flagged.join('\n- ')}`,
     );
   }
 

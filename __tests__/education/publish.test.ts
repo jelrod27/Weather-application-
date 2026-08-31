@@ -33,6 +33,7 @@ const base = {
   modelUsed: 'claude-sonnet-4-6',
   retries: 1,
   wordCount: 903,
+  factCheck: { claims: 24, unsupported: 0, highRisk: 0, flagged: [] },
   now: new Date('2026-08-29T00:00:00Z'),
 };
 
@@ -73,6 +74,8 @@ describe('buildGuideMarkdown', () => {
     expect(parsed.data.model_used).toBe('claude-sonnet-4-6');
     expect(parsed.data.generation_retries).toBe(1);
     expect(parsed.data.word_count).toBe(903);
+    expect(parsed.data.fact_check_claims).toBe(24);
+    expect(parsed.data.fact_check_unsupported).toBe(0);
   });
 
   it('drops a repeated citation instead of listing it twice', () => {
@@ -133,5 +136,39 @@ describe('publishGuide', () => {
       publishGuide({ ...base, body: 'no headings, far too short' }, { dryRun: true }),
     ).toThrow(UnpublishableGuideError);
     expect(fs.existsSync(path.join(os.tmpdir(), 'never-written.md'))).toBe(before);
+  });
+});
+
+describe('publishGuide fact-check boundary', () => {
+  // generate.ts already refuses these, so this repeats in the normal path. It
+  // exists because this is where bytes hit the disk: no caller, including one
+  // written later, should be able to publish an ungrounded number.
+  it('refuses a Guide carrying an unsupported number or attribution', () => {
+    expect(() =>
+      publishGuide({
+        ...base,
+        factCheck: {
+          claims: 24,
+          unsupported: 1,
+          highRisk: 1,
+          flagged: ['Severe means gusts above 45 mph'],
+        },
+      }),
+    ).toThrow(UnpublishableGuideError);
+  });
+
+  it('allows unsupported claims that carry neither a number nor an agency', () => {
+    expect(() =>
+      publishGuide(
+        {
+          ...base,
+          body: matter(
+            fs.readFileSync('content/education/clouds/cumulonimbus.md', 'utf8'),
+          ).content.trim(),
+          factCheck: { claims: 24, unsupported: 2, highRisk: 0, flagged: ['a wording quibble'] },
+        },
+        { dryRun: true },
+      ),
+    ).not.toThrow();
   });
 });
