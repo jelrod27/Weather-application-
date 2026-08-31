@@ -6,9 +6,21 @@
  * limit" is flavour text, and letting it into the grounding block is how that
  * register leaks into 900 words meant to rank in search.
  *
- * These same fields render in the Guide's "At a glance" panel, so the prompt
- * passes them to keep the prose consistent with the panel, not to have them
- * recited back.
+ * `notableEvent`, `historicalOccurrence` and the `facts` arrays are held back
+ * for a second reason: nothing can cite them. The catalog behind a Guide is a
+ * US federal one describing mechanisms, so it covers how a cyclone deepens but
+ * not that the Great Storm of 1987 hit the UK, and no page in it will ever
+ * support "Only 5% of people ever witness this phenomenon". The retained fields
+ * carry numbers too — altitudes, pressures, temperatures — but those are the
+ * physical quantities NOAA and NWS pages actually state, so the model can
+ * ground them; a named event or a piece of trivia has nowhere to land. An
+ * unsupported number is a hard failure in `fact-check.ts`, which is what
+ * stopped the first cyclones run. Events and trivia keep their home in the
+ * Atlas detail UI, which displays them rather than asserting them as sourced.
+ *
+ * The retained fields also render in the Guide's "At a glance" panel, so the
+ * prompt passes them to keep the prose consistent with the panel, not to have
+ * them recited back.
  */
 
 import type { CloudData } from '@/data/cloud-types';
@@ -64,7 +76,6 @@ function systemFacts(system: WeatherSystemData): string[] {
     line('Duration', system.duration),
     line('Types', system.types),
     line('Etymology', system.etymology),
-    line('Notable event', system.notableEvent),
   ].filter((entry): entry is string => entry !== null);
 }
 
@@ -73,11 +84,9 @@ function phenomenonFacts(phenomenon: WeatherPhenomena): string[] {
     line('Category', phenomenon.category),
     line('Description', phenomenon.description),
     line('Scientific mechanism', phenomenon.scientificMechanism),
-    line('Historical occurrence', phenomenon.historicalOccurrence),
     line('How to spot it', phenomenon.howToSpot),
     line('Where to see it', phenomenon.whereToSee),
     line('Best season', phenomenon.bestSeason),
-    ...phenomenon.facts.map((fact, i) => `Recorded fact ${i + 1}: ${fact}`),
   ].filter((entry): entry is string => entry !== null);
 }
 
