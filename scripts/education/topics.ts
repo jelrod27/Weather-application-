@@ -24,7 +24,7 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'cloud:cirrus': {
     tags: ['clouds', 'cloud-formation', 'upper-air', 'optics'],
     focus:
-      'Ice, not water, and what that changes. Cirrus as the visible edge of an approaching system — the 8-to-24-hour warning, and the halo that says the ice crystals are hexagonal.',
+      'Ice, not water, and what that changes. Cirrus as the visible edge of an approaching system — the long warning it gives, and the halo that says the ice crystals are hexagonal.',
   },
   'cloud:cumulus': {
     tags: ['clouds', 'cloud-formation', 'stability', 'thunderstorms'],
@@ -70,7 +70,7 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'weather-system:depressions': {
     tags: ['pressure', 'mid-latitude-cyclone', 'synoptic', 'fronts'],
     focus:
-      'The term as maritime forecasters use it, its relationship to the mid-latitude cyclone, and how deepening is measured in millibars per hour.',
+      'Why forecasters say depression where the textbooks say low, and what deepening means for the weather underneath it.',
   },
   'weather-system:blocking-highs': {
     tags: ['upper-air', 'pressure', 'jet-stream', 'global-circulation'],

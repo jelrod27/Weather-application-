@@ -2,13 +2,12 @@
 entryKind: weather-system
 entrySlug: cyclones
 title: Cyclones
+reviewed: 2026-09-01
 summary: How cyclones form, intensify, and dissipate — and what their pressure, fronts, and winds mean for the weather they produce.
 generated: "2026-08-31"
 model_used: claude-sonnet-4-6
 generation_retries: 1
-word_count: 1045
-fact_check_claims: 24
-fact_check_unsupported: 2
+word_count: 953
 sources:
   - label: NWS Glossary — Low Pressure System
     url: https://forecast.weather.gov/glossary.php?word=low%20pressure%20system
@@ -26,14 +25,9 @@ sources:
     url: https://www.noaa.gov/jetstream/atmosphere/air-pressure
   - label: NOAA JetStream — Synoptic Meteorology
     url: https://www.noaa.gov/jetstream/synoptic
-fact_check_flagged:
-  - The word 'cyclone' comes from the Greek 'kyklon', meaning moving in a circle or coiled snake.
-  - Warm fronts typically have a gentle slope, producing a broad area of rising air and widespread stratiform cloudiness and precipitation.
 ---
 
-A cyclone is not a storm. It is a circulation — a column of air organized around a pressure deficit, drawing surface winds inward and upward across a region that can span 620 to 1,500 miles. The weather it produces is a consequence of that structure, not the thing itself.
-
-The word comes from the Greek *kyklon*: moving in a circle, or coiled snake. The name is more accurate than it sounds.
+A cyclone is not a storm. It is a circulation — a column of air organized around a pressure deficit, drawing surface winds inward and upward. The weather it produces is a consequence of that structure, not the thing itself.
 
 ## What it actually is
 
@@ -45,7 +39,7 @@ Pressure at the center is the most direct measure of intensity. Standard sea-lev
 
 ## How one forms
 
-The Norwegian cyclone model, developed by Scandinavian meteorologists in the 1910s and 1920s, describes the most common life cycle in the mid-latitudes.
+The Norwegian cyclone model, developed by Norwegian meteorologists in the 1910s and 1920s, describes the most common life cycle in the mid-latitudes.
 
 It begins with a boundary — a stationary front separating a warm air mass to the south from a cold air mass to the north. When an upper-level low embedded in the jet stream passes over that boundary, it introduces a kink. The stationary front fractures into a cold front and a warm front, and the air masses begin to move. A wave is developing.
 
@@ -69,8 +63,6 @@ The cloud sequence along a warm front is one of the more legible things in synop
 
 ## What it means for the person looking at it
 
-Extratropical cyclones — the mid-latitude systems that drive most of the weather across the continental United States from fall through spring — are typically 2,000 kilometers in diameter and contain cold fronts that extend hundreds of kilometers toward the equator. They are the primary mechanism by which unsettled weather moves across the mid-latitudes.
-
-The dry line, a boundary common to the central and southern Plains in spring and early summer, adds another dimension. It separates moist Gulf air from dry desert air out of the Southwest, and it can serve as a focal point for cyclone development and severe convection when other conditions are favorable.
+Extratropical cyclones — the mid-latitude systems that drive weather from fall through spring — are typically 2,000 kilometers in diameter and contain cold fronts that extend hundreds of kilometers toward the equator. They are the primary mechanism by which unsettled weather moves across the mid-latitudes.
 
 Cyclones are more intense in winter, when temperature contrasts between air masses are sharpest and the jet stream is most energetic. But they occur year-round, and the mechanism is the same regardless of season: surface convergence forces air upward, the column organizes around the pressure deficit, and the rotation follows from the hemisphere. The weather that results — cloud cover, precipitation type, wind speed and direction — depends on the air masses the system is drawing together and how fast the fronts are moving.
