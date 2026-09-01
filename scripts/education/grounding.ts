@@ -75,6 +75,11 @@ function readableRegion(html: string): string {
   return main ? main[1] : html;
 }
 
+/**
+ * The named entities NWS office pages actually use. Left encoded, a figure like
+ * `15&ndash;50 cm` reaches the model as that string, so a judge quoting the
+ * page as "15–50 cm" fails to verify against it.
+ */
 const ENTITIES: Record<string, string> = {
   nbsp: ' ',
   amp: '&',
@@ -82,6 +87,14 @@ const ENTITIES: Record<string, string> = {
   gt: '>',
   quot: '"',
   apos: "'",
+  ndash: '–',
+  mdash: '—',
+  lsquo: '\u2018',
+  rsquo: '\u2019',
+  ldquo: '\u201c',
+  rdquo: '\u201d',
+  hellip: '…',
+  deg: '°',
 };
 
 /**

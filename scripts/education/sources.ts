@@ -136,6 +136,13 @@ export const SOURCES: SourceEntry[] = [
   jetstream('lightning/how-lightning-is-created', 'How Lightning is Created', ['lightning']),
   jetstream('lightning/sound-of-thunder', 'The Sound of Thunder', ['lightning', 'atmosphere']),
   jetstream('lightning/frequently-asked-questions', 'Lightning FAQ', ['lightning', 'atmosphere']),
+  // The one JetStream page that reaches above the storm: sprites and elves, their
+  // altitudes, and the positive strokes that drive them.
+  jetstream(
+    'lightning/positive-and-negative-side-of-lightning',
+    'The Positive and Negative Side of Lightning',
+    ['lightning', 'thunderstorms'],
+  ),
 
   // --- NOAA JetStream: synoptic and global scale -------------------------
   jetstream('synoptic', 'Synoptic Meteorology', ['synoptic']),
@@ -186,6 +193,69 @@ export const SOURCES: SourceEntry[] = [
   jetstream('ocean', 'The Ocean', ['ocean']),
   jetstream('ocean/sea-breeze', 'The Sea Breeze', ['ocean', 'cloud-formation']),
   jetstream('ocean/circulations', 'Ocean Circulations', ['ocean', 'global-circulation']),
+
+  // --- NOAA and NWS explainers -------------------------------------------
+  // Topic pages outside JetStream for the Entries its curriculum does not
+  // reach. Office pages (bis, epz, okx, lot, bmx, ama) are NWS-authored and on
+  // the allowed host; the event write-ups among them are cited for the
+  // mechanism they explain, not the date they describe.
+  {
+    id: 'noaa-atmospheric-rivers',
+    label: 'NOAA — What are atmospheric rivers?',
+    url: 'https://www.noaa.gov/stories/what-are-atmospheric-rivers',
+    tags: ['precipitation', 'flood', 'ocean'],
+  },
+  {
+    id: 'nws-polar-vortex',
+    label: 'NWS — What is the polar vortex?',
+    url: 'https://www.weather.gov/safety/cold-polar-vortex',
+    tags: ['winter', 'upper-air', 'jet-stream'],
+  },
+  {
+    id: 'nws-bis-sudden-stratospheric-warming',
+    label: 'NWS Bismarck — Sudden stratospheric warming events',
+    url: 'https://www.weather.gov/bis/sudden_stratospheric_warming_events',
+    tags: ['upper-air', 'winter', 'global-circulation'],
+  },
+  {
+    id: 'nws-epz-conditional-symmetric-instability',
+    label: 'NWS El Paso — A snow event related to conditional symmetric instability',
+    url: 'https://www.weather.gov/epz/research_papers_vptb_csi',
+    tags: ['winter', 'precipitation', 'stability'],
+  },
+  {
+    id: 'nws-okx-blizzard-meteorology',
+    label: 'NWS New York — The meteorology of a thundersnow blizzard',
+    url: 'https://www.weather.gov/okx/Meteorology12262010',
+    tags: ['winter', 'precipitation', 'stability'],
+  },
+  {
+    id: 'nws-lot-thundersnow',
+    label: 'NWS Chicago — Thundersnow brings quick accumulations',
+    url: 'https://www.weather.gov/lot/2023mar03',
+    tags: ['winter', 'precipitation', 'thunderstorms'],
+  },
+  {
+    id: 'nws-bmx-microbursts',
+    label: 'NWS Birmingham — Microbursts',
+    url: 'https://www.weather.gov/bmx/outreach_microbursts',
+    tags: ['downburst', 'wind', 'severe'],
+  },
+  {
+    id: 'nws-ama-microbursts',
+    label: 'NWS Amarillo — Microbursts',
+    url: 'https://www.weather.gov/ama/microbursts',
+    tags: ['downburst', 'wind', 'severe'],
+  },
+  // A Weather-Ready Nation graphics kit, but the page text is the NWS account of
+  // lightning types, and it is the only NWS page on an allowed host that says
+  // anything about ball lightning. The passage sits inside the text budget.
+  {
+    id: 'nws-wrn-lightning-types',
+    label: 'NWS Weather-Ready Nation — Lightning types',
+    url: 'https://www.weather.gov/wrn/summer-lightning-sm',
+    tags: ['lightning', 'safety'],
+  },
 
   // --- NWS safety pages ---------------------------------------------------
   {
@@ -262,6 +332,12 @@ export const SOURCES: SourceEntry[] = [
     url: 'https://www.nhc.noaa.gov/climo/',
     tags: ['tropical', 'ocean'],
   },
+  {
+    id: 'nhc-storm-surge',
+    label: 'NOAA National Hurricane Center — Storm surge overview',
+    url: 'https://www.nhc.noaa.gov/surge/',
+    tags: ['tropical', 'flood', 'ocean'],
+  },
 
   // --- NWS Glossary -------------------------------------------------------
   glossary('cirrus', ['clouds']),
@@ -298,6 +374,11 @@ export const SOURCES: SourceEntry[] = [
   glossary('gust front', ['downburst', 'thunderstorms']),
   glossary('downburst', ['downburst', 'wind']),
   glossary('microburst', ['downburst', 'severe']),
+  glossary('dry microburst', ['downburst', 'wind']),
+  glossary('wet microburst', ['downburst', 'wind']),
+  glossary('tropical cyclone', ['tropical', 'ocean']),
+  glossary('eye', ['tropical']),
+  glossary('storm surge', ['tropical', 'flood']),
   glossary('dust storm', ['dust', 'wind']),
   glossary('graupel', ['winter', 'precipitation']),
   glossary('snow squall', ['winter', 'precipitation']),
@@ -323,9 +404,15 @@ export function getSourceById(id: string): SourceEntry | null {
  * Cyclones brief, and catalog order then decided — the Saffir-Simpson page was
  * never offered. Ties still keep catalog order, which puts JetStream explainers
  * ahead of one-paragraph glossary entries.
+ *
+ * Weights halve down the list, so each tag outweighs every tag after it put
+ * together: a source carrying only the first tag cannot be overtaken by one
+ * carrying all the others. Linear weights let the atmospheric-rivers page
+ * (`ocean` + `flood`) tie a glossary entry carrying only `tropical` and win on
+ * catalog order.
  */
 export function sourcesForTags(tags: readonly SourceTag[], limit: number): SourceEntry[] {
-  const weight = new Map(tags.map((tag, index) => [tag, tags.length - index]));
+  const weight = new Map(tags.map((tag, index) => [tag, 2 ** (tags.length - 1 - index)]));
   return SOURCES.map((source) => ({
     source,
     score: source.tags.reduce((n, tag) => n + (weight.get(tag) ?? 0), 0),

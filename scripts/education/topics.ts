@@ -121,6 +121,10 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['precipitation', 'flood', 'ocean', 'global-circulation'],
     focus:
       'A narrow corridor of water vapour transport measured in Mississippi-Rivers-worth. Landfall, orographic enhancement, and why the same feature is both a water supply and a flood risk.',
+    // The only catalog page about atmospheric rivers as such; the tags alone
+    // would fill the list with generic precipitation and flood pages. The
+    // focus names orographic enhancement, and no brief tag reaches that entry.
+    pin: ['noaa-atmospheric-rivers', 'glossary-orographic'],
   },
   'weather-system:jet-streams': {
     tags: ['jet-stream', 'upper-air', 'global-circulation', 'atmosphere'],
@@ -135,7 +139,10 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'weather-system:polar-vortex': {
     tags: ['upper-air', 'jet-stream', 'winter', 'global-circulation'],
     focus:
-      'A stratospheric circulation that is always there. What "the polar vortex" in a headline actually describes, sudden stratospheric warming, and the lag before surface cold arrives.',
+      'A circulation that is always there. What "the polar vortex" in a headline actually describes, the stratospheric vortex as distinct from the tropospheric one, and how a sudden stratospheric warming can displace or split it and let Arctic air spill south.',
+    // The safety explainer defines the term; the Bismarck page is the only
+    // catalog source that describes sudden stratospheric warming.
+    pin: ['nws-polar-vortex', 'nws-bis-sudden-stratospheric-warming'],
   },
   'weather-system:mid-latitude-cyclones': {
     tags: ['mid-latitude-cyclone', 'fronts', 'synoptic', 'pressure'],
@@ -145,12 +152,16 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'weather-system:tropical-cyclones': {
     tags: ['tropical', 'ocean', 'wind', 'flood'],
     focus:
-      'A warm-core engine over 26°C water. Eye and eyewall structure, the Saffir-Simpson scale and what it deliberately omits, and storm surge as the deadlier hazard.',
-    // The focus names the scale and the eye/eyewall structure by name.
+      'A warm-core engine over warm ocean water. Eye and eyewall structure, the Saffir-Simpson scale and the hazards it deliberately leaves out, and storm surge as the deadlier one.',
+    // The focus names the scale, the eye/eyewall structure and surge by name.
+    // The sea-surface threshold is left to the sources: JetStream gives it in
+    // Fahrenheit, and a Celsius figure in the brief commissioned a conversion
+    // the fact check could not verify.
     pin: [
       'nhc-sshws',
       'jetstream-tropical-tropical-cyclone-introduction',
       'jetstream-tropical-tropical-cyclone-introduction-tropical-cyclone-structure',
+      'nhc-storm-surge',
     ],
   },
   'weather-system:squall-lines': {
@@ -168,17 +179,30 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'phenomenon:ball-lightning': {
     tags: ['lightning', 'thunderstorms', 'atmosphere'],
     focus:
-      'A phenomenon with centuries of reports and no settled explanation. Treat the uncertainty as the subject: what witnesses describe, which hypotheses survive, and what would count as evidence.',
+      'A phenomenon with reports and no settled explanation. Treat the uncertainty as the subject: what witnesses most often describe — size, colour, how long it lasts, how close to the ground it moves — and how thin that record is next to the lightning types that are understood.',
+    // The one catalog page that mentions ball lightning at all. Without it the
+    // draft has nothing to quote and the fact check refuses every description.
+    pin: ['nws-wrn-lightning-types'],
   },
   'phenomenon:thundersnow': {
-    tags: ['winter', 'thunderstorms', 'lightning', 'precipitation'],
+    tags: ['winter', 'precipitation', 'stability', 'lightning'],
     focus:
-      'Convection inside a snowstorm. Why it is rare, why the thunder sounds muffled, and why thundersnow is a reliable marker of the heaviest snowfall rates.',
+      'Convection inside a snowstorm. The elevated instability and steep mid-level lapse rates that let a snow band produce lightning, why that is rare, and why thundersnow marks the heaviest snowfall rates.',
+    // The catalog has no page on thundersnow as a topic; these NWS write-ups
+    // carry the mechanism (slantwise and elevated convection) and the snowfall
+    // rates the focus asks for. Tag ranking cannot pick them out of `winter`.
+    pin: [
+      'nws-epz-conditional-symmetric-instability',
+      'nws-okx-blizzard-meteorology',
+      'nws-lot-thundersnow',
+    ],
   },
   'phenomenon:microbursts': {
     tags: ['downburst', 'thunderstorms', 'wind', 'severe'],
     focus:
-      'A small, violent downdraft. Wet versus dry microbursts, the diverging outflow that distinguishes the damage from a tornado, and the aviation history that made them famous.',
+      'A small, violent downdraft. Wet versus dry microbursts, the diverging straight-line outflow that separates its damage from a tornado\'s, and the safety guidance that follows from how little warning it gives.',
+    // Wet versus dry is the focus and each has its own glossary entry.
+    pin: ['glossary-dry-microburst', 'glossary-wet-microburst'],
   },
   'phenomenon:sun-dogs': {
     tags: ['optics', 'clouds', 'atmosphere'],
@@ -194,7 +218,14 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'phenomenon:sprites': {
     tags: ['lightning', 'atmosphere', 'thunderstorms'],
     focus:
-      'Electrical discharge above the storm rather than below it. Mesosphere altitudes, the link to positive cloud-to-ground strokes, and why a flash lasting milliseconds is so rarely seen from the ground.',
+      'Electrical discharge above the storm rather than below it. The altitudes sprites and elves reach, their link to positive cloud-to-ground strokes, and why a faint red flash lasting a fraction of a second is so rarely seen without a sensitive camera.',
+    // The positive-lightning page is the only JetStream page that mentions
+    // sprites; the layers page places their altitude in the atmosphere.
+    pin: [
+      'jetstream-lightning-positive-and-negative-side-of-lightning',
+      'nws-wrn-lightning-types',
+      'jetstream-atmosphere-layers-of-atmosphere',
+    ],
   },
 };
 
