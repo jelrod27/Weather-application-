@@ -29,6 +29,20 @@ function isEffort(value: string | undefined): value is Effort {
   return (EFFORT_LEVELS as readonly string[]).includes(value ?? '');
 }
 
+/**
+ * Sonnet 4.6 accepts low/medium/high/max, not xhigh. Sending xhigh is a 400
+ * from Anthropic rather than a quieter fallback, so refuse it here.
+ */
+const SONNET_46 = /claude-sonnet-4-6/;
+
+export function assertEffortForModel(model: string, effort: Effort): void {
+  if (effort === 'xhigh' && SONNET_46.test(model)) {
+    throw new Error(
+      `effort "xhigh" is not supported by ${model}; use low, medium, high, or max.`,
+    );
+  }
+}
+
 /** Reasoning depth for every Guide call. `EDUCATION_EFFORT` overrides; anything else is refused. */
 export const EDUCATION_EFFORT: Effort = (() => {
   const requested = process.env.EDUCATION_EFFORT;
@@ -48,11 +62,14 @@ const EDUCATION_TIMEOUT_MS = 10 * 60_000;
 const EDUCATION_MAX_TOKENS = 32_000;
 
 export function callEducationModel(opts: CallAnthropicOptions): Promise<string> {
+  const model = opts.model ?? EDUCATION_MODEL;
+  const effort = opts.effort ?? EDUCATION_EFFORT;
+  assertEffortForModel(model, effort);
   return callAnthropic({
     ...opts,
-    model: opts.model ?? EDUCATION_MODEL,
+    model,
     maxTokens: opts.maxTokens ?? EDUCATION_MAX_TOKENS,
     timeoutMs: opts.timeoutMs ?? EDUCATION_TIMEOUT_MS,
-    effort: opts.effort ?? EDUCATION_EFFORT,
+    effort,
   });
 }

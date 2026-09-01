@@ -158,6 +158,43 @@ function classify(text: string): { hasNumber: boolean; hasAttribution: boolean }
   return { hasNumber: /\d/.test(text), hasAttribution: ATTRIBUTION.test(text) };
 }
 
+/**
+ * Keep a judge-supplied draft sentence only when it is a verbatim span of the
+ * body. An invented draft would otherwise satisfy numeric coverage for figures
+ * the judge never quoted from the prose.
+ */
+function verbatimDraft(body: string, draft: unknown): string | undefined {
+  if (typeof draft !== 'string') return undefined;
+  const trimmed = draft.trim();
+  if (!trimmed) return undefined;
+  return body.includes(trimmed) ? trimmed : undefined;
+}
+
+/**
+ * Turns the judge's JSON list into claims. Numbers and agency names are read
+ * from the restatement and from a validated draft together, so a paraphrase
+ * that dropped the figure still counts as numeric.
+ */
+export function claimsFromJudge(body: string, rawClaims: unknown[]): FactCheckClaim[] {
+  return rawClaims.flatMap((item): FactCheckClaim[] => {
+    if (!item || typeof item !== 'object') return [];
+    const { text, draft, verdict, sourceId, quote } = item as Record<string, unknown>;
+    if (typeof text !== 'string' || !text.trim()) return [];
+    const assertion = text.trim();
+    const fromDraft = verbatimDraft(body, draft);
+    return [
+      {
+        text: assertion,
+        draft: fromDraft,
+        verdict: verdict === 'supported' ? 'supported' : 'unsupported',
+        sourceId: typeof sourceId === 'string' ? sourceId : undefined,
+        quote: typeof quote === 'string' ? quote : undefined,
+        ...classify([assertion, fromDraft].filter(Boolean).join('\n')),
+      },
+    ];
+  });
+}
+
 function summarize(claims: FactCheckClaim[]): FactCheckResult {
   const unsupported = claims.filter((claim) => claim.verdict === 'unsupported');
   return {
@@ -235,22 +272,7 @@ ${body}`;
 
   const parsed = parseModelJsonObject(raw);
   const rawClaims = Array.isArray(parsed.claims) ? parsed.claims : [];
-
-  const claims: FactCheckClaim[] = rawClaims.flatMap((item): FactCheckClaim[] => {
-    if (!item || typeof item !== 'object') return [];
-    const { text, draft, verdict, sourceId, quote } = item as Record<string, unknown>;
-    if (typeof text !== 'string' || !text.trim()) return [];
-    return [
-      {
-        text: text.trim(),
-        draft: typeof draft === 'string' && draft.trim() ? draft.trim() : undefined,
-        verdict: verdict === 'supported' ? 'supported' : 'unsupported',
-        sourceId: typeof sourceId === 'string' ? sourceId : undefined,
-        quote: typeof quote === 'string' ? quote : undefined,
-        ...classify(text),
-      },
-    ];
-  });
+  const claims = claimsFromJudge(body, rawClaims);
 
   if (claims.length === 0) {
     throw new JudgeUnusableError(

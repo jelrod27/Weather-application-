@@ -98,9 +98,8 @@ export async function callAnthropic(opts: CallAnthropicOptions): Promise<string>
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? REQUEST_TIMEOUT_MS);
-  let res: Response;
   try {
-    res = await fetch(ANTHROPIC_API, {
+    const res = await fetch(ANTHROPIC_API, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -110,30 +109,30 @@ export async function callAnthropic(opts: CallAnthropicOptions): Promise<string>
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Anthropic API ${res.status}: ${text.slice(0, 500)}`);
+    }
+    const data = (await res.json()) as MessagesResponse;
+    if (data.stop_reason === 'max_tokens') {
+      throw new Error(
+        `Anthropic response was cut off at max_tokens=${String(body.max_tokens)}; raise maxTokens for this call.`,
+      );
+    }
+    if (data.stop_reason === 'refusal') {
+      const category = data.stop_details?.category ? ` (${data.stop_details.category})` : '';
+      throw new Error(
+        `Anthropic declined the request${category}: ${data.stop_details?.explanation ?? 'no explanation given'}`,
+      );
+    }
+    // Thinking models return `thinking` blocks ahead of the answer; the first
+    // text block is the answer on every model.
+    const block = data.content?.find((b) => b.type === 'text');
+    return block?.text ?? '';
   } finally {
     clearTimeout(timer);
   }
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Anthropic API ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = (await res.json()) as MessagesResponse;
-  if (data.stop_reason === 'max_tokens') {
-    throw new Error(
-      `Anthropic response was cut off at max_tokens=${String(body.max_tokens)}; raise maxTokens for this call.`,
-    );
-  }
-  if (data.stop_reason === 'refusal') {
-    const category = data.stop_details?.category ? ` (${data.stop_details.category})` : '';
-    throw new Error(
-      `Anthropic declined the request${category}: ${data.stop_details?.explanation ?? 'no explanation given'}`,
-    );
-  }
-  // Thinking models return `thinking` blocks ahead of the answer; the first
-  // text block is the answer on every model.
-  const block = data.content?.find((b) => b.type === 'text');
-  return block?.text ?? '';
 }
 
 /**

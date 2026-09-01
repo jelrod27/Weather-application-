@@ -78,6 +78,16 @@ describe('candidateSourcesFor', () => {
     expect(new Set(picks.map((source) => source.id)).size).toBe(5);
   });
 
+  it('collapses a repeated pin id to one candidate', () => {
+    const picks = candidateSourcesFor(
+      { tags: ['clouds'], pin: ['jetstream-clouds', 'jetstream-clouds'] },
+      5,
+    );
+    expect(picks[0].id).toBe('jetstream-clouds');
+    expect(picks.filter((source) => source.id === 'jetstream-clouds')).toHaveLength(1);
+    expect(new Set(picks.map((source) => source.id)).size).toBe(picks.length);
+  });
+
   it('refuses a pin that is not in the catalog', () => {
     expect(() => candidateSourcesFor({ tags: ['clouds'], pin: ['jetstream-made-up'] }, 5)).toThrow(
       UnknownPinnedSourceError,

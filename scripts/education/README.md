@@ -41,10 +41,13 @@ and later) and fails the call on a `max_tokens` or `refusal` stop rather than re
 truncated body.
 
 Effort is `medium` by default (`EDUCATION_EFFORT` overrides: `low`, `medium`, `high`,
-`xhigh`, `max`). At the model's own default the first Opus 5 dry run spent four minutes
-and the whole 16,000-token ceiling thinking about a 900-word draft and never reached the
-prose; the writing here is grounded in supplied text rather than derived, and medium
-leaves the 32,000-token ceiling with room to spare.
+`xhigh`, `max`). `xhigh` is refused for `claude-sonnet-4-6`, which does not accept it.
+At the model's own default the first Opus 5 dry run spent four minutes and the whole
+16,000-token ceiling thinking about a 900-word draft and never reached the prose; the
+writing here is grounded in supplied text rather than derived, and medium leaves the
+32,000-token ceiling with room to spare. The GitHub Action maps both `EDUCATION_MODEL`
+and `EDUCATION_EFFORT` from repository variables; without that mapping the runner would
+always use the code defaults.
 
 ## Layout
 

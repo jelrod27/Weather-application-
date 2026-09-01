@@ -352,7 +352,7 @@ export function candidateSourcesFor(
   brief: { tags: readonly SourceTag[]; pin?: readonly string[] },
   limit: number,
 ): SourceEntry[] {
-  const pinned = (brief.pin ?? []).map((id) => {
+  const pinned = [...new Set(brief.pin ?? [])].map((id) => {
     const source = getSourceById(id);
     if (!source) throw new UnknownPinnedSourceError(`Pinned source "${id}" is not in the catalog.`);
     return source;

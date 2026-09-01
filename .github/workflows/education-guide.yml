@@ -61,6 +61,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           EDUCATION_MODEL: ${{ vars.EDUCATION_MODEL || 'claude-opus-5' }}
+          EDUCATION_EFFORT: ${{ vars.EDUCATION_EFFORT || 'medium' }}
           SLUG: ${{ inputs.slug }}
           KIND: ${{ inputs.kind }}
           DRY_RUN: ${{ inputs.dry_run }}

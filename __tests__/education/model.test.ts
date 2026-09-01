@@ -1,5 +1,9 @@
-import { EDUCATION_EFFORT, EDUCATION_MODEL } from '../../scripts/education/model';
-import { buildMessagesRequestBody, modelAcceptsSampling } from '../../scripts/newsletter/repetition';
+import { assertEffortForModel, EDUCATION_EFFORT, EDUCATION_MODEL } from '../../scripts/education/model';
+import {
+  buildMessagesRequestBody,
+  callAnthropic,
+  modelAcceptsSampling,
+} from '../../scripts/newsletter/repetition';
 
 const messages = [{ role: 'user' as const, content: 'x' }];
 
@@ -22,6 +26,46 @@ describe('effort', () => {
     expect(buildMessagesRequestBody({ model: 'claude-opus-5', messages, effort: 'medium' }).output_config).toEqual({
       effort: 'medium',
     });
+  });
+
+  it('refuses xhigh for Sonnet 4.6, which the API does not accept', () => {
+    expect(() => assertEffortForModel('claude-sonnet-4-6', 'xhigh')).toThrow(/xhigh/);
+    expect(() => assertEffortForModel('claude-sonnet-4-6', 'max')).not.toThrow();
+    expect(() => assertEffortForModel('claude-opus-5', 'xhigh')).not.toThrow();
+  });
+});
+
+describe('callAnthropic timeout', () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = originalKey;
+  });
+
+  it('still times out when headers arrive but the body never does', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+    global.fetch = jest.fn((_url: unknown, init?: RequestInit) => {
+      const signal = init?.signal;
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            if (!signal) return;
+            const abort = () => {
+              const err = new Error('The operation was aborted');
+              err.name = 'AbortError';
+              reject(err);
+            };
+            if (signal.aborted) abort();
+            else signal.addEventListener('abort', abort, { once: true });
+          }),
+      });
+    }) as unknown as typeof fetch;
+
+    await expect(callAnthropic({ messages, timeoutMs: 40 })).rejects.toMatchObject({ name: 'AbortError' });
   });
 });
 

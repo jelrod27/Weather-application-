@@ -1,5 +1,6 @@
 import {
   buildFactCorrection,
+  claimsFromJudge,
   formatFactCheck,
   unexaminedNumericClaims,
   verifyAgainstSources,
@@ -182,6 +183,47 @@ describe('unexaminedNumericClaims', () => {
   it('marks an unexamined sentence naming an agency as an attribution too', () => {
     const out = unexaminedNumericClaims('The National Weather Service uses 58 mph.', []);
     expect(out[0].hasAttribution).toBe(true);
+  });
+
+  it('does not treat figures in a fabricated draft as examined', () => {
+    const body = 'The tower reaches 60,000 feet.';
+    const claims = claimsFromJudge(body, [
+      {
+        text: 'Storms need moisture',
+        draft: 'The tower reaches 60,000 feet extra.',
+        verdict: 'supported',
+      },
+    ]);
+    expect(unexaminedNumericClaims(body, claims)).toHaveLength(1);
+  });
+});
+
+describe('claimsFromJudge', () => {
+  it('keeps a draft sentence that appears in the body and classifies figures from it', () => {
+    const body = 'Gusts of 58 mph define a severe thunderstorm.';
+    const [parsed] = claimsFromJudge(body, [
+      {
+        text: 'Severe storms have strong winds',
+        draft: 'Gusts of 58 mph define a severe thunderstorm.',
+        verdict: 'unsupported',
+      },
+    ]);
+    expect(parsed.draft).toBe('Gusts of 58 mph define a severe thunderstorm.');
+    expect(parsed.hasNumber).toBe(true);
+    expect(parsed.verdict).toBe('unsupported');
+  });
+
+  it('drops a fabricated draft so its figures cannot satisfy coverage', () => {
+    const body = 'Gusts of 58 mph define a severe thunderstorm.';
+    const [parsed] = claimsFromJudge(body, [
+      {
+        text: 'Storms need moisture',
+        draft: 'Gusts of 58 mph AND 200 mph.',
+        verdict: 'supported',
+      },
+    ]);
+    expect(parsed.draft).toBeUndefined();
+    expect(parsed.hasNumber).toBe(false);
   });
 });
 
