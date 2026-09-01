@@ -92,6 +92,36 @@ Add the polar vortex and atmospheric rivers pages; verify NSSL candidates locall
 resolves (`npm run validate:education-sources`); rewrite the sprites, tropical-cyclones,
 microbursts, ball-lightning and thundersnow focus lines to what the sources can carry; add pins.
 
+Findings from the workstation check (`education/catalog-brief-audit`):
+
+- **NSSL is not citable from this pipeline.** `www.nssl.noaa.gov` serves only its leaf
+  certificate (issuer Sectigo DV R36, no intermediate in the chain), so `curl` and Node's `fetch`
+  both fail verification; browsers pass because they fetch the missing intermediate themselves.
+  This is server-side, so GitHub Actions would fail the same way. The host stays on the allow
+  list; nothing is catalogued from it until NOAA fixes the chain.
+- **Sprites** are covered by JetStream's *Positive and Negative Side of Lightning* (altitudes,
+  positive strokes, elves). **Ball lightning** appears on exactly one NWS page on an allowed
+  host, the Weather-Ready Nation lightning-types kit (`/wrn/summer-lightning-sm`); the passage
+  sits at ~8.7K characters, inside the 12K text budget. The sibling kit pages carry the same text
+  past the cut and are not catalogued.
+- **Thundersnow** has no NWS topic page. Three NWS office write-ups carry the mechanism
+  (El Paso on conditional symmetric instability, New York on elevated instability and steep
+  mid-level lapse rates, Chicago on snowfall rates with lightning). The "muffled thunder" line
+  was dropped from the focus — no source explains it.
+- **Microbursts**: the Birmingham and Amarillo office pages plus the *dry* and *wet microburst*
+  glossary entries. The aviation-history line was dropped.
+- **Tropical Cyclones**: the brief no longer names 26°C; JetStream gives the threshold in
+  Fahrenheit, and the Celsius figure commissioned a conversion the fact check could not verify.
+  Added the NHC storm-surge overview and the *tropical cyclone*, *eye*, *storm surge* glossary
+  entries.
+- **Polar Vortex**: the NWS safety explainer plus NWS Bismarck's sudden-stratospheric-warming
+  page (stratospheric vs tropospheric vortex, wave breaking, wind reversal, displacement or split).
+- `sourcesForTags` now halves weights down the tag list so each tag outweighs all later tags
+  combined; with linear weights the atmospheric-rivers page (`ocean` + `flood`) tied a
+  `tropical`-only glossary entry and won on catalog order.
+- `htmlToText` decodes `&ndash;`, `&mdash;`, curly quotes, `&hellip;` and `&deg;` — office pages
+  use them, and `15&ndash;50 cm` left encoded cannot be matched by a judge quoting "15–50 cm".
+
 ### PR 3 — SEO (independent of 1 and 2)
 
 Enable Web Analytics (dashboard). Move topic tags into `lib/education/` so the page can render a
@@ -108,8 +138,8 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 
 | Step | State |
 |---|---|
-| PR 1 pipeline hardening | in progress (this branch). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
-| PR 2 catalog and briefs | not started |
+| PR 1 pipeline hardening | merged (#568). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
+| PR 2 catalog and briefs | in progress (`education/catalog-brief-audit`). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
 | PR 3 SEO | not started |
 | Web Analytics toggle | not done — needs the dashboard |
-| Anticyclones re-run | blocked on PR 1 |
+| Anticyclones re-run | unblocked by PR 1; not yet run |

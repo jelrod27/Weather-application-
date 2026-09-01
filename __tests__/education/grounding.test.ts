@@ -33,6 +33,12 @@ describe('htmlToText', () => {
     expect(htmlToText('<p>&notanentity; stays</p>')).toBe('&notanentity; stays');
   });
 
+  it('decodes the typographic entities NWS office pages use', () => {
+    expect(htmlToText('<p>a radius of 15&ndash;50 cm &mdash; &ldquo;break&rdquo; at 26&deg;C</p>')).toBe(
+      'a radius of 15–50 cm — \u201cbreak\u201d at 26°C',
+    );
+  });
+
   // Every noaa.gov article opens with the same government banner and main menu.
   // That chrome is byte-identical across pages, so a fact-check quote drawn from
   // it verifies against any source — an unsupported claim could be "grounded" in

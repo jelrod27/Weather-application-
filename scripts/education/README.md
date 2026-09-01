@@ -143,8 +143,9 @@ Add it by hand on the PR once the prose has been read against the citations.
 
 ## Curating the source catalog
 
-`sources.ts` holds NOAA JetStream pages, NWS safety pages, SPC/NHC references and NWS
-Glossary entries, each tagged by subject. To add one, append an entry, tag it, and run:
+`sources.ts` holds NOAA JetStream pages, NWS safety and office explainers, SPC/NHC
+references and NWS Glossary entries, each tagged by subject. To add one, append an entry,
+tag it, and run:
 
 ```bash
 npm run validate:education-sources
@@ -160,6 +161,18 @@ product token — a descriptive UA is refused on every JetStream page while `cur
 served. NOAA's robots.txt does not disallow `/jetstream/`, so `grounding.ts` leads with
 the token the filter accepts and carries our identity and contact address behind it.
 Keep both halves.
+
+`www.nssl.noaa.gov` is on the allowed-host list but nothing is catalogued from it: the
+server sends only its leaf certificate, so `curl` and Node's `fetch` fail verification
+(browsers pass because they fetch the missing intermediate themselves). That is
+server-side and would fail in CI too. Re-check with `openssl s_client` before adding an
+NSSL page.
+
+Ranking weights halve down a brief's tag list, so each tag outweighs every tag after it
+combined: a source carrying only the first tag cannot be overtaken by one carrying all
+the others. The fetched text is capped at 12,000 characters; a page whose relevant
+passage sits past that (the longer Weather-Ready Nation kit pages) is not a usable
+source even though it resolves.
 
 ### Pinned sources
 
