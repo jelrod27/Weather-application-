@@ -159,6 +159,22 @@ describe('unexaminedNumericClaims', () => {
     expect(out).toEqual([]);
   });
 
+  it('accepts a figure that appears in the draft sentence the judge quoted, even when its restatement rounded it', () => {
+    // The judge restates claims in its own words. "About 1013 mb" for a draft
+    // that says 1013.2 used to flag the sentence as never examined.
+    const body = 'Standard sea-level pressure is 1013.2 millibars.';
+    const out = unexaminedNumericClaims(body, [
+      {
+        text: 'Standard sea-level pressure is about 1013 mb',
+        draft: 'Standard sea-level pressure is 1013.2 millibars.',
+        verdict: 'supported',
+        hasNumber: true,
+        hasAttribution: false,
+      },
+    ]);
+    expect(out).toEqual([]);
+  });
+
   it('ignores prose with no figures at all', () => {
     expect(unexaminedNumericClaims('Cirrus is made of ice rather than water.', [])).toEqual([]);
   });

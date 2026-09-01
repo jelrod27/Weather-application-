@@ -313,21 +313,51 @@ export function getSourceById(id: string): SourceEntry | null {
 }
 
 /**
- * Candidate sources for a set of subject tags, most relevant first.
+ * Candidate sources for a brief's subject tags, most relevant first.
  *
- * Relevance is the number of the Entry's tags a source carries, so a page
- * tagged both `clouds` and `cloud-formation` outranks one tagged only
- * `clouds` for a Guide that asked for both. Ties keep catalog order, which
- * puts JetStream explainers ahead of one-paragraph glossary entries.
+ * A brief lists its tags most-important first, and relevance follows that
+ * order: a source carrying the brief's first tag scores more than one carrying
+ * only its last, and a source carrying several adds them up. Counting matches
+ * without weighting them put Derechos and Bow Echoes (one `wind` match) level
+ * with Tropical Cyclone Structure (one `tropical` match) for the Tropical
+ * Cyclones brief, and catalog order then decided — the Saffir-Simpson page was
+ * never offered. Ties still keep catalog order, which puts JetStream explainers
+ * ahead of one-paragraph glossary entries.
  */
 export function sourcesForTags(tags: readonly SourceTag[], limit: number): SourceEntry[] {
-  const wanted = new Set(tags);
+  const weight = new Map(tags.map((tag, index) => [tag, tags.length - index]));
   return SOURCES.map((source) => ({
     source,
-    score: source.tags.reduce((n, tag) => (wanted.has(tag) ? n + 1 : n), 0),
+    score: source.tags.reduce((n, tag) => n + (weight.get(tag) ?? 0), 0),
   }))
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ source }) => source);
+}
+
+export class UnknownPinnedSourceError extends Error {}
+
+/**
+ * The sources a Guide is offered: the brief's pinned ids first, then the
+ * tag-ranked rest, up to `limit`.
+ *
+ * Pins exist for the page a focus line depends on. Ranking is by subject, and
+ * a focus line that names the Saffir-Simpson scale or a subsidence inversion
+ * needs that specific page in front of the model however the rest of the
+ * catalog scores. A pin that is not in the catalog throws rather than being
+ * skipped — the brief was written around it.
+ */
+export function candidateSourcesFor(
+  brief: { tags: readonly SourceTag[]; pin?: readonly string[] },
+  limit: number,
+): SourceEntry[] {
+  const pinned = (brief.pin ?? []).map((id) => {
+    const source = getSourceById(id);
+    if (!source) throw new UnknownPinnedSourceError(`Pinned source "${id}" is not in the catalog.`);
+    return source;
+  });
+  const seen = new Set(pinned.map((source) => source.id));
+  const ranked = sourcesForTags(brief.tags, limit).filter((source) => !seen.has(source.id));
+  return [...pinned, ...ranked].slice(0, Math.max(limit, pinned.length));
 }

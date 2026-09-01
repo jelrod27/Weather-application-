@@ -28,7 +28,7 @@ Additional rules for a Guide:
 - No links and no URLs in the body. Citations are handled separately.
 - Explain mechanism, not vocabulary. "The downdraft carries rain-cooled air to the surface" teaches; "meteorologists call this a downdraft" does not.
 - The reader gets one useful thing they can do or notice with their own eyes. Recognition beats definition.
-- Numbers are welcome and should be specific, but every number must come from the source material provided.
+- Numbers are welcome and should be specific, but every number must come from the source material provided. That includes illustrative ones: no hypothetical scenarios, worked examples or round-number comparisons with made-up values. The fact check treats every digit as a claim, and a Guide carrying a figure the sources do not state is not published.
 - Do not restate the structured data panel. Altitude, pressure and temperature ranges already render beside the prose; use them only where the number carries the explanation.
 - Never claim more certainty than the sources do. Where the science is unsettled, say so plainly and say what would settle it.
 `.trim();

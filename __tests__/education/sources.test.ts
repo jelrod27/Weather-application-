@@ -1,6 +1,12 @@
 import { isAllowedSourceUrl } from '@/lib/education/content';
 import { getEligibleEntries } from '../../scripts/education/queue';
-import { getSourceById, SOURCES, sourcesForTags } from '../../scripts/education/sources';
+import {
+  candidateSourcesFor,
+  getSourceById,
+  SOURCES,
+  sourcesForTags,
+  UnknownPinnedSourceError,
+} from '../../scripts/education/sources';
 import { GUIDE_BRIEFS, getGuideBrief } from '../../scripts/education/topics';
 
 describe('the source catalog', () => {
@@ -33,12 +39,55 @@ describe('sourcesForTags', () => {
     expect(picks[0].tags).toEqual(expect.arrayContaining(['clouds', 'cloud-formation']));
   });
 
+  it("weights by the brief's tag order, so every first-tag source outranks any source without it", () => {
+    // Tropical Cyclones lists `tropical` first. Counting matches without
+    // weighting put Derechos and Bow Echoes (one `wind` match) level with
+    // Tropical Cyclone Structure (one `tropical` match), and catalog order then
+    // offered the storm pages and left the Saffir-Simpson page out.
+    const picks = sourcesForTags(['tropical', 'ocean', 'wind', 'flood'], 12);
+    const isTropical = picks.map((source) => source.tags.includes('tropical'));
+    const lastTropical = isTropical.lastIndexOf(true);
+    const firstOther = isTropical.indexOf(false);
+    expect(lastTropical).toBeGreaterThan(-1);
+    expect(firstOther === -1 || firstOther > lastTropical).toBe(true);
+    expect(picks.map((source) => source.id)).toEqual(
+      expect.arrayContaining([
+        'nhc-sshws',
+        'jetstream-tropical-tropical-cyclone-introduction-tropical-cyclone-structure',
+      ]),
+    );
+  });
+
   it('returns nothing for a tag no source carries', () => {
     expect(sourcesForTags([], 5)).toEqual([]);
   });
 
   it('respects the limit', () => {
     expect(sourcesForTags(['clouds'], 2)).toHaveLength(2);
+  });
+});
+
+describe('candidateSourcesFor', () => {
+  it('offers pinned sources first and fills the rest by rank without repeating them', () => {
+    const picks = candidateSourcesFor(
+      { tags: ['clouds'], pin: ['glossary-inversion', 'jetstream-clouds'] },
+      5,
+    );
+    expect(picks.slice(0, 2).map((source) => source.id)).toEqual(['glossary-inversion', 'jetstream-clouds']);
+    expect(picks).toHaveLength(5);
+    expect(new Set(picks.map((source) => source.id)).size).toBe(5);
+  });
+
+  it('refuses a pin that is not in the catalog', () => {
+    expect(() => candidateSourcesFor({ tags: ['clouds'], pin: ['jetstream-made-up'] }, 5)).toThrow(
+      UnknownPinnedSourceError,
+    );
+  });
+
+  it('is plain tag ranking when nothing is pinned', () => {
+    expect(candidateSourcesFor({ tags: ['clouds', 'cloud-formation'] }, 3)).toEqual(
+      sourcesForTags(['clouds', 'cloud-formation'], 3),
+    );
   });
 });
 
@@ -55,7 +104,7 @@ describe('the drafting briefs', () => {
   it('give every Entry enough candidate sources to satisfy the citation floor', () => {
     const starved = eligible
       .map((entry) => ({ entry, brief: getGuideBrief(entry.kind, entry.slug)! }))
-      .filter(({ brief }) => sourcesForTags(brief.tags, 8).length < 4)
+      .filter(({ brief }) => candidateSourcesFor(brief, 12).length < 4)
       .map(({ entry }) => `${entry.kind}:${entry.slug}`);
     expect(starved).toEqual([]);
   });
@@ -65,5 +114,22 @@ describe('the drafting briefs', () => {
       .filter(([, brief]) => brief.focus.trim().length < 40)
       .map(([key]) => key);
     expect(empty).toEqual([]);
+  });
+
+  it('pin only sources that exist in the catalog', () => {
+    const broken = Object.entries(GUIDE_BRIEFS).flatMap(([key, brief]) =>
+      (brief.pin ?? []).filter((id) => !getSourceById(id)).map((id) => `${key}: ${id}`),
+    );
+    expect(broken).toEqual([]);
+  });
+
+  it('commission no dated events: a focus line never carries a year', () => {
+    // The catalog is federal reference text about mechanism. It will never
+    // state that sprites were first photographed in 1989, so a brief asking
+    // for that is asking for the unsupported claim the fact check then refuses.
+    const dated = Object.entries(GUIDE_BRIEFS)
+      .filter(([, brief]) => /\b(?:1[5-9]|20)\d{2}\b/.test(brief.focus))
+      .map(([key]) => key);
+    expect(dated).toEqual([]);
   });
 });

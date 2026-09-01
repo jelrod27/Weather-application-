@@ -8,16 +8,16 @@
  *
  * Env:
  *   ANTHROPIC_API_KEY  required (except for --list)
- *   NEWSLETTER_MODEL   optional, defaults to claude-sonnet-4-6
+ *   EDUCATION_MODEL    optional, defaults to claude-opus-5
  */
 
 import type { EducationEntryKind } from '@/lib/education/entries';
 
 import fs from 'node:fs';
 
-import { DEFAULT_MODEL } from '../newsletter/repetition';
 import { formatFactCheck } from './fact-check';
 import { generateGuide } from './generate';
+import { EDUCATION_MODEL } from './model';
 import { publishGuide } from './publish';
 import {
   getEligibleEntries,
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
     );
   }
 
-  console.log(`[education] generating ${target.kind}:${target.slug} with ${DEFAULT_MODEL}`);
+  console.log(`[education] generating ${target.kind}:${target.slug} with ${EDUCATION_MODEL}`);
   const startedAt = Date.now();
   const result = await generateGuide(target);
 

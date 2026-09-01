@@ -2,7 +2,8 @@
 
 Drafts one long-form Entry Guide into `content/education/`, gates it, and leaves it
 for review on a PR. The design decisions it implements are in
-`planning/education-hub-direction.md` and `planning/adr/0001`–`0003`.
+`planning/education-hub-direction.md` and `planning/adr/0001`–`0003`; the plan for
+finishing the queue is `planning/education-guide-pipeline-plan-2026-09-01.md`.
 
 ## What it will and will not write
 
@@ -11,10 +12,11 @@ the databases. Asking for one of the other 47 is refused with a pointer to ADR-0
 those are Atlas rows, and coverage for them comes from Collection Guides rather than a
 page each. The queue empties at 29 and does not refill.
 
-Only kinds whose detail route actually loads `getGuideContent` are generated for; today
-that is `cloud`. A Guide written for a kind whose route ignores it would sit unread, so
-the generator refuses and says which route to wire. `KINDS_WITH_GUIDE_RENDERING` in
-`queue.ts` records the list and a test reads the routes to keep it honest.
+Only kinds whose detail route actually loads `getGuideContent` are generated for. All
+three kinds do today — `cloud`, `weather-system` and `phenomenon` — but the guard stays:
+a Guide written for a kind whose route ignores it would sit unread, so the generator
+refuses and says which route to wire. `KINDS_WITH_GUIDE_RENDERING` in `queue.ts` records
+the list and a test reads the routes to keep it honest.
 
 ## Run locally
 
@@ -29,8 +31,13 @@ ANTHROPIC_API_KEY=sk-... npm run education:guide -- --next
 ANTHROPIC_API_KEY=sk-... npm run education:guide -- --slug cirrus --dry-run
 ```
 
-`NEWSLETTER_MODEL` selects the model and defaults to `claude-sonnet-4-6` — the same
-variable the newsletter uses, because the two pipelines share `callAnthropic`.
+`EDUCATION_MODEL` selects the model and defaults to `claude-opus-5`. It is deliberately
+separate from the newsletter's `NEWSLETTER_MODEL`: the pipelines share `callAnthropic`,
+but a Guide's judge has to find verbatim spans in some 30,000 characters of source text,
+which repays a stronger model than a dated post does. `model.ts` is the one place the
+model, its timeout and its token ceiling are chosen. The shared wrapper withholds
+`temperature` from models that reject it (the Claude 5 family, Opus 4.7 and later) and
+fails the call on a `max_tokens` or `refusal` stop rather than returning a truncated body.
 
 ## Layout
 
@@ -38,14 +45,15 @@ variable the newsletter uses, because the two pipelines share `callAnthropic`.
 scripts/education/
   index.ts             # CLI: --list, --next, --slug, --kind, --dry-run
   queue.ts             # the eligible 29, the queue, the render-path guard
-  topics.ts            # per-Entry source tags and focus line
-  sources.ts           # NOAA/NWS source catalog, cited by id only
+  topics.ts            # per-Entry source tags, pinned sources and focus line
+  sources.ts           # NOAA/NWS source catalog, cited by id only; tag-weighted ranking
   grounding.ts         # fetch + HTML-to-text; also backs validate-sources
   brief.ts             # the Entry's physical fields, as prompt context
   voice.ts             # newsletter voice spec plus the Guide delta
-  draft.ts             # the two model calls: prose, then metadata
+  model.ts             # the model, its timeout and its token ceiling
+  draft.ts             # the two model calls: prose (or an in-place revision), then metadata
   gates.ts             # length, shape, register, containment
-  generate.ts          # ground -> draft -> gate -> retry -> finalize
+  generate.ts          # ground -> draft -> gate -> fact-check -> retry -> finalize
   publish.ts           # frontmatter writer
   validate-guide.ts    # post-write gate, run by the workflow
   validate-sources.ts  # npm run validate:education-sources
@@ -53,23 +61,27 @@ scripts/education/
 
 ## How a run works
 
-1. **Ground.** `topics.ts` gives the Entry its subject tags; `sources.ts` ranks the
-   catalog against them; `grounding.ts` fetches the top 8. Only pages that actually
-   came back are citable, and fewer than 3 fails the run rather than drafting from
-   recall — the line the newsletter takes when Iowa Mesonet returns empty.
+1. **Ground.** `topics.ts` gives the Entry its subject tags and any pinned source ids;
+   `sources.ts` ranks the catalog against the tags, weighting them in the order the brief
+   lists them, and puts the pins first; `grounding.ts` fetches the top 12. Only pages that
+   actually came back are citable, and fewer than 3 fails the run rather than drafting
+   from recall — the line the newsletter takes when Iowa Mesonet returns empty.
 2. **Draft.** The voice spec, the cumulonimbus Guide as the standard, and the fetched
    source text go in as cached system blocks. The model returns prose only.
 3. **Gate.** `gates.ts` checks length, section count, register, and containment: no
-   links, URLs, images, raw HTML or code fences. Failures are fed back as a correction,
-   twice. A draft that still fails raises — a Guide is evergreen and indexed, so
-   publishing a broken one is worse than failing the run.
+   links, URLs, images, raw HTML or code fences. Failures go back as a correction
+   alongside the draft they refer to, and the model revises that draft in place.
 4. **Fact-check.** `fact-check.ts` asks whether the prose says only what the sources
-   say — the one thing no other gate checks. See below.
-5. **Finalize.** A second call writes the search summary, picks which offered sources
+   say — the one thing no other gate checks. See below. A number or agency claim the
+   sources do not state goes back the same way, as an in-place edit.
+5. **Retry budget.** Steps 3 and 4 share four retries. A draft that still fails after
+   them raises — a Guide is evergreen and indexed, so publishing a broken one is worse
+   than failing the run.
+6. **Finalize.** A second call writes the search summary, picks which offered sources
    the prose rests on, and places diagrams by registry id with a verbatim anchor. Every
    anchor is resolved through `buildGuideSegments`, the same function the page uses, so
    a diagram cannot be promised in frontmatter and silently dropped at render.
-6. **Publish.** `publish.ts` resolves source ids to citations and writes the file.
+7. **Publish.** `publish.ts` resolves source ids to citations and writes the file.
 
 ## The fact check, and why the judge is not trusted
 
@@ -85,10 +97,20 @@ code resolves it.
 
 Risk is graded in code, not by the judge. An unsupported sentence about storms needing
 moisture is a wording problem. An unsupported number, or an unsupported claim naming an
-agency, is not: those trigger one retry naming the offending claims, and if they survive
-it the run raises `UnsupportedClaimError` rather than shipping. Everything else is
-recorded — in `fact_check_*` frontmatter on the page itself, and as a checklist in the
-PR body, so a reviewer reads flagged lines instead of 900 words.
+agency, is not: those go back to the writer as corrections, drawing on the same retry
+budget as the prose gates, and if they survive it the run raises `UnsupportedClaimError`
+rather than shipping. Everything else is recorded — in `fact_check_*` frontmatter on the
+page itself, and as a checklist in the PR body, so a reviewer reads flagged lines instead
+of 900 words.
+
+Retries edit the previous draft rather than starting over. The check rests on verbatim
+quotes, and a fresh draft at writing temperature re-rolls every sentence: claims that had
+verified come back reworded and unverified, next to new ones. The Depressions run of
+2026-09-01 went from seven unsupported claims to six different ones that way.
+
+The judge also returns the draft sentence each claim came from. The unexamined-number
+check reads figures from that sentence as well as from the judge's restatement, so a
+judge that rounds 1013.2 to "about 1013" no longer flags the sentence as never examined.
 
 Grounding is narrowed to `<main>` for this reason too. Every noaa.gov article opens with
 the same banner and menu, and that chrome is byte-identical across pages — a quote drawn
@@ -129,16 +151,36 @@ served. NOAA's robots.txt does not disallow `/jetstream/`, so `grounding.ts` lea
 the token the filter accepts and carries our identity and contact address behind it.
 Keep both halves.
 
+### Pinned sources
+
+A focus line that depends on one page — the Saffir-Simpson scale, a subsidence
+inversion — names it in the brief's `pin` list in `topics.ts`, and it is offered ahead of
+the ranked candidates. Pins are catalog ids; one that is not in the catalog throws. Tag
+ranking still carries the rest, so pin the page the brief cannot do without, not
+everything relevant.
+
+### Briefs may only ask for what the catalog can cite
+
+The sources are federal reference pages about mechanism. A focus line asking how
+deepening is measured in millibars per hour, or when sprites were first photographed,
+commissions precisely the claim the fact check then refuses — the Depressions run of
+2026-09-01 failed that way. A test rejects any focus line carrying a year; keep the rest
+of a brief to mechanism the catalog actually describes.
+
 ## Failure modes
 
 - **Fewer than 3 sources resolved** → `NoGroundingError`. Re-run when the NOAA hosts are
   reachable. Do not draft without them.
-- **Gates still failing after 2 retries** → `GuideGateError`, naming every check. Nothing
-  is written.
-- **A number or agency claim the sources do not state** → `UnsupportedClaimError` after
-  one retry, naming each claim. Nothing is written. Usually means the source catalog is
-  missing a page the Guide needs; add it and re-run rather than loosening the gate.
+- **A pinned id not in the catalog** → `UnknownPinnedSourceError`. Fix the brief.
+- **Gates still failing after the retry budget** → `GuideGateError`, naming every check.
+  Nothing is written.
+- **A number or agency claim the sources do not state** → `UnsupportedClaimError` once
+  the retry budget is spent, naming each claim. Nothing is written. Usually means the
+  source catalog is missing a page the Guide needs; add it (or pin it) and re-run rather
+  than loosening the gate.
 - **Entry not in the eligible 29** → `IneligibleEntryError` pointing at ADR-0001.
 - **No brief for the Entry** → add its tags and focus line to `topics.ts`.
+- **The model stopped at `max_tokens` or declined** → the wrapper throws naming the stop.
+  Nothing is written.
 - **Anthropic 429 / 5xx** → the shared wrapper bubbles the status up. Re-run after a
   cool-down.

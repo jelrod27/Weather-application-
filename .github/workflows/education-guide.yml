@@ -60,7 +60,7 @@ jobs:
       - name: Generate Guide
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          NEWSLETTER_MODEL: ${{ vars.NEWSLETTER_MODEL || 'claude-sonnet-4-6' }}
+          EDUCATION_MODEL: ${{ vars.EDUCATION_MODEL || 'claude-opus-5' }}
           SLUG: ${{ inputs.slug }}
           KIND: ${{ inputs.kind }}
           DRY_RUN: ${{ inputs.dry_run }}
