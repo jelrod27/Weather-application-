@@ -106,7 +106,7 @@ Six themes (`lib/theme-config.ts`): `nord`, `daybreak` (default), `synthwave84`,
 
 ### Education Guide generation
 
-`scripts/education/` drafts one long-form Entry Guide into `content/education/` and opens a PR — manual dispatch only (`.github/workflows/education-guide.yml`), because the queue is finite. It shares the newsletter's `callAnthropic`, voice spec and `NEWSLETTER_MODEL`. Two hard rules it enforces, both easy to "fix" wrongly: the eligible set is the **29 Entries already published as Guide URLs**, never the other 47 (ADR-0001), and it only generates for kinds whose route actually calls `getGuideContent` — today `cloud` alone. Citations come from the catalog in `scripts/education/sources.ts` by id (`npm run validate:education-sources`), diagrams from the registry by id, and the body gate rejects links, URLs, images and raw HTML outright. `npm run education:guide -- --list` shows the queue. See `scripts/education/README.md`.
+`scripts/education/` drafts one long-form Entry Guide into `content/education/` and opens a PR — manual dispatch only (`.github/workflows/education-guide.yml`), because the queue is finite. It shares the newsletter's `callAnthropic` and voice spec; its model is `EDUCATION_MODEL` (default `claude-opus-5`, chosen in `scripts/education/model.ts`), separate from `NEWSLETTER_MODEL`, and the shared wrapper withholds `temperature` from models that reject it. Two hard rules it enforces, both easy to "fix" wrongly: the eligible set is the **29 Entries already published as Guide URLs**, never the other 47 (ADR-0001), and it only generates for kinds whose route actually calls `getGuideContent` (`KINDS_WITH_GUIDE_RENDERING` in `queue.ts` — all three kinds today, kept honest by a test that reads the routes). Citations come from the catalog in `scripts/education/sources.ts` by id (`npm run validate:education-sources`), ranked by the brief's tag order in `topics.ts` with per-brief pins for the page a focus line depends on; diagrams come from the registry by id; the body gate rejects links, URLs, images and raw HTML outright; and every retry edits the previous draft in place rather than regenerating it. `npm run education:guide -- --list` shows the queue. See `scripts/education/README.md`.
 
 ## Testing
 
@@ -132,7 +132,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
-Optional/server-only (see `.env.example` for the annotated list): `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `RESEND_API_KEY`/`RESEND_FROM_EMAIL`, `SUPABASE_WEBHOOK_SECRET`, `ADMIN_NOTIFICATION_EMAIL`, `GOOGLE_POLLEN_API_KEY` (US pollen coverage), `NASA_API_KEY`, `ANTHROPIC_API_KEY`/`NEWSLETTER_MODEL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `WEATHER_RATE_LIMIT_*`. Weather data itself is keyless.
+Optional/server-only (see `.env.example` for the annotated list): `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `RESEND_API_KEY`/`RESEND_FROM_EMAIL`, `SUPABASE_WEBHOOK_SECRET`, `ADMIN_NOTIFICATION_EMAIL`, `GOOGLE_POLLEN_API_KEY` (US pollen coverage), `NASA_API_KEY`, `ANTHROPIC_API_KEY`/`NEWSLETTER_MODEL`/`EDUCATION_MODEL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `WEATHER_RATE_LIMIT_*`. Weather data itself is keyless.
 
 ## Repo layout notes
 

@@ -12,10 +12,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { parseModelJsonObject } from '../newsletter/model-json';
-import { callAnthropic, DEFAULT_MODEL, type AnthropicCacheBlock } from '../newsletter/repetition';
+import type { AnthropicCacheBlock } from '../newsletter/repetition';
 import { entryFacts, kindLabel } from './brief';
 import { MAX_WORDS, MIN_SOURCES, MIN_WORDS, type DiagramPlacement } from './gates';
 import type { GroundedSource } from './grounding';
+import { callEducationModel } from './model';
 import type { EligibleEntry } from './queue';
 import type { GuideBrief } from './topics';
 import { GUIDE_SYSTEM_PROMPT } from './voice';
@@ -54,6 +55,12 @@ export interface DraftBodyOptions {
   brief: GuideBrief;
   sources: GroundedSource[];
   correction: string | null;
+  /**
+   * The draft the correction refers to. When set, the model is asked to revise
+   * it in place rather than write again, so sentences the fact check has
+   * already verified survive the retry verbatim.
+   */
+  previousBody?: string | null;
   model?: string;
 }
 
@@ -78,7 +85,7 @@ function systemBlocks(options: DraftBodyOptions): AnthropicCacheBlock[] {
 }
 
 export async function draftBody(options: DraftBodyOptions): Promise<string> {
-  const { entry, brief, correction } = options;
+  const { entry, brief, correction, previousBody } = options;
   const facts = entryFacts(entry);
 
   const sections = [
@@ -99,18 +106,27 @@ export async function draftBody(options: DraftBodyOptions): Promise<string> {
 - End on the last substantive paragraph. No summary section, no "Bottom Line", no closing exhortation.
 - ${MIN_WORDS}-${MAX_WORDS} words. Aim near 900.`);
 
-  if (correction) sections.push(correction);
+  if (correction && previousBody) {
+    sections.push(`YOUR PREVIOUS DRAFT\n\n${previousBody}`);
+    sections.push(correction);
+    sections.push(
+      'Revise the previous draft; do not start over. Change only what the correction requires and keep every other sentence exactly as it was — a sentence already checked against the sources stays checked only if it stays verbatim. Return the complete revised Guide.',
+    );
+  } else if (correction) {
+    sections.push(correction);
+  }
 
   sections.push(
     'Return only the markdown body. No frontmatter, no fences, no H1, no commentary before or after.',
   );
 
-  return callAnthropic({
-    model: options.model ?? DEFAULT_MODEL,
+  return callEducationModel({
+    model: options.model,
     systemBlocks: systemBlocks(options),
     messages: [{ role: 'user', content: sections.join('\n\n') }],
-    maxTokens: 4000,
-    temperature: 0.7,
+    // Only reaches models that accept sampling; an edit wants far less variety
+    // than a first draft.
+    temperature: previousBody ? 0.2 : 0.7,
   });
 }
 
@@ -161,10 +177,9 @@ diagrams: zero or more placements. "insertAfter" must be a phrase of 3-8 words c
     .filter(Boolean)
     .join('\n\n');
 
-  const raw = await callAnthropic({
-    model: options.model ?? DEFAULT_MODEL,
+  const raw = await callEducationModel({
+    model: options.model,
     messages: [{ role: 'user', content: prompt }],
-    maxTokens: 1500,
     temperature: 0,
   });
 

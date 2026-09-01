@@ -10,13 +10,26 @@
  * are fronts or pressure systems that a general model will describe in nearly
  * the same words; naming the distinct thing each one owns is what keeps the
  * similarity judge quiet and the pages worth ranking separately.
+ *
+ * A focus line may only ask for what the catalog can cite. The sources are
+ * federal reference pages about mechanism, so "how deepening is measured in
+ * millibars per hour" or "first photographed in 1989" commissions precisely the
+ * claim the fact check then refuses — that is how the Depressions run of
+ * 2026-09-01 failed. A test rejects any focus line carrying a year.
  */
 
 import type { SourceTag } from './sources';
 
 export interface GuideBrief {
+  /** Most important first; `sourcesForTags` weights matches by this order. */
   tags: SourceTag[];
   focus: string;
+  /**
+   * Catalog ids offered ahead of the ranked candidates. For the page a focus
+   * line cannot do without — the Saffir-Simpson scale, the inversion entry —
+   * not for everything relevant; tag ranking carries the rest.
+   */
+  pin?: string[];
 }
 
 export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
@@ -66,6 +79,10 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['pressure', 'synoptic', 'global-circulation', 'upper-air'],
     focus:
       'Subsidence and what it suppresses. Why high pressure means clear skies in summer and trapped haze or fog in winter — the same mechanism, opposite comfort.',
+    // Origin of Wind is the only page that explains subsidence and fair weather
+    // together; the inversion entry is what the winter-fog half rests on. Neither
+    // carries the brief's tags strongly enough to rank on its own.
+    pin: ['jetstream-synoptic-origin-of-wind', 'glossary-inversion'],
   },
   'weather-system:depressions': {
     tags: ['pressure', 'mid-latitude-cyclone', 'synoptic', 'fronts'],
@@ -76,11 +93,14 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['upper-air', 'pressure', 'jet-stream', 'global-circulation'],
     focus:
       'A pattern that stops moving. Omega and Rex blocks in the 500 mb flow, and why a block is a heat-wave and flood story at the same time in two different places.',
+    pin: ['jetstream-upper-air-charts-basic-wave-patterns'],
   },
   'weather-system:warm-fronts': {
     tags: ['fronts', 'air-masses', 'synoptic', 'clouds'],
     focus:
       'The gentle slope, and the cloud sequence it writes across the sky hours ahead of the rain — cirrus, cirrostratus, altostratus, nimbostratus.',
+    // The cloud sequence is the focus, and `clouds` is the brief's last tag.
+    pin: ['jetstream-clouds-ten-basic-clouds'],
   },
   'weather-system:cold-fronts': {
     tags: ['fronts', 'air-masses', 'synoptic', 'thunderstorms'],
@@ -126,6 +146,12 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['tropical', 'ocean', 'wind', 'flood'],
     focus:
       'A warm-core engine over 26°C water. Eye and eyewall structure, the Saffir-Simpson scale and what it deliberately omits, and storm surge as the deadlier hazard.',
+    // The focus names the scale and the eye/eyewall structure by name.
+    pin: [
+      'nhc-sshws',
+      'jetstream-tropical-tropical-cyclone-introduction',
+      'jetstream-tropical-tropical-cyclone-introduction-tropical-cyclone-structure',
+    ],
   },
   'weather-system:squall-lines': {
     tags: ['thunderstorms', 'severe', 'wind', 'fronts'],
@@ -158,6 +184,7 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['optics', 'clouds', 'atmosphere'],
     focus:
       'Refraction through hexagonal plate crystals. The 22-degree geometry, why sun dogs sit level with the sun, and what their presence says about the cloud overhead.',
+    pin: ['glossary-parhelion'],
   },
   'phenomenon:haboob': {
     tags: ['dust', 'wind', 'downburst', 'thunderstorms'],
@@ -167,7 +194,7 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
   'phenomenon:sprites': {
     tags: ['lightning', 'atmosphere', 'thunderstorms'],
     focus:
-      'Electrical discharge above the storm rather than below it. Mesosphere altitudes, the link to positive cloud-to-ground strokes, and why they went unphotographed until 1989.',
+      'Electrical discharge above the storm rather than below it. Mesosphere altitudes, the link to positive cloud-to-ground strokes, and why a flash lasting milliseconds is so rarely seen from the ground.',
   },
 };
 

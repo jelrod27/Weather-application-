@@ -22,8 +22,9 @@
  */
 
 import { parseModelJsonObject } from '../newsletter/model-json';
-import { callAnthropic, DEFAULT_MODEL, type AnthropicCacheBlock } from '../newsletter/repetition';
+import type { AnthropicCacheBlock } from '../newsletter/repetition';
 import type { GroundedSource } from './grounding';
+import { callEducationModel } from './model';
 
 /** Shorter spans match by coincidence; this is long enough to mean something. */
 const MIN_QUOTE_CHARS = 24;
@@ -36,6 +37,8 @@ export type ClaimVerdict = 'supported' | 'unsupported';
 export interface FactCheckClaim {
   /** The assertion, as the judge restated it. */
   text: string;
+  /** The draft sentence the judge read the assertion from, verbatim. */
+  draft?: string;
   verdict: ClaimVerdict;
   /** Catalog id the judge says supports it. */
   sourceId?: string;
@@ -83,9 +86,15 @@ function numbersIn(text: string): string[] {
  * a number the judge silently skipped cannot be treated as fine. Each sentence
  * carrying an unexamined figure becomes an unsupported high-risk claim, which
  * means it either gets grounded on the retry or stops the run.
+ *
+ * "Mentioned" is read from the draft sentence the judge quoted as well as from
+ * its own restatement. The judge paraphrases, and a judge that rounds 1013.2 to
+ * "about 1013" has examined the figure — only the restatement lost the decimal.
  */
 export function unexaminedNumericClaims(body: string, claims: FactCheckClaim[]): FactCheckClaim[] {
-  const examined = new Set(claims.flatMap((claim) => numbersIn(claim.text)));
+  const examined = new Set(
+    claims.flatMap((claim) => [...numbersIn(claim.text), ...numbersIn(claim.draft ?? '')]),
+  );
   const sentences = body
     .replace(/^#{1,6} .*$/gm, ' ')
     .split(/(?<=[.!?])\s+/)
@@ -149,6 +158,43 @@ function classify(text: string): { hasNumber: boolean; hasAttribution: boolean }
   return { hasNumber: /\d/.test(text), hasAttribution: ATTRIBUTION.test(text) };
 }
 
+/**
+ * Keep a judge-supplied draft sentence only when it is a verbatim span of the
+ * body. An invented draft would otherwise satisfy numeric coverage for figures
+ * the judge never quoted from the prose.
+ */
+function verbatimDraft(body: string, draft: unknown): string | undefined {
+  if (typeof draft !== 'string') return undefined;
+  const trimmed = draft.trim();
+  if (!trimmed) return undefined;
+  return body.includes(trimmed) ? trimmed : undefined;
+}
+
+/**
+ * Turns the judge's JSON list into claims. Numbers and agency names are read
+ * from the restatement and from a validated draft together, so a paraphrase
+ * that dropped the figure still counts as numeric.
+ */
+export function claimsFromJudge(body: string, rawClaims: unknown[]): FactCheckClaim[] {
+  return rawClaims.flatMap((item): FactCheckClaim[] => {
+    if (!item || typeof item !== 'object') return [];
+    const { text, draft, verdict, sourceId, quote } = item as Record<string, unknown>;
+    if (typeof text !== 'string' || !text.trim()) return [];
+    const assertion = text.trim();
+    const fromDraft = verbatimDraft(body, draft);
+    return [
+      {
+        text: assertion,
+        draft: fromDraft,
+        verdict: verdict === 'supported' ? 'supported' : 'unsupported',
+        sourceId: typeof sourceId === 'string' ? sourceId : undefined,
+        quote: typeof quote === 'string' ? quote : undefined,
+        ...classify([assertion, fromDraft].filter(Boolean).join('\n')),
+      },
+    ];
+  });
+}
+
 function summarize(claims: FactCheckClaim[]): FactCheckResult {
   const unsupported = claims.filter((claim) => claim.verdict === 'unsupported');
   return {
@@ -199,6 +245,7 @@ Return JSON only, with this exact shape:
   "claims": [
     {
       "text": "the assertion, in your own words, one sentence",
+      "draft": "the sentence of the draft the assertion comes from, copied verbatim",
       "verdict": "supported" | "unsupported",
       "sourceId": "the id of the source that states it, when supported",
       "quote": "an exact span copied character for character from that source, at least ${MIN_QUOTE_CHARS} characters, that states it"
@@ -208,6 +255,7 @@ Return JSON only, with this exact shape:
 
 Rules that matter:
 - "quote" must be copied verbatim from the source material above. Do not paraphrase it, do not tidy it, do not join two separate passages. It is checked against the source by exact match, and an invented quote marks the claim unsupported.
+- "draft" must be copied verbatim from the draft, figures included. Every number in the draft has to appear in some claim's "draft" or "text"; a figure no claim mentions is treated as unchecked.
 - If the source material does not state the assertion, return "unsupported" and omit sourceId and quote. That is a useful answer, not a failure. Do not stretch a nearby passage to cover it.
 - Judge the assertion, not the wording. A draft saying 58 mph is supported by a source saying 58 mph, whatever the sentence around it looks like.
 - Widely known background that no source states is still "unsupported". Report it honestly; the pipeline decides what matters.
@@ -215,31 +263,16 @@ Rules that matter:
 DRAFT:
 ${body}`;
 
-  const raw = await callAnthropic({
-    model: options.model ?? DEFAULT_MODEL,
+  const raw = await callEducationModel({
+    model: options.model,
     systemBlocks: systemBlocks(sources),
     messages: [{ role: 'user', content: prompt }],
-    maxTokens: 8000,
     temperature: 0,
   });
 
   const parsed = parseModelJsonObject(raw);
   const rawClaims = Array.isArray(parsed.claims) ? parsed.claims : [];
-
-  const claims: FactCheckClaim[] = rawClaims.flatMap((item): FactCheckClaim[] => {
-    if (!item || typeof item !== 'object') return [];
-    const { text, verdict, sourceId, quote } = item as Record<string, unknown>;
-    if (typeof text !== 'string' || !text.trim()) return [];
-    return [
-      {
-        text: text.trim(),
-        verdict: verdict === 'supported' ? 'supported' : 'unsupported',
-        sourceId: typeof sourceId === 'string' ? sourceId : undefined,
-        quote: typeof quote === 'string' ? quote : undefined,
-        ...classify(text),
-      },
-    ];
-  });
+  const claims = claimsFromJudge(body, rawClaims);
 
   if (claims.length === 0) {
     throw new JudgeUnusableError(
