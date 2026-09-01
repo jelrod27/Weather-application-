@@ -1,7 +1,13 @@
 import type { MetadataRoute } from 'next'
 import { cityData as cityMetadata } from '@/lib/cities'
 import { getAllPosts } from '@/lib/blog'
-import { FEATURED_DETAIL_SLUGS, getAllWeatherSystemSlugs, getEducationDetailHref } from '@/lib/education/entries'
+import { getGuideLastModified } from '@/lib/education/content'
+import {
+  FEATURED_DETAIL_SLUGS,
+  getAllWeatherSystemSlugs,
+  getEducationDetailHref,
+  type EducationEntryKind,
+} from '@/lib/education/entries'
 import {
   startOfUtcDay,
   startOfUtcHour,
@@ -58,25 +64,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${baseUrl}/education/glossary`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.7 },
     ]
 
+    // A Guide's prose carries its own review or generation date; an Entry
+    // without a Guide has nothing that changes, so it keeps the monthly bucket.
+    const educationDetailPage = (kind: EducationEntryKind, slug: string) => ({
+      url: `${baseUrl}${getEducationDetailHref(kind, slug)}`,
+      lastModified: getGuideLastModified(kind, slug) ?? monthly,
+      changeFrequency: 'monthly' as const,
+      priority: 0.75,
+    })
+
     const educationDetailPages: MetadataRoute.Sitemap = [
-      ...getAllWeatherSystemSlugs().map((slug) => ({
-        url: `${baseUrl}${getEducationDetailHref('weather-system', slug)}`,
-        lastModified: monthly,
-        changeFrequency: 'monthly' as const,
-        priority: 0.75,
-      })),
-      ...FEATURED_DETAIL_SLUGS.cloud.map((slug) => ({
-        url: `${baseUrl}${getEducationDetailHref('cloud', slug)}`,
-        lastModified: monthly,
-        changeFrequency: 'monthly' as const,
-        priority: 0.75,
-      })),
-      ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => ({
-        url: `${baseUrl}${getEducationDetailHref('phenomenon', slug)}`,
-        lastModified: monthly,
-        changeFrequency: 'monthly' as const,
-        priority: 0.75,
-      })),
+      ...getAllWeatherSystemSlugs().map((slug) => educationDetailPage('weather-system', slug)),
+      ...FEATURED_DETAIL_SLUGS.cloud.map((slug) => educationDetailPage('cloud', slug)),
+      ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => educationDetailPage('phenomenon', slug)),
     ]
 
     const cityPages: MetadataRoute.Sitemap = Object.keys(cityMetadata || {}).map(citySlug => ({

@@ -129,6 +129,27 @@ code-generated Related Guides block from shared tags (keeps ADR-0002: the model 
 links). Server-render Guide links on the three atlas pages. Add `datePublished`, `image` and
 `BreadcrumbList` to the Guide schema. Drive sitemap `lastModified` from `reviewed`/`generated`.
 
+As built (`education/seo`):
+
+- Tags moved to `lib/education/topics.ts` (`GUIDE_TOPICS`, keyed `kind:slug`); the generator's
+  `topics.ts` keeps only focus and pins and joins the two into `GUIDE_BRIEFS`, throwing at import
+  on a key present in one map and not the other. `SourceTag` is now an alias of `GuideTopicTag`.
+- `getRelatedGuides` ranks the other 28 published Guides by shared tags with the same halving
+  weights the catalog ranking uses, and `RelatedGuides` renders the top three on every Guide URL —
+  the three prose Guides and the 26 fallback pages alike (the client detail islands take it as a
+  `related` prop). A test asserts no published Guide is left without a neighbour.
+- `GuideIndex` lists every Guide URL of a kind as plain links at the foot of each atlas page. The
+  atlas pages are click-to-expand cards; a static list inside a `"use client"` page is still in
+  the server-rendered HTML, so no page had to be restructured.
+- `lib/education/guide-seo.ts` builds metadata and JSON-LD for all three routes: Article with
+  `datePublished` (from `generated`), `dateModified` (from `reviewed`), absolute `image` (the OG
+  route) and `citation`, plus a three-crumb `BreadcrumbList` matching the visible crumbs, in one
+  `@graph`. Cloud and phenomenon pages gain the OG/Twitter image weather systems already had, and
+  now emit the Article for Entries without a Guide as weather systems already did.
+- The loader keeps `generated`; `getGuideLastModified` feeds the sitemap `reviewed`, else
+  `generated`, else the monthly bucket for Entries with no Guide.
+- Web Analytics is a dashboard toggle and is not part of the PR.
+
 ### Then dispatch
 
 Anticyclones, Depressions, the remaining weather systems, then clouds, then phenomena last
@@ -139,7 +160,7 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 | Step | State |
 |---|---|
 | PR 1 pipeline hardening | merged (#568). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
-| PR 2 catalog and briefs | in progress (`education/catalog-brief-audit`). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
-| PR 3 SEO | not started |
+| PR 2 catalog and briefs | merged (#574). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
+| PR 3 SEO | in progress (`education/seo`); see "As built" above |
 | Web Analytics toggle | not done — needs the dashboard |
 | Anticyclones re-run | unblocked by PR 1; not yet run |

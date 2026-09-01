@@ -1,13 +1,12 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+
 import PhenomenonDetail from '@/components/education/phenomenon-detail'
 import PhenomenonGuide from '@/components/education/phenomenon-guide'
+import RelatedGuides from '@/components/education/related-guides'
 import { getGuideContent, getGuideSlugs } from '@/lib/education/content'
-import {
-  FEATURED_DETAIL_SLUGS,
-  getEducationDetailHref,
-  getPhenomenonBySlug,
-} from '@/lib/education/entries'
+import { FEATURED_DETAIL_SLUGS, getPhenomenonBySlug } from '@/lib/education/entries'
+import { buildGuideJsonLd, buildGuideMetadata, type GuideSeoInput } from '@/lib/education/guide-seo'
 import { safeJsonLd } from '@/lib/utils'
 
 interface PageProps {
@@ -25,27 +24,24 @@ export function generateStaticParams() {
   return [...slugs].filter((slug) => getPhenomenonBySlug(slug)).map((slug) => ({ slug }))
 }
 
+function seoInput(
+  slug: string,
+  phenomenon: NonNullable<ReturnType<typeof getPhenomenonBySlug>>,
+): GuideSeoInput {
+  return {
+    kind: 'phenomenon',
+    slug,
+    name: phenomenon.name,
+    fallbackDescription: phenomenon.description,
+    guide: getGuideContent('phenomenon', slug),
+  }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const phenomenon = getPhenomenonBySlug(slug)
   if (!phenomenon) return { title: 'Phenomenon Not Found' }
-
-  const guide = getGuideContent('phenomenon', slug)
-  const url = `https://www.16bitweather.co${getEducationDetailHref('phenomenon', slug)}`
-  const title = `${guide?.title ?? phenomenon.name} — 16-Bit Takes`
-  const description = guide?.summary ?? phenomenon.description
-
-  return {
-    title: `${title} | 16 Bit Weather`,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      title,
-      description,
-      url,
-      type: 'article',
-    },
-  }
+  return buildGuideMetadata(seoInput(slug, phenomenon))
 }
 
 export default async function PhenomenonDetailPage({ params }: PageProps) {
@@ -53,33 +49,23 @@ export default async function PhenomenonDetailPage({ params }: PageProps) {
   const phenomenon = getPhenomenonBySlug(slug)
   if (!phenomenon) notFound()
 
-  const guide = getGuideContent('phenomenon', slug)
-  if (!guide) return <PhenomenonDetail phenomenon={phenomenon} />
-
-  const url = `https://www.16bitweather.co${getEducationDetailHref('phenomenon', slug)}`
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    // Matches the <title> and og:title above; a headline naming a section
-    // that appears nowhere on the page is worse than no headline.
-    headline: `${guide.title} — 16-Bit Takes`,
-    description: guide.summary,
-    url,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    author: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    publisher: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    about: { '@type': 'Thing', name: guide.title },
-    citation: guide.sources.map((source) => source.url),
-    ...(guide.reviewed ? { dateModified: guide.reviewed } : {}),
-  }
+  const input = seoInput(slug, phenomenon)
+  const { guide } = input
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildGuideJsonLd(input)) }}
       />
-      <PhenomenonGuide phenomenon={phenomenon} guide={guide} />
+      {guide ? (
+        <PhenomenonGuide phenomenon={phenomenon} guide={guide} />
+      ) : (
+        <PhenomenonDetail
+          phenomenon={phenomenon}
+          related={<RelatedGuides kind="phenomenon" slug={slug} />}
+        />
+      )}
     </>
   )
 }

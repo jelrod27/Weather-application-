@@ -3,12 +3,10 @@ import { notFound } from 'next/navigation'
 
 import CloudDetail from '@/components/education/cloud-detail'
 import CloudGuide from '@/components/education/cloud-guide'
+import RelatedGuides from '@/components/education/related-guides'
 import { getGuideContent, getGuideSlugs } from '@/lib/education/content'
-import {
-  FEATURED_DETAIL_SLUGS,
-  getCloudBySlug,
-  getEducationDetailHref,
-} from '@/lib/education/entries'
+import { FEATURED_DETAIL_SLUGS, getCloudBySlug } from '@/lib/education/entries'
+import { buildGuideJsonLd, buildGuideMetadata, type GuideSeoInput } from '@/lib/education/guide-seo'
 import { safeJsonLd } from '@/lib/utils'
 
 interface PageProps {
@@ -28,29 +26,23 @@ export function generateStaticParams() {
   return [...slugs].filter((slug) => getCloudBySlug(slug)).map((slug) => ({ slug }))
 }
 
+function seoInput(slug: string, cloud: NonNullable<ReturnType<typeof getCloudBySlug>>): GuideSeoInput {
+  return {
+    kind: 'cloud',
+    slug,
+    name: cloud.name,
+    // description16bit is flavour text ("Massive storm tower reaching max
+    // altitude limit"); a Guide summary is written to be read in search results.
+    fallbackDescription: cloud.description16bit,
+    guide: getGuideContent('cloud', slug),
+  }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const cloud = getCloudBySlug(slug)
   if (!cloud) return { title: 'Cloud Type Not Found' }
-
-  const guide = getGuideContent('cloud', slug)
-  const url = `https://www.16bitweather.co${getEducationDetailHref('cloud', slug)}`
-  const title = `${guide?.title ?? cloud.name} — Cloud Atlas`
-  // description16bit is flavour text ("Massive storm tower reaching max
-  // altitude limit"); a Guide summary is written to be read in search results.
-  const description = guide?.summary ?? cloud.description16bit
-
-  return {
-    title: `${title} | 16 Bit Weather`,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      title,
-      description,
-      url,
-      type: 'article',
-    },
-  }
+  return buildGuideMetadata(seoInput(slug, cloud))
 }
 
 export default async function CloudDetailPage({ params }: PageProps) {
@@ -58,31 +50,20 @@ export default async function CloudDetailPage({ params }: PageProps) {
   const cloud = getCloudBySlug(slug)
   if (!cloud) notFound()
 
-  const guide = getGuideContent('cloud', slug)
-  if (!guide) return <CloudDetail cloud={cloud} />
-
-  const url = `https://www.16bitweather.co${getEducationDetailHref('cloud', slug)}`
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: `${guide.title} — Cloud Atlas`,
-    description: guide.summary,
-    url,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    author: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    publisher: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    about: { '@type': 'Thing', name: guide.title },
-    citation: guide.sources.map((source) => source.url),
-    ...(guide.reviewed ? { dateModified: guide.reviewed } : {}),
-  }
+  const input = seoInput(slug, cloud)
+  const { guide } = input
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildGuideJsonLd(input)) }}
       />
-      <CloudGuide cloud={cloud} guide={guide} />
+      {guide ? (
+        <CloudGuide cloud={cloud} guide={guide} />
+      ) : (
+        <CloudDetail cloud={cloud} related={<RelatedGuides kind="cloud" slug={slug} />} />
+      )}
     </>
   )
 }

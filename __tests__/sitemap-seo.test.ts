@@ -139,4 +139,26 @@ describe('Sitemap SEO', () => {
       jest.useRealTimers()
     }
   })
+
+  it('dates a Guide page by its review, and an Entry without a Guide by the monthly bucket', async () => {
+    const { getGuideContent } = await import('@/lib/education/content')
+    const { startOfUtcMonth } = await import('@/lib/seo/sitemap-lastmod')
+    const { default: sitemap } = await import('../app/sitemap')
+    const entries = await sitemap()
+    const byPath = new Map(
+      entries.map((e: { url: string; lastModified?: Date | string }) => [
+        new URL(e.url).pathname,
+        e.lastModified instanceof Date ? e.lastModified : new Date(String(e.lastModified)),
+      ]),
+    )
+
+    const cirrus = getGuideContent('cloud', 'cirrus')
+    expect(cirrus?.reviewed).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(byPath.get('/education/cloud-types/cirrus')?.toISOString()).toBe(
+      new Date(`${cirrus!.reviewed}T00:00:00Z`).toISOString(),
+    )
+
+    expect(getGuideContent('phenomenon', 'haboob')).toBeNull()
+    expect(byPath.get('/education/phenomena/haboob')?.toISOString()).toBe(startOfUtcMonth().toISOString())
+  })
 })

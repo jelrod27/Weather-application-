@@ -55,7 +55,7 @@ always use the code defaults.
 scripts/education/
   index.ts             # CLI: --list, --next, --slug, --kind, --dry-run
   queue.ts             # the eligible 29, the queue, the render-path guard
-  topics.ts            # per-Entry source tags, pinned sources and focus line
+  topics.ts            # per-Entry focus line and pinned sources; tags come from lib/education/topics.ts
   sources.ts           # NOAA/NWS source catalog, cited by id only; tag-weighted ranking
   grounding.ts         # fetch + HTML-to-text; also backs validate-sources
   brief.ts             # the Entry's physical fields, as prompt context
@@ -71,8 +71,9 @@ scripts/education/
 
 ## How a run works
 
-1. **Ground.** `topics.ts` gives the Entry its subject tags and any pinned source ids;
-   `sources.ts` ranks the catalog against the tags, weighting them in the order the brief
+1. **Ground.** `lib/education/topics.ts` gives the Entry its subject tags (the Guide pages
+   rank their Related Guides block from the same tags) and `topics.ts` adds any pinned source
+   ids; `sources.ts` ranks the catalog against the tags, weighting them in the order the brief
    lists them, and puts the pins first; `grounding.ts` fetches the top 12. Only pages that
    actually came back are citable, and fewer than 3 fails the run rather than drafting
    from recall — the line the newsletter takes when Iowa Mesonet returns empty.
@@ -202,7 +203,8 @@ of a brief to mechanism the catalog actually describes.
   source catalog is missing a page the Guide needs; add it (or pin it) and re-run rather
   than loosening the gate.
 - **Entry not in the eligible 29** → `IneligibleEntryError` pointing at ADR-0001.
-- **No brief for the Entry** → add its tags and focus line to `topics.ts`.
+- **No brief for the Entry** → add its tags to `lib/education/topics.ts` and its focus line
+  to `topics.ts`; a key present in one and not the other fails at import.
 - **The model stopped at `max_tokens` or declined** → the wrapper throws naming the stop.
   Nothing is written.
 - **Anthropic 429 / 5xx** → the shared wrapper bubbles the status up. Re-run after a

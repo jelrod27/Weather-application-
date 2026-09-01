@@ -92,6 +92,14 @@ describe('getGuideContent', () => {
     expect(guide!.body.split(/\s+/).length).toBeGreaterThan(600)
   })
 
+  it('reads the generation date the publisher writes, as YYYY-MM-DD', () => {
+    // publish.ts quotes `generated`, so it arrives as a string; `reviewed` is
+    // unquoted and arrives as a Date. Both must come out the same shape.
+    const guide = getGuideContent('cloud', 'cirrus')
+    expect(guide?.generated).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(guide?.reviewed).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
   it('returns null for an Entry with no Guide', () => {
     // Cirrostratus, not one of the 29 published Guides: planning/adr/0001 keeps
     // it an Atlas row, so it is the one kind of Entry guaranteed never to gain

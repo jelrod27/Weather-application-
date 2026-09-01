@@ -14,9 +14,11 @@ import { themeTokens } from '@/lib/theme-tokens'
 
 interface WeatherSystemDetailProps {
   system: WeatherSystemData
+  /** Server-rendered Related Guides block, passed in because this is a client island. */
+  related?: React.ReactNode
 }
 
-export default function WeatherSystemDetail({ system }: WeatherSystemDetailProps) {
+export default function WeatherSystemDetail({ system, related }: WeatherSystemDetailProps) {
   const themeClasses = themeTokens.weather
   const slug = systemSlug(system)
   const url = `https://www.16bitweather.co${getEducationDetailHref('weather-system', slug)}`
@@ -91,7 +93,9 @@ export default function WeatherSystemDetail({ system }: WeatherSystemDetailProps
           </Card>
         )}
 
-        <div className="flex flex-wrap gap-4 justify-center">
+        {related}
+
+        <div className="flex flex-wrap gap-4 justify-center mt-8">
           <Link href="/severe" className={cn('text-sm font-mono font-bold uppercase underline', themeClasses.accentText)}>
             Open Severe Weather lab →
           </Link>

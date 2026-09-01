@@ -14,9 +14,11 @@ import { themeTokens } from '@/lib/theme-tokens'
 
 interface CloudDetailProps {
   cloud: CloudData
+  /** Server-rendered Related Guides block, passed in because this is a client island. */
+  related?: React.ReactNode
 }
 
-export default function CloudDetail({ cloud }: CloudDetailProps) {
+export default function CloudDetail({ cloud, related }: CloudDetailProps) {
   const themeClasses = themeTokens.weather
   const slug = cloudSlug(cloud)
   const url = `https://www.16bitweather.co${getEducationDetailHref('cloud', slug)}`
@@ -81,7 +83,9 @@ export default function CloudDetail({ cloud }: CloudDetailProps) {
           </Card>
         )}
 
-        <div className="flex flex-wrap gap-4 justify-center">
+        {related}
+
+        <div className="flex flex-wrap gap-4 justify-center mt-8">
           <Link href="/radar" className={cn('text-sm font-mono font-bold uppercase underline', themeClasses.accentText)}>
             Open Radar lab →
           </Link>

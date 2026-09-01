@@ -19,6 +19,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -448,6 +449,8 @@ export default function WeatherSystemsPage() {
             </CardContent>
           </Card>
         </div>
+
+        <GuideIndex kind="weather-system" />
       </div>
     </PageWrapper>
   )

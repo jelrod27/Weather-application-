@@ -13,9 +13,11 @@ import { themeTokens } from '@/lib/theme-tokens'
 
 interface PhenomenonDetailProps {
   phenomenon: WeatherPhenomena
+  /** Server-rendered Related Guides block, passed in because this is a client island. */
+  related?: React.ReactNode
 }
 
-export default function PhenomenonDetail({ phenomenon }: PhenomenonDetailProps) {
+export default function PhenomenonDetail({ phenomenon, related }: PhenomenonDetailProps) {
   const themeClasses = themeTokens.weather
   const url = `https://www.16bitweather.co${getEducationDetailHref('phenomenon', phenomenon.id)}`
 
@@ -91,7 +93,9 @@ export default function PhenomenonDetail({ phenomenon }: PhenomenonDetailProps) 
           ))}
         </ul>
 
-        <div className="flex flex-wrap gap-4 justify-center">
+        {related}
+
+        <div className="flex flex-wrap gap-4 justify-center mt-8">
           <Link href="/fun-facts" className={cn('text-sm font-mono uppercase', themeClasses.text)}>
             Browse all phenomena
           </Link>
