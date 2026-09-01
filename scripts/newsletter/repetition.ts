@@ -22,7 +22,60 @@ export interface CallAnthropicOptions {
   systemBlocks?: AnthropicCacheBlock[];
   messages: AnthropicMessage[];
   maxTokens?: number;
+  /** Sent only to models that still accept sampling parameters; see `modelAcceptsSampling`. */
   temperature?: number;
+  /** Per-call request timeout. Defaults to two minutes, which the newsletter's calls fit. */
+  timeoutMs?: number;
+  /**
+   * How hard a thinking model reasons before answering (`output_config.effort`).
+   * Omitted from the request when unset, which leaves the model's default —
+   * `high` on the 4.6+ family, where a 900-word draft spent four minutes and
+   * the whole 16,000-token ceiling thinking. Sent only when a caller asks.
+   */
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+}
+
+/**
+ * Models that reject `temperature`, `top_p` and `top_k` with a 400. The Claude 5
+ * family and Opus 4.7 onwards removed sampling parameters — thinking is on by
+ * default there and depth is steered with `output_config.effort` instead. A
+ * model not matched here is assumed to still accept them, which is true of
+ * Sonnet 4.6, Opus 4.6 and everything older.
+ */
+const SAMPLING_REMOVED = /^claude-(?:opus-5|sonnet-5|opus-4-[78]|fable|mythos)/;
+
+export function modelAcceptsSampling(model: string): boolean {
+  return !SAMPLING_REMOVED.test(model);
+}
+
+/**
+ * The request body for one Messages call. Pure, so the shape a given model is
+ * sent can be asserted without a network — in particular that a 5-family model
+ * is never handed a `temperature`, which would fail the whole run with a 400.
+ */
+export function buildMessagesRequestBody(opts: CallAnthropicOptions): Record<string, unknown> {
+  const model = opts.model ?? DEFAULT_MODEL;
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: opts.maxTokens ?? 2048,
+    messages: opts.messages,
+  };
+  if (modelAcceptsSampling(model)) {
+    body.temperature = opts.temperature ?? 0;
+  }
+  if (opts.effort) {
+    body.output_config = { effort: opts.effort };
+  }
+  if (opts.systemBlocks && opts.systemBlocks.length > 0) {
+    body.system = opts.systemBlocks;
+  }
+  return body;
+}
+
+interface MessagesResponse {
+  content?: Array<{ type: string; text?: string }>;
+  stop_reason?: string;
+  stop_details?: { category?: string | null; explanation?: string };
 }
 
 /**
@@ -32,27 +85,21 @@ export interface CallAnthropicOptions {
  * one run cheaply.
  *
  * Throws on non-200 responses with body text included so callers can
- * distinguish 429 (rate-limit) from 400 (bad request).
+ * distinguish 429 (rate-limit) from 400 (bad request). Also throws when the
+ * model stopped for `max_tokens` or `refusal`: a draft cut off mid-sentence,
+ * or an empty body, would otherwise flow into the gates as if it were the
+ * model's answer.
  */
 export async function callAnthropic(opts: CallAnthropicOptions): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
 
-  const body: Record<string, unknown> = {
-    model: opts.model ?? DEFAULT_MODEL,
-    max_tokens: opts.maxTokens ?? 2048,
-    temperature: opts.temperature ?? 0,
-    messages: opts.messages,
-  };
-  if (opts.systemBlocks && opts.systemBlocks.length > 0) {
-    body.system = opts.systemBlocks;
-  }
+  const body = buildMessagesRequestBody(opts);
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  let res: Response;
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? REQUEST_TIMEOUT_MS);
   try {
-    res = await fetch(ANTHROPIC_API, {
+    const res = await fetch(ANTHROPIC_API, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -62,17 +109,30 @@ export async function callAnthropic(opts: CallAnthropicOptions): Promise<string>
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Anthropic API ${res.status}: ${text.slice(0, 500)}`);
+    }
+    const data = (await res.json()) as MessagesResponse;
+    if (data.stop_reason === 'max_tokens') {
+      throw new Error(
+        `Anthropic response was cut off at max_tokens=${String(body.max_tokens)}; raise maxTokens for this call.`,
+      );
+    }
+    if (data.stop_reason === 'refusal') {
+      const category = data.stop_details?.category ? ` (${data.stop_details.category})` : '';
+      throw new Error(
+        `Anthropic declined the request${category}: ${data.stop_details?.explanation ?? 'no explanation given'}`,
+      );
+    }
+    // Thinking models return `thinking` blocks ahead of the answer; the first
+    // text block is the answer on every model.
+    const block = data.content?.find((b) => b.type === 'text');
+    return block?.text ?? '';
   } finally {
     clearTimeout(timer);
   }
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Anthropic API ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  const block = data.content?.find((b) => b.type === 'text');
-  return block?.text ?? '';
 }
 
 /**
