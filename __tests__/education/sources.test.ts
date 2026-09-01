@@ -58,6 +58,18 @@ describe('sourcesForTags', () => {
     );
   });
 
+  it('lets a source carrying only the first tag outrank one carrying every other tag', () => {
+    // Linear weights (4, 3, 2, 1) let ocean + flood + precipitation (6) beat a
+    // tropical-only glossary entry (4). Halving weights (8, 4, 2, 1) cannot: the
+    // tags after the first sum to less than it.
+    const picks = sourcesForTags(['tropical', 'ocean', 'flood', 'precipitation'], SOURCES.length);
+    const ids = picks.map((source) => source.id);
+    const rivers = getSourceById('noaa-atmospheric-rivers');
+    expect(rivers?.tags).toEqual(expect.arrayContaining(['ocean', 'flood', 'precipitation']));
+    expect(rivers?.tags).not.toContain('tropical');
+    expect(ids.indexOf('glossary-eye')).toBeLessThan(ids.indexOf('noaa-atmospheric-rivers'));
+  });
+
   it('returns nothing for a tag no source carries', () => {
     expect(sourcesForTags([], 5)).toEqual([]);
   });

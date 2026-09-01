@@ -34,7 +34,6 @@ describe('htmlToText', () => {
   });
 
   it('decodes the typographic entities NWS office pages use', () => {
-    // `15&ndash;50 cm` left encoded cannot be matched by a judge quoting "15–50 cm".
     expect(htmlToText('<p>a radius of 15&ndash;50 cm &mdash; &ldquo;break&rdquo; at 26&deg;C</p>')).toBe(
       'a radius of 15–50 cm — \u201cbreak\u201d at 26°C',
     );

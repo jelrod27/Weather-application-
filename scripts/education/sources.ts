@@ -206,12 +206,6 @@ export const SOURCES: SourceEntry[] = [
     tags: ['precipitation', 'flood', 'ocean'],
   },
   {
-    id: 'nws-polar-vortex',
-    label: 'NWS — What is the polar vortex?',
-    url: 'https://www.weather.gov/safety/cold-polar-vortex',
-    tags: ['winter', 'upper-air', 'jet-stream'],
-  },
-  {
     id: 'nws-bis-sudden-stratospheric-warming',
     label: 'NWS Bismarck — Sudden stratospheric warming events',
     url: 'https://www.weather.gov/bis/sudden_stratospheric_warming_events',
@@ -281,6 +275,14 @@ export const SOURCES: SourceEntry[] = [
     label: 'NWS — Cold weather safety',
     url: 'https://www.weather.gov/safety/cold',
     tags: ['safety', 'winter'],
+  },
+  // An explainer rather than guidance, but it lives under /safety/ and takes
+  // the same id shape as its neighbours.
+  {
+    id: 'safety-cold-polar-vortex',
+    label: 'NWS — What is the polar vortex?',
+    url: 'https://www.weather.gov/safety/cold-polar-vortex',
+    tags: ['winter', 'upper-air', 'jet-stream'],
   },
   {
     id: 'safety-wind',
@@ -397,19 +399,13 @@ export function getSourceById(id: string): SourceEntry | null {
  * Candidate sources for a brief's subject tags, most relevant first.
  *
  * A brief lists its tags most-important first, and relevance follows that
- * order: a source carrying the brief's first tag scores more than one carrying
- * only its last, and a source carrying several adds them up. Counting matches
- * without weighting them put Derechos and Bow Echoes (one `wind` match) level
- * with Tropical Cyclone Structure (one `tropical` match) for the Tropical
- * Cyclones brief, and catalog order then decided — the Saffir-Simpson page was
- * never offered. Ties still keep catalog order, which puts JetStream explainers
- * ahead of one-paragraph glossary entries.
- *
- * Weights halve down the list, so each tag outweighs every tag after it put
- * together: a source carrying only the first tag cannot be overtaken by one
- * carrying all the others. Linear weights let the atmospheric-rivers page
- * (`ocean` + `flood`) tie a glossary entry carrying only `tropical` and win on
- * catalog order.
+ * order. Weights halve down the list, so each tag outweighs every tag after it
+ * put together: a source carrying only the brief's first tag cannot be
+ * overtaken by one carrying all the others, however many it matches. Ties keep
+ * catalog order, which puts JetStream explainers ahead of one-paragraph
+ * glossary entries. Unweighted counting once left the Saffir-Simpson page out
+ * of the Tropical Cyclones list behind two `wind` pages; linear weights let the
+ * atmospheric-rivers page (`ocean` + `flood`) tie a `tropical`-only entry.
  */
 export function sourcesForTags(tags: readonly SourceTag[], limit: number): SourceEntry[] {
   const weight = new Map(tags.map((tag, index) => [tag, 2 ** (tags.length - 1 - index)]));

@@ -142,7 +142,7 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
       'A circulation that is always there. What "the polar vortex" in a headline actually describes, the stratospheric vortex as distinct from the tropospheric one, and how a sudden stratospheric warming can displace or split it and let Arctic air spill south.',
     // The safety explainer defines the term; the Bismarck page is the only
     // catalog source that describes sudden stratospheric warming.
-    pin: ['nws-polar-vortex', 'nws-bis-sudden-stratospheric-warming'],
+    pin: ['safety-cold-polar-vortex', 'nws-bis-sudden-stratospheric-warming'],
   },
   'weather-system:mid-latitude-cyclones': {
     tags: ['mid-latitude-cyclone', 'fronts', 'synoptic', 'pressure'],
@@ -153,15 +153,15 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     tags: ['tropical', 'ocean', 'wind', 'flood'],
     focus:
       'A warm-core engine over warm ocean water. Eye and eyewall structure, the Saffir-Simpson scale and the hazards it deliberately leaves out, and storm surge as the deadlier one.',
-    // The focus names the scale, the eye/eyewall structure and surge by name.
-    // The sea-surface threshold is left to the sources: JetStream gives it in
+    // The focus names the scale and the eye/eyewall structure by name. The
+    // sea-surface threshold is left to the sources: JetStream gives it in
     // Fahrenheit, and a Celsius figure in the brief commissioned a conversion
-    // the fact check could not verify.
+    // the fact check could not verify. The NHC surge page carries three of the
+    // brief's tags and ranks first on its own.
     pin: [
       'nhc-sshws',
       'jetstream-tropical-tropical-cyclone-introduction',
       'jetstream-tropical-tropical-cyclone-introduction-tropical-cyclone-structure',
-      'nhc-storm-surge',
     ],
   },
   'weather-system:squall-lines': {
@@ -220,12 +220,8 @@ export const GUIDE_BRIEFS: Record<string, GuideBrief> = {
     focus:
       'Electrical discharge above the storm rather than below it. The altitudes sprites and elves reach, their link to positive cloud-to-ground strokes, and why a faint red flash lasting a fraction of a second is so rarely seen without a sensitive camera.',
     // The positive-lightning page is the only JetStream page that mentions
-    // sprites; the layers page places their altitude in the atmosphere.
-    pin: [
-      'jetstream-lightning-positive-and-negative-side-of-lightning',
-      'nws-wrn-lightning-types',
-      'jetstream-atmosphere-layers-of-atmosphere',
-    ],
+    // sprites; the WRN page is the only other NWS text that names them.
+    pin: ['jetstream-lightning-positive-and-negative-side-of-lightning', 'nws-wrn-lightning-types'],
   },
 };
 
