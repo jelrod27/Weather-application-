@@ -108,7 +108,7 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 
 | Step | State |
 |---|---|
-| PR 1 pipeline hardening | in progress (this branch) |
+| PR 1 pipeline hardening | in progress (this branch). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
 | PR 2 catalog and briefs | not started |
 | PR 3 SEO | not started |
 | Web Analytics toggle | not done — needs the dashboard |

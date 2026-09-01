@@ -26,6 +26,13 @@ export interface CallAnthropicOptions {
   temperature?: number;
   /** Per-call request timeout. Defaults to two minutes, which the newsletter's calls fit. */
   timeoutMs?: number;
+  /**
+   * How hard a thinking model reasons before answering (`output_config.effort`).
+   * Omitted from the request when unset, which leaves the model's default —
+   * `high` on the 4.6+ family, where a 900-word draft spent four minutes and
+   * the whole 16,000-token ceiling thinking. Sent only when a caller asks.
+   */
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 }
 
 /**
@@ -55,6 +62,9 @@ export function buildMessagesRequestBody(opts: CallAnthropicOptions): Record<str
   };
   if (modelAcceptsSampling(model)) {
     body.temperature = opts.temperature ?? 0;
+  }
+  if (opts.effort) {
+    body.output_config = { effort: opts.effort };
   }
   if (opts.systemBlocks && opts.systemBlocks.length > 0) {
     body.system = opts.systemBlocks;

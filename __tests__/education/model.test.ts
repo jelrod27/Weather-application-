@@ -1,4 +1,4 @@
-import { EDUCATION_MODEL } from '../../scripts/education/model';
+import { EDUCATION_EFFORT, EDUCATION_MODEL } from '../../scripts/education/model';
 import { buildMessagesRequestBody, modelAcceptsSampling } from '../../scripts/newsletter/repetition';
 
 const messages = [{ role: 'user' as const, content: 'x' }];
@@ -7,6 +7,21 @@ describe('the Guide pipeline model', () => {
   it('defaults to Opus 5, independently of the newsletter', () => {
     // Read at import; CI sets neither EDUCATION_MODEL nor NEWSLETTER_MODEL.
     expect(EDUCATION_MODEL).toBe('claude-opus-5');
+  });
+
+  it('defaults to medium effort', () => {
+    // The first Opus 5 dry run spent its whole token ceiling thinking at the
+    // model's default effort and never reached the prose.
+    expect(EDUCATION_EFFORT).toBe('medium');
+  });
+});
+
+describe('effort', () => {
+  it('is sent as output_config only when a caller asks for it', () => {
+    expect(buildMessagesRequestBody({ model: 'claude-opus-5', messages })).not.toHaveProperty('output_config');
+    expect(buildMessagesRequestBody({ model: 'claude-opus-5', messages, effort: 'medium' }).output_config).toEqual({
+      effort: 'medium',
+    });
   });
 });
 

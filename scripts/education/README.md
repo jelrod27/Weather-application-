@@ -35,9 +35,16 @@ ANTHROPIC_API_KEY=sk-... npm run education:guide -- --slug cirrus --dry-run
 separate from the newsletter's `NEWSLETTER_MODEL`: the pipelines share `callAnthropic`,
 but a Guide's judge has to find verbatim spans in some 30,000 characters of source text,
 which repays a stronger model than a dated post does. `model.ts` is the one place the
-model, its timeout and its token ceiling are chosen. The shared wrapper withholds
-`temperature` from models that reject it (the Claude 5 family, Opus 4.7 and later) and
-fails the call on a `max_tokens` or `refusal` stop rather than returning a truncated body.
+model, its reasoning effort, its timeout and its token ceiling are chosen. The shared
+wrapper withholds `temperature` from models that reject it (the Claude 5 family, Opus 4.7
+and later) and fails the call on a `max_tokens` or `refusal` stop rather than returning a
+truncated body.
+
+Effort is `medium` by default (`EDUCATION_EFFORT` overrides: `low`, `medium`, `high`,
+`xhigh`, `max`). At the model's own default the first Opus 5 dry run spent four minutes
+and the whole 16,000-token ceiling thinking about a 900-word draft and never reached the
+prose; the writing here is grounded in supplied text rather than derived, and medium
+leaves the 32,000-token ceiling with room to spare.
 
 ## Layout
 
