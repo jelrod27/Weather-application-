@@ -100,7 +100,7 @@
     "topojson-client": "^3.1.0",
     "ts-jest": "^29.4.12",
     "tsx": "^4.23.12",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "world-atlas": "^2.0.2"
   },
   "overrides": {
