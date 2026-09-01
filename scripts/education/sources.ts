@@ -155,6 +155,7 @@ export const SOURCES: SourceEntry[] = [
   jetstream('upper-air-charts/basic-wave-patterns', 'Basic Wave Patterns', [
     'upper-air',
     'jet-stream',
+    'pressure',
   ]),
   jetstream('upper-air-charts/longwaves-and-shortwaves', 'Longwaves and Shortwaves', [
     'upper-air',
