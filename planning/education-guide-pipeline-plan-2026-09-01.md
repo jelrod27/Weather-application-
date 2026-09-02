@@ -12,7 +12,7 @@ unsure what to do next on the Guides, read the status table at the bottom first.
 | Guides live | 3 of 29: Cumulonimbus, Cirrus, Cyclones |
 | Queue remaining | 26: 15 weather systems, 5 clouds, 6 phenomena |
 | Runs on 2026-09-01 | Anticyclones failed on 1 claim, Depressions on 6; both before #567 merged |
-| Analytics | Vercel Web Analytics disabled at the project level (API returns 404); component is mounted |
+| Analytics | Vercel Web Analytics is on and has data back to at least 2026-08-25 (83 visitors / 188 views in the week to 09-01). The earlier "disabled, API 404" note was a misread; `/_vercel/insights/script.js` serves 200 and the component is mounted |
 
 Both failures were upstream of the model. Anticyclones died on a 500 mb ridge claim with no ridge
 source in scope; Depressions was commissioned by its own brief to state a millibars-per-hour rate
@@ -51,8 +51,10 @@ Cyclones had three wording issues out of 22 claims, none numeric.
 
 ### SEO: under-served
 
-- **No measurement.** Web Analytics is off at the project level. Enabling is a dashboard toggle
-  (Project → Analytics); no MCP tool does it. Search Console is not integrated in the repo.
+- **Measurement exists but is thin.** Web Analytics is on (the review's "off" finding was wrong).
+  In the week to 2026-09-01: `/education` had 6 visitors and no Guide URL made the top pages;
+  referrers were Bing, Google, DuckDuckGo, Yahoo and ChatGPT. Search Console is not integrated
+  in the repo.
 - **Each Guide has one crawlable inbound link**, from `/education`. The weather-systems atlas
   link sits inside a click-to-expand card; the cloud and phenomena atlases have no Guide links.
   Guide bodies carry no links by design and the template has no related-Guides block.
@@ -162,5 +164,5 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 | PR 1 pipeline hardening | merged (#568). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
 | PR 2 catalog and briefs | merged (#574). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
 | PR 3 SEO | in progress (`education/seo`); see "As built" above |
-| Web Analytics toggle | not done — needs the dashboard |
+| Web Analytics toggle | not needed — was already on; dashboard shows data from 2026-08-25 |
 | Anticyclones re-run | unblocked by PR 1; not yet run |
