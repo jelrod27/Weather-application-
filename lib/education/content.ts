@@ -118,9 +118,21 @@ function readDiagrams(raw: unknown): GuideDiagram[] {
  * `dateModified` in its JSON-LD, on a green build.
  */
 function readDate(raw: unknown): string {
-  if (typeof raw === 'string') return raw.trim()
+  if (typeof raw === 'string') return isCalendarDate(raw.trim()) ? raw.trim() : ''
   if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw.toISOString().slice(0, 10)
   return ''
+}
+
+/**
+ * Whether a string is a real `YYYY-MM-DD` date. V8 rolls `2026-02-30` over to
+ * March 1 rather than rejecting it, so a typo in frontmatter would otherwise
+ * publish a sitemap lastmod and a `dateModified` the Guide never declared.
+ * Exported so tests assert the real rule.
+ */
+export function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
 /**
@@ -159,10 +171,9 @@ export function getGuideContent(kind: EducationEntryKind, slug: string): GuideCo
  */
 export function getGuideLastModified(kind: EducationEntryKind, slug: string): Date | null {
   const guide = getGuideContent(kind, slug)
+  // readDate has already rejected anything that is not a real calendar date.
   const stamp = guide?.reviewed || guide?.generated
-  if (!stamp) return null
-  const date = new Date(`${stamp}T00:00:00Z`)
-  return Number.isNaN(date.getTime()) ? null : date
+  return stamp ? new Date(`${stamp}T00:00:00Z`) : null
 }
 
 /** Slugs of every Entry of this kind that has a Guide. */
