@@ -12,6 +12,7 @@ import Link from 'next/link'
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
+import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { WeatherSystemData } from '@/data/weather-systems'
@@ -148,6 +149,8 @@ export default function WeatherSystemGuide({ system, guide }: WeatherSystemGuide
             )}
           </section>
         )}
+
+        <RelatedGuides kind="weather-system" slug={guide.slug} />
 
         <nav className="mt-10 pt-6 border-t border-subtle flex flex-wrap gap-x-6 gap-y-2 guide-data">
           <Link href="/weather-systems" style={{ color: 'var(--weather-primary)' }}>

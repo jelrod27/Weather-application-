@@ -73,6 +73,8 @@ export interface GuideContent {
   summary: string
   /** ISO date the prose was last checked against its sources. */
   reviewed: string
+  /** ISO date the prose was first drafted; empty for hand-written Guides. */
+  generated: string
   sources: GuideSource[]
   diagrams: GuideDiagram[]
   body: string
@@ -107,7 +109,7 @@ function readDiagrams(raw: unknown): GuideDiagram[] {
 }
 
 /**
- * The review date, as a `YYYY-MM-DD` string.
+ * A frontmatter date, as a `YYYY-MM-DD` string.
  *
  * `reviewed: 2026-08-29` is a YAML timestamp, and js-yaml hands gray-matter a
  * Date for it — the same coercion `lib/blog/index.ts` documents for a post's
@@ -115,10 +117,22 @@ function readDiagrams(raw: unknown): GuideDiagram[] {
  * and the Guide rendered with no "Checked against sources" line and no
  * `dateModified` in its JSON-LD, on a green build.
  */
-function readReviewed(raw: unknown): string {
-  if (typeof raw === 'string') return raw.trim()
+function readDate(raw: unknown): string {
+  if (typeof raw === 'string') return isCalendarDate(raw.trim()) ? raw.trim() : ''
   if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw.toISOString().slice(0, 10)
   return ''
+}
+
+/**
+ * Whether a string is a real `YYYY-MM-DD` date. V8 rolls `2026-02-30` over to
+ * March 1 rather than rejecting it, so a typo in frontmatter would otherwise
+ * publish a sitemap lastmod and a `dateModified` the Guide never declared.
+ * Exported so tests assert the real rule.
+ */
+export function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
 /**
@@ -141,11 +155,25 @@ export function getGuideContent(kind: EducationEntryKind, slug: string): GuideCo
     slug,
     title,
     summary,
-    reviewed: readReviewed(data.reviewed),
+    reviewed: readDate(data.reviewed),
+    generated: readDate(data.generated),
     sources: readSources(data.sources),
     diagrams: readDiagrams(data.diagrams),
     body: content.trim(),
   }
+}
+
+/**
+ * When a Guide's prose last changed, for the sitemap: the review date, else the
+ * generation date. Null when the Entry has no Guide or the Guide carries
+ * neither date, so the caller falls back to its bucketed default rather than
+ * advertising a change that never happened.
+ */
+export function getGuideLastModified(kind: EducationEntryKind, slug: string): Date | null {
+  const guide = getGuideContent(kind, slug)
+  // readDate has already rejected anything that is not a real calendar date.
+  const stamp = guide?.reviewed || guide?.generated
+  return stamp ? new Date(`${stamp}T00:00:00Z`) : null
 }
 
 /** Slugs of every Entry of this kind that has a Guide. */

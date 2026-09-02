@@ -18,6 +18,7 @@
 import React, { useState } from "react"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { themeTokens } from '@/lib/theme-tokens'
 
@@ -518,6 +519,8 @@ export default function CloudTypesPage() {
             </div>
           </CardContent>
         </Card>
+
+        <GuideIndex kind="cloud" />
       </div>
     </PageWrapper>
   )

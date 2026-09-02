@@ -1,5 +1,5 @@
 import { parseAltitudeRange } from '@/lib/education/altitude'
-import { getGuideContent, getGuideSlugs, isAllowedSourceUrl } from '@/lib/education/content'
+import { getGuideContent, getGuideSlugs, isAllowedSourceUrl, isCalendarDate } from '@/lib/education/content'
 import { getDiagram, getDiagramIds, isKnownDiagramId } from '@/lib/education/diagrams'
 import { buildGuideSegments } from '@/lib/education/guide-layout'
 import { cloudDatabase } from '@/data/cloud-types'
@@ -90,6 +90,26 @@ describe('getGuideContent', () => {
     // Depth is the point of the Guide (planning/adr/0001); the template it
     // replaced rendered a median of 84 words.
     expect(guide!.body.split(/\s+/).length).toBeGreaterThan(600)
+  })
+
+  it('reads the generation date the publisher writes, as YYYY-MM-DD', () => {
+    // publish.ts quotes `generated`, so it arrives as a string; `reviewed` is
+    // unquoted and arrives as a Date. Both must come out the same shape.
+    const guide = getGuideContent('cloud', 'cirrus')
+    expect(guide?.generated).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(guide?.reviewed).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('rejects a frontmatter date that is not a real calendar day', () => {
+    // V8 rolls 2026-02-30 over to March 1 instead of failing, so without the
+    // round-trip check a typo would reach the sitemap and the JSON-LD as a
+    // date the Guide never declared.
+    expect(isCalendarDate('2026-02-28')).toBe(true)
+    expect(isCalendarDate('2026-02-30')).toBe(false)
+    expect(isCalendarDate('2026-13-01')).toBe(false)
+    expect(isCalendarDate('2026-1-5')).toBe(false)
+    expect(isCalendarDate('2026-08-29T00:00:00Z')).toBe(false)
+    expect(isCalendarDate('')).toBe(false)
   })
 
   it('returns null for an Entry with no Guide', () => {

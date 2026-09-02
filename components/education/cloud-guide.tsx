@@ -12,6 +12,7 @@ import Link from 'next/link'
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
+import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { CloudData } from '@/data/cloud-types'
@@ -108,6 +109,8 @@ export default function CloudGuide({ cloud, guide }: CloudGuideProps) {
             )}
           </section>
         )}
+
+        <RelatedGuides kind="cloud" slug={guide.slug} />
 
         <nav className="mt-10 pt-6 border-t border-subtle flex flex-wrap gap-x-6 gap-y-2 guide-data">
           <Link href="/cloud-types" style={{ color: 'var(--weather-primary)' }}>

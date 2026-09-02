@@ -10,6 +10,7 @@ import Link from 'next/link'
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
+import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { WeatherPhenomena } from '@/data/fun-facts'
@@ -143,6 +144,8 @@ export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuidePr
             )}
           </section>
         )}
+
+        <RelatedGuides kind="phenomenon" slug={guide.slug} />
 
         <nav className="mt-10 pt-6 border-t border-subtle flex flex-wrap gap-x-6 gap-y-2 guide-data">
           <Link href="/fun-facts" style={{ color: 'var(--weather-primary)' }}>

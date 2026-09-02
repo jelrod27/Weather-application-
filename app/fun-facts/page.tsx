@@ -18,6 +18,7 @@
 import { useState } from "react"
 import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
+import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { themeTokens } from '@/lib/theme-tokens'
@@ -245,6 +246,8 @@ export default function FunFactsPage() {
             Click any phenomenon card to expand and learn more!
           </p>
         </div>
+
+        <GuideIndex kind="phenomenon" />
       </div>
     </PageWrapper>
   )

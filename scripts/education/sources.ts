@@ -17,41 +17,16 @@
  * Images on those pages are not automatically — this catalog is text only.
  */
 
+import type { GuideTopicTag } from '@/lib/education/topics';
+
 /**
  * Subject tags. Entries are matched to sources through these rather than by
  * naming URLs per Entry, so a new source becomes available to every Guide that
- * already carries the tag. `topics.ts` maps each of the 29 Entries to its tags.
+ * already carries the tag. The tag vocabulary and each Guide's tags live in
+ * `lib/education/topics.ts`, because the Guide pages rank related Guides by
+ * the same tags; `topics.ts` here adds the drafting direction.
  */
-export type SourceTag =
-  | 'air-masses'
-  | 'atmosphere'
-  | 'cloud-formation'
-  | 'clouds'
-  | 'downburst'
-  | 'dust'
-  | 'flood'
-  | 'fronts'
-  | 'global-circulation'
-  | 'hail'
-  | 'jet-stream'
-  | 'lightning'
-  | 'mid-latitude-cyclone'
-  | 'monsoon'
-  | 'ocean'
-  | 'optics'
-  | 'orographic'
-  | 'precipitation'
-  | 'pressure'
-  | 'safety'
-  | 'severe'
-  | 'stability'
-  | 'synoptic'
-  | 'thunderstorms'
-  | 'tornado'
-  | 'tropical'
-  | 'upper-air'
-  | 'wind'
-  | 'winter';
+export type SourceTag = GuideTopicTag;
 
 export interface SourceEntry {
   /** Stable id. The only thing a draft is allowed to reference. */

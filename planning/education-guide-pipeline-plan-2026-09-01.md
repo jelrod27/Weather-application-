@@ -12,7 +12,7 @@ unsure what to do next on the Guides, read the status table at the bottom first.
 | Guides live | 3 of 29: Cumulonimbus, Cirrus, Cyclones |
 | Queue remaining | 26: 15 weather systems, 5 clouds, 6 phenomena |
 | Runs on 2026-09-01 | Anticyclones failed on 1 claim, Depressions on 6; both before #567 merged |
-| Analytics | Vercel Web Analytics disabled at the project level (API returns 404); component is mounted |
+| Analytics | Vercel Web Analytics is on and has data back to at least 2026-08-25 (83 visitors / 188 views in the week to 09-01). The earlier "disabled, API 404" note was a misread; `/_vercel/insights/script.js` serves 200 and the component is mounted |
 
 Both failures were upstream of the model. Anticyclones died on a 500 mb ridge claim with no ridge
 source in scope; Depressions was commissioned by its own brief to state a millibars-per-hour rate
@@ -51,8 +51,10 @@ Cyclones had three wording issues out of 22 claims, none numeric.
 
 ### SEO: under-served
 
-- **No measurement.** Web Analytics is off at the project level. Enabling is a dashboard toggle
-  (Project → Analytics); no MCP tool does it. Search Console is not integrated in the repo.
+- **Measurement exists but is thin.** Web Analytics is on (the review's "off" finding was wrong).
+  In the week to 2026-09-01: `/education` had 6 visitors and no Guide URL made the top pages;
+  referrers were Bing, Google, DuckDuckGo, Yahoo and ChatGPT. Search Console is not integrated
+  in the repo.
 - **Each Guide has one crawlable inbound link**, from `/education`. The weather-systems atlas
   link sits inside a click-to-expand card; the cloud and phenomena atlases have no Guide links.
   Guide bodies carry no links by design and the template has no related-Guides block.
@@ -129,6 +131,27 @@ code-generated Related Guides block from shared tags (keeps ADR-0002: the model 
 links). Server-render Guide links on the three atlas pages. Add `datePublished`, `image` and
 `BreadcrumbList` to the Guide schema. Drive sitemap `lastModified` from `reviewed`/`generated`.
 
+As built (`education/seo`):
+
+- Tags moved to `lib/education/topics.ts` (`GUIDE_TOPICS`, keyed `kind:slug`); the generator's
+  `topics.ts` keeps only focus and pins and joins the two into `GUIDE_BRIEFS`, throwing at import
+  on a key present in one map and not the other. `SourceTag` is now an alias of `GuideTopicTag`.
+- `getRelatedGuides` ranks the other 28 published Guides by shared tags with the same halving
+  weights the catalog ranking uses, and `RelatedGuides` renders the top three on every Guide URL —
+  the three prose Guides and the 26 fallback pages alike (the client detail islands take it as a
+  `related` prop). A test asserts no published Guide is left without a neighbour.
+- `GuideIndex` lists every Guide URL of a kind as plain links at the foot of each atlas page. The
+  atlas pages are click-to-expand cards; a static list inside a `"use client"` page is still in
+  the server-rendered HTML, so no page had to be restructured.
+- `lib/education/guide-seo.ts` builds metadata and JSON-LD for all three routes: Article with
+  `datePublished` (from `generated`), `dateModified` (from `reviewed`), absolute `image` (the OG
+  route) and `citation`, plus a three-crumb `BreadcrumbList` matching the visible crumbs, in one
+  `@graph`. Cloud and phenomenon pages gain the OG/Twitter image weather systems already had, and
+  now emit the Article for Entries without a Guide as weather systems already did.
+- The loader keeps `generated`; `getGuideLastModified` feeds the sitemap `reviewed`, else
+  `generated`, else the monthly bucket for Entries with no Guide.
+- Web Analytics is a dashboard toggle and is not part of the PR.
+
 ### Then dispatch
 
 Anticyclones, Depressions, the remaining weather systems, then clouds, then phenomena last
@@ -139,7 +162,7 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 | Step | State |
 |---|---|
 | PR 1 pipeline hardening | merged (#568). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
-| PR 2 catalog and briefs | in progress (`education/catalog-brief-audit`). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
-| PR 3 SEO | not started |
-| Web Analytics toggle | not done — needs the dashboard |
+| PR 2 catalog and briefs | merged (#574). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
+| PR 3 SEO | in progress (`education/seo`); see "As built" above |
+| Web Analytics toggle | not needed — was already on; dashboard shows data from 2026-08-25 |
 | Anticyclones re-run | unblocked by PR 1; not yet run |
