@@ -2,6 +2,105 @@
 
 All notable changes to 16-Bit Weather are documented in this file.
 
+## Versioning
+
+This project uses **calendar versioning** (`YYYY.M.PATCH`) as of `2026.9.0`. The
+app is a continuously deployed site, not a published package - nothing installs
+it at a pinned version, so semver's compatibility contract never carried any
+meaning here. A dated version tells you at a glance how current a release is,
+and it can never go backwards.
+
+The pre-`2026.9.0` entries below used semver-shaped numbers that were not
+ordered: `1.600.0` was tagged 2026-03-29 and `1.589.0` on 2026-04-12, so the
+newer release carried the lower number. Those tags are left in place as history.
+Every calendar version sorts above all of them.
+
+## [2026.9.0] - 2026-09-01
+
+First release under calendar versioning, covering 160 pull requests since
+`1.589.0` (2026-04-12).
+
+### Added
+
+- **Warning alerting pipeline (Bitwatch)**: End-to-end NWS warning delivery. An
+  every-minute ingest cron leases a row, pulls alert pages from a sliding
+  watermark, content-hashes each source message, and applies it to a warning
+  event through VTEC parsing and geometry place matching; a second cron fans out
+  to email (Resend) and web push. Includes a local-first warning center with
+  on-site interrupt, nearby-warning ranking around a searchable pin, and Scout
+  nowcasting (#533, #535, #536, #537).
+- **Guest alerts**: Subscribe a place to warnings without an account, managed
+  through HMAC-signed links at `/alerts` (#535, #537).
+- **Education Guides pipeline**: Long-form guide generation into
+  `content/education/`, with a validated source catalog, per-brief citation
+  pinning, a diagram registry, and a pre-ship grounding check. Guides published
+  for Cumulonimbus, Cirrus, Cyclones, and Anticyclones (#557, #559, #561-#568,
+  #574-#576).
+- **Education page structure**: Related Guides, guide indexes, and full Article
+  JSON-LD across the education routes (#575).
+- **Radar v2**: RainViewer-native tiles proxied through the app, plus a North
+  America radar modernization pass (#445, #447, #449).
+- **Aviation live tracker**: `/aviation` rebuilt around ADS-B flight tracking
+  (#483).
+- **Earth sciences and dashboard**: USGS earthquake surface and a home hub
+  discovery row (#352, #456).
+- **News overhaul**: New information architecture, UI, sources, and pipeline
+  fixes (#455).
+- **SEO and AI discoverability**: `llms.txt`, homepage JSON-LD, robots rules,
+  crawlable city links, and indexing work for radar, city climate, and space
+  weather (#458, #459, #464, #473, #477).
+- **Auth**: Security and UX overhaul plus post-signup dashboard onboarding
+  (#460, #461, #475).
+- **Stargazer**: Per-hour observing scores and best-window selection (#346).
+- **Pre-push type check**: Both TypeScript projects are checked locally so CI is
+  not the first sign of a type error (#499).
+
+### Changed
+
+- **Shared API route wrapper**: `withApiRoute` adopted across space weather and
+  other route groups, so rate limiting and Sentry-visible failures are uniform
+  (#552, #554).
+- **Rate limit isolation**: Radar tiles, city search, alerts, and hub reads no
+  longer share a bucket, so a map pan can no longer 429 a search (#548, #553).
+- **Theme color lives only in CSS variables**; Tailwind class strings are no
+  longer looked up through `useTheme` (#551).
+- **Architecture consolidation**: Deep-module sweep across newsletter, cache,
+  API routes, space weather, and client data loading; god-module splits and a
+  city catalog facade (#498, #554).
+- **Session ownership**: Theme, auth, and preferences ownership collapsed and
+  the weather session bootstrap unified behind one hook (#488).
+- **Timezones**: Weather times render in the viewed location's timezone rather
+  than the browser's (#527).
+- **Search ranking**: Snippets ranked on live weather demand (#556).
+
+### Removed
+
+- **AI chat subsystem**: The assistant, its tool surface, and per-user AI memory
+  were removed (#387). The `1.512.0` and `1.600.0` entries below describe
+  features that no longer exist.
+- **Weather arcade**: The games feature was removed (2026-04-27).
+- **OpenWeatherMap**: Dropped as a data source. Open-Meteo is now the primary
+  forecast provider and requires no API key (#480).
+
+### Fixed
+
+- **Bitwatch ingest hardening**: Lease reclaim against PostgREST `RETURNING`,
+  closeout against PostgREST URL length limits, and ingest success recorded
+  before source-message upserts (#542, #544, #545).
+- **Supabase resilience**: Fail open when the free-tier project is paused, and
+  skip a hung `getUser` on public routes (#531, #532).
+- **Theme contrast**: Accent text rendering at roughly 1:1 contrast fixed in all
+  six themes (#558).
+- **Maps**: CARTO basemap key appended to tile URLs, removing the API-key
+  watermark (#555).
+- **Alerts**: NWS news cards open readable alert pages instead of downloading
+  CAP XML (#443).
+- **Security and dependencies**: Multi-phase audit remediation (#387, #484),
+  Next.js 16.3 security bumps, MapLibre 6, and patched `postcss`, `nanoid`, and
+  `js-yaml` overrides (#496, #497, #501, #505, #529, #530).
+
+---
+
 ## [1.600.0] - 2026-03-29
 
 ### Added
