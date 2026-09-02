@@ -4,6 +4,7 @@ entrySlug: stratus
 title: Stratus
 summary: Stratus is a structureless gray layer formed by cooling a whole air layer to saturation — the same object as fog — which is why it drizzles, hides no halo, and hurts visibility.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 1
 word_count: 1066
@@ -54,13 +55,13 @@ Every cloud needs the same two ingredients: water vapour, and condensation nucle
 
 The difference is in how the air gets cold enough. The textbook route is a rising parcel: as it climbs into lower pressure it expands, and expansion cools it at 5.5°F for every 1,000 feet of ascent until it saturates. An air mass at the surface at 85°F with a dew point of 65°F will reach that saturation point around 4,000 feet, which is where the flat base of a cumulus cloud appears.
 
-Stratus generally arrives by the other road. Instead of one parcel being shoved upward through a stationary atmosphere, an entire layer of air is cooled uniformly — over hours rather than minutes — until the whole thing reaches its dew point at once. Because the cooling is applied across a broad horizontal sheet rather than concentrated in a column, saturation happens everywhere at nearly the same level. The result is a cloud with a base that looks laser-cut and no internal texture whatsoever, forming over a span of hours rather than the twenty-odd minutes a cumulus tower needs to build.
+Stratus generally arrives by the other road. Instead of one parcel being shoved upward through a stationary atmosphere, an entire layer of air is cooled uniformly — over hours rather than minutes — until the whole thing reaches its dew point at once. Because the cooling is applied across a broad horizontal sheet rather than concentrated in a column, saturation happens everywhere at nearly the same level. The result is a cloud with a base that looks laser-cut and no internal texture whatsoever, forming over a span of hours rather than the minutes a cumulus tower needs to build.
 
 ## Fog that lost contact with the ground
 
 The clearest demonstration of this is fog that lifts. Ground fog is stratus with a base of zero. When the lowest few hundred feet warm slightly through the morning, the bottom of the layer evaporates while the rest stays saturated, and the deck detaches from the surface and becomes a low overcast. Nothing about the cloud changed except which end of it you are standing under.
 
-The same physics produces the marine layer along cool coastlines, where air sitting over cold water is chilled from below until the layer saturates. A gentle onshore flow is enough to push it inland, where it can stall against terrain and sit for a day. In both cases the cloud is thin — a few hundred to a couple of thousand feet from base to top — which is why the sun often burns through by early afternoon.
+The same physics produces the marine layer along cool coastlines, where air sitting over cold water is chilled from below until the layer saturates. A gentle onshore flow is enough to push it inland, where it can stall against terrain and sit for a day. In both cases the cloud is thin enough that the sun often burns through by early afternoon.
 
 ## Recognising it in three seconds
 

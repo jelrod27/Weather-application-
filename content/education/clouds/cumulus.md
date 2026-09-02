@@ -4,6 +4,7 @@ entrySlug: cumulus
 title: Cumulus
 summary: How cumulus forms, why its base is flat and its top white, and how to tell a fair-weather heap from a tower that is turning into a thunderstorm.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 0
 word_count: 989
