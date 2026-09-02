@@ -4,6 +4,7 @@ entrySlug: lenticular
 title: Lenticular
 summary: Learn why a lenticular cloud hangs motionless over a ridge while air rushes through it, how mountain standing waves build and hold its lens shape, and what it warns pilots and drivers about.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 1
 word_count: 1010
@@ -12,6 +13,10 @@ fact_check_unsupported: 10
 sources:
   - label: NWS Glossary — Lenticular
     url: https://forecast.weather.gov/glossary.php?word=lenticular
+  - label: NWS Glossary — Mountain Wave
+    url: https://forecast.weather.gov/glossary.php?word=mountain%20wave
+  - label: NWS Glossary — Orographic
+    url: https://forecast.weather.gov/glossary.php?word=orographic
   - label: NOAA JetStream — How Clouds Form
     url: https://www.noaa.gov/jetstream/clouds/how-clouds-form
   - label: NOAA JetStream — The Color of Clouds
@@ -29,13 +34,14 @@ fact_check_flagged:
   - Lenticular clouds form in stacked groups from multiple moist layers at wave crests.
   - Lenticular clouds form in mountain lee waves that remain fixed in position while air flows through them.
   - Lenticular clouds require a stable layer, moisture at the right height, and strong wind perpendicular to a ridge.
-  - Mountain wave oscillations involve pressure swings of tens of millibars.
-  - Mountain wave fields generate clear-air turbulence around and beneath the lenticular cloud.
   - Pilots treat lenticular clouds as indicators of terrain-induced turbulence.
   - The descending branch of a mountain wave can produce strong gusty downslope winds at the surface.
+diagrams:
+  - id: cloud-altitude-plot
+    insertAfter: near or in the lee of a mountain ridge
 ---
 
-Almost every cloud you see is a passenger. It forms in a parcel of air and travels with it, which is why clouds are carried along by winds that can reach 150 mph. A lenticular does the opposite. It sits over the same patch of ground for hours while the air it is made of streams through it at highway speed and out the other side. The cloud is stationary; nothing in it is.
+Almost every cloud you see is a passenger. It forms in a parcel of air and travels with it, which is why clouds are carried along by the wind. A lenticular does the opposite. It sits over the same patch of ground for hours while the air it is made of streams through it and out the other side. The cloud is stationary; nothing in it is.
 
 ## A shape, not a lump
 
@@ -65,6 +71,6 @@ Three other markers separate it from lookalikes. It is nearly always near or dow
 
 A lenticular is evidence of a specific and fairly demanding set of conditions: a stable layer, moisture at the right height, and a strong wind blowing roughly perpendicular to a ridge. Those conditions do not assemble often, which is why the cloud is uncommon in most places and near-routine in a handful of them.
 
-The operational meaning is the part worth carrying away. The cloud marks the visible crest of a wave in air that is moving fast, and the faster and more perpendicular the flow across the ridge, the better formed the lens tends to be. The cloud is smooth; the air producing it is not gentle. It is being lifted and dropped through a vertical oscillation with pressure swings of tens of millibars, and the same wave field that draws the lens also generates turbulence in the clear air around and beneath it, where nothing is visible at all.
+The operational meaning is the part worth carrying away. The cloud marks the visible crest of a wave in air that is moving fast, and the faster and more perpendicular the flow across the ridge, the better formed the lens tends to be. The cloud is smooth; the air producing it is not gentle. It is being lifted and dropped through a vertical oscillation, and the same wave field that draws the lens also produces updrafts and downdrafts in the clear air around and beneath it, where nothing is visible at all.
 
-Pilots therefore read a lenticular as a terrain-turbulence marker rather than as a pretty cloud. It is one of the few situations in which the sky draws you a diagram of an invisible hazard: the disc shows where the wave crest is, the stack shows how deep the wave field goes, and the ridge upwind shows what is driving it. On the ground the same signal is worth noting for mountain roads and exposed passes, where the descending branch of the wave can reach the surface as strong, gusty downslope wind while the cloud overhead sits there looking motionless and serene.
+Pilots therefore read a lenticular as a terrain-turbulence marker rather than as a pretty cloud. It is one of the few situations in which the sky draws you a diagram of an invisible hazard: the disc shows where the wave crest is, the stack shows how deep the wave field goes, and the ridge upwind shows what is driving it. On the ground the same signal is worth noting for mountain roads and exposed passes, where the descending branch of the wave can reach the surface as a downdraft while the cloud overhead sits there looking motionless and serene.

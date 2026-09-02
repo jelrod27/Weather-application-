@@ -4,6 +4,7 @@ entrySlug: altocumulus
 title: Altocumulus
 summary: Learn why altocumulus sits in the middle atmosphere, how layer convection builds its rolls, and how the three-finger test and a corona identify it.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 2
 word_count: 1097
@@ -46,7 +47,7 @@ That matters more than a naming quibble, because the middle atmosphere is the la
 
 Altocumulus is composed primarily of water droplets, which is the fact that drives nearly everything else about its appearance. Droplets scatter all visible wavelengths roughly equally — Mie scattering, named for the particle size involved, where the droplets are close in size to the wavelengths of light passing through them. Equal scattering across the spectrum is what the eye reads as white.
 
-At sufficiently low temperatures the cloud can contain ice crystals instead, which is why altocumulus occupies an awkward middle ground in cloud physics. Its cousins overhead, cirrus and cirrocumulus, are always ice. The clouds below it are always liquid. Altocumulus can be either or both, depending on where in the layer it forms and how cold that layer happens to be.
+At sufficiently low temperatures the cloud can contain ice crystals instead, which is why altocumulus occupies an awkward middle ground in cloud physics. Its cousins overhead, cirrus and cirrocumulus, are ice. The clouds below it are liquid. Altocumulus can be either or both, depending on where in the layer it forms and how cold that layer happens to be.
 
 Where the patches thicken, they turn gray, for the straightforward reason that thicker cloud blocks more sunlight from reaching your side of it. A single altocumulus field can therefore show white and dark gray elements simultaneously — bright where the cloud is thin, shaded where it has built up. Part of that contrast is also a trick of perception: a moderately bright cloud seen against a much brighter background reads as darker than it is.
 

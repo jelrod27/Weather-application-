@@ -4,6 +4,7 @@ entrySlug: nimbostratus
 title: Nimbostratus
 summary: Learn why nimbostratus straddles the low and mid cloud bands, how warm-front overrunning builds it, and how to read the cirrus–cirrostratus–altostratus sequence that precedes its steady rain.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 0
 word_count: 1033
@@ -81,4 +82,4 @@ That difference shows up on weather radar as a matter of geometry rather than in
 
 Nimbostratus is not a severe weather cloud. Hail and tornadoes are the province of cumulonimbus, which is a different genus with a different engine. The hazards from a rain layer are duller and more cumulative.
 
-The primary one is visibility. Precipitation from clouds reduces visibility and makes travel dangerous, and nimbostratus produces it over a wide area for a long time — the ragged fragments beneath the base can bring the effective ceiling lower still. The second is duration. A cloud that takes six to twelve hours to build and covers a frontal slope hundreds of miles across does not clear because you waited half an hour. Whatever it is doing when it arrives, it will keep doing.
+The primary one is visibility. Precipitation from clouds reduces visibility and makes travel dangerous, and nimbostratus produces it over a wide area for a long time — the ragged fragments beneath the base can bring the effective ceiling lower still. The second is duration. A cloud that covers a frontal slope hundreds of miles across does not clear because you waited half an hour. Whatever it is doing when it arrives, it will keep doing.

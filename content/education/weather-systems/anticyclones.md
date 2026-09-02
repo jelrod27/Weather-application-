@@ -4,6 +4,7 @@ entrySlug: anticyclones
 title: Anticyclones
 summary: How outward-spiralling winds under a high force air to sink, why that erases cloud and builds inversions, and how one mechanism produces both summer heat waves and winter cold pools.
 generated: "2026-09-02"
+reviewed: 2026-09-02
 model_used: claude-opus-5
 generation_retries: 2
 word_count: 1077
