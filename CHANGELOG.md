@@ -2,19 +2,6 @@
 
 All notable changes to 16-Bit Weather are documented in this file.
 
-## Versioning
-
-This project uses **calendar versioning** (`YYYY.M.PATCH`) as of `2026.9.0`. The
-app is a continuously deployed site, not a published package - nothing installs
-it at a pinned version, so semver's compatibility contract never carried any
-meaning here. A dated version tells you at a glance how current a release is,
-and it can never go backwards.
-
-The pre-`2026.9.0` entries below used semver-shaped numbers that were not
-ordered: `1.600.0` was tagged 2026-03-29 and `1.589.0` on 2026-04-12, so the
-newer release carried the lower number. Those tags are left in place as history.
-Every calendar version sorts above all of them.
-
 ## [2026.9.0] - 2026-09-01
 
 First release under calendar versioning, covering 160 pull requests since
@@ -78,7 +65,7 @@ First release under calendar versioning, covering 160 pull requests since
 - **AI chat subsystem**: The assistant, its tool surface, and per-user AI memory
   were removed (#387). The `1.512.0` and `1.600.0` entries below describe
   features that no longer exist.
-- **Weather arcade**: The games feature was removed (2026-04-27).
+- **Weather arcade**: The games feature was removed (#368).
 - **OpenWeatherMap**: Dropped as a data source. Open-Meteo is now the primary
   forecast provider and requires no API key (#480).
 
@@ -98,6 +85,21 @@ First release under calendar versioning, covering 160 pull requests since
 - **Security and dependencies**: Multi-phase audit remediation (#387, #484),
   Next.js 16.3 security bumps, MapLibre 6, and patched `postcss`, `nanoid`, and
   `js-yaml` overrides (#496, #497, #501, #505, #529, #530).
+
+---
+
+### A note on versioning
+
+This project uses **calendar versioning** (`YYYY.M.PATCH`) as of `2026.9.0`. The
+app is a continuously deployed site, not a published package - nothing installs
+it at a pinned version, so semver's compatibility contract never carried any
+meaning here. A dated version tells you at a glance how current a release is,
+and it can never go backwards.
+
+The pre-`2026.9.0` entries below used semver-shaped numbers that were not
+ordered: `1.600.0` was tagged 2026-03-29 and `1.589.0` on 2026-04-12, so the
+newer release carried the lower number. Those tags are left in place as history.
+Every calendar version sorts above all of them.
 
 ---
 

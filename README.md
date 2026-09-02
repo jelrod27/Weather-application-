@@ -36,7 +36,7 @@ Forecast data comes from Open-Meteo and needs no API key, so the app runs locall
 
 ## How it fits together
 
-- **API proxying.** Every external call goes through `app/api/*` so keys stay server-side. New routes use the shared wrapper in `lib/api/with-api-route.ts`, which applies the rate-limit gate and turns thrown errors into logged, Sentry-visible responses.
+- **API proxying.** Keyed and rate-limited upstreams are proxied through `app/api/*` so their credentials stay server-side. New routes use the shared wrapper in `lib/api/with-api-route.ts`, which applies the rate-limit gate and turns thrown errors into logged, Sentry-visible responses. Basemap tiles, Supabase, Sentry, and IP geolocation are called from the browser directly — see the CSP note below.
 - **Weather data flow.** `useWeatherSession` is the single load/cache/rate-limit hook; `useWeatherController` (home bootstrap) and `useCityWeatherSession` (city pages) are thin wrappers over it. Cache TTLs live in `lib/cache/weather-cache-policy.ts`. Do not add parallel fetch logic — extend the session hook.
 - **Middleware and CSP.** `middleware.ts` handles Supabase session refresh, auth redirects, and builds the Content-Security-Policy. Any new external host the client calls must be added to `connect-src` there, or it fails silently in production.
 - **Alerting pipeline.** Two every-minute Vercel crons (`vercel.json`) drive it: `bitwatch-ingest` leases a row, pulls NWS alert pages from a sliding watermark, and applies each source message to a warning event (VTEC parsing, geometry place matching); `severe-alerts` fans out to email via Resend and web push. Both authenticate with a timing-safe bearer check against `CRON_SECRET`. The domain vocabulary for this subsystem is defined in [CONTEXT.md](CONTEXT.md) — use those terms.
@@ -70,7 +70,10 @@ cd Weather-application-
 npm install
 ```
 
-Copy `.env.example` to `.env.local`. Only three variables are required:
+Copy `.env.example` to `.env.local`. **No variable is strictly required** — the
+app boots without any of them, forecasts are keyless, and `lib/supabase/constants.ts`
+substitutes placeholder credentials so unauthenticated browsing works. Set these to
+get auth, saved locations, and alerts working:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -126,7 +129,7 @@ Open http://localhost:3000.
 
 CI (`.github/workflows/ci.yml`) runs `lint`, `typecheck`, `typecheck:tests`, `test:ci`, and `knip` in parallel, then `build` if all pass. **Knip failures break the build**, so remove orphaned exports, files, and dependencies as you go. E2E and Lighthouse run as separate workflows on pull requests.
 
-Locally, `pre-commit` runs a gitleaks scan of the staged diff and `pre-push` scans unpushed commits and type-checks both TypeScript projects.
+Locally, `pre-commit` runs a gitleaks scan of the staged diff and `pre-push` scans unpushed commits and type-checks both TypeScript projects. The type check is skipped when `CI` is set, so the newsletter workflows that push from CI do not compile the repo twice; the secret scan always runs.
 
 ## Repo layout
 
@@ -141,6 +144,9 @@ supabase/       Dated SQL migrations
 tests/          Playwright E2E
 __tests__/      Jest unit tests
 planning/       Design notes, PRDs, and ADRs
+
+middleware.ts   Supabase session refresh, auth redirects, and the CSP
+instrumentation*.ts, sentry.*.config.ts, proxy.ts   Entry points outside the App Router
 ```
 
 `@/*` maps to the project root, so imports read as `@/lib/`, `@/components/`, `@/hooks/`.
@@ -157,13 +163,22 @@ planning/       Design notes, PRDs, and ADRs
 
 ## Data sources
 
-NOAA/NWS (`api.weather.gov`, SPC, NHC, SWPC, NESDIS), Open-Meteo, RainViewer, AviationWeather.gov, USGS, NASA (SDO, SOHO), CelesTrak, ADS-B networks, OpenStreetMap Nominatim, and Google Pollen. All are used under their respective terms; imagery in blog posts is restricted to the allowed-host list in `lib/blog/allowed-hosts.ts`.
+**Weather and science data**: NOAA/NWS (`api.weather.gov`, SPC, NHC, SWPC, NESDIS),
+Open-Meteo, RainViewer, Iowa Environmental Mesonet (NEXRAD), AviationWeather.gov, USGS,
+NASA (SDO, SOHO), CelesTrak, ADS-B networks, and Google Pollen.
+
+**Basemaps**: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
+rendered through [CARTO](https://carto.com/) and OpenFreeMap. Geocoding uses OSM Nominatim;
+IP geolocation falls back to ipapi.co and ipinfo.io.
+
+All are used under their respective terms; imagery in blog posts is restricted to the
+allowed-host list in `lib/blog/allowed-hosts.ts`.
 
 ## Releases
 
 The site deploys continuously from `main`. Tagged releases use calendar
 versioning (`YYYY.M.PATCH`) and are summarized in [CHANGELOG.md](CHANGELOG.md);
-see the "Versioning" note there for why the older semver-shaped tags are not
+see "A note on versioning" there for why the older semver-shaped tags are not
 ordered.
 
 ## License
