@@ -333,6 +333,7 @@ export const SOURCES: SourceEntry[] = [
   glossary('advection', ['synoptic', 'atmosphere']),
   glossary('convergence', ['synoptic', 'pressure']),
   glossary('low pressure system', ['pressure', 'synoptic']),
+  glossary('depression', ['pressure', 'synoptic', 'mid-latitude-cyclone']),
   glossary('anticyclone', ['pressure', 'synoptic']),
   glossary('extratropical cyclone', ['mid-latitude-cyclone', 'pressure']),
   glossary('trough', ['upper-air', 'pressure']),

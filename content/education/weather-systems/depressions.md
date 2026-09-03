@@ -4,12 +4,15 @@ entrySlug: depressions
 title: Depressions
 summary: Understand why a depression, low and cyclone name the same object, how upper-level troughs deepen one, why tightening isobars mean stronger wind and rain, and how it occludes or cuts off.
 generated: "2026-09-03"
+reviewed: 2026-09-03
 model_used: claude-opus-5
 generation_retries: 0
-word_count: 1114
+word_count: 1086
 fact_check_claims: 47
 fact_check_unsupported: 4
 sources:
+  - label: NWS Glossary — Depression
+    url: https://forecast.weather.gov/glossary.php?word=depression
   - label: NWS Glossary — Low Pressure System
     url: https://forecast.weather.gov/glossary.php?word=low%20pressure%20system
   - label: NWS Glossary — Extratropical Cyclone
@@ -39,17 +42,17 @@ fact_check_flagged:
   - The model bias means precipitation lasts longer than model guidance suggests.
 ---
 
-A depression, a low, and a cyclone are the same object under three names. The National Weather Service glossary makes this explicit: a low pressure system is an area of relative pressure minimum with converging winds, rotating in the same direction as the earth — counterclockwise in the Northern Hemisphere — and it is "also known as a cyclone." What differs between the words is the vantage point. *Cyclone* describes the rotation. *Low* describes the position on a chart. *Depression* describes what the barometer did: the trace pressed down.
+A depression, a low, and a cyclone describe the same weather system from different angles. The National Weather Service defines a depression as a region of low atmospheric pressure, usually accompanied by low clouds and precipitation. Its glossary defines a low pressure system more mechanically: an area of relative pressure minimum with converging winds, rotating in the same direction as the earth — counterclockwise in the Northern Hemisphere — and "also known as a cyclone." *Cyclone* describes the rotation. *Low* describes the position on a chart. *Depression* names the region of lowered pressure and the weather gathered around it.
 
 That distinction matters more than it sounds, because the word carries a measurement rather than a shape. And the measurement is relative, not absolute.
 
 ## Relative to what
 
-Standard pressure at sea level is 1013.25 millibars, equivalently 29.92 inches of mercury. Values used in meteorology run from roughly 100 to 1050 millibars. But no threshold on that scale defines a depression. What defines it is that the pressure at the centre is lower than the pressure around it, which is why the glossary phrase is *relative* pressure minimum.
+Standard pressure at sea level is 1013.25 millibars, equivalently 29.92 inches of mercury. Values used in meteorology run from roughly 100 to 1050 millibars. The NWS definition does not hinge on one numerical cutoff. What defines the system is that the pressure at the centre is lower than the pressure around it, which is why the glossary phrase is *relative* pressure minimum.
 
 Station readings are all converted to a sea-level equivalent before anyone compares them, because pressure falls steeply with height — half of all the air molecules in the atmosphere sit below 18,000 feet. Without that correction, every mountain observatory would look like a permanent storm.
 
-The mature version of this system in the mid-latitudes is the extratropical cyclone: often 2,000 kilometres across, and usually containing a cold front trailing toward the equator for hundreds of kilometres. That is the scale of thing that dominates weather from autumn through spring across the North Atlantic, North Pacific and Southern Ocean tracks.
+The mature version of this system in the mid-latitudes is the extratropical cyclone: often 2,000 kilometres across, and usually containing a cold front trailing toward the equator for hundreds of kilometres. These are the migratory frontal cyclones of the middle and higher latitudes.
 
 ## Where the dip comes from
 
@@ -79,4 +82,4 @@ Geography also limits Brewer's rules. The largest pressure changes with storms o
 
 The cold front moves faster than the warm front and eventually overtakes it, forming an occluded front. As occlusion increases, the warm moist air is progressively lifted away from the centre, and without that warm air mass to sustain it, the low gradually dissipates.
 
-Unless it doesn't. When a strong shortwave dives south on the west side of an equator-reaching trough, its momentum can pull the trough clean out of the main airflow, leaving a closed circulation isolated from the steering winds. These cut-off lows drift for days over the same ground, with unsettled weather over their eastern half and precipitation sometimes wrapping around the north end into the northwest quadrant. Forecast models handle their drift reasonably well but still tend to reopen them into the main flow too quickly, which means the rain lasts longer than the guidance suggests. When a cut-off low is locked beneath a blocking high in a Rex pattern, the persistence itself becomes the hazard — flooding under the low, short-term drought under the high, and neither budging until one of the two centres changes intensity.
+Unless it doesn't. When a strong shortwave dives south on the west side of an equator-reaching trough, its momentum can pull the trough clean out of the main airflow, leaving a closed circulation isolated from the steering winds. These cut-off lows drift for days over the same ground, with unsettled weather over their eastern half and precipitation sometimes wrapping around the north end into the northwest quadrant. When a cut-off low is locked beneath a blocking high in a Rex pattern, the persistence itself becomes the hazard — flooding under the low, short-term drought under the high, and neither budging until one of the two centres changes intensity.
