@@ -222,6 +222,23 @@ export const SOURCES: SourceEntry[] = [
     url: 'https://www.weather.gov/ama/microbursts',
     tags: ['downburst', 'wind', 'severe'],
   },
+  // The only NWS pages on an allowed host that explain the monsoon as a
+  // mechanism. Tucson's information page opens with the thermal low, the
+  // onshore flow it draws and the upper-level easterlies, then the North
+  // American Monsoon itself; Flagstaff's carries the Arizona season dates and
+  // the Gulf of California moisture path. Both sit inside the text budget.
+  {
+    id: 'nws-twc-monsoon-info',
+    label: 'NWS Tucson — Monsoon information',
+    url: 'https://www.weather.gov/twc/MonsoonInfo',
+    tags: ['monsoon', 'global-circulation', 'precipitation'],
+  },
+  {
+    id: 'nws-fgz-monsoon-info',
+    label: 'NWS Flagstaff — Northern Arizona monsoon season',
+    url: 'https://www.weather.gov/fgz/MonsoonInfo',
+    tags: ['monsoon', 'precipitation', 'flood'],
+  },
   // A Weather-Ready Nation graphics kit, but the page text is the NWS account of
   // lightning types, and it is the only NWS page on an allowed host that says
   // anything about ball lightning. The passage sits inside the text budget.
@@ -345,6 +362,7 @@ export const SOURCES: SourceEntry[] = [
   glossary('trough', ['upper-air', 'pressure']),
   glossary('shortwave', ['upper-air', 'jet-stream']),
   glossary('jet stream', ['jet-stream', 'upper-air']),
+  glossary('jet streak', ['jet-stream', 'upper-air']),
   glossary('monsoon', ['monsoon', 'global-circulation']),
   glossary('cold front', ['fronts', 'air-masses']),
   glossary('warm front', ['fronts', 'air-masses']),
@@ -354,6 +372,7 @@ export const SOURCES: SourceEntry[] = [
   glossary('supercell', ['severe', 'thunderstorms']),
   glossary('squall line', ['severe', 'thunderstorms']),
   glossary('mesoscale convective complex', ['severe', 'thunderstorms']),
+  glossary('low level jet', ['thunderstorms', 'wind']),
   glossary('bow echo', ['severe', 'wind']),
   glossary('gust front', ['downburst', 'thunderstorms']),
   glossary('downburst', ['downburst', 'wind']),
@@ -366,6 +385,7 @@ export const SOURCES: SourceEntry[] = [
   glossary('dust storm', ['dust', 'wind']),
   glossary('graupel', ['winter', 'precipitation']),
   glossary('snow squall', ['winter', 'precipitation']),
+  glossary('training', ['precipitation', 'flood', 'thunderstorms']),
   glossary('parhelion', ['optics']),
   glossary('halo', ['optics', 'clouds']),
 ];

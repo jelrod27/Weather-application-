@@ -112,7 +112,11 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   },
   'weather-system:stationary-fronts': {
     focus:
-      'A boundary that stalls, and the multi-day rainfall that trains along it. The alternating red and blue notation, and what makes a stalled front start moving again.',
+      'A boundary that stalls, and the multi-day rainfall that trains along it. Why a front stops moving, and what starts it again.',
+    // Training is the focus, and `precipitation` is the brief's last tag: the
+    // front and air-mass pages fill the list before any rainfall page ranks.
+    // The map notation was dropped from the focus — no source describes it.
+    pin: ['glossary-training'],
   },
   'weather-system:atmospheric-rivers': {
     focus:
@@ -124,11 +128,19 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   },
   'weather-system:jet-streams': {
     focus:
-      'A thermal wind produced by a temperature contrast. Polar and subtropical jets, jet streaks and their divergent quadrants, and the steering of surface systems.',
+      'A thermal wind produced by a temperature contrast. Polar and subtropical jets, jet streaks, and the steering of surface systems.',
+    // The Jet Stream page ranks first on its own; the glossary entry is the
+    // only source that defines a jet streak. The divergent-quadrant model was
+    // dropped from the focus — no catalog page describes it.
+    pin: ['glossary-jet-streak'],
   },
   'weather-system:monsoons': {
     focus:
       'A seasonal wind reversal, not a rainstorm. Differential heating between land and ocean, and the North American monsoon as the version that reaches the US Southwest.',
+    // The one catalog page that explains the mechanism — thermal low, onshore
+    // flow, easterlies aloft — and then the North American Monsoon by name.
+    // `monsoon` is the first tag, so the Flagstaff page ranks on its own.
+    pin: ['nws-twc-monsoon-info'],
   },
   'weather-system:polar-vortex': {
     focus:
@@ -158,10 +170,18 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   'weather-system:squall-lines': {
     focus:
       'Convection organised into a line. The cold pool that keeps it going, the bow echo, and why the wind threat outruns the tornado threat in this mode.',
+    // The focus names the bow echo and the outflow that drives the line, but
+    // `thunderstorms` is the first tag and its pages fill the list before the
+    // bow-echo and gust-front entries, tagged `severe`/`wind`, can rank.
+    pin: ['jetstream-derechos-bow-echoes', 'glossary-bow-echo', 'glossary-gust-front'],
   },
   'weather-system:mesoscale-convective-complexes': {
     focus:
       'The overnight storm system that covers a state. Size and duration criteria from satellite, the nocturnal low-level jet that feeds it, and flash flooding as the signature hazard.',
+    // The glossary MCC entry carries the size and duration criteria and ranks
+    // on its own. The low-level jet entry is the only source describing the
+    // nocturnal Plains wind maximum, and `flood` is the brief's last tag.
+    pin: ['jetstream-thunderstorms-flood', 'glossary-low-level-jet'],
   },
 
   // --- Phenomena ----------------------------------------------------------
@@ -198,6 +218,9 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   'phenomenon:haboob': {
     focus:
       'A thunderstorm outflow made visible by the surface it crosses. The gust front as the driver, the wall of dust, and the driving guidance that follows from near-zero visibility.',
+    // The gust front is the mechanism, and the microburst and derecho pages
+    // that share the brief's `downburst` and `wind` tags outrank its entry.
+    pin: ['glossary-gust-front'],
   },
   'phenomenon:sprites': {
     focus:
