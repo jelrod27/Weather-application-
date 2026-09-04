@@ -166,4 +166,4 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 | PR 3 SEO | merged (#575); see "As built" above |
 | Web Analytics toggle | not needed — was already on; dashboard shows data from 2026-08-25 |
 | Anticyclones re-run | merged (#576) on 2026-09-02 |
-| Queue | 11 of 29 live as of 2026-09-04: all 7 clouds, plus Cyclones, Anticyclones, Depressions (#585) and Blocking Highs (#586). Every live Guide carries `reviewed:`. Next up is Warm Fronts, then the other 11 weather systems, then the 6 phenomena |
+| Queue | 14 of 29 on main as of 2026-09-04: all 7 clouds, plus Cyclones, Anticyclones, Depressions (#585), Blocking Highs (#586), Occluded Fronts (#587), Warm Fronts (#588) and Cold Fronts (#589). The three front Guides merged before a review pass; #590 resolved their 18 flagged claims against the cited sources, and they still need a `reviewed:` stamp. Next up is Stationary Fronts (needs this branch's `glossary-training` pin), then the other 10 weather systems, then the 6 phenomena |
