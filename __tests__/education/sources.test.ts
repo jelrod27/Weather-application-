@@ -98,6 +98,23 @@ describe('candidateSourcesFor', () => {
     );
   });
 
+  it.each([
+    ['weather-system', 'stationary-fronts', 'glossary-training'],
+    ['weather-system', 'jet-streams', 'glossary-jet-streak'],
+    ['weather-system', 'monsoons', 'nws-twc-monsoon-info'],
+    ['weather-system', 'monsoons', 'nws-fgz-monsoon-info'],
+    ['weather-system', 'squall-lines', 'jetstream-derechos-bow-echoes'],
+    ['weather-system', 'squall-lines', 'glossary-bow-echo'],
+    ['weather-system', 'mesoscale-convective-complexes', 'jetstream-thunderstorms-flood'],
+    ['weather-system', 'mesoscale-convective-complexes', 'glossary-low-level-jet'],
+    ['phenomenon', 'haboob', 'glossary-gust-front'],
+  ])('offers %s:%s the page its focus line rests on (%s)', (kind, slug, id) => {
+    const brief = getGuideBrief(kind, slug);
+
+    expect(brief).not.toBeNull();
+    expect(candidateSourcesFor(brief!, 12).map((source) => source.id)).toContain(id);
+  });
+
   it('offers pinned sources first and fills the rest by rank without repeating them', () => {
     const picks = candidateSourcesFor(
       { tags: ['clouds'], pin: ['glossary-inversion', 'jetstream-clouds'] },

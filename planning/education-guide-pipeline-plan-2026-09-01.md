@@ -163,6 +163,7 @@ Anticyclones, Depressions, the remaining weather systems, then clouds, then phen
 |---|---|
 | PR 1 pipeline hardening | merged (#568). First Opus 5 dry run hit the 16K ceiling thinking at default effort; now `medium` effort (`EDUCATION_EFFORT`) with a 32K ceiling |
 | PR 2 catalog and briefs | merged (#574). Catalog 98 → 114 entries, all resolving; seven briefs rewritten or pinned; NSSL unreachable (broken TLS chain, see above) |
-| PR 3 SEO | in progress (`education/seo`); see "As built" above |
+| PR 3 SEO | merged (#575); see "As built" above |
 | Web Analytics toggle | not needed — was already on; dashboard shows data from 2026-08-25 |
-| Anticyclones re-run | unblocked by PR 1; not yet run |
+| Anticyclones re-run | merged (#576) on 2026-09-02 |
+| Queue | 11 of 29 live as of 2026-09-04: all 7 clouds, plus Cyclones, Anticyclones, Depressions (#585) and Blocking Highs (#586). Every live Guide carries `reviewed:`. Next up is Warm Fronts, then the other 11 weather systems, then the 6 phenomena |
