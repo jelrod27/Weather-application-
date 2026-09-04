@@ -6,7 +6,7 @@ summary: Understand why a cold front's steep slope produces its narrow storm ban
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1072
+word_count: 1100
 fact_check_claims: 31
 fact_check_unsupported: 7
 sources:
@@ -42,7 +42,7 @@ fact_check_flagged:
   - A pseudo-cold front operates on scales of a few kilometres and a few minutes.
 ---
 
-A cold front is not a line. The line drawn on the map is where a sloping surface, tilted back over hundreds of kilometres of cold air, happens to intersect the ground. Everything that makes a cold front behave the way it does — the abruptness, the wind shift, the narrow ribbon of thunderstorms — follows from how steeply that surface leans.
+A cold front is not a line. The line drawn on the map is where a sloping surface happens to intersect the ground; fronts have a vertical structure, a slope, as well as a position. Everything that makes a cold front behave the way it does — the abruptness, the wind shift, the narrow ribbon of thunderstorms — follows from how steeply that surface leans.
 
 ## The boundary itself
 
@@ -50,7 +50,7 @@ The National Weather Service defines a cold front as a zone separating two air m
 
 Air masses acquire their character from the ground beneath them. A body of air sitting over northern Canada in winter becomes very cold and very dry — continental polar, in the standard notation. One drifting up from the tropics over water becomes warm and moist. Neither mixes readily with the other. Where they meet, the difference in temperature and humidity is compressed into a boundary that can be crossed in a few minutes of driving.
 
-Because the cold air is denser, it does not politely displace the warm air sideways. It wedges underneath, and the warm air has nowhere to go but up. That forced ascent is the entire precipitation mechanism of a cold front. Nothing else is required — no daytime heating, no terrain, no sea breeze. The front supplies its own lift.
+Because the cold air is denser, it does not politely displace the warm air sideways. It wedges underneath, and the warm air has nowhere to go but up. That forced ascent is what a cold front brings with it. The front supplies its own lift, which is why the motion of the air masses sets where a good portion of the precipitation falls.
 
 ## Steepness is the whole argument
 
@@ -66,13 +66,13 @@ Where the fronts go is set aloft. Air mass motion follows the flow in the upper 
 
 The passage of a cold front is one of the few weather events you can identify by standing outside for ten minutes.
 
-The wind shifts. In the mature stage of a mid-latitude cyclone, the cold front is marked by a sharper temperature gradient and a distinct change in wind direction. Ahead of the boundary the surface wind draws warm air northward; behind it, the wind veers and starts hauling cold air in. The change is a rotation, not a lull, and it happens over minutes.
+The wind shifts. In the mature stage of a mid-latitude cyclone, the cold front is marked by a sharper temperature gradient and a distinct change in wind direction. Ahead of the boundary the wind is carrying warm air in — warm advection, in the glossary's terms; behind it the wind has changed direction and is carrying cold air in. The change is in direction, not merely in strength.
 
-The pressure turns. Fronts extend outward from the centre of a low-pressure system, a region of relative pressure minimum with converging winds. Along the front the pressure is at its lowest; once the denser air mass arrives behind it, the weight of that colder column pushes surface pressure back up. A falling barometer that abruptly starts rising is the boundary crossing your position.
+The pressure tells you what the front belongs to. A cold front is part of a low-pressure system — an area of relative pressure minimum with converging winds, rotating counterclockwise in the Northern Hemisphere. Converging air at low levels has to go somewhere, and it goes up, which is why low-level convergence raises the potential for thunderstorms when the air is also unstable.
 
 The temperature drops, and it drops without a transition. This is the part people misremember afterward as a storm cooling things off. The storm is a symptom. The cooling is the front.
 
-Then the sky clears. Once the narrow convective band moves through, there is nothing left overhead but the dry, stable interior of the cold air mass.
+Then the band passes. It is fairly narrow — along or just ahead of the front — and behind it is the advancing air mass itself, which for continental polar air out of Canada means air that stays very dry.
 
 ## What the convective band contains
 
@@ -80,7 +80,7 @@ The squall is the signature. Officially it is a sudden wind increase of at least
 
 Hail is the other frequent product of that band. Individual stones a quarter inch across or larger qualify; anything an inch or more in diameter indicates a severe thunderstorm. Under the strongest storms in the line you can get a tornado, a violently rotating column of air in contact with the ground, or a funnel cloud if the rotation stays aloft.
 
-There is a look-alike worth knowing. Inside a supercell, the boundary between the storm's inflow and its rear-flank downdraft is called a pseudo-cold front: downdraft air advancing on the inflow region, a particular form of gust front. It behaves like a cold front over a few kilometres and a few minutes, and it is manufactured by the storm rather than by the continental air masses.
+There is a look-alike worth knowing. Inside a supercell, the boundary between the storm's inflow and its rear-flank downdraft is called a pseudo-cold front: downdraft air advancing on the inflow region, a particular form of gust front. It extends outward from the mesocyclone centre, usually toward the south or southwest, and it is manufactured by the storm rather than by the air masses on the synoptic map.
 
 ## Variants and the end of the story
 
