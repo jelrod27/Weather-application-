@@ -6,7 +6,7 @@ summary: Understand why a warm front's gentle slope produces cirrus-to-nimbostra
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1103
+word_count: 1108
 fact_check_claims: 33
 fact_check_unsupported: 5
 sources:
@@ -36,11 +36,11 @@ fact_check_flagged:
   - Virga is defined as streaks of rain that evaporate before reaching the ground.
 ---
 
-A warm front does most of its work before it arrives. By the time the boundary itself passes over you and the temperature nudges up, the sky has been telling you about it for the better part of a day — a sequence of clouds that begins with thin filaments of ice thousands of feet up and ends with a gray ceiling low enough to blot out the sun. The rain is the last chapter, not the first.
+A warm front does most of its work before it arrives. By the time the boundary itself passes over you and the temperature nudges up, the sky has been telling you about it for the better part of a day — a sequence of clouds that begins with thin filaments of ice at the high levels of the atmosphere and ends with a gray ceiling low enough to blot out the sun. The rain is the last chapter, not the first.
 
 ## A boundary you can lean on
 
-A warm front is a transition zone between a mass of warm air and the colder air it is replacing. That is the definition, and it is deceptively flat, because the important word is *zone*. On a surface map the front is a line with red semicircles. In the atmosphere it is a ramp.
+A warm front is a transition zone between a mass of warm air and the colder air it is replacing. That is the definition, and it is deceptively flat, because the important word is *zone*. On a surface map the front is a line. In the atmosphere it is a ramp.
 
 Cold air is denser than warm air. When two air masses meet, the denser one stays on the bottom and the lighter one has no option but to climb. At a warm front the warm air mass is the one doing the advancing, and it cannot shove the cold air out of the way at ground level — it rides up and over it instead. The result is a sloping surface, warm air above, cold air wedged beneath, with the intersection at the ground being the line drawn on the map.
 
@@ -50,9 +50,9 @@ That slope is gentle — shallow enough that you would not register it as a hill
 
 They are not free-standing features. Warm fronts appear as part of the life cycle of a mid-latitude cyclone, and the Norwegian meteorologists who worked out that cycle in the 1910s and 1920s put the sequence in order.
 
-It begins with a stationary boundary separating warm air to the south from cold air to the north. When an upper-level low embedded in the jet stream moves over that boundary, a wave develops — the front acquires a kink, the air masses on either side start moving in opposite directions, and the single stationary front resolves into two: a cold front trailing to the southwest, a warm front extending east. Precipitation begins along the boundary as soon as the wave forms.
+It begins with a stationary boundary separating warm air to the south from cold air to the north. When an upper-level low embedded in the jet stream moves over that boundary, a wave develops — the front acquires a kink, the air masses on either side start moving in opposite directions, and the single stationary front resolves into two, a cold front and a warm front, as the air masses begin to move. Precipitation begins to develop, heaviest along the front itself.
 
-From there the warm front travels northeast ahead of the low's centre, with the warm sector — the wedge of mild, moist air between the two fronts — following behind it.
+From there the wave intensifies. Both fronts become better organised, each marked by a sharper temperature gradient and a distinct change in wind direction, and the warm, moist air between them is what the low is feeding on.
 
 ## The sequence, in order
 
@@ -62,7 +62,7 @@ Because the frontal surface slopes so gently, the warm air climbing it does so g
 
 **Cirrostratus** follows as the sheet thickens — a transparent whitish veil, fibrous or smooth, extensive enough to cover the whole sky. It is still thin enough that objects on the ground cast shadows.
 
-**Altostratus** is next: gray or bluish sheets, striated or fibrous, thin enough to show the sun as if through ground glass. Sometimes virga — streaks of rain that evaporate before landing — hangs beneath it, though at times it reaches the ground as very light precipitation.
+**Altostratus** is next: gray or bluish sheets, striated or fibrous, thin enough to show the sun as if through ground glass. Sometimes virga — streaks of rain — hangs beneath it, and at times the precipitation reaches the ground as a very light fall.
 
 **Nimbostratus** is altostratus that has thickened past the point of translucency. Dark gray, diffused by falling rain or snow, thick enough throughout to blot out the sun entirely. Low ragged clouds form beneath it and sometimes merge with its base, and the base itself keeps lowering as the precipitation continues — which is why nimbostratus is so often mistaken for a low cloud when it can extend well into the high levels.
 

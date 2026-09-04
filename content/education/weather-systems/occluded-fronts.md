@@ -6,7 +6,7 @@ summary: Learn why an occluded front lifts warm air off the ground entirely, how
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1058
+word_count: 1081
 fact_check_claims: 29
 fact_check_unsupported: 6
 sources:
@@ -35,7 +35,7 @@ fact_check_flagged:
   - The presence of an occluded front indicates the cyclone is at or past its peak intensity.
 ---
 
-An occluded front is the only front where the warm air is not at the surface. It has already been lifted clear of the ground, and what meets you at the boundary is cold air on one side and cold air on the other. The Latin gives the game away: *occludere*, to shut up or close off. The warm air mass has been closed out of the lowest layer of the atmosphere entirely, and the front you see drawn in purple on a surface map is the seam where two cold air masses now argue over which one is colder.
+An occluded front is the front where the warm air has been lifted away. A cold front has overtaken a warm front, and what meets you at the boundary is the cold air that was behind the one and the cold air that was ahead of the other. The warm, moist air has been progressively removed from the low's centre, and the front you see drawn in purple on a surface map is the seam where two cold air masses now argue over which one is colder.
 
 ## A composite of two fronts
 
@@ -57,20 +57,20 @@ Once the warm air is aloft, the front at the surface separates cold from cold, a
 
 A cold occlusion forms when the coldest air is behind the cold front. The advancing air is the densest in the system, so it does what dense air always does: it undercuts what is ahead of it and forces that air upward. A warm occlusion forms when the coldest air lies ahead of the warm front. In that case the air arriving behind the cold front, though cold, is less cold than the air it meets, and it must ride up and over instead of burrowing beneath.
 
-The distinction matters for where the lifting happens and therefore where the heaviest weather sits relative to the surface boundary. It is also genuinely difficult to determine from one location. Classifying an occlusion requires knowing the temperature of the air on both sides and the air mass histories that produced them — whether one arrived as continental polar air off the Canadian interior, dry and cold, or as maritime polar air that crossed an ocean and picked up moisture along the way. A single thermometer cannot tell you.
+The distinction matters for where the lifting happens and therefore where the heaviest weather sits relative to the surface boundary. Which type you have depends on the relative coldness of the air behind the cold front and the air ahead of the warm front — and that coldness is a matter of history: whether an air mass arrived as continental polar air, which stays very dry as it moves south from Canada, or as maritime polar air, arctic air that crossed the ocean and picked up some warmth and moisture on the way.
 
 ## Why the weather turns messy
 
 Front slope explains most of what falls. Warm fronts have a gentle slope, so air rises along the frontal surface gradually over a broad area, producing widespread layered cloud and precipitation along and north of the boundary. Cold fronts are much steeper and force air upward abruptly, which favours a narrow band of showers and thunderstorms along or just ahead of the front.
 
-An occlusion stacks both mechanisms into one system. You get the broad stratiform shield of the warm-frontal component and the sharper convective band of the cold-frontal one, overlapping. Add a vertical temperature profile with cold air at the surface and lifted warm air above it, and the precipitation type becomes a function of exactly which layers a falling particle passes through. Rain, drizzle, snow, snow grains, graupel and ice pellets — transparent pellets of frozen raindrops, or largely melted then refrozen snowflakes — can all come out of the same system within a few hours of each other.
+An occluded front is, by definition, a composite of those two fronts, and both kinds of lifting are still in play: the gradual rise that gives a warm front its widespread layered precipitation, and the abrupt lift that gives a cold front its narrow band of showers and thunderstorms. Add a vertical temperature profile with cold air at the surface and lifted warm air above it, and the precipitation type becomes a function of exactly which layers a falling particle passes through. Rain, drizzle, snow, snow grains, graupel and ice pellets — transparent pellets of frozen raindrops, or largely melted then refrozen snowflakes — can all come out of the same system within a few hours of each other.
 
 ## What to notice from the ground
 
-Here is the recognition that actually works without a map. When a conventional cold front passes, you have spent the previous hours in warm air. With an occlusion, you never get that warm interval. The rain and cloud arrive, the wind shifts direction, the precipitation may change character more than once, and the surface temperature stays cold throughout, because the warm air is several thousand feet above your head and never touches down. Prolonged, mixed, cold precipitation with no warm sector in front of it is the fingerprint.
+Here is the recognition that actually works without a map. When a conventional cold front passes, you have spent the previous hours in warm air. With an occlusion, that warm interval is brief or missing altogether. The rain and cloud arrive, the wind shifts direction, the precipitation may change character more than once, and the surface temperature often stays cold throughout, because the warm air has been lifted off the surface. Prolonged, mixed, cold precipitation with no warm sector in front of it is the fingerprint.
 
 ## The beginning of the end
 
 The occlusion is also the cyclone's obituary, written in advance. The storm is powered by warm moist air feeding into its centre. As the cold front continues advancing on the warm front, the occlusion lengthens and progressively removes that warm moist air from the low's core. Without the warm air mass to sustain it, the low-pressure system gradually dissipates.
 
-This is why an occluded front on a surface chart is a timing cue as much as a weather feature. The system is at or past its peak. What remains can still be substantial — mixed precipitation, thunderstorms along the cold-frontal segment, hail of an inch or more indicating a severe storm, squalls in which wind speed increases by at least 18 mph and holds at 25 mph or more for a minute — but the engine is being disconnected from its fuel.
+This is why an occluded front on a surface chart is a timing cue as much as a weather feature. The system has reached the mature stage of its life cycle, and the next stage in the model is dissipation. What remains can still be substantial — mixed precipitation, thunderstorms along the cold-frontal segment, hail of an inch or more indicating a severe storm, squalls in which wind speed increases by at least 18 mph and holds at 25 mph or more for a minute — but the engine is being disconnected from its fuel.
