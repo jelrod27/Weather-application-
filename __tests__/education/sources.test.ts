@@ -80,6 +80,15 @@ describe('sourcesForTags', () => {
 });
 
 describe('candidateSourcesFor', () => {
+  it('offers the NWS depression definition to the Depressions brief', () => {
+    const brief = getGuideBrief('weather-system', 'depressions');
+
+    expect(brief).not.toBeNull();
+    expect(candidateSourcesFor(brief!, 12).map((source) => source.id)).toContain(
+      'glossary-depression',
+    );
+  });
+
   it('offers pinned sources first and fills the rest by rank without repeating them', () => {
     const picks = candidateSourcesFor(
       { tags: ['clouds'], pin: ['glossary-inversion', 'jetstream-clouds'] },

@@ -86,6 +86,7 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   'weather-system:depressions': {
     focus:
       'Why forecasters say depression where the textbooks say low, and what deepening means for the weather underneath it.',
+    pin: ['glossary-depression'],
   },
   'weather-system:blocking-highs': {
     focus:
