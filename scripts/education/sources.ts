@@ -147,6 +147,12 @@ export const SOURCES: SourceEntry[] = [
     'upper-air',
     'pressure',
   ]),
+  {
+    id: 'cpc-atmospheric-blocking-background',
+    label: 'NOAA Climate Prediction Center — Atmospheric Blocking Background',
+    url: 'https://www.cpc.ncep.noaa.gov/products/precip/CWlink/blocking/background/background.shtml',
+    tags: ['upper-air', 'jet-stream', 'pressure'],
+  },
 
   // --- NOAA JetStream: tropics and ocean ---------------------------------
   jetstream('tropical', 'Tropical Weather', ['tropical']),

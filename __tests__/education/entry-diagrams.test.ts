@@ -3,7 +3,10 @@ import {
   offeredDiagramsFor,
   unrenderableDiagramIds,
 } from '../../scripts/education/entry-diagrams';
-import { validateGuideFile } from '../../scripts/education/validate-guide';
+import {
+  reviewChronologyErrors,
+  validateGuideFile,
+} from '../../scripts/education/validate-guide';
 
 describe('diagramContextFor', () => {
   it('gives a cloud Entry its data and everything else an empty context', () => {
@@ -50,6 +53,13 @@ describe('unrenderableDiagramIds', () => {
 });
 
 describe('validateGuideFile', () => {
+  it('refuses a review date before the generated date', () => {
+    expect(reviewChronologyErrors('2026-09-04', '2026-09-03')).toEqual([
+      'reviewed date 2026-09-03 is before generated date 2026-09-04.',
+    ]);
+    expect(reviewChronologyErrors('2026-09-04', '2026-09-04')).toEqual([]);
+  });
+
   it('passes the exemplar Guide', () => {
     const result = validateGuideFile('content/education/clouds/cumulonimbus.md');
     expect(result.errors).toEqual([]);
