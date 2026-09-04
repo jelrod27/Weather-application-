@@ -6,7 +6,7 @@ summary: Understand why a warm front's gentle slope produces cirrus-to-nimbostra
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1107
+word_count: 1108
 fact_check_claims: 33
 fact_check_unsupported: 5
 sources:
@@ -62,7 +62,7 @@ Because the frontal surface slopes so gently, the warm air climbing it does so g
 
 **Cirrostratus** follows as the sheet thickens — a transparent whitish veil, fibrous or smooth, extensive enough to cover the whole sky. It is still thin enough that objects on the ground cast shadows.
 
-**Altostratus** is next: gray or bluish sheets, striated or fibrous, thin enough to show the sun as if through ground glass. Sometimes virga — streaks of rain — hangs beneath it, and at times it even reaches the ground as very light precipitation.
+**Altostratus** is next: gray or bluish sheets, striated or fibrous, thin enough to show the sun as if through ground glass. Sometimes virga — streaks of rain — hangs beneath it, and at times the precipitation reaches the ground as a very light fall.
 
 **Nimbostratus** is altostratus that has thickened past the point of translucency. Dark gray, diffused by falling rain or snow, thick enough throughout to blot out the sun entirely. Low ragged clouds form beneath it and sometimes merge with its base, and the base itself keeps lowering as the precipitation continues — which is why nimbostratus is so often mistaken for a low cloud when it can extend well into the high levels.
 

@@ -6,7 +6,7 @@ summary: Understand why a cold front's steep slope produces its narrow storm ban
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1100
+word_count: 1103
 fact_check_claims: 31
 fact_check_unsupported: 7
 sources:
@@ -42,7 +42,7 @@ fact_check_flagged:
   - A pseudo-cold front operates on scales of a few kilometres and a few minutes.
 ---
 
-A cold front is not a line. The line drawn on the map is where a sloping surface happens to intersect the ground; fronts have a vertical structure, a slope, as well as a position. Everything that makes a cold front behave the way it does — the abruptness, the wind shift, the narrow ribbon of thunderstorms — follows from how steeply that surface leans.
+A cold front is not a line. The line drawn on the map is where a sloping surface happens to intersect the ground; fronts have a vertical structure, a slope, as well as a position. How steeply that surface leans is what makes the lifting abrupt and concentrates it into a narrow ribbon. The wind shift and the temperature drop come from the change of air mass itself.
 
 ## The boundary itself
 

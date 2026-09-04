@@ -6,7 +6,7 @@ summary: Learn why an occluded front lifts warm air off the ground entirely, how
 generated: "2026-09-04"
 model_used: claude-opus-5
 generation_retries: 1
-word_count: 1082
+word_count: 1081
 fact_check_claims: 29
 fact_check_unsupported: 6
 sources:
@@ -67,7 +67,7 @@ An occluded front is, by definition, a composite of those two fronts, and both k
 
 ## What to notice from the ground
 
-Here is the recognition that actually works without a map. When a conventional cold front passes, you have spent the previous hours in warm air. With an occlusion, you never get that warm interval. The rain and cloud arrive, the wind shifts direction, the precipitation may change character more than once, and the surface temperature stays cold throughout, because the warm air has been lifted off the surface and never touches down. Prolonged, mixed, cold precipitation with no warm sector in front of it is the fingerprint.
+Here is the recognition that actually works without a map. When a conventional cold front passes, you have spent the previous hours in warm air. With an occlusion, that warm interval is brief or missing altogether. The rain and cloud arrive, the wind shifts direction, the precipitation may change character more than once, and the surface temperature often stays cold throughout, because the warm air has been lifted off the surface. Prolonged, mixed, cold precipitation with no warm sector in front of it is the fingerprint.
 
 ## The beginning of the end
 
