@@ -80,6 +80,15 @@ describe('sourcesForTags', () => {
 });
 
 describe('candidateSourcesFor', () => {
+  it('offers the NOAA blocking-pattern explainer to the Blocking Highs brief', () => {
+    const brief = getGuideBrief('weather-system', 'blocking-highs');
+
+    expect(brief).not.toBeNull();
+    expect(candidateSourcesFor(brief!, 12).map((source) => source.id)).toContain(
+      'cpc-atmospheric-blocking-background',
+    );
+  });
+
   it('offers the NWS depression definition to the Depressions brief', () => {
     const brief = getGuideBrief('weather-system', 'depressions');
 

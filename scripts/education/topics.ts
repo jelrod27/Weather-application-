@@ -91,7 +91,10 @@ export const GUIDE_DIRECTION: Record<string, GuideDirection> = {
   'weather-system:blocking-highs': {
     focus:
       'A pattern that stops moving. Omega and Rex blocks in the 500 mb flow, and why a block is a heat-wave and flood story at the same time in two different places.',
-    pin: ['jetstream-upper-air-charts-basic-wave-patterns'],
+    pin: [
+      'jetstream-upper-air-charts-basic-wave-patterns',
+      'cpc-atmospheric-blocking-background',
+    ],
   },
   'weather-system:warm-fronts': {
     focus:

@@ -35,6 +35,11 @@ export interface GuideValidationResult {
   errors: string[];
 }
 
+export function reviewChronologyErrors(generated: string, reviewed: string): string[] {
+  if (!generated || !reviewed || reviewed >= generated) return [];
+  return [`reviewed date ${reviewed} is before generated date ${generated}.`];
+}
+
 function countArray(value: unknown): number {
   return Array.isArray(value) ? value.length : 0;
 }
@@ -102,6 +107,8 @@ export function validateGuideFile(filePath: string): GuideValidationResult {
   if (guide.sources.length < MIN_SOURCES) {
     errors.push(`Only ${guide.sources.length} citations survive; a Guide needs at least ${MIN_SOURCES}.`);
   }
+
+  errors.push(...reviewChronologyErrors(guide.generated, guide.reviewed));
 
   const declaredDiagrams = countArray(raw.data.diagrams);
   if (declaredDiagrams !== guide.diagrams.length) {
