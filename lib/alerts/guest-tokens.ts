@@ -14,13 +14,26 @@ export function guestVerifyExpiry(now = new Date()): string {
   return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
 }
 
+/**
+ * Secrets for guest manage links, most preferred first. Links are signed with
+ * the first entry and verified against all of them, so a secret can be
+ * rotated by moving the old value to BITWATCH_MANAGE_SECRET_PREVIOUS: links
+ * in already-sent emails keep working while new emails carry the new secret.
+ * The service-role and cron fallbacks exist because links were signed with
+ * them before a dedicated secret existed.
+ */
+export function guestManageSecrets(): string[] {
+  const candidates = [
+    process.env.BITWATCH_MANAGE_SECRET,
+    process.env.BITWATCH_MANAGE_SECRET_PREVIOUS,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.CRON_SECRET,
+  ]
+  return candidates.filter((value): value is string => typeof value === 'string' && value.length > 0)
+}
+
 export function guestManageSecret(): string | null {
-  return (
-    process.env.BITWATCH_MANAGE_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.CRON_SECRET ||
-    null
-  )
+  return guestManageSecrets()[0] ?? null
 }
 
 export function signGuestManageToken(subscriberId: string, secret = guestManageSecret()): string | null {
@@ -29,11 +42,8 @@ export function signGuestManageToken(subscriberId: string, secret = guestManageS
   return `${MANAGE_PREFIX}${subscriberId}.${sig}`
 }
 
-export function parseSignedGuestManageToken(
-  token: string,
-  secret = guestManageSecret(),
-): string | null {
-  if (!secret || !token.startsWith(MANAGE_PREFIX)) return null
+function parseWithSecret(token: string, secret: string): string | null {
+  if (!token.startsWith(MANAGE_PREFIX)) return null
   const rest = token.slice(MANAGE_PREFIX.length)
   const dot = rest.lastIndexOf('.')
   if (dot <= 0) return null
@@ -46,6 +56,15 @@ export function parseSignedGuestManageToken(
   if (givenBuf.length !== expectedBuf.length) return null
   if (!timingSafeEqual(givenBuf, expectedBuf)) return null
   return subscriberId
+}
+
+export function parseSignedGuestManageToken(token: string, secret?: string): string | null {
+  const secrets = secret ? [secret] : guestManageSecrets()
+  for (const candidate of secrets) {
+    const subscriberId = parseWithSecret(token, candidate)
+    if (subscriberId) return subscriberId
+  }
+  return null
 }
 
 export function guestManagePath(subscriberId: string): string {
