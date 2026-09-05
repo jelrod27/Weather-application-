@@ -1085,7 +1085,7 @@ installed here; they are not cached and `e2e-pr.yml` installs them on a hit.
 
 ```bash
 grep -n "key: playwright-" .github/workflows/ci.yml .github/workflows/e2e-pr.yml
-node /private/tmp/claude-501/-Users-justinelrod-Projects-Weather-application/fef0cc58-a412-4d7b-bbfd-8bf6a5797c53/scratchpad/parse-workflows.mjs
+node scripts/check-workflows.mjs
 ```
 
 Expected: the two `key:` lines are identical apart from the filename; the
