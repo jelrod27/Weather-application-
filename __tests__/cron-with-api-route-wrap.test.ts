@@ -1,7 +1,7 @@
 /**
  * Pins cron and webhook routes behind withApiRoute with rateLimit: false
- * so bearer/secret identity is not IP-quota gated. Session and public
- * test routes are wrapped but still rate-limited.
+ * so bearer/secret identity is not IP-quota gated. Session routes are
+ * wrapped but still rate-limited.
  */
 
 import { readFileSync } from 'fs'
@@ -29,13 +29,6 @@ describe('cron and webhook routes use withApiRoute', () => {
     const src = readFileSync(join(ROOT, 'app/api/auth/welcome-email/route.ts'), 'utf8')
     expect(src).toContain("from '@/lib/api/with-api-route'")
     expect(src).toContain("rateLimitBucket: 'account'")
-    expect(src).not.toContain('rateLimit: false')
-  })
-
-  it('test-sentry-error is wrapped and still rate-limited', () => {
-    const src = readFileSync(join(ROOT, 'app/api/test-sentry-error/route.ts'), 'utf8')
-    expect(src).toContain("from '@/lib/api/with-api-route'")
-    expect(src).toMatch(/return withApiRoute\(\s*request\s*,/)
     expect(src).not.toContain('rateLimit: false')
   })
 })

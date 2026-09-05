@@ -1,0 +1,8 @@
+# Security contact for 16-Bit Weather (https://www.16bitweather.co)
+# Format: RFC 9116. Full policy and scope in SECURITY.md at the repository root.
+Contact: https://github.com/jelrod27/Weather-application-/security/advisories/new
+Contact: mailto:security@16bitweather.co
+Policy: https://github.com/jelrod27/Weather-application-/blob/main/SECURITY.md
+Preferred-Languages: en
+Canonical: https://www.16bitweather.co/.well-known/security.txt
+Expires: 2027-09-05T00:00:00.000Z

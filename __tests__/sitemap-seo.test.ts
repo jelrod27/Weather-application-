@@ -42,7 +42,6 @@ describe('Sitemap SEO', () => {
 
   it('dev/utility pages should have noindex metadata', async () => {
     const devPages = [
-      { path: '../app/test-sentry/layout', name: 'test-sentry' },
       { path: '../app/radar-diagnostic/layout', name: 'radar-diagnostic' },
       { path: '../app/gfs-model/layout', name: 'gfs-model' },
       { path: '../app/auth/layout', name: 'auth' },
