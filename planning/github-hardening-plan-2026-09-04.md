@@ -182,7 +182,7 @@ Leave the two `HAZARD\.{3}` patterns on lines 37 and 44 alone; `\.{3}` consumes 
 npm test -- nws-parameters
 ```
 
-Expected: 4 passed.
+Expected: 4 passed at the time this task ran. The file holds 6 tests after the amendment above, so a correct run reports 6 passed today.
 
 - [ ] **Step 5: Commit**
 
