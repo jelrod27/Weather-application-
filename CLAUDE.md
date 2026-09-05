@@ -48,7 +48,7 @@ npm run lighthouse
 npm run validate:pr      # build + E2E + Lighthouse
 ```
 
-`npm` only — do not switch package managers. Node 20.9+.
+`npm` only — do not switch package managers. Node 22 (`.nvmrc`; matches the Vercel project's 22.x. Next.js 16's floor is 20.9).
 
 ### What CI actually gates
 
