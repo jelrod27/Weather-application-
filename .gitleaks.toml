@@ -29,7 +29,10 @@ keywords = ["service_role", "supabase"]
 [[rules]]
 id = "openweather-api-key"
 description = "OpenWeatherMap API Key"
-regex = '''[a-f0-9]{32}'''
+# OpenWeather keys are exactly 32 hex characters. The \b anchors stop the
+# rule matching a 32-hex substring of a longer hash (a 40-hex commit SHA in
+# a doc that also mentions OpenWeather tripped it, 2026-09-04).
+regex = '''\b[a-f0-9]{32}\b'''
 keywords = ["openweather", "appid"]
 entropy = 3.5
 

@@ -30,6 +30,20 @@ describe('parseNwsHazardParameters', () => {
       source: expect.stringMatching(/RADAR INDICATED/i),
     })
   })
+
+  it('reads MAX HAIL SIZE / MAX WIND GUST lines without leaking the leading dots', () => {
+    const description = [
+      'HAIL THREAT...RADAR INDICATED',
+      'MAX HAIL SIZE...1.75 IN',
+      'WIND THREAT...RADAR INDICATED',
+      'MAX WIND GUST...70 MPH',
+    ].join('\n')
+
+    expect(parseNwsHazardParameters(null, description)).toMatchObject({
+      maxHail: '1.75 IN',
+      maxWind: '70 MPH',
+    })
+  })
 })
 
 describe('formatWarningTimeLeft', () => {

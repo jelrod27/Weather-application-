@@ -9,6 +9,8 @@ export default [
         ignores: [
             'node_modules/**',
             '.next/**',
+            '.worktrees/**',
+            '.claude/worktrees/**',
             'playwright-report/**',
             'test-results/**',
             '_archive/**',
@@ -71,6 +73,18 @@ export default [
             '@typescript-eslint/consistent-type-imports': [
                 'warn',
                 { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
+            ],
+            // Warn (not error) until the ~90 pre-existing hits are cleared; then
+            // flip to 'error'. Underscore-prefixed names are the documented
+            // opt-out for intentionally unused parameters and destructures.
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    caughtErrors: 'none',
+                    ignoreRestSiblings: true,
+                },
             ],
         },
     },

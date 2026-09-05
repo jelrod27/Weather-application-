@@ -7,7 +7,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import { cn } from '@/lib/utils'
-import { themeTokens } from '@/lib/theme-tokens'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
@@ -21,8 +20,6 @@ interface BlogArticleProps {
 }
 
 export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
-  const themeClasses = themeTokens.card
-
   const shareConfig = {
     title: post.title,
     text: `${post.title} -- ${post.summary}`,
@@ -67,7 +64,7 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
           <span>BY {post.author.toUpperCase()}</span>
         </div>
 
-        {/* Title — text-primary, not themeClasses.accentText: accentText maps
+        {/* Title — text-primary, not themeTokens.card.accentText: accentText maps
             to text-primary-foreground, which is the on-primary-button color
             and blends into the page background (white-on-white in Daybreak). */}
         <h1 className={cn(

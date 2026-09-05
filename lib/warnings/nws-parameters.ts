@@ -33,14 +33,14 @@ export function parseNwsHazardParameters(
     firstString(p.maxHailSize) ??
     firstString(p.MaxHailSize) ??
     matchDescription(description, [
-      /MAX HAIL SIZE[.\s.]*?([0-9.]+\s*(?:IN|INCHES)?)/i,
+      /MAX HAIL SIZE[.\s]*?(\d+(?:\.\d+)?\s*(?:IN|INCHES)?)/i,
       /HAZARD\.{3}.*?([0-9.]+\s*IN(?:CH)?(?:\s*HAIL)?)/i,
     ])
   const wind =
     firstString(p.maxWindGust) ??
     firstString(p.MaxWindGust) ??
     matchDescription(description, [
-      /MAX WIND GUST[.\s.]*?([0-9.]+\s*(?:MPH)?)/i,
+      /MAX WIND GUST[.\s]*?(\d+(?:\.\d+)?\s*(?:MPH)?)/i,
       /HAZARD\.{3}.*?([0-9.]+\s*MPH)/i,
     ])
   const source =
