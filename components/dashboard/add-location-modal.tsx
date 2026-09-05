@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, MapPin, Search, Plus, Star } from 'lucide-react'
+import { MapPin, Search, Plus, Star } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { themeTokens } from '@/lib/theme-tokens'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
