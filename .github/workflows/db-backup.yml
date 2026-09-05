@@ -1,0 +1,75 @@
+name: Database backup
+
+# Weekly logical dump of the production Supabase database. The Free plan has
+# no backups. Output is encrypted with age to the public key in
+# .github/backup-recipient.txt and kept as an artifact for 90 days.
+#
+# Restore (on a machine holding the age private key):
+#   age -d -i backup-key.txt backup-YYYYMMDD.data.dump.age > data.dump
+#   age -d -i backup-key.txt backup-YYYYMMDD.public-schema.sql.age > schema.sql
+#   psql "$NEW_DB_URL" -f schema.sql
+#   pg_restore --data-only --no-owner --disable-triggers -d "$NEW_DB_URL" data.dump
+#
+# Requires the repository secret SUPABASE_BACKUP_DB_URL: a session-pooler
+# connection string for the read-only backup_reader role (see
+# planning/supabase-hardening-plan-2026-09-05.md, Phase C).
+
+on:
+  schedule:
+    - cron: '30 9 * * 1' # Mondays 09:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Refuse to run without a recipient key
+        run: |
+          set -euo pipefail
+          grep -Eq '^age1[0-9a-z]{58}$' .github/backup-recipient.txt || {
+            echo "::error::.github/backup-recipient.txt does not hold an age public key"
+            exit 1
+          }
+
+      - name: Install age and pg_dump 17
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version && age --version
+
+      - name: Dump and encrypt
+        env:
+          DB_URL: ${{ secrets.SUPABASE_BACKUP_DB_URL }}
+          PGSSLMODE: require
+        run: |
+          set -euo pipefail
+          test -n "$DB_URL" || { echo "::error::SUPABASE_BACKUP_DB_URL is not set"; exit 1; }
+          stamp=$(date -u +%Y%m%d)
+          recipient=$(cat .github/backup-recipient.txt)
+          pg_dump "$DB_URL" --data-only --format=custom --no-owner --no-privileges \
+            --schema=public --schema=auth --file="backup-$stamp.data.dump"
+          pg_dump "$DB_URL" --schema-only --format=plain --no-owner --no-privileges \
+            --schema=public --file="backup-$stamp.public-schema.sql"
+          age -r "$recipient" -o "backup-$stamp.data.dump.age" "backup-$stamp.data.dump"
+          age -r "$recipient" -o "backup-$stamp.public-schema.sql.age" "backup-$stamp.public-schema.sql"
+          shred -u "backup-$stamp.data.dump" "backup-$stamp.public-schema.sql"
+          ls -l backup-*.age
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup-*.age
+          retention-days: 90
+          if-no-files-found: error
