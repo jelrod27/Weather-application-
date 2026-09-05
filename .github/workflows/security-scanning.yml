@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript-typescript' ]
+        language: [ 'javascript-typescript', 'actions' ]
 
     steps:
     - name: Checkout repository
@@ -90,8 +90,10 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
       with:
-        # Keep category stable across branches so code scanning can compare against main
-        category: /language:javascript-typescript
+        # Keep category stable across branches so code scanning can compare
+        # against main. It must also be unique per matrix leg, so derive it
+        # from the language: the javascript-typescript value is unchanged.
+        category: /language:${{ matrix.language }}
 
   dependency-review:
     name: Dependency Review
