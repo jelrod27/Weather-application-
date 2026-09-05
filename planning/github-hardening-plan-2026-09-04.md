@@ -1611,6 +1611,12 @@ Expected: `0`.
 
 ### B2: Turn on the two free secret-scanning features
 
+> **Closed 2026-09-05: not available.** Non-provider patterns and validity
+> checks require GitHub Secret Protection, which GitHub offers only to
+> organization-owned repositories. On this user-owned public repository the
+> PATCH echoes `disabled` and the UI has no toggle. The audit line "both are
+> free on public repos" was wrong. Push protection itself is enabled.
+
 - [ ] **Step 1: Enable non-provider patterns and validity checks**
 
 ```bash
@@ -1885,6 +1891,12 @@ the policy is `first_time_contributors`. The repo has no forks, so the only
 visible effect is an "Approve and run" button on any future outside PR.
 
 ### B12: Push ruleset for secret-shaped files, and a tag ruleset for `v*`
+
+> **Outcome 2026-09-05.** The push-ruleset `POST` returned 422 ("only
+> org-owned repos can have push rules") and was skipped, as anticipated below.
+> The tag ruleset "Protect release tags" (id 22346791) is active.
+> Secret-shaped files stay guarded by `.gitignore`, the gitleaks hooks, and
+> GitHub push protection.
 
 Push rules are enforced by GitHub when it receives a push, on every branch,
 from every machine and token, with no flag to bypass. They back up
