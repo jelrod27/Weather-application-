@@ -1889,9 +1889,15 @@ visible effect is an "Approve and run" button on any future outside PR.
 Push rules are enforced by GitHub when it receives a push, on every branch,
 from every machine and token, with no flag to bypass. They back up
 `.gitignore` (client-side, pattern-dependent) and the gitleaks hook
-(client-side, skippable with `--no-verify`). The exact names below are used
-instead of a `.env.*` wildcard because `.env.example` is tracked and must stay
-pushable. The 10 MB cap is ten times the largest tracked file (`package-lock.json`, under 1 MB).
+(client-side, skippable with `--no-verify`). The patterns use `**/` so nested files
+such as `app/.env.local` match too. `.env.example` is tracked and must stay
+pushable, and `file_path_restriction` has no allow-list, so the list
+enumerates the real variants instead of a `**/.env.*` wildcard. The 10 MB cap is ten times the largest tracked file (`package-lock.json`, under 1 MB).
+
+Push rulesets are gated by repository visibility and plan. This repository is
+public. If the first `POST` below returns 403 or 422 citing plan eligibility,
+record that in the ledger and skip the push ruleset; the tag ruleset is
+unaffected and still applies.
 
 Write the two bodies with the Write tool, then:
 
@@ -1912,7 +1918,8 @@ gh api "repos/jelrod27/Weather-application-/rulesets" --jq '.[] | "\(.name) targ
   "rules": [
     { "type": "file_path_restriction",
       "parameters": { "restricted_file_paths": [
-        ".env", ".env.local", ".env.production", ".env.development", ".env.infisical", ".env.supabase",
+        ".env", "**/.env", "**/.env.local", "**/.env.development", "**/.env.production",
+        "**/.env.test", "**/.env.*.local", "**/.env.infisical", "**/.env.supabase",
         "**/credentials.json", "**/service-account*.json", "**/id_rsa*", "**/id_ed25519*", "**/id_ecdsa*" ] } },
     { "type": "file_extension_restriction",
       "parameters": { "restricted_file_extensions": ["pem", "key", "p12", "pfx"] } },
