@@ -58,7 +58,7 @@ Forecast data comes from Open-Meteo and needs no API key, so the app runs locall
 
 ### Prerequisites
 
-- Node.js 20.9 or newer
+- Node.js 22 or newer (pinned in .nvmrc)
 - npm (this repo is npm-only; do not switch package managers)
 - [gitleaks](https://github.com/gitleaks/gitleaks) on your `PATH` — the husky `pre-commit` and `pre-push` hooks hard-fail without it
 
