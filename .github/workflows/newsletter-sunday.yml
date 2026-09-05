@@ -19,6 +19,12 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # This job holds contents:write and pull-requests:write and runs
+          # npm ci before it pushes. Left at the default, checkout writes
+          # GITHUB_TOKEN into .git/config, where a dependency's install script
+          # could read it. Git is authenticated explicitly at the push instead.
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -80,6 +86,10 @@ jobs:
         run: |
           BRANCH_DATE=$(date -u +%Y-%m-%d)
           BRANCH_NAME="blog/sun-${BRANCH_DATE}-${GITHUB_RUN_ID}"
+
+          # checkout ran with persist-credentials: false, so the push needs
+          # credentials of its own. Scoped to this step rather than the job.
+          gh auth setup-git
 
           git config user.name "16bitbot"
           git config user.email "16bitbot@16bitweather.co"
