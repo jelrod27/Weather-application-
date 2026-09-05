@@ -22,6 +22,9 @@ Run the gates CI runs:
     npm test
     npm run knip
 
+CI runs the same Jest suite as `npm run test:ci` (one worker at a time);
+`npm test` is the faster local equivalent.
+
 Playwright E2E (`npm run test:e2e`) and Lighthouse (`npm run lighthouse`) run
 on every PR; run them locally if you touched pages or API routes.
 

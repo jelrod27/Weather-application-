@@ -1631,7 +1631,7 @@ JSON
 gh api "repos/$R" --jq '.security_and_analysis | to_entries[] | "\(.key)=\(.value.status)"'
 ```
 
-Expected: all five entries `enabled` (`secret_scanning`, `secret_scanning_push_protection`, `dependabot_security_updates`, `secret_scanning_non_provider_patterns`, `secret_scanning_validity_checks`).
+Expected on this account (observed 2026-09-05): `secret_scanning`, `secret_scanning_push_protection`, and `dependabot_security_updates` are `enabled`; `secret_scanning_non_provider_patterns` and `secret_scanning_validity_checks` stay `disabled` whatever Step 1 sends. Steps 1 and 2 are not applicable here and are kept only as the record of what was tried.
 
 ### B3: Lock down the Actions policy (after PR 2 is merged)
 
@@ -1956,8 +1956,9 @@ release tags):
 }
 ```
 
-Expected read-back: two rulesets, `target=push` and `target=tag`, both
-`enforcement=active`.
+Expected read-back on this account (observed 2026-09-05): one ruleset,
+`Protect release tags target=tag enforcement=active`. The push ruleset is
+absent because the `POST` was refused (see the outcome note above).
 
 ---
 
