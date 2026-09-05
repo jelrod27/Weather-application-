@@ -4,7 +4,10 @@ name: Database backup
 # no backups. Output is encrypted with age to the public key in
 # .github/backup-recipient.txt and kept as an artifact for 90 days.
 #
-# Restore (on a machine holding the age private key):
+# Restore, into a fresh Supabase project (its auth schema already exists and
+# is managed by Supabase, which is why only the public schema is dumped as
+# DDL; never restore auth DDL from elsewhere). On a machine holding the age
+# private key:
 #   age -d -i backup-key.txt backup-YYYYMMDD.data.dump.age > data.dump
 #   age -d -i backup-key.txt backup-YYYYMMDD.public-schema.sql.age > schema.sql
 #   psql "$NEW_DB_URL" -f schema.sql
