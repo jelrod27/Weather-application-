@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-pr-${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true

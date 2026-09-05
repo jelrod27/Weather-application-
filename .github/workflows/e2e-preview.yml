@@ -3,6 +3,9 @@ name: E2E Tests on Vercel Preview
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-preview-${{ github.event.deployment.sha }}
   cancel-in-progress: true
