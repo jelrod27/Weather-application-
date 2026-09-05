@@ -3,6 +3,9 @@ name: E2E Tests on Vercel Preview
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-preview-${{ github.event.deployment.sha }}
   cancel-in-progress: true
@@ -22,30 +25,40 @@ jobs:
       PREVIEW_URL: ${{ github.event.deployment_status.target_url || github.event.deployment_status.environment_url }}
 
     steps:
+      # Event fields go through env, never straight into the script: a value
+      # containing shell metacharacters would otherwise execute. Only Vercel
+      # posts these events today, but the pattern should not depend on that.
       - name: Debug deployment info
+        env:
+          DEPLOY_ENVIRONMENT: ${{ github.event.deployment_status.environment }}
+          DEPLOY_STATE: ${{ github.event.deployment_status.state }}
+          DEPLOY_TARGET_URL: ${{ github.event.deployment_status.target_url }}
+          DEPLOY_ENVIRONMENT_URL: ${{ github.event.deployment_status.environment_url }}
         run: |
-          echo "🔍 Deployment Status Event:"
-          echo "  Environment: ${{ github.event.deployment_status.environment }}"
-          echo "  State: ${{ github.event.deployment_status.state }}"
-          echo "  Target URL: ${{ github.event.deployment_status.target_url }}"
-          echo "  Environment URL: ${{ github.event.deployment_status.environment_url }}"
-          echo "  Using: ${{ env.PREVIEW_URL }}"
+          echo "Deployment status event:"
+          echo "  Environment: $DEPLOY_ENVIRONMENT"
+          echo "  State: $DEPLOY_STATE"
+          echo "  Target URL: $DEPLOY_TARGET_URL"
+          echo "  Environment URL: $DEPLOY_ENVIRONMENT_URL"
+          echo "  Using: $PREVIEW_URL"
 
       - name: Validate preview URL
         run: |
-          if [ -z "${{ env.PREVIEW_URL }}" ]; then
-            echo "❌ Error: No preview URL found in deployment_status event"
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "::error::No preview URL found in deployment_status event"
             exit 1
           fi
-          echo "✅ Preview URL: ${{ env.PREVIEW_URL }}"
+          echo "Preview URL: $PREVIEW_URL"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies
@@ -63,7 +76,7 @@ jobs:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: playwright-report-${{ github.run_id }}
@@ -71,7 +84,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Playwright test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: playwright-test-results-${{ github.run_id }}

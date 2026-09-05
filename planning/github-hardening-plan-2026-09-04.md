@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- `npm` only. Node 22 (`.nvmrc` is added in Task 15; the Vercel project runs `22.x`). Next.js 16 needs Node 20.9+.
+- `npm` only. Node 22 (`.nvmrc` is added in Task 21, which superseded Task 15 on 2026-09-05; the Vercel project runs `22.x`). Next.js 16 needs Node 20.9+.
 - **Never edit the main checkout at `/Users/justinelrod/Projects/Weather-application`.** It is 34 commits behind `origin/main` and has uncommitted edits to `AGENTS.md`, `CLAUDE.md`, and `next-env.d.ts` that must be preserved. All code work happens in the worktree created in Task 0.
 - Use `npm ci` in the worktree (no symlinked `node_modules`; Turbopack needs a real install).
 - gitleaks pre-commit and pre-push hooks run on every commit and push. `gitleaks` 8.30.1 is installed at `/opt/homebrew/bin/gitleaks`.
@@ -854,6 +854,257 @@ Expected: both `CodeQL Analysis (javascript-typescript) success` and `CodeQL Ana
 
 ---
 
+## Phase A, PR 2 addendum (2026-09-05): three items folded into the workflow PR
+
+Added after the follow-up audit on 2026-09-05, with the user's agreement.
+Evidence for each is in the SDD ledger for that date. All three land in
+PR 2 with Tasks 7–12, in the order 21, 22, 23, after Task 12.
+
+### Task 21: Pin Node 22 in every workflow, `.nvmrc`, `package.json`, and CLAUDE.md
+
+**Files:**
+- Create: `.nvmrc`
+- Modify: `package.json` (add `engines` after `"private": true,`)
+- Modify: `package-lock.json` (only if `npm install --package-lock-only` changes it)
+- Modify: all nine `.github/workflows/*.yml` (`node-version: '20'` → `node-version-file: '.nvmrc'`)
+- Modify: `CLAUDE.md` (one line in "Common Commands")
+
+The Vercel project (`weather-application`, team `justin-elrods-projects`) reports
+`nodeVersion: 22.x`; the user's machine runs 22.22.3 (a Hermes-bundled binary,
+no version manager); CI is the odd one out on 20, which reached end of life on
+2026-04-30. Replaces the superseded Task 15.
+
+- [ ] **Step 1: Add `.nvmrc` and `engines`**
+
+```bash
+printf '22\n' > .nvmrc
+```
+
+In `package.json`, directly after the line `  "private": true,` insert:
+
+```json
+  "engines": {
+    "node": ">=22"
+  },
+```
+
+Then sync the lockfile's root entry without touching `node_modules`:
+
+```bash
+npm install --package-lock-only
+git diff --stat package-lock.json
+```
+
+Expected: either no change, or a change confined to the root `packages[""]`
+entry gaining an `engines` block. Anything wider is a concern to report.
+
+- [ ] **Step 2: Point every workflow at `.nvmrc`**
+
+In each of the nine files under `.github/workflows/`, replace every
+occurrence of
+
+```yaml
+          node-version: '20'
+```
+
+with
+
+```yaml
+          node-version-file: '.nvmrc'
+```
+
+(same indentation; `cache: 'npm'` on the next line is unchanged). Use the Edit
+tool per file; a shell loop over `.github/` paths is refused in this worktree.
+Then:
+
+```bash
+grep -rn "node-version" .github/workflows
+```
+
+Expected: 12 lines, every one `node-version-file: '.nvmrc'`, none `node-version: '20'`.
+
+- [ ] **Step 3: Update the CLAUDE.md line**
+
+`CLAUDE.md` contains the line:
+
+```
+`npm` only — do not switch package managers. Node 20.9+.
+```
+
+Change it to:
+
+```
+`npm` only — do not switch package managers. Node 22 (`.nvmrc`; matches the Vercel project's 22.x. Next.js 16's floor is 20.9).
+```
+
+- [ ] **Step 4: Verify locally**
+
+```bash
+node -v
+npm ci
+npm run typecheck
+```
+
+Expected: `v22.x`; `npm ci` prints no `EBADENGINE` warning; typecheck exits 0.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .nvmrc package.json package-lock.json .github/workflows CLAUDE.md
+git commit -m "Pin Node 22 in .nvmrc, package.json engines, and every workflow
+
+Vercel builds on 22.x and local dev is on 22; CI was still on 20, which
+reached end of life in April 2026.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+```
+
+### Task 22: Give every job a timeout
+
+**Files:**
+- Modify: `.github/workflows/ci.yml` (5 jobs), `security-scanning.yml` (3 jobs),
+  `education-guide.yml`, `newsletter-sunday.yml`, `newsletter-wednesday.yml` (1 job each)
+
+Jobs without `timeout-minutes` get GitHub's 360-minute default. Measured
+execution on 2026-09-05: CI ~2 min (10 min on a cold cache), security
+scanning ~1.5 min (11 min outlier), newsletters 2–6 min, education guide
+3–12 min. The Anthropic-backed generators retry and have legitimately run 12
+minutes, so they get 30; the rest get 15. `e2e-pr.yml`, `e2e-preview.yml`,
+`lighthouse-pr.yml`, and `news-feed-health.yml` already have a timeout and are
+untouched.
+
+- [ ] **Step 1: Insert the line after `runs-on: ubuntu-latest` in each listed job**
+
+For `ci.yml` (jobs `lint`, `typecheck`, `unit-tests`, `dead-code`, `build`) and
+`security-scanning.yml` (jobs `secret-scanning`, `analyze`, `dependency-review`),
+directly after each job's
+
+```yaml
+    runs-on: ubuntu-latest
+```
+
+add
+
+```yaml
+    timeout-minutes: 15
+```
+
+For the `generate` job in `education-guide.yml`, `newsletter-sunday.yml`, and
+`newsletter-wednesday.yml`, add
+
+```yaml
+    timeout-minutes: 30
+```
+
+in the same position. Keep the 4-space indent of `runs-on`.
+
+- [ ] **Step 2: Verify counts**
+
+```bash
+grep -c "timeout-minutes" .github/workflows/ci.yml
+grep -c "timeout-minutes" .github/workflows/security-scanning.yml
+grep -c "timeout-minutes" .github/workflows/education-guide.yml
+grep -c "timeout-minutes" .github/workflows/newsletter-sunday.yml
+grep -c "timeout-minutes" .github/workflows/newsletter-wednesday.yml
+```
+
+Expected: 5, 3, 1, 1, 1.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add .github/workflows
+git commit -m "Give every workflow job a timeout
+
+The five workflows without one fell back to GitHub's six-hour default.
+Gates get 15 minutes; the Anthropic-backed generators, which have run 12
+minutes legitimately, get 30.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+```
+
+### Task 23: Warm the Playwright browser cache on main
+
+**Files:**
+- Modify: `.github/workflows/ci.yml` (new job at the end of `jobs:`)
+
+A pull request can restore caches saved on its own ref or on the default
+branch, never on another PR. `e2e-pr.yml` runs only on `pull_request`, so the
+Playwright browser cache is only ever saved under `refs/pull/N/merge`: every
+PR misses, downloads Chromium again, and saves a 268 MB copy nobody else can
+read. On 2026-09-05 there were 24 such copies (6.4 GB) and the repository was
+at the 10 GB cache ceiling, evicting the npm and Next.js caches too. This job
+saves the same key on `main`, once per lockfile change, so PRs hit it.
+
+- [ ] **Step 1: Append the job to `ci.yml`**
+
+After the `build` job (the end of the file), add:
+
+```yaml
+
+  warm-playwright-cache:
+    # PRs can only restore caches saved on main, and e2e-pr.yml never runs on
+    # main, so without this job every PR re-downloads Chromium and saves a
+    # copy no other PR can use. Same key and path as e2e-pr.yml; keep them in
+    # step. push-only: on a PR the e2e job already does this work.
+    name: Warm Playwright cache
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # npm ci first so npx resolves the locked @playwright/test, whose
+      # browser revision is what e2e-pr.yml will look for under this key.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+```
+
+The `key` and `path` must be byte-identical to the `Cache Playwright browsers`
+step in `e2e-pr.yml`. OS packages (`--with-deps`) are deliberately not
+installed here; they are not cached and `e2e-pr.yml` installs them on a hit.
+
+- [ ] **Step 2: Verify the key matches and the file parses**
+
+```bash
+grep -n "key: playwright-" .github/workflows/ci.yml .github/workflows/e2e-pr.yml
+node scripts/check-workflows.mjs
+```
+
+Expected: the two `key:` lines are identical apart from the filename; the
+parser prints `ok` for all nine files, `unpinned=none` on each, and
+`all workflows parse`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add .github/workflows/ci.yml
+git commit -m "Warm the Playwright browser cache on main so PRs can restore it
+
+e2e-pr.yml only runs on pull_request, and a PR cannot read another PR's
+cache, so every PR downloaded Chromium and saved a 268 MB copy nobody
+else could use. 24 of them had filled the 10 GB cache.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+```
+
 ## Phase A, PR 3: repo hygiene
 
 ### Task 14: Start the third branch
@@ -868,6 +1119,9 @@ npm ci
 ```
 
 ### Task 15: Pin Node 22 everywhere
+
+> **Superseded 2026-09-05.** This task moved into PR 2 as Task 21 (see the
+> PR 2 addendum below) so the workflow files change once. Do not run it.
 
 **Files:**
 - Create: `.nvmrc`
@@ -1572,6 +1826,12 @@ Expected: one repo secret (`VERCEL_AUTOMATION_BYPASS_SECRET`), one environment s
 
 ### B9: Delete the three stale remote branches
 
+> **Dropped 2026-09-05.** The audit finding behind this step was wrong: the
+> `git fetch` that fed it ran without `--prune`, so `git branch -r` showed
+> local tracking refs for branches GitHub had already deleted on 2026-09-04
+> (delete-on-merge worked). `gh api repos/jelrod27/Weather-application-/branches`
+> lists only `main`. Nothing to do.
+
 - [ ] **Step 1: Delete**
 
 ```bash
@@ -1588,6 +1848,104 @@ git ls-remote --heads origin
 ```
 
 Expected: only `refs/heads/main`.
+
+---
+
+### Phase B addendum (2026-09-05)
+
+Three settings steps added after the follow-up audit, agreed by the user.
+Same rule as B1–B8: one `gh api` call each, run after PR 2 is merged.
+
+### B10: Prune the PR-scoped Actions caches
+
+After the `Warm Playwright cache` job has run once on `main` (Task 23), delete
+every cache saved under a `refs/pull/*` ref. They are unreachable from any
+other PR and were the reason the repository sat at the 10 GB ceiling. Use a
+script file (a shell loop over `gh` is refused in this worktree):
+
+```bash
+gh api --paginate "repos/jelrod27/Weather-application-/actions/caches?per_page=100" --jq '.actions_caches[] | select(.ref | startswith("refs/pull/")) | .id' > /tmp/pr-cache-ids.txt
+wc -l /tmp/pr-cache-ids.txt
+```
+
+Then for each id: `gh api -X DELETE "repos/jelrod27/Weather-application-/actions/caches/<id>"`.
+Read back with `gh api repos/jelrod27/Weather-application-/actions/cache/usage`.
+Expected: `active_caches_size_in_bytes` well under 5 GB and a
+`playwright-Linux-*` entry present on `refs/heads/main`.
+
+### B11: Require approval before workflows run on any outside PR
+
+```bash
+gh api -X PUT "repos/jelrod27/Weather-application-/actions/permissions/fork-pr-contributor-approval" -f approval_policy=all_external_contributors
+gh api "repos/jelrod27/Weather-application-/actions/permissions/fork-pr-contributor-approval"
+```
+
+Expected read-back: `{"approval_policy":"all_external_contributors"}`. Today
+the policy is `first_time_contributors`. The repo has no forks, so the only
+visible effect is an "Approve and run" button on any future outside PR.
+
+### B12: Push ruleset for secret-shaped files, and a tag ruleset for `v*`
+
+Push rules are enforced by GitHub when it receives a push, on every branch,
+from every machine and token, with no flag to bypass. They back up
+`.gitignore` (client-side, pattern-dependent) and the gitleaks hook
+(client-side, skippable with `--no-verify`). The patterns use `**/` so nested files
+such as `app/.env.local` match too. `.env.example` is tracked and must stay
+pushable, and `file_path_restriction` has no allow-list, so the list
+enumerates the real variants instead of a `**/.env.*` wildcard. The 10 MB cap is ten times the largest tracked file (`package-lock.json`, under 1 MB).
+
+Push rulesets are gated by repository visibility and plan. This repository is
+public. If the first `POST` below returns 403 or 422 citing plan eligibility,
+record that in the ledger and skip the push ruleset; the tag ruleset is
+unaffected and still applies.
+
+Write the two bodies with the Write tool, then:
+
+```bash
+gh api -X POST "repos/jelrod27/Weather-application-/rulesets" --input /tmp/push-ruleset.json
+gh api -X POST "repos/jelrod27/Weather-application-/rulesets" --input /tmp/tag-ruleset.json
+gh api "repos/jelrod27/Weather-application-/rulesets" --jq '.[] | "\(.name) target=\(.target) enforcement=\(.enforcement)"'
+```
+
+`/tmp/push-ruleset.json`:
+
+```json
+{
+  "name": "Block secret-shaped files and oversized pushes",
+  "target": "push",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "rules": [
+    { "type": "file_path_restriction",
+      "parameters": { "restricted_file_paths": [
+        ".env", "**/.env", "**/.env.local", "**/.env.development", "**/.env.production",
+        "**/.env.test", "**/.env.*.local", "**/.env.infisical", "**/.env.supabase",
+        "**/credentials.json", "**/service-account*.json", "**/id_rsa*", "**/id_ed25519*", "**/id_ecdsa*" ] } },
+    { "type": "file_extension_restriction",
+      "parameters": { "restricted_file_extensions": ["pem", "key", "p12", "pfx"] } },
+    { "type": "max_file_size",
+      "parameters": { "max_file_size": 10 } }
+  ]
+}
+```
+
+`/tmp/tag-ruleset.json` (repository admins keep bypass so a mistaken tag can
+still be fixed by a person; workflow tokens and apps cannot delete or move
+release tags):
+
+```json
+{
+  "name": "Protect release tags",
+  "target": "tag",
+  "enforcement": "active",
+  "bypass_actors": [ { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" } ],
+  "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" }, { "type": "update" } ]
+}
+```
+
+Expected read-back: two rulesets, `target=push` and `target=tag`, both
+`enforcement=active`.
 
 ---
 

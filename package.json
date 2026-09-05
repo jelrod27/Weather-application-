@@ -3,6 +3,9 @@
   "version": "2026.9.0",
   "description": "Retro weather education platform with live forecasts, earth-science and space data, aviation and stargazing tools, automated blog/newsletter, Supabase auth, themes, and Playwright-tested flows. Next.js 16, React 19.",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
