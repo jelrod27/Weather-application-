@@ -69,5 +69,29 @@ describe('guest-tokens', () => {
       const token = signGuestManageToken(id, 'new-secret')
       expect(parseSignedGuestManageToken(token!, 'other')).toBeNull()
     })
+
+    it('never signs with the previous secret when the current one is missing', () => {
+      const id = '11111111-2222-4333-8444-555555555555'
+      delete process.env.BITWATCH_MANAGE_SECRET
+      process.env.BITWATCH_MANAGE_SECRET_PREVIOUS = 'old-secret'
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role'
+      delete process.env.CRON_SECRET
+
+      const token = signGuestManageToken(id)
+      expect(token).toBe(signGuestManageToken(id, 'service-role'))
+      expect(token).not.toBe(signGuestManageToken(id, 'old-secret'))
+      expect(parseSignedGuestManageToken(signGuestManageToken(id, 'old-secret')!)).toBe(id)
+    })
+
+    it('signs nothing when only the previous secret is configured', () => {
+      const id = '11111111-2222-4333-8444-555555555555'
+      delete process.env.BITWATCH_MANAGE_SECRET
+      process.env.BITWATCH_MANAGE_SECRET_PREVIOUS = 'old-secret'
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY
+      delete process.env.CRON_SECRET
+
+      expect(signGuestManageToken(id)).toBeNull()
+      expect(parseSignedGuestManageToken(signGuestManageToken(id, 'old-secret')!)).toBe(id)
+    })
   })
 })

@@ -14,26 +14,38 @@ export function guestVerifyExpiry(now = new Date()): string {
   return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
 }
 
+function definedSecrets(values: Array<string | undefined>): string[] {
+  return values.filter((value): value is string => typeof value === 'string' && value.length > 0)
+}
+
 /**
- * Secrets for guest manage links, most preferred first. Links are signed with
- * the first entry and verified against all of them, so a secret can be
- * rotated by moving the old value to BITWATCH_MANAGE_SECRET_PREVIOUS: links
- * in already-sent emails keep working while new emails carry the new secret.
- * The service-role and cron fallbacks exist because links were signed with
- * them before a dedicated secret existed.
+ * Secrets accepted when verifying a manage link: the current secret, the
+ * previous one while a rotation is in flight, then the legacy fallbacks that
+ * links were signed with before a dedicated secret existed.
  */
 export function guestManageSecrets(): string[] {
-  const candidates = [
+  return definedSecrets([
     process.env.BITWATCH_MANAGE_SECRET,
     process.env.BITWATCH_MANAGE_SECRET_PREVIOUS,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     process.env.CRON_SECRET,
-  ]
-  return candidates.filter((value): value is string => typeof value === 'string' && value.length > 0)
+  ])
 }
 
+/**
+ * Secret used to sign new links. BITWATCH_MANAGE_SECRET_PREVIOUS is
+ * deliberately absent: a retired key must never sign fresh links, so a
+ * misconfiguration that leaves only the previous secret set falls through to
+ * the legacy fallbacks or to null (no link) rather than to the old key.
+ */
 export function guestManageSecret(): string | null {
-  return guestManageSecrets()[0] ?? null
+  return (
+    definedSecrets([
+      process.env.BITWATCH_MANAGE_SECRET,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.CRON_SECRET,
+    ])[0] ?? null
+  )
 }
 
 export function signGuestManageToken(subscriberId: string, secret = guestManageSecret()): string | null {

@@ -552,6 +552,11 @@ export function parseSignedGuestManageToken(token: string, secret?: string): str
 
 `signGuestManageToken` keeps its `secret = guestManageSecret()` default and is otherwise unchanged.
 
+> **Amendment (2026-09-05, CodeRabbit on #601).** The shipped
+> `guestManageSecret()` excludes `BITWATCH_MANAGE_SECRET_PREVIOUS` from the
+> signing chain; the previous secret is verification-only. The code block
+> above shows the original brief; copy from `lib/alerts/guest-tokens.ts`.
+
 - [ ] **Step 4: Document the new variable**
 
 In `lib/env-validation.ts`, directly after the `BITWATCH_MANAGE_SECRET` entry, add:
