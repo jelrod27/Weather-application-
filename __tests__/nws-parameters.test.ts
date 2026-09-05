@@ -44,6 +44,33 @@ describe('parseNwsHazardParameters', () => {
       maxWind: '70 MPH',
     })
   })
+
+  // NWS writes a sub-severe tag value as a "less than" bound with no leading
+  // zero — "<.75 IN", "<50 MPH" — when the product is issued on the other
+  // criterion (a Special Weather Statement, or a warning met on wind alone).
+  // The comparator has to survive parsing: ".75 IN" would report a hail size
+  // the office explicitly declined to assert.
+  it('reads sub-severe threshold values that carry a < comparator', () => {
+    const description = [
+      'HAZARD...60 MPH WIND GUSTS AND PENNY SIZE HAIL',
+      'MAX HAIL SIZE...<.75 IN',
+      'MAX WIND GUST...<50 MPH',
+    ].join('\n')
+
+    expect(parseNwsHazardParameters(null, description)).toMatchObject({
+      maxHail: '<.75 IN',
+      maxWind: '<50 MPH',
+    })
+  })
+
+  it('still reads whole-number and no-hail tag values', () => {
+    expect(
+      parseNwsHazardParameters(null, 'MAX HAIL SIZE...0.00 IN\nMAX WIND GUST...100 MPH'),
+    ).toMatchObject({
+      maxHail: '0.00 IN',
+      maxWind: '100 MPH',
+    })
+  })
 })
 
 describe('formatWarningTimeLeft', () => {

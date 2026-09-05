@@ -164,6 +164,18 @@ with
 
 Leave the two `HAZARD\.{3}` patterns on lines 37 and 44 alone; `\.{3}` consumes the separator there, so they are not affected.
 
+> **Amendment, 2026-09-05 (superseded by the fix in PR #595).** The two
+> replacements above shipped in PR #594 and are no longer what the file
+> contains. CodeRabbit's review of #594 pointed out that they reject the
+> sub-severe tag values NWS writes as a "less than" bound with no leading
+> zero (`<.75 IN`, `<50 MPH`), leaving `maxHail`/`maxWind` null. The shipped
+> patterns are now
+> `/MAX HAIL SIZE[.\s]*(<?\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:IN|INCHES)?)/i` and
+> `/MAX WIND GUST[.\s]*(<?\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:MPH)?)/i`. Note the
+> greedy `[.\s]*`: with the lazy `*?` above, the leading-decimal alternative
+> lets the number claim a separator dot and `...1.75 IN` captures as `.1`.
+> Copy the patterns from `lib/warnings/nws-parameters.ts`, not from this task.
+
 - [ ] **Step 4: Run the test and watch it pass**
 
 ```bash

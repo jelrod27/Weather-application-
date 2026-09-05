@@ -29,18 +29,25 @@ export function parseNwsHazardParameters(
   description = '',
 ): NwsHazardParameters {
   const p = parameters ?? {}
+  // The MAX * tag patterns below share a shape. The `[.\s]*` separator is
+  // greedy so it eats the `...` before the value rather than leaving a dot for
+  // the number to claim (lazy matching turned "...1.75 IN" into ".1"). The
+  // value itself allows an optional `<` and a missing leading zero, because
+  // NWS writes a sub-severe bound as "<.75 IN" / "<50 MPH" when the product
+  // was issued on the other criterion. Dropping the `<` would assert a size
+  // the issuing office did not.
   const hail =
     firstString(p.maxHailSize) ??
     firstString(p.MaxHailSize) ??
     matchDescription(description, [
-      /MAX HAIL SIZE[.\s]*?(\d+(?:\.\d+)?\s*(?:IN|INCHES)?)/i,
+      /MAX HAIL SIZE[.\s]*(<?\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:IN|INCHES)?)/i,
       /HAZARD\.{3}.*?([0-9.]+\s*IN(?:CH)?(?:\s*HAIL)?)/i,
     ])
   const wind =
     firstString(p.maxWindGust) ??
     firstString(p.MaxWindGust) ??
     matchDescription(description, [
-      /MAX WIND GUST[.\s]*?(\d+(?:\.\d+)?\s*(?:MPH)?)/i,
+      /MAX WIND GUST[.\s]*(<?\s*(?:\d+(?:\.\d+)?|\.\d+)\s*(?:MPH)?)/i,
       /HAZARD\.{3}.*?([0-9.]+\s*MPH)/i,
     ])
   const source =
