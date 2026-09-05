@@ -122,6 +122,10 @@ const envConfig: EnvConfig = {
       name: 'BITWATCH_MANAGE_SECRET',
       description: 'HMAC secret for stable guest manage/unsubscribe links (optional - falls back to the Supabase service role key).',
     },
+    BITWATCH_MANAGE_SECRET_PREVIOUS: {
+      name: 'BITWATCH_MANAGE_SECRET_PREVIOUS',
+      description: 'Previous HMAC secret kept during rotation so manage links in already-sent emails keep verifying (optional).',
+    },
   },
 };
 

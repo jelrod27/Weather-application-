@@ -52,6 +52,7 @@ function alert(
 }
 
 type UpsertCall = { table: string; rows: unknown[] }
+type DeleteCall = { table: string; filters: Array<[string, string, string]> }
 type EventStatus = 'active' | 'ended'
 type QueryResult = {
   data: unknown
@@ -66,10 +67,11 @@ function createSupabase(
     lease_until: string | null
   } | null,
   seedEvents: Array<{ id: string; status: EventStatus }> = [],
-  options?: { failSourceMessages?: boolean },
+  options?: { failSourceMessages?: boolean; failPrune?: boolean },
 ) {
   const orFilters: string[] = []
   const upserts: UpsertCall[] = []
+  const deletes: DeleteCall[] = []
   const inFilters: string[][] = []
   const notInFilters: string[] = []
   const ranges: Array<[number, number]> = []
@@ -78,11 +80,12 @@ function createSupabase(
   const from = (table: string) => {
     let orFilter: string | undefined
     let selected: string | undefined
-    let op: 'select' | 'update' | null = null
+    let op: 'select' | 'update' | 'delete' | null = null
     let notInValue: string | undefined
     let inValues: string[] | undefined
     let rangeFrom: number | undefined
     let rangeTo: number | undefined
+    let filters: Array<[string, string, string]> = []
     const builder: Record<string, unknown> = {}
     const self = () => builder
     const leaseUpdateResult = (): QueryResult => {
@@ -137,6 +140,13 @@ function createSupabase(
         }
         return { data: null, error: null, count: inValues?.length ?? 0 }
       }
+      if (op === 'delete') {
+        deletes.push({ table, filters })
+        if (options?.failPrune) {
+          return { data: null, error: { message: 'prune failed' }, count: null }
+        }
+        return { data: null, error: null, count: table === 'bitwatch_source_messages' ? 3 : 2 }
+      }
       return { data: null, error: null, count: null }
     }
     Object.assign(builder, {
@@ -145,7 +155,10 @@ function createSupabase(
         selected = columns ?? '*'
         return builder
       },
-      eq: self,
+      eq: (column: string, value: string) => {
+        filters.push([column, 'eq', value])
+        return builder
+      },
       filter: (_column: string, operator: string, value: string) => {
         if (operator === 'not.in') notInValue = value
         return builder
@@ -170,6 +183,14 @@ function createSupabase(
       update: () => {
         op = 'update'
         selected = undefined
+        return builder
+      },
+      delete: () => {
+        op = 'delete'
+        return builder
+      },
+      lt: (column: string, value: string) => {
+        filters.push([column, 'lt', value])
         return builder
       },
       upsert: (payload: unknown) => {
@@ -201,7 +222,7 @@ function createSupabase(
     return builder
   }
 
-  return { from, orFilters, upserts, inFilters, notInFilters, events, ranges }
+  return { from, orFilters, upserts, deletes, inFilters, notInFilters, events, ranges }
 }
 
 describe('runBitwatchIngest', () => {
@@ -334,6 +355,46 @@ describe('runBitwatchIngest', () => {
     expect(stateWrites.some((call) => (call.rows[0] as { last_success_at?: string }).last_success_at)).toBe(
       true,
     )
+    errorSpy.mockRestore()
+  })
+
+  it('prunes expired source messages and ended events after a run', async () => {
+    const nowMs = Date.parse('2026-09-05T20:00:00.000Z')
+    ;(fetchNwsAlertPages as jest.Mock).mockResolvedValue([])
+    ;(fetchActiveAlertsDetail as jest.Mock).mockResolvedValue([])
+    const supabase = createSupabase(null)
+
+    const result = await runBitwatchIngest(supabase as never, nowMs)
+
+    expect(result.ok).toBe(true)
+    expect(result.pruned).toEqual({ messages: 3, events: 2 })
+    expect(supabase.deletes).toEqual([
+      {
+        table: 'bitwatch_source_messages',
+        filters: [['observed_at', 'lt', '2026-08-06T20:00:00.000Z']],
+      },
+      {
+        table: 'bitwatch_warning_events',
+        filters: [
+          ['status', 'eq', 'ended'],
+          ['updated_at', 'lt', '2026-07-07T20:00:00.000Z'],
+        ],
+      },
+    ])
+  })
+
+  it('does not fail the run when pruning fails', async () => {
+    const nowMs = Date.parse('2026-09-05T20:00:00.000Z')
+    ;(fetchNwsAlertPages as jest.Mock).mockResolvedValue([])
+    ;(fetchActiveAlertsDetail as jest.Mock).mockResolvedValue([])
+    const supabase = createSupabase(null, [], { failPrune: true })
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    const result = await runBitwatchIngest(supabase as never, nowMs)
+
+    expect(result.ok).toBe(true)
+    expect(result.pruned).toEqual({ messages: 0, events: 0 })
+    expect(errorSpy).toHaveBeenCalledWith('[bitwatch-ingest] prune failed', expect.anything())
     errorSpy.mockRestore()
   })
 })

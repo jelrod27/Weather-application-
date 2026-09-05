@@ -40,3 +40,13 @@ The live schema_migrations table also contains entries with no file here
 (2026-01-18 search_path fixes, 2026-03-29 entries, and dashboard-era
 fix-ups). The 2026-05-29 baseline migrations plus the 2026-06-09 files in
 this directory describe the resulting state for the surviving tables.
+
+## Supabase GitHub integration
+
+Do not connect the Supabase GitHub integration (or "branching") to this
+repository. It clones the repo on every push to `main` and tries to apply
+the files here to the production database. Because these files are
+records with date-only prefixes, it fails today; a correctly named file
+would be applied on merge, outside the MCP workflow above. It was
+disconnected on 2026-09-05 after the audit found it running eleven
+times a day.

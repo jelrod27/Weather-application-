@@ -18,6 +18,12 @@ const LEASE_MS = 50_000
 const SOURCE_MESSAGE_CHUNK = 50
 export const INGEST_SUPABASE_TIMEOUT_MS = 20_000
 
+const DAY_MS = 24 * 60 * 60 * 1000
+/** Source messages are an audit trail; the desk reads warning events, not these. */
+export const SOURCE_MESSAGE_RETENTION_DAYS = 30
+/** Ended events stay long enough for /warnings/[id] links in sent emails to resolve. */
+export const ENDED_EVENT_RETENTION_DAYS = 60
+
 export type BitwatchFreshness = 'fresh' | 'delayed' | 'unavailable'
 
 export type IngestRunResult = {
@@ -27,6 +33,7 @@ export type IngestRunResult = {
   activeEvents: number
   watermark: string | null
   error?: string
+  pruned?: { messages: number; events: number }
 }
 
 export function overlapStartIso(watermarkSent: string | null, nowMs: number): string {
@@ -260,6 +267,35 @@ async function claimIngestLease(
   return { ok: true, skipped: false }
 }
 
+/**
+ * Deletes rows past their retention window. The Free plan caps the database
+ * at 500 MB and these two tables grew ~3 MB/day with nothing removing rows
+ * (2026-09-05 audit). Both deletes are index range scans that usually match
+ * nothing; the first run after deploy clears the backlog in one statement.
+ */
+export async function pruneExpiredRows(
+  supabase: SupabaseClient<Database>,
+  nowMs = Date.now(),
+): Promise<{ messages: number; events: number }> {
+  const messageCutoff = new Date(nowMs - SOURCE_MESSAGE_RETENTION_DAYS * DAY_MS).toISOString()
+  const eventCutoff = new Date(nowMs - ENDED_EVENT_RETENTION_DAYS * DAY_MS).toISOString()
+
+  const { count: messages, error: messageError } = await supabase
+    .from('bitwatch_source_messages')
+    .delete({ count: 'exact' })
+    .lt('observed_at', messageCutoff)
+  if (messageError) throw new Error(messageError.message)
+
+  const { count: events, error: eventError } = await supabase
+    .from('bitwatch_warning_events')
+    .delete({ count: 'exact' })
+    .eq('status', 'ended')
+    .lt('updated_at', eventCutoff)
+  if (eventError) throw new Error(eventError.message)
+
+  return { messages: messages ?? 0, events: events ?? 0 }
+}
+
 export async function runBitwatchIngest(
   supabase: SupabaseClient<Database>,
   nowMs = Date.now(),
@@ -362,12 +398,22 @@ export async function runBitwatchIngest(
       }
     }
 
+    // Retention runs last so a slow delete can never delay freshness or the
+    // watermark, both persisted above.
+    let pruned = { messages: 0, events: 0 }
+    try {
+      pruned = await pruneExpiredRows(supabase, nowMs)
+    } catch (error) {
+      console.error('[bitwatch-ingest] prune failed', error)
+    }
+
     return {
       ok: true,
       skipped: false,
       messages: collection.length,
       activeEvents: activeEvents.length,
       watermark,
+      pruned,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ingest failed'

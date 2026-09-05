@@ -11,12 +11,18 @@ function getAdminRestConfig(): { url: string; key: string } | null {
   return { url, key }
 }
 
-function adminHeaders(key: string): HeadersInit {
-  return {
+/**
+ * New-style Supabase keys (sb_secret_...) are not JWTs and must travel on the
+ * apikey header only; the gateway rejects them on Authorization with
+ * "Invalid JWT". Legacy service_role JWTs need both headers.
+ */
+export function adminHeaders(key: string): HeadersInit {
+  const headers: Record<string, string> = {
     apikey: key,
-    Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
   }
+  if (!key.startsWith('sb_')) headers.Authorization = `Bearer ${key}`
+  return headers
 }
 
 export async function fetchWelcomeEmailProfile(
