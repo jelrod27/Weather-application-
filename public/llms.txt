@@ -45,7 +45,7 @@
 - User profiles: /profile
 - Auth flows: /auth/*
 - API endpoints: /api/*
-- Internal/dev utilities: /test-sentry, /radar-diagnostic, /gfs-model/*
+- Internal/dev utilities: /radar-diagnostic, /gfs-model/*
 - Legacy routes (redirect to /education): /learn, /learn/glossary
 
 ## Data sources (for attribution)

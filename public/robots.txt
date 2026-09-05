@@ -28,7 +28,6 @@ Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
 Disallow: /auth/
-Disallow: /test-sentry
 Disallow: /radar-diagnostic
 Disallow: /gfs-model/
 Disallow: /dashboard
