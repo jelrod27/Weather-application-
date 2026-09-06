@@ -15,12 +15,13 @@ workflow needs a Vercel token, org id, or project id.
 ## `Production` environment secrets
 
 The newsletter and education workflows bind to `environment: production`
-only to read this secret. The environment is restricted to protected
-branches, so a `workflow_dispatch` from a feature branch cannot use it.
+only to read these secrets. The environment is restricted to protected
+branches, so a `workflow_dispatch` from a feature branch cannot use them.
 
 | Name | Used by | Purpose |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | `newsletter-sunday.yml`, `newsletter-wednesday.yml`, `education-guide.yml` | Model calls for generated posts and guides. |
+| `CONTENT_BOT_TOKEN` | `newsletter-sunday.yml`, `newsletter-wednesday.yml`, `education-guide.yml` | Fine-grained personal access token that pushes the generated branch and opens the PR. Repository access: this repository only. Permissions: Contents read and write, Pull requests read and write. Required because "Allow GitHub Actions to create and approve pull requests" is off (hardening B3), so `GITHUB_TOKEN` cannot open PRs. Give it an expiry and rotate it; the jobs fail before pushing if it is missing. |
 
 ## Repository variables (optional)
 
