@@ -983,9 +983,12 @@ Verify first: sign in on production, load a saved location, trigger a guest-subs
    role still cannot write; the dashboard `postgres` role may grant the
    attribute because it holds it itself.
 
-   Then add the GitHub repository secret `SUPABASE_BACKUP_DB_URL` with the value
-   `postgresql://backup_reader.cckcvyccjntadoohjntr:PASSWORD@aws-1-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require`
-   (percent-encode the password if it has special characters). Generate an age key pair on your machine with `age-keygen -o backup-key.txt`, store `backup-key.txt` in your password manager, and replace the single line of `.github/backup-recipient.txt` with the `age1...` public key it printed, in a small PR. Run the workflow once by hand and confirm the artifact appears.
+   Then add the GitHub repository secret `SUPABASE_BACKUP_DB_PASSWORD` holding
+   only that password. The workflow assembles the session-pooler URL itself
+   (user `backup_reader.cckcvyccjntadoohjntr`, host
+   `aws-1-us-west-1.pooler.supabase.com:5432`, database `postgres`,
+   `sslmode=require`) and percent-encodes the password, so no URL editing and
+   no special-character handling is needed. Generate an age key pair on your machine with `age-keygen -o backup-key.txt`, store `backup-key.txt` in your password manager, and replace the single line of `.github/backup-recipient.txt` with the `age1...` public key it printed, in a small PR. Run the workflow once by hand and confirm the artifact appears.
 
 2. **Custom SMTP through Resend** (F5). Supabase dashboard → Authentication → SMTP Settings: host `smtp.resend.com`, port `465`, username `resend`, password = a Resend API key, sender `noreply@16bitweather.co`, sender name `16-Bit Weather`. Then tell the agent to run B5.
 

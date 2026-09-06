@@ -13,8 +13,10 @@ name: Database backup
 #   psql "$NEW_DB_URL" -f schema.sql
 #   pg_restore --data-only --no-owner --disable-triggers -d "$NEW_DB_URL" data.dump
 #
-# Requires the repository secret SUPABASE_BACKUP_DB_URL: a session-pooler
-# connection string for the read-only backup_reader role (see
+# Requires the repository secret SUPABASE_BACKUP_DB_PASSWORD: the password of
+# the read-only backup_reader role, nothing else. The user, host, port, and
+# database are not secrets and are fixed below; the job percent-encodes the
+# password and assembles the session-pooler URL itself (see
 # planning/supabase-hardening-plan-2026-09-05.md, Phase C).
 
 on:
@@ -56,11 +58,14 @@ jobs:
 
       - name: Dump and encrypt
         env:
-          DB_URL: ${{ secrets.SUPABASE_BACKUP_DB_URL }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_BACKUP_DB_PASSWORD }}
           PGSSLMODE: require
         run: |
           set -euo pipefail
-          test -n "$DB_URL" || { echo "::error::SUPABASE_BACKUP_DB_URL is not set"; exit 1; }
+          test -n "$DB_PASSWORD" || { echo "::error::SUPABASE_BACKUP_DB_PASSWORD is not set"; exit 1; }
+          encoded=$(python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))')
+          echo "::add-mask::$encoded"
+          DB_URL="postgresql://backup_reader.cckcvyccjntadoohjntr:${encoded}@aws-1-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
           PG_DUMP=/usr/lib/postgresql/17/bin/pg_dump
           stamp=$(date -u +%Y%m%d)
           recipient=$(cat .github/backup-recipient.txt)

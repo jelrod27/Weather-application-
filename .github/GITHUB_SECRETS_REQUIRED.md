@@ -10,7 +10,7 @@ workflow needs a Vercel token, org id, or project id.
 | Name | Used by | Purpose |
 | --- | --- | --- |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | `e2e-preview.yml` | Lets Playwright reach a protected Vercel preview deployment. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. |
-| `SUPABASE_BACKUP_DB_URL` | `db-backup.yml` | Session-pooler connection string for the read-only `backup_reader` role, with `sslmode=require`. The weekly job refuses to run until it exists. |
+| `SUPABASE_BACKUP_DB_PASSWORD` | `db-backup.yml` | Password of the read-only `backup_reader` role, nothing else; the job percent-encodes it and builds the session-pooler URL itself. The weekly job refuses to run until it exists. |
 
 ## `Production` environment secrets
 
