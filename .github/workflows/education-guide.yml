@@ -25,13 +25,12 @@ jobs:
     timeout-minutes: 30
     environment: production
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # This job holds contents:write and pull-requests:write, and runs
-          # `npm ci` before it pushes. Left at the default, checkout writes
+          # The push and the PR use CONTENT_BOT_TOKEN, not GITHUB_TOKEN, and the
+          # job runs npm ci before either. Left at the default, checkout writes
           # GITHUB_TOKEN into .git/config, where a dependency's install script
           # could read it. Git is authenticated explicitly at the push instead.
           persist-credentials: false
@@ -105,9 +104,17 @@ jobs:
       - name: Open PR with the new Guide
         if: steps.check.outputs.new_guide == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CONTENT_BOT_TOKEN }}
           NEW_FILE: ${{ steps.check.outputs.new_file }}
         run: |
+          # Actions may not create PRs with GITHUB_TOKEN on this repo (hardening
+          # B3), so the push and the PR use a fine-grained PAT. Fail before the
+          # push if it is missing rather than after.
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::CONTENT_BOT_TOKEN is not set in the production environment; see .github/GITHUB_SECRETS_REQUIRED.md"
+            exit 1
+          fi
+
           set -euo pipefail
           SLUG=$(basename "$NEW_FILE" .md)
           BRANCH_NAME="education/guide-${SLUG}-${GITHUB_RUN_ID}"
