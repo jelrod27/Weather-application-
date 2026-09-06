@@ -49,7 +49,10 @@ jobs:
           sudo apt-get install -y -qq age postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version && age --version
+          # The runner ships postgresql-client-16 and its pg_dump wrapper wins on
+          # PATH, so call the 17 binary by path; pg_dump refuses newer servers.
+          test -x /usr/lib/postgresql/17/bin/pg_dump || { echo "::error::postgresql-client-17 did not install"; exit 1; }
+          /usr/lib/postgresql/17/bin/pg_dump --version && age --version
 
       - name: Dump and encrypt
         env:
@@ -58,11 +61,12 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$DB_URL" || { echo "::error::SUPABASE_BACKUP_DB_URL is not set"; exit 1; }
+          PG_DUMP=/usr/lib/postgresql/17/bin/pg_dump
           stamp=$(date -u +%Y%m%d)
           recipient=$(cat .github/backup-recipient.txt)
-          pg_dump "$DB_URL" --data-only --format=custom --no-owner --no-privileges \
+          "$PG_DUMP" "$DB_URL" --data-only --format=custom --no-owner --no-privileges \
             --schema=public --schema=auth --file="backup-$stamp.data.dump"
-          pg_dump "$DB_URL" --schema-only --format=plain --no-owner --no-privileges \
+          "$PG_DUMP" "$DB_URL" --schema-only --format=plain --no-owner --no-privileges \
             --schema=public --file="backup-$stamp.public-schema.sql"
           age -r "$recipient" -o "backup-$stamp.data.dump.age" "backup-$stamp.data.dump"
           age -r "$recipient" -o "backup-$stamp.public-schema.sql.age" "backup-$stamp.public-schema.sql"

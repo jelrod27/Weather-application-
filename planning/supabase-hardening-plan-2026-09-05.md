@@ -971,9 +971,17 @@ Verify first: sign in on production, load a saved location, trigger a guest-subs
 1. **Backup role and secret** (F4). In the Supabase SQL editor, with a password from your password manager in place of `PASSWORD`:
 
    ```sql
-   create role backup_reader with login password 'PASSWORD' noinherit;
+   create role backup_reader with login password 'PASSWORD' bypassrls;
    grant pg_read_all_data to backup_reader;
    ```
+
+   Keep the default `inherit` on the role: it reads through its membership in
+   `pg_read_all_data`, and a `noinherit` role fails pg_dump with "permission
+   denied for schema auth". `bypassrls` is required as well: every table in
+   `public` and `auth` has row-level security, and pg_dump runs with
+   `row_security = off`, which errors for any role that cannot bypass it. The
+   role still cannot write; the dashboard `postgres` role may grant the
+   attribute because it holds it itself.
 
    Then add the GitHub repository secret `SUPABASE_BACKUP_DB_URL` with the value
    `postgresql://backup_reader.cckcvyccjntadoohjntr:PASSWORD@aws-1-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require`
