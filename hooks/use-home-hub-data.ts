@@ -12,6 +12,7 @@ import {
   type HubUserLocation,
 } from '@/lib/home/hub-utils';
 import { isSpcOutlookRegion } from '@/lib/home/hub-location';
+import { runHubRequest } from '@/lib/home/hub-request';
 import { splitLocalWarnings } from '@/lib/warnings/local-ranking';
 
 export interface LocalSpcOutlook {
@@ -104,122 +105,110 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
       if (isSpcOutlookRegion(user)) setSpcLoading(true);
 
       const point = `${user.lat},${user.lon}`;
+      const alertsUnavailable = {
+        count: 0,
+        headline: 'Alerts unavailable',
+        severity: null,
+        topAlertId: null,
+        nearbyCount: 0,
+        nearbyTopId: null,
+      };
+      const noSpc = { label: null, fill: '#64748b', riskCode: null };
       const requests: Promise<void>[] = [];
 
       requests.push(
-        fetch(`/api/weather/alerts?harm=1&detail=1`, { signal })
-          .then(async (alertsRes) => {
+        runHubRequest({
+          signal,
+          task: async () => {
+            const alertsRes = await fetch(`/api/weather/alerts?harm=1&detail=1`, { signal });
             if (signal?.aborted) return;
-            try {
-              if (alertsRes.ok) {
-                const data = (await alertsRes.json()) as { alerts?: NWSAlertDetail[] };
-                const { onYou, nearby } = splitLocalWarnings(data.alerts ?? [], {
-                  lat: user.lat,
-                  lon: user.lon,
-                });
-                setAlertSummary({
-                  ...summarizeAlerts(onYou),
-                  nearbyCount: nearby.length,
-                  nearbyTopId: nearby[0]?.id ?? null,
-                });
-              } else {
-                setAlertSummary({
-                  count: 0,
-                  headline: 'Alerts unavailable',
-                  severity: null,
-                  topAlertId: null,
-                  nearbyCount: 0,
-                  nearbyTopId: null,
-                });
-              }
-            } catch {
-              setAlertSummary({
-                count: 0,
-                headline: 'Alerts unavailable',
-                severity: null,
-                topAlertId: null,
-                nearbyCount: 0,
-                nearbyTopId: null,
-              });
-            } finally {
-              if (!signal?.aborted) setAlertsLoading(false);
-            }
-          }),
+            if (!alertsRes.ok) throw new Error('alerts');
+            const data = (await alertsRes.json()) as { alerts?: NWSAlertDetail[] };
+            const { onYou, nearby } = splitLocalWarnings(data.alerts ?? [], {
+              lat: user.lat,
+              lon: user.lon,
+            });
+            setAlertSummary({
+              ...summarizeAlerts(onYou),
+              nearbyCount: nearby.length,
+              nearbyTopId: nearby[0]?.id ?? null,
+            });
+          },
+          onFailure: () => setAlertSummary(alertsUnavailable),
+          onSettled: () => setAlertsLoading(false),
+        }),
       );
 
       requests.push(
-        fetch(`/api/stargazer?lat=${user.lat}&lon=${user.lon}`, { signal })
-          .then(async (stargazerRes) => {
+        runHubRequest({
+          signal,
+          task: async () => {
+            const stargazerRes = await fetch(`/api/stargazer?lat=${user.lat}&lon=${user.lon}`, {
+              signal,
+            });
             if (signal?.aborted) return;
-            try {
-              if (stargazerRes.ok) {
-                const data = (await stargazerRes.json()) as { score?: StargazerScore };
-                setStargazerScore(data.score ?? null);
-              } else {
-                setStargazerScore(null);
-              }
-            } catch {
-              setStargazerScore(null);
-            } finally {
-              if (!signal?.aborted) setStargazerLoading(false);
-            }
-          }),
+            if (!stargazerRes.ok) throw new Error('stargazer');
+            const data = (await stargazerRes.json()) as { score?: StargazerScore };
+            setStargazerScore(data.score ?? null);
+          },
+          onFailure: () => setStargazerScore(null),
+          onSettled: () => setStargazerLoading(false),
+        }),
       );
 
       requests.push(
-        fetch('/api/news/rss?maxItems=30&maxAge=72', { signal })
-          .then(async (newsRes) => {
+        runHubRequest({
+          signal,
+          task: async () => {
+            const newsRes = await fetch('/api/news/rss?maxItems=30&maxAge=72', { signal });
             if (signal?.aborted) return;
-            try {
-              if (!newsRes.ok) throw new Error('news');
-              const data = await newsRes.json();
-              const happeningNow = Array.isArray(data.happeningNow)
-                ? hydrateNewsItems(data.happeningNow)
-                : [];
-              setHeadlineItem(pickHappeningNowHeadline(happeningNow, user));
-              setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
-            } catch {
-              setHeadlineItem(null);
-              setLastUpdated(null);
-            } finally {
-              if (!signal?.aborted) setHeadlineLoading(false);
-            }
-          }),
+            if (!newsRes.ok) throw new Error('news');
+            const data = await newsRes.json();
+            const happeningNow = Array.isArray(data.happeningNow)
+              ? hydrateNewsItems(data.happeningNow)
+              : [];
+            setHeadlineItem(pickHappeningNowHeadline(happeningNow, user));
+            setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
+          },
+          onFailure: () => {
+            setHeadlineItem(null);
+            setLastUpdated(null);
+          },
+          onSettled: () => setHeadlineLoading(false),
+        }),
       );
 
       if (isSpcOutlookRegion(user)) {
         requests.push(
-          fetch(
-            `/api/weather/spc-outlook?day=1&type=cat&point=${encodeURIComponent(point)}`,
-            { signal },
-          ).then(async (spcRes) => {
-            if (signal?.aborted) return;
-            try {
-              if (spcRes.ok) {
-                const data = (await spcRes.json()) as {
-                  pointRisk?: { riskCode: string; label: string; fill: string } | null;
-                };
-                const risk = data.pointRisk ?? null;
-                setLocalSpc({
-                  label: risk?.label ?? null,
-                  fill: risk?.fill ?? '#64748b',
-                  riskCode: risk?.riskCode ?? null,
-                });
-              } else {
-                setLocalSpc({ label: null, fill: '#64748b', riskCode: null });
-              }
-            } catch {
-              setLocalSpc({ label: null, fill: '#64748b', riskCode: null });
-            } finally {
-              if (!signal?.aborted) setSpcLoading(false);
-            }
+          runHubRequest({
+            signal,
+            task: async () => {
+              const spcRes = await fetch(
+                `/api/weather/spc-outlook?day=1&type=cat&point=${encodeURIComponent(point)}`,
+                { signal },
+              );
+              if (signal?.aborted) return;
+              if (!spcRes.ok) throw new Error('spc');
+              const data = (await spcRes.json()) as {
+                pointRisk?: { riskCode: string; label: string; fill: string } | null;
+              };
+              const risk = data.pointRisk ?? null;
+              setLocalSpc({
+                label: risk?.label ?? null,
+                fill: risk?.fill ?? '#64748b',
+                riskCode: risk?.riskCode ?? null,
+              });
+            },
+            onFailure: () => setLocalSpc(noSpc),
+            onSettled: () => setSpcLoading(false),
           }),
         );
       } else {
-        setLocalSpc({ label: null, fill: '#64748b', riskCode: null });
+        setLocalSpc(noSpc);
         setSpcLoading(false);
       }
 
+      // runHubRequest never rejects, so nothing here can escape the effect's void call.
       await Promise.all(requests);
     },
     [],
