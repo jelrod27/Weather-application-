@@ -189,6 +189,11 @@ export async function fetchMetarsBulk(icaos: string[]): Promise<Map<string, Meta
   try {
     response = await fetchWithTimeout(url);
   } catch (error) {
+    if (isAbortError(error)) {
+      console.warn('[aviation-noaa-service]', 'metar bulk fetch timed out');
+      captureUpstreamTimeout('aviation-noaa:fetchMetarsBulk', { stationCount: valid.length });
+      return results;
+    }
     console.error('[aviation-noaa-service]', 'metar bulk fetch failed', error);
     captureError(error, 'aviation-noaa:fetchMetarsBulk', { stationCount: valid.length });
     return results;

@@ -10,8 +10,8 @@ import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo';
-import { logRouteError } from '@/lib/error-utils'
-import { withApiRoute } from '@/lib/api/with-api-route'
+import { isExpectedUpstreamHttpError, logRouteError } from '@/lib/error-utils'
+import { ApiError, withApiRoute } from '@/lib/api/with-api-route'
 
 // 15 minutes — precipitation changes fast during active rain.
 const precipitationCache = createTtlCache<PrecipitationResponse>({ ttlMs: 15 * 60 * 1000 });
@@ -198,6 +198,9 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (error) {
+      if (isExpectedUpstreamHttpError(error)) {
+        throw new ApiError(502, 'Failed to fetch precipitation data');
+      }
       logRouteError('Precipitation API', error);
       return NextResponse.json(
         { error: 'Failed to fetch precipitation data' },

@@ -14,12 +14,14 @@ import {
   countsFromAlerts,
   fetchActiveAlertsDetail,
   fetchHarmWarningAlerts,
+  NwsPointOutOfBoundsError,
 } from '@/lib/services/nws-alerts-service'
+import { isUSLocation } from '@/lib/utils/location-utils'
 import { loadCanonicalActiveAlerts } from '@/lib/bitwatch/ingest'
 import { isSevereMonitorAlert } from '@/lib/services/severe-alert-filter'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
-import { logRouteError } from '@/lib/error-utils'
-import { withApiRoute } from '@/lib/api/with-api-route'
+import { isExpectedUpstreamHttpError, logRouteError } from '@/lib/error-utils'
+import { ApiError, withApiRoute } from '@/lib/api/with-api-route'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 function parsePoint(raw: string | null): { lat: number; lon: number } | null {
@@ -31,26 +33,42 @@ function parsePoint(raw: string | null): { lat: number; lon: number } | null {
   return { lat, lon }
 }
 
+/** Set when the pin is outside NWS coverage, so an empty list is not "all clear". */
+type AlertsCoverage = 'outside-nws'
+
+const OUTSIDE_NWS = {
+  details: [] as NWSAlertDetail[],
+  freshness: 'live-fallback',
+  coverage: 'outside-nws' as AlertsCoverage,
+}
+
 async function loadDetails(input: {
   harm: boolean
   point: { lat: number; lon: number } | null
-}): Promise<{ details: NWSAlertDetail[]; freshness: string }> {
-  if (!input.point) {
-    const supabase = createServiceRoleSupabaseClient()
-    if (supabase) {
-      const canonical = await loadCanonicalActiveAlerts(supabase)
-      if (canonical?.freshness === 'fresh') {
-        const details = input.harm ? canonical.alerts.filter(isSevereMonitorAlert) : canonical.alerts
-        return { details, freshness: canonical.freshness }
-      }
+}): Promise<{ details: NWSAlertDetail[]; freshness: string; coverage?: AlertsCoverage }> {
+  if (input.point) {
+    // NWS only answers for US points; anything else is a 400, not an outage.
+    if (!isUSLocation(input.point.lat, input.point.lon)) return OUTSIDE_NWS
+    try {
+      const live = await fetchActiveAlertsDetail({ point: input.point })
+      const details = input.harm ? live.filter(isSevereMonitorAlert) : live
+      return { details, freshness: 'live-fallback' }
+    } catch (error) {
+      if (error instanceof NwsPointOutOfBoundsError) return OUTSIDE_NWS
+      throw error
     }
   }
 
-  const live = input.point
-    ? await fetchActiveAlertsDetail({ point: input.point })
-    : input.harm
-      ? await fetchHarmWarningAlerts()
-      : await fetchActiveAlertsDetail()
+  const supabase = createServiceRoleSupabaseClient()
+  if (supabase) {
+    const canonical = await loadCanonicalActiveAlerts(supabase)
+    if (canonical?.freshness === 'fresh') {
+      const details = input.harm ? canonical.alerts.filter(isSevereMonitorAlert) : canonical.alerts
+      return { details, freshness: canonical.freshness }
+    }
+  }
+
+  const live = input.harm ? await fetchHarmWarningAlerts() : await fetchActiveAlertsDetail()
   const details = input.harm ? live.filter(isSevereMonitorAlert) : live
   return { details, freshness: 'live-fallback' }
 }
@@ -72,7 +90,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let { details, freshness } = await loadDetails({ harm, point })
+    let { details, freshness, coverage } = await loadDetails({ harm, point })
+    const coverageField = coverage ? { coverage } : {}
 
     if (area) {
       details = details.filter((a) => a.areaDesc.toLowerCase().includes(area.toLowerCase()))
@@ -106,23 +125,27 @@ export async function GET(request: NextRequest) {
         maxDescriptionChars: maxChars,
         maxInstructionChars: maxChars,
       })
-      return NextResponse.json(fc, {
-        headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders },
-      })
+      return NextResponse.json(
+        { ...fc, ...coverageField },
+        { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
+      )
     }
 
     if (detail) {
       return NextResponse.json(
-        { alerts: details, wis: wisMerged, total: details.length, freshness },
+        { alerts: details, wis: wisMerged, total: details.length, freshness, ...coverageField },
         { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
       )
     }
 
     return NextResponse.json(
-      { alerts: summaries, wis: wisMerged, total: summaries.length, freshness },
+      { alerts: summaries, wis: wisMerged, total: summaries.length, freshness, ...coverageField },
       { headers: { 'Cache-Control': cacheControl, ...rateLimitHeaders } },
     )
   } catch (error) {
+    if (isExpectedUpstreamHttpError(error)) {
+      throw new ApiError(502, 'Failed to fetch alerts')
+    }
     logRouteError('Alerts API', error)
     return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 })
   }

@@ -7,7 +7,7 @@
  * transient noise and must NOT open a Sentry issue, while a genuine NOAA
  * failure (non-ok HTTP, network error) must still be captured.
  */
-import { fetchAviationAlertsFromNOAA } from '@/lib/services/aviation-noaa-service';
+import { fetchAviationAlertsFromNOAA, fetchMetarsBulk } from '@/lib/services/aviation-noaa-service';
 import * as Sentry from '@sentry/nextjs';
 
 jest.mock('@sentry/nextjs', () => ({
@@ -59,6 +59,34 @@ describe('fetchAviationAlertsFromNOAA upstream failure classification', () => {
     const alerts = await fetchAviationAlertsFromNOAA();
 
     expect(alerts).toEqual([]);
+    expect(mockedSentry.captureException).toHaveBeenCalled();
+  });
+});
+
+describe('fetchMetarsBulk upstream failure classification', () => {
+  const realFetch = global.fetch;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    global.fetch = realFetch;
+  });
+
+  it('does not open a Sentry issue when the METAR timeout aborts', async () => {
+    global.fetch = jest.fn().mockRejectedValue(abortError());
+
+    const results = await fetchMetarsBulk(['KATL', 'KORD']);
+
+    expect(results.size).toBe(0);
+    expect(mockedSentry.captureException).not.toHaveBeenCalled();
+    expect(mockedSentry.addBreadcrumb).toHaveBeenCalled();
+  });
+
+  it('captures a Sentry error when NOAA METAR returns a non-ok status', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 });
+
+    const results = await fetchMetarsBulk(['KATL']);
+
+    expect(results.size).toBe(0);
     expect(mockedSentry.captureException).toHaveBeenCalled();
   });
 });
