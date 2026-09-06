@@ -18,6 +18,7 @@ Product specs live in `planning/prds/`. Start with `planning/prds/README.md` for
 - React 19
 - TypeScript strict mode
 - Tailwind CSS v4
+- OpenLayers for maps; MapLibre GL only for the aviation aircraft map
 - Supabase
 - Open-Meteo weather data (primary)
 - Jest unit tests
