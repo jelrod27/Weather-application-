@@ -96,6 +96,10 @@ Caching layers: `lib/weather-session-cache.ts` (in-tab), `lib/user-cache-service
 
 Six themes (`lib/theme-config.ts`): `nord`, `daybreak` (default), `synthwave84`, `dracula`, `cyberpunk`, `matrix`, split into free/premium tiers by `lib/theme-tiers.ts` with a 30s preview window (`hooks/use-theme-preview.ts`). Read theme state from `@/components/theme-provider` (`useTheme`) — **never** `next-themes`. Style with the CSS custom properties (`var(--bg)`, `var(--text)`, `var(--primary)`), not hardcoded colors.
 
+### Maps: two libraries, on purpose
+
+OpenLayers (`ol`) draws every map except one: radar (`components/radar-v2/`, `hooks/useRadarMapEngine.ts`), warnings, severe, travel, and the SPC outlook. MapLibre GL is used only for the aviation live aircraft map (`components/aviation/LiveAircraftMap.tsx`). Do not add a third library or mix the two on one page. Basemap tile URLs go through `lib/maps/carto-basemap.ts`; a test rejects hardcoded CARTO templates anywhere else.
+
 ### Middleware and CSP
 
 `middleware.ts` handles Supabase session refresh, auth-route redirects, and builds the Content-Security-Policy (`buildCspHeader`). **Any new external host a client calls must be added to `connect-src` there** or it fails silently in production — this has bitten the location fallback and map basemaps before. CSP lives only in middleware; do not duplicate it in `next.config.mjs`. `'unsafe-inline'` in `script-src` is intentional: most pages are SSG, so per-request nonces cannot be injected.
@@ -141,6 +145,20 @@ Optional/server-only (see `.env.example` for the annotated list): `SUPABASE_SERV
 - `_archive/`, `tempest/` — historical plans and legacy E2E; excluded from search/build/knip.
 - `scripts/` — one-off `tsx` utilities; excluded from knip, so unused exports there are not flagged.
 - `proxy.ts`, `instrumentation*.ts`, `sentry.*.config.ts` — top-level entry points outside the App Router.
+- `lib/cities.ts` is the city catalog facade. `lib/city-metadata.ts` (SEO, neighbors), `lib/city-database.ts` (search index), and `lib/city-data.ts` (random-link catalog) are its internals; import only the facade. A test fails the suite on any other import path.
+
+### `lib/` map
+
+One line per directory; the 39 top-level files in `lib/` are shared utilities (`error-utils`, `abort-error`, `theme-*`, `cities`, the session and user caches, rate limits).
+
+- `alerts/` guest manage tokens (HMAC) · `api/` `withApiRoute`, query-param parsing · `auth/` AuthProvider, protected routes, post-auth redirects
+- `aviation/` METAR, aircraft providers and normalization, brief score, live-map GeoJSON · `bitwatch/` the NWS warning pipeline (see above) · `blog/` post loading, categories, hero, allowed image hosts
+- `cache/` TTL cache and weather cache policy · `cron/` cron bearer verification · `dashboard/` onboarding state, save location · `data/` static catalogs (major US airports)
+- `education/` Entries, slugs, Guide content, layout, SEO, diagrams · `geo/` point-in-polygon, CONUS bounds, SPC point risk · `geocoding/` lookup · `home/` hub links, location, utils, and the hub request runner
+- `maps/` CARTO basemap helper · `news/` RSS rails, tropical headlines, stock images · `pollen/` Google and Open-Meteo pollen, category normalization · `preferences/` server preference resolution · `push/` web push send and VAPID
+- `radar/` providers and coverage, RainViewer manifest, timestamps, URL state · `security/` Turnstile · `seo/` city page and homepage metadata, sitemap lastmod · `services/` external API clients plus severe and guest alert email delivery
+- `space-weather/` shared series route helper · `stargazer/` astronomy, Bortle, satellites and launches, score · `supabase/` browser, server, and service-role clients, timed fetch · `utils/` US location bounds, redirect validation
+- `validations/` Zod schemas (preferences, storm report) · `warnings/` local ranking, alert links, NWS parameter parsing, pin persistence · `weather/` Open-Meteo adapter, current, forecast, geocoding, home bootstrap, hero and precip utils
 
 ## Pull Requests
 
