@@ -209,6 +209,28 @@ export function countNwsProductTiers(details: Pick<NWSAlertDetail, 'event'>[]): 
   return { nwsWarnings, nwsWatches, nwsAdvisories }
 }
 
+/**
+ * api.weather.gov answers `400 Parameter "point" is invalid: out of bounds`
+ * for a pin outside NWS coverage (Canada, Mexico, Europe). That is a fact
+ * about the pin, not an upstream failure, so callers get a typed error they
+ * can turn into "no NWS coverage here" instead of a 5xx.
+ */
+export class NwsPointOutOfBoundsError extends Error {
+  constructor() {
+    super('NWS point outside coverage')
+    this.name = 'NwsPointOutOfBoundsError'
+  }
+}
+
+async function isNwsPointOutOfBounds(response: Response): Promise<boolean> {
+  try {
+    const body = (await response.json()) as { detail?: unknown }
+    return typeof body?.detail === 'string' && /out of bounds/i.test(body.detail)
+  } catch {
+    return false
+  }
+}
+
 async function fetchNwsFeatureCollection(url: string): Promise<{
   type: 'FeatureCollection'
   features: Array<{
@@ -230,6 +252,9 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
     clearTimeout(timer)
   }
   if (!response.ok) {
+    if (response.status === 400 && (await isNwsPointOutOfBounds(response))) {
+      throw new NwsPointOutOfBoundsError()
+    }
     throw new Error(`NWS alerts HTTP ${response.status}`)
   }
   const data = (await response.json()) as {

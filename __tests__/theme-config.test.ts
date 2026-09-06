@@ -2,6 +2,8 @@
  * Unit tests for theme configuration
  */
 
+import fs from 'fs';
+import path from 'path';
 import {
   THEME_DEFINITIONS,
   THEME_LIST,
@@ -43,6 +45,16 @@ describe('Theme Configuration', () => {
     it('should contain valid theme types', () => {
       THEME_LIST.forEach(theme => {
         expect(THEME_DEFINITIONS).toHaveProperty(theme);
+      });
+    });
+
+    it('is listed in the live user_preferences theme CHECK migration', () => {
+      const sql = fs.readFileSync(
+        path.join(__dirname, '..', 'supabase', 'migrations', '20260905_user_preferences_theme_daybreak.sql'),
+        'utf8',
+      );
+      THEME_LIST.forEach((theme) => {
+        expect(sql).toContain(`'${theme}'`);
       });
     });
   });
