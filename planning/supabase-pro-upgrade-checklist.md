@@ -14,7 +14,7 @@ Use this when a Free-tier limit or product requirement makes the $25/mo Pro plan
 
 | Trigger | Why Pro helps |
 |---------|----------------|
-| Backups | Free has none. Until Pro, `.github/workflows/db-backup.yml` takes a weekly encrypted logical dump (see that file's header for restore steps). Inert until the age recipient key and the `SUPABASE_BACKUP_DB_URL` secret are provisioned (hardening plan, Phase C); until then a run fails on purpose rather than uploading nothing. |
+| Backups | Free has none. Until Pro, `.github/workflows/db-backup.yml` takes a weekly encrypted logical dump (see that file's header for restore steps). Inert until the age recipient key and the `SUPABASE_BACKUP_DB_PASSWORD` secret are provisioned (hardening plan, Phase C); until then a run fails on purpose rather than uploading nothing. |
 | Branded auth emails | Not a Pro trigger: custom SMTP is configurable on every plan (Auth → SMTP Settings). Point it at Resend; the built-in sender is capped at 2 emails/hour and documented as not for production. |
 | Backups / recovery | Daily backups, 7-day retention; Free has none |
 | Auth audit / support | 7-day auth logs vs 1 hour on Free; email support |
