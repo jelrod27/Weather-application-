@@ -170,6 +170,20 @@ export interface SimilarityVerdict {
  *
  * Returns max=0, worstMatch=null when no prior posts exist.
  */
+/**
+ * Output room for the judge. It answers with one scored entry and a reason
+ * per prior post plus trigger phrases, so the ceiling has to grow with the
+ * lookback: a flat 1500 was cut off once the Sunday window filled up, and
+ * the pipeline silently scored that run as 0 similarity.
+ */
+const JUDGE_MAX_TOKENS_FLOOR = 2000;
+const JUDGE_MAX_TOKENS_BASE = 1000;
+const JUDGE_MAX_TOKENS_PER_POST = 300;
+
+function judgeMaxTokens(priorPostCount: number): number {
+  return Math.max(JUDGE_MAX_TOKENS_FLOOR, JUDGE_MAX_TOKENS_BASE + JUDGE_MAX_TOKENS_PER_POST * priorPostCount);
+}
+
 export async function judgeSimilarity(
   draft: string,
   priorPosts: BlogPost[],
@@ -212,7 +226,7 @@ ${draft}`;
 
   const raw = await callAnthropic({
     messages: [{ role: 'user', content: prompt }],
-    maxTokens: 1500,
+    maxTokens: judgeMaxTokens(priorPosts.length),
     temperature: 0,
   });
 
