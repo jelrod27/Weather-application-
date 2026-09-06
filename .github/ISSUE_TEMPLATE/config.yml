@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/jelrod27/Weather-application-/security/advisories/new
+    about: Do not open a public issue for security problems. Open a private advisory or email security@16bitweather.co.
+  - name: Ask a question or share an idea
+    url: https://github.com/jelrod27/Weather-application-/discussions
+    about: Questions and open-ended ideas go in Discussions.

@@ -1,51 +1,47 @@
-# Required GitHub Secrets for CI/CD
+# GitHub Actions secrets and variables
 
-This project requires the following secrets to be configured in your GitHub repository settings for the Playwright tests and deployment to work correctly:
+This is the complete list of what the workflows in `.github/workflows/` read.
+Anything not listed here is unused and should be deleted rather than kept
+"just in case". Deployment is handled by Vercel's Git integration, so no
+workflow needs a Vercel token, org id, or project id.
 
-## Required Secrets
+## Repository secrets
 
-### Vercel Deployment
-- `VERCEL_TOKEN` - Your Vercel authentication token
-- `VERCEL_PROJECT_ID` - The Vercel project ID
-- `VERCEL_ORG_ID` - Your Vercel organization/team ID
+| Name | Used by | Purpose |
+| --- | --- | --- |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | `e2e-preview.yml` | Lets Playwright reach a protected Vercel preview deployment. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. |
+| `SUPABASE_BACKUP_DB_URL` | `db-backup.yml` | Session-pooler connection string for the read-only `backup_reader` role, with `sslmode=require`. The weekly job refuses to run until it exists. |
 
-### Supabase Authentication
-- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for server-side operations)
+## `Production` environment secrets
 
-### Optional Weather APIs
-- `GOOGLE_POLLEN_API_KEY` - Google Pollen API key (recommended for US pollen coverage; Open-Meteo CAMS is the fallback)
+The newsletter and education workflows bind to `environment: production`
+only to read this secret. The environment is restricted to protected
+branches, so a `workflow_dispatch` from a feature branch cannot use it.
 
-Primary weather, forecast, UV, air quality, and precipitation data use Open-Meteo and do not require an API key.
+| Name | Used by | Purpose |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | `newsletter-sunday.yml`, `newsletter-wednesday.yml`, `education-guide.yml` | Model calls for generated posts and guides. |
 
-## How to Add Secrets
+## Repository variables (optional)
 
-1. Go to your GitHub repository
-2. Click on **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-4. Add each secret with the exact name listed above
+| Name | Default if unset | Used by |
+| --- | --- | --- |
+| `NEWSLETTER_MODEL` | `claude-sonnet-4-6` | newsletter workflows |
+| `EDUCATION_MODEL` | `claude-opus-5` | `education-guide.yml` |
+| `EDUCATION_EFFORT` | `medium` | `education-guide.yml` |
 
-## Vercel Environment Variables
+## What CI does *not* need
 
-For Playwright tests to work correctly against Vercel preview deployments, you need to configure the following environment variable in your Vercel project:
+- Supabase keys: `ci.yml`, `e2e-pr.yml`, and `lighthouse-pr.yml` build with
+  placeholder `NEXT_PUBLIC_SUPABASE_*` values set in the workflow file.
+- Weather API keys: Open-Meteo needs none. Google Pollen and other optional
+  keys are Vercel runtime env vars, not CI secrets.
+- `KERNEL_API_KEY`: opt-in legacy mode for Playwright (see `playwright.config.ts`);
+  no workflow sets it.
 
-### Required for Playwright Tests in Vercel Preview
+## Vercel environment variables that CI depends on
 
-- `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE` - Set to `true` to enable test mode bypass in middleware
-
-### How to Add Vercel Environment Variables
-
-1. Go to your Vercel project dashboard
-2. Navigate to **Settings** → **Environment Variables**
-3. Add `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE` with value `true`
-4. Select **Preview** environment (or all environments if you want)
-5. Click **Save**
-
-**Note:** The middleware will automatically detect Vercel preview environments (`VERCEL_ENV=preview`) and allow test mode bypass when the test header/cookie is present. However, explicitly setting `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=true` in Vercel is recommended for clarity and reliability.
-
-## Important Notes
-
-- Weather endpoints do not require OpenWeatherMap keys
-- Make sure to use the same API keys in your GitHub secrets as in your local `.env.local` file
-- For Vercel preview deployments, ensure `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=true` is set in Vercel's environment variables
+`NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=true` on Preview deployments so
+`e2e-preview.yml` can bypass auth via the test header (see
+`lib/playwright-test-mode.ts`; the bypass is refused when `NODE_ENV` is
+`production`).

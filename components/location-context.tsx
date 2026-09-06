@@ -11,7 +11,7 @@
  *
  * BETA SOFTWARE NOTICE:
  * This software is in active development. Features may change.
- * Report issues: https://github.com/deephouse23/Weather-application-/issues
+ * Report issues: https://github.com/jelrod27/Weather-application-/issues
  */
 
 

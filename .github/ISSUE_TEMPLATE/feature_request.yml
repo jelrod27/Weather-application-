@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest a tool, page, or data source.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this help you do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+  - type: input
+    id: source
+    attributes:
+      label: Data source (if any)
+      description: Link to the public API or dataset the feature would use.

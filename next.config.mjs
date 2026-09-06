@@ -39,9 +39,10 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
 
   // Add headers for better caching and security.
-  // NOTE: Content-Security-Policy is set per-request in middleware.ts so we can
-  // use a fresh nonce for script-src in production. Do NOT duplicate CSP
-  // here — a static CSP would collide with the nonce CSP.
+  // NOTE: Content-Security-Policy is set per-request in middleware.ts
+  // (buildCspHeader) so production and development can differ. Do NOT add a
+  // CSP here: two CSP headers are enforced as their intersection, so a static
+  // one would silently tighten the middleware policy.
   async headers() {
     return [
       {
@@ -63,10 +64,6 @@ const nextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
           },
           {
             key: 'Referrer-Policy',

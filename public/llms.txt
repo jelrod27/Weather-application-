@@ -59,4 +59,4 @@
 ## Contact
 
 - Site: https://www.16bitweather.co/about
-- Issues: https://github.com/deephouse23/Weather-application-/issues
+- Issues: https://github.com/jelrod27/Weather-application-/issues

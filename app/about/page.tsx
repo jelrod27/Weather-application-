@@ -202,7 +202,7 @@ export default function AboutPage() {
           <p className="text-sm font-mono text-muted-foreground tracking-widest uppercase mb-6">Justin Elrod</p>
 
           <div className="flex justify-center gap-6">
-            <a href="https://github.com/deephouse23" target="_blank" rel="noopener noreferrer"
+            <a href="https://github.com/jelrod27" target="_blank" rel="noopener noreferrer"
               className="group flex flex-col items-center gap-2">
               <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-colors">
                 <Code className="w-5 h-5" />

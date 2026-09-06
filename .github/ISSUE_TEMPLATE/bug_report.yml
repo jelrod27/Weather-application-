@@ -1,0 +1,30 @@
+name: Bug report
+description: Something on 16bitweather.co is broken or wrong.
+labels: [bug]
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      placeholder: https://www.16bitweather.co/...
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+  - type: input
+    id: env
+    attributes:
+      label: Browser and device
+      placeholder: Safari 18 on iPhone 15; Chrome 130 on macOS

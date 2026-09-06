@@ -1611,6 +1611,12 @@ Expected: `0`.
 
 ### B2: Turn on the two free secret-scanning features
 
+> **Closed 2026-09-05: not available.** Non-provider patterns and validity
+> checks require GitHub Secret Protection, which GitHub offers only to
+> organization-owned repositories. On this user-owned public repository the
+> PATCH echoes `disabled` and the UI has no toggle. The audit line "both are
+> free on public repos" was wrong. Push protection itself is enabled.
+
 - [ ] **Step 1: Enable non-provider patterns and validity checks**
 
 ```bash
@@ -1625,7 +1631,7 @@ JSON
 gh api "repos/$R" --jq '.security_and_analysis | to_entries[] | "\(.key)=\(.value.status)"'
 ```
 
-Expected: all five entries `enabled` (`secret_scanning`, `secret_scanning_push_protection`, `dependabot_security_updates`, `secret_scanning_non_provider_patterns`, `secret_scanning_validity_checks`).
+Expected on this account (observed 2026-09-05): `secret_scanning`, `secret_scanning_push_protection`, and `dependabot_security_updates` are `enabled`; `secret_scanning_non_provider_patterns` and `secret_scanning_validity_checks` stay `disabled` whatever Step 1 sends. Steps 1 and 2 are not applicable here and are kept only as the record of what was tried.
 
 ### B3: Lock down the Actions policy (after PR 2 is merged)
 
@@ -1886,6 +1892,12 @@ visible effect is an "Approve and run" button on any future outside PR.
 
 ### B12: Push ruleset for secret-shaped files, and a tag ruleset for `v*`
 
+> **Outcome 2026-09-05.** The push-ruleset `POST` returned 422 ("only
+> org-owned repos can have push rules") and was skipped, as anticipated below.
+> The tag ruleset "Protect release tags" (id 22346791) is active.
+> Secret-shaped files stay guarded by `.gitignore`, the gitleaks hooks, and
+> GitHub push protection.
+
 Push rules are enforced by GitHub when it receives a push, on every branch,
 from every machine and token, with no flag to bypass. They back up
 `.gitignore` (client-side, pattern-dependent) and the gitleaks hook
@@ -1944,8 +1956,9 @@ release tags):
 }
 ```
 
-Expected read-back: two rulesets, `target=push` and `target=tag`, both
-`enforcement=active`.
+Expected read-back on this account (observed 2026-09-05): one ruleset,
+`Protect release tags target=tag enforcement=active`. The push ruleset is
+absent because the `POST` was refused (see the outcome note above).
 
 ---
 
