@@ -67,6 +67,14 @@ jobs:
           echo "::add-mask::$encoded"
           DB_URL="postgresql://backup_reader.cckcvyccjntadoohjntr:${encoded}@aws-1-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
           PG_DUMP=/usr/lib/postgresql/17/bin/pg_dump
+          # The shared pooler caches role credentials; its first login after a
+          # password rotation fails while it refreshes them, the next succeeds.
+          for attempt in 1 2 3; do
+            /usr/lib/postgresql/17/bin/psql "$DB_URL" -qAtc "select 1" >/dev/null 2>&1 && break
+            echo "connection attempt $attempt failed; retrying in 5s"
+            [ "$attempt" -lt 3 ] || { echo "::error::could not connect as backup_reader after 3 attempts"; exit 1; }
+            sleep 5
+          done
           stamp=$(date -u +%Y%m%d)
           recipient=$(cat .github/backup-recipient.txt)
           "$PG_DUMP" "$DB_URL" --data-only --format=custom --no-owner --no-privileges \
