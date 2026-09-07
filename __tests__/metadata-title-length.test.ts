@@ -64,9 +64,6 @@ describe('static route metadata fits a search result', () => {
     if (title == null) return
 
     if (typeof title === 'string') {
-      expect({ route: relativePath, title, length: title.length }).toMatchObject({
-        length: expect.any(Number),
-      })
       expect(title.length).toBeLessThanOrEqual(MAX_SEGMENT_TITLE)
       expect(title).not.toContain('16 Bit Weather')
       expect(title).not.toContain('16-Bit Weather')

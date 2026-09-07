@@ -42,10 +42,38 @@ function formatType(type: string): string {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/**
+ * Renders an observing window. Sorting alone is not enough: a winter target
+ * carries months like [11, 12, 1, 2], which sorts to [1, 2, 11, 12] and would
+ * read as "Jan-Dec", the opposite of the truth. A single gap in the sorted run
+ * means the window wraps through December, so long as the months either side
+ * of it account for the whole set.
+ */
 function formatBestMonths(months: number[]): string {
   if (months.length === 0 || months.length === 12) return 'year-round';
   const sorted = [...months].sort((a, b) => a - b);
-  return `${MONTH_NAMES[sorted[0] - 1]}–${MONTH_NAMES[sorted[sorted.length - 1] - 1]}`;
+  if (sorted.length === 1) return MONTH_NAMES[sorted[0] - 1];
+
+  const gaps: number[] = [];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] > 1) gaps.push(i);
+  }
+
+  if (gaps.length === 0) {
+    return `${MONTH_NAMES[sorted[0] - 1]}–${MONTH_NAMES[sorted[sorted.length - 1] - 1]}`;
+  }
+
+  if (gaps.length === 1) {
+    const start = sorted[gaps[0]];
+    const end = sorted[gaps[0] - 1];
+    const span = ((end - start + 12) % 12) + 1;
+    if (span === sorted.length) {
+      return `${MONTH_NAMES[start - 1]}–${MONTH_NAMES[end - 1]}`;
+    }
+  }
+
+  // Two or more separate windows: name the months rather than invent a range.
+  return sorted.map((month) => MONTH_NAMES[month - 1]).join(', ');
 }
 
 function groupByType(objects: DeepSkyObject[]): Array<{ type: string; objects: DeepSkyObject[] }> {
