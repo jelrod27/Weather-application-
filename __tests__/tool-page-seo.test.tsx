@@ -36,12 +36,14 @@ function readPage(...segments: string[]): string {
  * Strip tags (JSON-LD script included) and normalise entities and whitespace.
  *
  * The script match is case-insensitive because `<SCRIPT>` is equally valid
- * markup, and `&amp;` is unescaped last: doing it earlier turns `&amp;quot;`
- * into a literal quote rather than the text `&quot;`.
+ * markup, and is anchored on a word boundary so it cannot match a tag that
+ * merely starts with those letters. `&amp;` is unescaped last: doing it
+ * earlier turns `&amp;quot;` into a literal quote rather than the text
+ * `&quot;`.
  */
 function visibleText(markup: string): string {
   return markup
-    .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&#x27;|&#39;/g, "'")
     .replace(/&quot;/g, '"')
