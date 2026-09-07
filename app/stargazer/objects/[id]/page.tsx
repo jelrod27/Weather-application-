@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { DeepSkyObject } from '@/lib/stargazer/types';
-import catalog from '@/data/deep-sky-catalog.json';
+import PageWrapper from '@/components/page-wrapper';
 import ObjectDetail from '@/components/stargazer/ObjectDetail';
+import catalog from '@/data/deep-sky-catalog.json';
+import { clampDescription } from '@/lib/seo/clamp-description';
+import type { DeepSkyObject } from '@/lib/stargazer/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -21,10 +23,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const obj = getCatalogObject(id);
   if (!obj) return { title: 'Object Not Found' };
 
-  const title = `${obj.id} - ${obj.name} | Deep Sky Database | 16 Bit Weather`;
-  const description = obj.longDescription
-    ? obj.longDescription.slice(0, 160)
-    : obj.description;
+  // The root layout's title template appends the brand.
+  const title = `${obj.id} ${obj.name}: Observing Guide`;
+  const description = clampDescription(obj.longDescription || obj.description);
   const ogImage = `/api/og?title=${encodeURIComponent(obj.id)}&subtitle=${encodeURIComponent(obj.name)}`;
   const pageUrl = `https://www.16bitweather.co/stargazer/objects/${obj.id}`;
 
@@ -63,5 +64,11 @@ export default async function DeepSkyObjectPage({ params }: PageProps) {
   const obj = getCatalogObject(id);
   if (!obj) notFound();
 
-  return <ObjectDetail object={obj} />;
+  // PageWrapper gives the page the site nav and footer, so each object page
+  // links out to the rest of the site instead of only "Back to Stargazer".
+  return (
+    <PageWrapper>
+      <ObjectDetail object={obj} />
+    </PageWrapper>
+  );
 }
