@@ -89,6 +89,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
               <nav className="flex flex-col gap-1.5">
                 <Link href="/warnings" className="text-muted-foreground hover:text-foreground transition-colors">Warnings</Link>
                 <Link href="/alerts" className="text-muted-foreground hover:text-foreground transition-colors">Weather Alerts</Link>
+                <Link href="/weather" className="text-muted-foreground hover:text-foreground transition-colors">City Climate Guides</Link>
                 {/* /hourly is a noindex, location-specific view; keep it usable without pooling link equity there. */}
                 <Link href="/hourly" rel="nofollow" className="text-muted-foreground hover:text-foreground transition-colors">Hourly</Link>
                 <Link href="/travel" className="text-muted-foreground hover:text-foreground transition-colors">Travel</Link>
