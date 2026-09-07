@@ -37,13 +37,15 @@ function readPage(...segments: string[]): string {
  *
  * The script match is case-insensitive because `<SCRIPT>` is equally valid
  * markup, and is anchored on a word boundary so it cannot match a tag that
- * merely starts with those letters. `&amp;` is unescaped last: doing it
+ * merely starts with those letters. The closing tag allows trailing junk,
+ * which browsers accept in forms like `</script bar>`. `&amp;` is unescaped
+ * last: doing it
  * earlier turns `&amp;quot;` into a literal quote rather than the text
  * `&quot;`.
  */
 function visibleText(markup: string): string {
   return markup
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&#x27;|&#39;/g, "'")
     .replace(/&quot;/g, '"')
