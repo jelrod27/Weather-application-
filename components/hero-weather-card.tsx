@@ -83,7 +83,8 @@ export function HeroWeatherCard({
           {/* Left: identity + temperature */}
           <div className="min-w-0 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-3 mb-1.5">
-              <h1
+              {/* The card loads after the client fetch; the page's server-rendered <h1> owns the topic. */}
+              <h2
                 className={cn(
                   "font-extrabold tracking-wider uppercase text-primary font-sans",
                   glowClass,
@@ -91,7 +92,7 @@ export function HeroWeatherCard({
                 style={{ fontSize: "clamp(18px, 3.2vw, 26px)" }}
               >
                 {location} Weather
-              </h1>
+              </h2>
               {(highTemp !== undefined && lowTemp !== undefined) && (
                 <ShareButton
                   weatherData={{

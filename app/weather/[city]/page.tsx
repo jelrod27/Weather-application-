@@ -7,11 +7,13 @@
 
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { permanentRedirect } from 'next/navigation'
 
 import { safeJsonLd } from '@/lib/utils'
 import CityWeatherClient from './client'
 import CityClimateGuide from '@/components/city/city-climate-guide'
 import {
+  CITY_DATA,
   cityData as cityMetadata,
   getCityEnrichment,
   getNearbyCities,
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   if (!city) {
     const displayName = slugToDisplayName(citySlug)
     return {
-      title: `${displayName} Weather Forecast | 16 Bit Weather`,
+      title: `${displayName} Weather Forecast`,
       description: `Live weather conditions and forecast for ${displayName}.`,
       robots: { index: false, follow: true },
       alternates: { canonical: `${BASE_URL}/weather/${citySlug}` },
@@ -48,6 +50,14 @@ interface PageParams {
 
 export default async function CityWeatherPage({ params }: PageParams) {
   const { city: citySlug } = await params
+
+  // `/weather/New-York-NY` would otherwise render a noindex duplicate of the
+  // catalog page; send mixed-case slugs to the canonical lowercase URL.
+  const lowerSlug = citySlug.toLowerCase()
+  if (citySlug !== lowerSlug && cityMetadata[lowerSlug]) {
+    permanentRedirect(`/weather/${lowerSlug}`)
+  }
+
   const city = cityMetadata[citySlug]
 
   const cityInfo = city || {
@@ -67,6 +77,7 @@ export default async function CityWeatherPage({ params }: PageParams) {
   const enrichment = isPredefinedCity ? getCityEnrichment(citySlug) : null
   const nearbyCities = isPredefinedCity ? getNearbyCities(citySlug) : []
   const fullLocation = cityInfo.state ? `${cityInfo.name}, ${cityInfo.state}` : cityInfo.name
+  const coordinates = (CITY_DATA as Record<string, { lat: number; lon: number } | undefined>)[citySlug]
 
   const webPageJsonLd = {
     '@context': 'https://schema.org',
@@ -83,10 +94,16 @@ export default async function CityWeatherPage({ params }: PageParams) {
         addressRegion: cityInfo.state || undefined,
         addressCountry: 'US',
       },
-    },
-    mainEntity: {
-      '@type': 'WeatherForecast',
-      location: { '@type': 'Place', name: fullLocation },
+      // schema.org has no WeatherForecast type; coordinates are what a Place can carry.
+      ...(coordinates
+        ? {
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: coordinates.lat,
+              longitude: coordinates.lon,
+            },
+          }
+        : {}),
     },
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -120,6 +137,13 @@ export default async function CityWeatherPage({ params }: PageParams) {
     />
   ) : null
 
+  // Server-rendered so the page has its topic heading before the live card loads.
+  const heading = (
+    <h1 className="mb-3 font-mono text-lg font-bold uppercase tracking-wider text-primary sm:text-xl">
+      {fullLocation} Weather{isPredefinedCity ? ' & Climate Guide' : ''}
+    </h1>
+  )
+
   return (
     <>
       <script
@@ -145,6 +169,7 @@ export default async function CityWeatherPage({ params }: PageParams) {
         <CityWeatherClient
           city={cityInfo}
           citySlug={citySlug}
+          heading={heading}
           climateGuide={climateGuide}
         />
       </Suspense>
