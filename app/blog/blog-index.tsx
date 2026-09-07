@@ -9,7 +9,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogCategory, BlogCategoryId } from '@/lib/blog/categories'
 import { blogHeroImage } from '@/lib/blog/hero'
-import { blogIndexHref, blogPostHref } from '@/lib/blog/query'
+import { blogIndexHref, blogPostHref, tagSlug } from '@/lib/blog/query'
 
 /**
  * The subset of a post a card renders. Deliberately not `BlogPost`: the index
@@ -216,7 +216,7 @@ export function BlogIndex({
                 <div className="flex flex-wrap gap-2">
                   {featured.tags.map(tag => (
                     <span
-                      key={tag}
+                      key={tagSlug(tag)}
                       className="px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
                     >
                       {tag}
@@ -236,7 +236,10 @@ export function BlogIndex({
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {gridPosts.map(post => (
               <Link
-                key={post.slug}
+                // Reuses the validated href: `key` never reaches the DOM, but
+                // deriving it from the same sanitized value keeps one source of
+                // truth for the post's identity on this card.
+                key={blogPostHref(post.slug)}
                 href={blogPostHref(post.slug)}
                 className={cn(
                   'block rounded-lg border p-5 transition-all duration-200',
@@ -259,7 +262,7 @@ export function BlogIndex({
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {post.tags.slice(0, 3).map(tag => (
                     <span
-                      key={tag}
+                      key={tagSlug(tag)}
                       className="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
                     >
                       {tag}
