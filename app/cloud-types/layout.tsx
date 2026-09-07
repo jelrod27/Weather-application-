@@ -10,7 +10,7 @@ import { safeJsonLd } from '@/lib/utils'
 
 const CLOUD_COUNT = cloudDatabase.length
 const OG_IMAGE = `/api/og?title=Cloud+Types+Guide&subtitle=${CLOUD_COUNT}+Cloud+Types+Explained`
-const DESCRIPTION = `Identify ${CLOUD_COUNT} cloud types with the 16-bit cloud atlas: cirrus, cumulus, stratus, cumulonimbus and rare forms like mammatus and lenticular, with altitude and weather cues.`
+const DESCRIPTION = `Identify ${CLOUD_COUNT} cloud types with the 16-bit cloud atlas: cirrus, cumulus, stratus, cumulonimbus and rare forms like mammatus and lenticular, with altitude cues.`
 
 export const metadata: Metadata = {
   // The root layout's title template appends the brand.

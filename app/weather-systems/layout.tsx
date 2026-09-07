@@ -12,7 +12,7 @@ const BASE_URL = 'https://www.16bitweather.co'
 const PAGE_URL = `${BASE_URL}/weather-systems`
 const SYSTEM_COUNT = weatherSystemsDatabase.length
 const OG_IMAGE = `/api/og?title=Weather+Systems&subtitle=${SYSTEM_COUNT}+Storm+Types+Explained`
-const DESCRIPTION = `Guide to ${SYSTEM_COUNT} weather systems: cyclones, anticyclones, warm, cold and occluded fronts, jet streams, hurricanes and tornadoes, with how each forms and what weather it brings.`
+const DESCRIPTION = `Guide to ${SYSTEM_COUNT} weather systems: cyclones, anticyclones, warm, cold and occluded fronts, jet streams, hurricanes and tornadoes, and the weather each brings.`
 
 export const metadata: Metadata = {
   // The root layout's title template appends the brand.
