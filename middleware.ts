@@ -26,8 +26,8 @@ function buildCspHeader(isProd: boolean): string {
   return [
     "default-src 'self'",
     scriptSrc,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
     "img-src 'self' data: https: blob:",
     // IP-based geolocation fallback (lib/location-service.ts) calls these
     // directly from the client when the user blocks or denies navigator
