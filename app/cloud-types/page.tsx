@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cloudDatabase } from "@/data/cloud-types"
+import { CLOUD_TYPES_FAQ } from "@/lib/education/cloud-types-faq"
 
 
 export default function CloudTypesPage() {
@@ -517,6 +518,25 @@ export default function CloudTypesPage() {
             <div className={`mt-4 text-center text-xs ${themeClasses.mutedText}`}>
               Click on clouds to unlock achievements!
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Visible FAQ; the layout emits the same entries as FAQPage JSON-LD. */}
+        <Card className={`container-primary mt-8 ${themeClasses.border}`}>
+          <CardHeader>
+            <CardTitle className={`text-lg font-mono uppercase text-center ${themeClasses.accentText}`}>
+              <h2>Cloud Types FAQ</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-4 font-mono text-sm">
+              {CLOUD_TYPES_FAQ.map((entry) => (
+                <div key={entry.question}>
+                  <dt className={`font-bold ${themeClasses.text}`}>{entry.question}</dt>
+                  <dd className={`mt-1 leading-relaxed ${themeClasses.mutedText}`}>{entry.answer}</dd>
+                </div>
+              ))}
+            </dl>
           </CardContent>
         </Card>
 

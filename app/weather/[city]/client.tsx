@@ -46,10 +46,11 @@ interface CityWeatherClientProps {
     }
   }
   citySlug: string
+  heading?: ReactNode
   climateGuide?: ReactNode
 }
 
-export default function CityWeatherClient({ city, citySlug, climateGuide }: CityWeatherClientProps): JSX.Element {
+export default function CityWeatherClient({ city, citySlug, heading, climateGuide }: CityWeatherClientProps): JSX.Element {
   const router = useRouter()
   const { theme } = useTheme()
 
@@ -71,13 +72,6 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
     setSelectedDay(null)
   }, [citySlug])
 
-  useEffect(() => {
-    if (!weather || loading) return
-    const anchor = document.getElementById('live-weather')
-    if (!anchor) return
-    anchor.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [citySlug, weather?.location, loading])
-
   const handleSearch = (locationInput: string) => {
     if (!locationInput?.trim()) return
     const slug = locationInputToSlug(locationInput)
@@ -94,6 +88,8 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="2xl" padding="md">
 
+          {heading}
+
           <WeatherSearch
             key={citySlug}
             onSearch={handleSearch}
@@ -107,38 +103,42 @@ export default function CityWeatherClient({ city, citySlug, climateGuide }: City
 
           <HomeHub userLocation={hubLocation} />
 
-          {loading && (
-            <div className="flex justify-center items-center mt-8">
-              <Loader2 className="h-8 w-8 animate-spin text-weather-primary" />
-              <span className="ml-2 text-weather-text">Loading weather data...</span>
-            </div>
-          )}
+          {/* The live card arrives after the fetch; reserve its height so the
+              climate guide and footer do not jump when it lands (CLS). */}
+          <div className="min-h-[480px]">
+            {loading && (
+              <div className="flex justify-center items-center mt-8">
+                <Loader2 className="h-8 w-8 animate-spin text-weather-primary" />
+                <span className="ml-2 text-weather-text">Loading weather data...</span>
+              </div>
+            )}
 
-          {error && (
-            <div className="text-weather-danger text-center mt-4">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="text-weather-danger text-center mt-4">
+                {error}
+              </div>
+            )}
 
-          {weather && !loading && !error && (
-            <div id="live-weather" className="scroll-mt-24">
-              <div className="flex justify-end mb-2">
-                <SaveLocationButton
+            {weather && !loading && !error && (
+              <div id="live-weather" className="scroll-mt-24">
+                <div className="flex justify-end mb-2">
+                  <SaveLocationButton
+                    weather={weather}
+                    cityName={city.name}
+                    state={city.state}
+                  />
+                </div>
+                <WeatherDisplay
                   weather={weather}
-                  cityName={city.name}
-                  state={city.state}
+                  theme={theme || 'nord'}
+                  selectedDay={selectedDay}
+                  onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
+                  precipitation={precipitation}
+                  showRadar={true}
                 />
               </div>
-              <WeatherDisplay
-                weather={weather}
-                theme={theme || 'nord'}
-                selectedDay={selectedDay}
-                onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
-                precipitation={precipitation}
-                showRadar={true}
-              />
-            </div>
-          )}
+            )}
+          </div>
 
           {climateGuide ? <div className="mt-8">{climateGuide}</div> : null}
         </ResponsiveContainer>

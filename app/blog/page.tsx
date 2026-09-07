@@ -1,66 +1,136 @@
 import type { Metadata } from 'next'
-import { getAllPosts, getCategoriesInUse, BLOG_CATEGORIES } from '@/lib/blog'
-import { BlogIndex } from './blog-index'
+import { notFound } from 'next/navigation'
+
+import { getAllPosts, getCategoriesInUse, BLOG_CATEGORIES, type BlogPost } from '@/lib/blog'
+import {
+  blogIndexHref,
+  blogPageSlice,
+  blogTotalPages,
+  filterBlogPosts,
+  parseBlogIndexQuery,
+  tagSlug,
+  type BlogIndexSearchParams,
+} from '@/lib/blog/query'
+import { clampDescription } from '@/lib/seo/clamp-description'
+import { BlogIndex, type BlogIndexCard } from './blog-index'
 
 const BASE_URL = 'https://www.16bitweather.co'
+const RSS_URL = `${BASE_URL}/blog/rss.xml`
+
+const BASE_DESCRIPTION =
+  'Weekly dispatches from 16bitbot. Space weather, severe storms, weather phenomena, and climate records.'
 
 interface PageProps {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<BlogIndexSearchParams>
+}
+
+/**
+ * Display label for an active tag: the first spelling any post used for it.
+ *
+ * Takes the posts it scans rather than loading them, because `getAllPosts`
+ * re-reads and re-parses every markdown file on each call and `/blog` is
+ * request-time dynamic.
+ */
+function tagLabel(posts: BlogPost[], slug: string): string {
+  for (const post of posts) {
+    const match = post.tags.find(t => tagSlug(t) === slug)
+    if (match) return match
+  }
+  return slug.replace(/-/g, ' ')
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const { category } = await searchParams
+  const { category, tag, page } = parseBlogIndexQuery(await searchParams)
 
-  const baseTitle = '16 Bit Weather Blog | Weekly Dispatches from 16bitbot'
-  const baseDescription =
-    'Weekly dispatches from 16bitbot. Space weather, severe storms, weather phenomena, and climate records.'
+  // `alternates` is replaced wholesale per segment, so both /blog and the post
+  // route have to advertise the feed themselves.
+  const feed = { 'application/rss+xml': RSS_URL }
 
-  // Category-filtered URLs are near-duplicates of the index — keep them out of
-  // the index so crawl budget concentrates on canonical /blog and posts.
+  // Filtered URLs are near-duplicates of the index — keep them out of the
+  // index so crawl budget concentrates on canonical /blog and the posts.
   const categoryLabel = BLOG_CATEGORIES.find(c => c.id === category)?.label
-  if (categoryLabel) {
+  const filterLabel = categoryLabel ?? (tag ? tagLabel(getAllPosts(), tag) : null)
+  if (filterLabel) {
     return {
-      title: `${categoryLabel} | ${baseTitle}`,
-      description: `${categoryLabel} posts — ${baseDescription}`,
+      title: `${filterLabel} — Weather Blog`,
+      description: clampDescription(`${filterLabel} posts. ${BASE_DESCRIPTION}`),
       robots: { index: false, follow: true },
-      alternates: { canonical: `${BASE_URL}/blog` },
+      alternates: { canonical: `${BASE_URL}/blog`, types: feed },
     }
   }
 
+  // Unfiltered pages stay indexable and self-canonical; page 1 is /blog, never
+  // /blog?page=1, so the first page has a single URL.
+  const pageNumber = page ?? 1
+  const title = pageNumber > 1 ? `Weather Blog — Page ${pageNumber}` : 'Weather Blog'
+  const description =
+    pageNumber > 1
+      ? clampDescription(`Page ${pageNumber} of the dispatch archive. ${BASE_DESCRIPTION}`)
+      : clampDescription(BASE_DESCRIPTION)
+  const canonical = `${BASE_URL}${blogIndexHref({ page: pageNumber })}`
+  const ogImage = '/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot'
+
   return {
-    title: baseTitle,
-    description: baseDescription,
+    title,
+    description,
     openGraph: {
-      title: baseTitle,
-      description: baseDescription,
-      url: `${BASE_URL}/blog`,
+      title,
+      description,
+      url: canonical,
       siteName: '16 Bit Weather',
-      images: [
-        {
-          url: '/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot',
-          width: 1200,
-          height: 630,
-          alt: '16 Bit Weather Blog',
-        },
-      ],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: '16 Bit Weather Blog' }],
       locale: 'en_US',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: baseTitle,
-      description: baseDescription,
-      images: ['/api/og/blog?title=Weather+Blog&subtitle=Weekly+Dispatches+from+16bitbot'],
+      title,
+      description,
+      images: [ogImage],
     },
-    alternates: { canonical: `${BASE_URL}/blog` },
+    alternates: { canonical, types: feed },
+  }
+}
+
+/**
+ * Only the fields a card renders. The index used to receive every post in
+ * full — body markdown included — which is what made /blog ship 347 KB of
+ * inline RSC payload for ten cards.
+ */
+function toCard(post: ReturnType<typeof getAllPosts>[number]): BlogIndexCard {
+  return {
+    slug: post.slug,
+    title: post.title,
+    date: post.date,
+    author: post.author,
+    summary: post.summary,
+    tags: post.tags,
+    heroImage: post.heroImage,
+    readTime: post.readTime,
   }
 }
 
 export default async function BlogPage({ searchParams }: PageProps) {
-  const posts = getAllPosts()
-  const categories = getCategoriesInUse()
-  const { category } = await searchParams
-  const initialCategory =
-    category && BLOG_CATEGORIES.some(c => c.id === category) ? category : null
-  return <BlogIndex posts={posts} categories={categories} initialCategory={initialCategory} />
+  const { category, tag, page } = parseBlogIndexQuery(await searchParams)
+
+  // One read per request: getAllPosts hits the filesystem for every post.
+  const allPosts = getAllPosts()
+  const filtered = filterBlogPosts(allPosts, { category, tag })
+  const totalPages = blogTotalPages(filtered.length)
+
+  // A non-integer or out-of-range ?page= is a URL that never existed.
+  if (page === null || page > totalPages) notFound()
+
+  return (
+    <BlogIndex
+      posts={blogPageSlice(filtered, page).map(toCard)}
+      categories={getCategoriesInUse(allPosts)}
+      activeCategory={category}
+      activeTag={tag}
+      activeTagLabel={tag ? tagLabel(allPosts, tag) : null}
+      page={page}
+      totalPages={totalPages}
+      totalPosts={filtered.length}
+    />
+  )
 }

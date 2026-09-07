@@ -76,15 +76,19 @@ describe('Sitemap SEO', () => {
     expect(sitemapPaths).not.toContain('/map')
   })
 
-  it('sitemap should include stargazer hub but not deep-sky object pages', async () => {
+  it('sitemap should include the stargazer hub, the catalog index and every deep-sky object page', async () => {
     const { default: sitemap } = await import('../app/sitemap')
+    const { default: catalog } = await import('../data/deep-sky-catalog.json')
     const entries = await sitemap()
     const sitemapPaths = entries.map((e: { url: string }) => {
       try { return new URL(e.url).pathname } catch { return e.url }
     })
 
     expect(sitemapPaths).toContain('/stargazer')
-    expect(sitemapPaths.some((p) => p.startsWith('/stargazer/objects/'))).toBe(false)
+    expect(sitemapPaths).toContain('/stargazer/objects')
+    const objectPaths = sitemapPaths.filter((p) => p.startsWith('/stargazer/objects/'))
+    expect(objectPaths).toHaveLength((catalog as Array<{ id: string }>).length)
+    expect(objectPaths).toContain('/stargazer/objects/M31')
   })
 
   it('sitemap should include all shareable education detail guide pages', async () => {
@@ -130,10 +134,15 @@ describe('Sitemap SEO', () => {
         }),
       )
 
-      expect(byPath.get('/')?.toISOString()).toBe(startOfUtcDay().toISOString())
+      expect(byPath.get('/')?.toISOString()).toBe(startOfUtcWeek().toISOString())
+      // Only /space-weather stamps live values into its HTML; the other tool
+      // pages are static shells, so they take the monthly bucket.
       expect(byPath.get('/space-weather')?.toISOString()).toBe(startOfUtcHour().toISOString())
+      expect(byPath.get('/radar')?.toISOString()).toBe(startOfUtcMonth().toISOString())
+      expect(byPath.get('/warnings')?.toISOString()).toBe(startOfUtcMonth().toISOString())
+      expect(byPath.get('/tropical')?.toISOString()).toBe(startOfUtcDay().toISOString())
       expect(byPath.get('/education/glossary')?.toISOString()).toBe(startOfUtcMonth().toISOString())
-      expect(byPath.get('/weather/boston-ma')?.toISOString()).toBe(startOfUtcWeek().toISOString())
+      expect(byPath.get('/weather/boston-ma')?.toISOString()).toBe(startOfUtcMonth().toISOString())
     } finally {
       jest.useRealTimers()
     }

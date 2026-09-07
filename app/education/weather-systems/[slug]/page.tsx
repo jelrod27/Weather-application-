@@ -26,8 +26,8 @@ function seoInput(
     slug,
     name: system.name,
     // A Guide summary is written to be read in a search result; formationProcess
-    // is a data field truncated at 160 characters.
-    fallbackDescription: system.formationProcess.slice(0, 160),
+    // is a data field, so buildGuideMetadata clamps it at a word boundary.
+    fallbackDescription: system.formationProcess,
     guide: getGuideContent('weather-system', slug),
     keywords: system.classification,
   }

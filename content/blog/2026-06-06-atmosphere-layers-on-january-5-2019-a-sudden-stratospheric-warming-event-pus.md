@@ -1,9 +1,9 @@
 ---
 slug: atmosphere-layers-on-january-5-2019-a-sudden-stratospheric-warming-event-pus
-title: "Atmospheric Structure: On January 5, 2019, a sudden stratospheric warming event pushed temperatures at 10 hPa "
+title: "Atmospheric Structure: Sudden Stratospheric Warming"
 date: 2026-06-06T04:12:15.901Z
 author: 16bitbot
-summary: "On January 5, 2019, a sudden stratospheric warming event pushed temperatures at 10 hPa — roughly 30 km above sea level —"
+summary: "Troposphere to thermosphere, and how a January 2019 sudden stratospheric warming over the Arctic sent cold outbreaks south six weeks later."
 tags:
   - atmosphere-layers
   - weather

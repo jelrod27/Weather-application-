@@ -90,14 +90,15 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
           {/* Logo/Brand with Weather Data - TOP LEFT */}
           {/* Logo/Brand with Weather Data - TOP LEFT */}
           <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+            {/* The brand is not the page heading: each page owns its single <h1>. */}
+            <div className="text-xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
               <span className="font-extrabold tracking-wider">16-BIT WEATHER</span>
               {weatherLocation && weatherTemperature != null ? (
                 <span className="text-sm font-normal text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border">
                   {formatHeaderLocation(weatherLocation)} <span className="text-foreground font-bold">{Math.round(weatherTemperature)}°{weatherUnit === '°F' ? 'F' : 'C'}</span>
                 </span>
               ) : ''}
-            </h1>
+            </div>
           </div>
 
           {/* Main Navigation Links - TOP CENTER */}
@@ -181,14 +182,14 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
         <div className="md:hidden flex items-center justify-between px-4 py-3">
           {/* Mobile Logo with Weather Data */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <h1 className="text-lg font-extrabold tracking-tight text-foreground truncate flex flex-col leading-tight">
+            <div className="text-lg font-extrabold tracking-tight text-foreground truncate flex flex-col leading-tight">
               <span className="font-extrabold tracking-wider">16-BIT WEATHER</span>
               {weatherLocation && weatherTemperature != null && (
                 <span className="text-xs font-normal text-muted-foreground">
                   {Math.round(weatherTemperature)}°{weatherUnit === '°F' ? 'F' : 'C'} in {formatHeaderLocation(weatherLocation).split(',')[0]}
                 </span>
               )}
-            </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

@@ -19,6 +19,7 @@ import AirportMiseryBoard from '@/components/aviation/AirportMiseryBoard';
 import AircraftSearch from '@/components/aviation/AircraftSearch';
 import AircraftSelectionPanel from '@/components/aviation/AircraftSelectionPanel';
 import type { RouteInfo } from '@/components/aviation/AircraftSelectionPanel';
+import AviationSeoContent from '@/components/aviation/aviation-seo-content';
 import FlightWeatherBrief from '@/components/aviation/FlightWeatherBrief';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 import type { RouteMapEndpoints } from '@/components/aviation/LiveAircraftMap';
@@ -184,8 +185,141 @@ function AviationPageInner() {
   }, [count, degraded, sourceLabel]);
 
   return (
+    <>
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <AircraftSearch
+          initialQuery={flightParam}
+          className="w-full max-w-xl"
+          onFound={(a) => {
+            setSearchError(null);
+            selectAircraft(a);
+          }}
+          onError={setSearchError}
+        />
+        <div
+          className={cn(
+            'rounded border px-3 py-2 font-mono text-xs',
+            degraded
+              ? 'border-orange-500/50 bg-orange-500/10 text-orange-200'
+              : 'border-border bg-card/50 text-muted-foreground',
+          )}
+          data-testid="aircraft-count-chip"
+        >
+          {statusChip}
+        </div>
+      </div>
+
+      {searchError && (
+        <div className="mb-3 rounded border border-orange-500/40 bg-orange-500/10 px-3 py-2 font-mono text-xs text-orange-200">
+          {searchError}
+        </div>
+      )}
+
+      {error && (
+        <div
+          className="mb-4 border-4 p-4 font-mono text-sm"
+          style={{
+            color: 'var(--severity-extreme)',
+            backgroundColor: 'var(--severity-extreme-bg)',
+            borderColor: 'var(--severity-extreme)',
+          }}
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <LiveAircraftMap
+          selectedIcao24={selected?.icao24 ?? null}
+          highlightAircraft={selected}
+          flyTo={flyTo}
+          routeEndpoints={routeEndpoints}
+          trail={trail.map(({ lat, lon }) => ({ lat, lon }))}
+          onSelectAircraft={selectAircraft}
+          onSelectedAircraftUpdate={updateSelectedAircraft}
+          onCountChange={(n, meta) => {
+            setCount(n);
+            setSourceLabel(meta.source);
+            setDegraded(meta.degraded);
+          }}
+          onDegradedChange={(d, source) => {
+            setDegraded(d);
+            if (source) setSourceLabel(source);
+          }}
+        />
+        <div className="space-y-4">
+          {selected ? (
+            <AircraftSelectionPanel
+              aircraft={selected}
+              trail={trail}
+              onClose={() => selectAircraft(null)}
+              onRouteResolved={setRoute}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-4 font-mono text-xs text-muted-foreground">
+              Click an aircraft on the map or search a callsign to inspect identity, route, and
+              weather.
+            </div>
+          )}
+          <FlightWeatherBrief origin={route.origin} destination={route.destination} />
+        </div>
+      </div>
+
+      <div className="mt-10 space-y-6">
+        <div>
+          <h2
+            className={cn(
+              'mb-3 font-mono text-sm font-bold uppercase tracking-[0.2em]',
+              themeClasses.accentText,
+            )}
+          >
+            Hub Conditions
+          </h2>
+          <AirportMiseryBoard />
+        </div>
+
+        <div>
+          <button
+            type="button"
+            onClick={() => setExplorerOpen((v) => !v)}
+            className={cn(
+              'mb-3 inline-flex items-center gap-2 rounded border border-border px-3 py-2 font-mono text-xs uppercase tracking-wider',
+              'bg-card/40 hover:bg-card/70',
+            )}
+            aria-expanded={explorerOpen}
+          >
+            {explorerOpen ? 'Hide' : 'Show'} detail console (SIGMETs · turbulence · METARs)
+          </button>
+          {explorerOpen && (
+            <Suspense
+              fallback={
+                <div className={cn('p-8 text-center font-mono', themeClasses.background)}>
+                  <div className="animate-pulse">Loading aviation terminal...</div>
+                </div>
+              }
+            >
+              <FlightConditionsTerminal
+                alerts={alerts}
+                isLoading={isLoading}
+                alertsFetchedAt={alertsFetchedAt}
+              />
+            </Suspense>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function AviationPage() {
+  const themeClasses = themeTokens.weather;
+
+  return (
     <PageWrapper>
       <div className={cn('container mx-auto px-4 py-8', themeClasses.background)}>
+        {/* Heading and intro sit outside the Suspense boundary: the tracker reads
+            search params, so nothing inside it reaches the prerendered HTML. */}
         <div className="mb-6">
           <h1
             className={cn(
@@ -219,145 +353,16 @@ function AviationPageInner() {
           </Link>
         </div>
 
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <AircraftSearch
-            initialQuery={flightParam}
-            className="w-full max-w-xl"
-            onFound={(a) => {
-              setSearchError(null);
-              selectAircraft(a);
-            }}
-            onError={setSearchError}
-          />
-          <div
-            className={cn(
-              'rounded border px-3 py-2 font-mono text-xs',
-              degraded
-                ? 'border-orange-500/50 bg-orange-500/10 text-orange-200'
-                : 'border-border bg-card/50 text-muted-foreground',
-            )}
-            data-testid="aircraft-count-chip"
-          >
-            {statusChip}
-          </div>
-        </div>
-
-        {searchError && (
-          <div className="mb-3 rounded border border-orange-500/40 bg-orange-500/10 px-3 py-2 font-mono text-xs text-orange-200">
-            {searchError}
-          </div>
-        )}
-
-        {error && (
-          <div
-            className="mb-4 border-4 p-4 font-mono text-sm"
-            style={{
-              color: 'var(--severity-extreme)',
-              backgroundColor: 'var(--severity-extreme-bg)',
-              borderColor: 'var(--severity-extreme)',
-            }}
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <LiveAircraftMap
-            selectedIcao24={selected?.icao24 ?? null}
-            highlightAircraft={selected}
-            flyTo={flyTo}
-            routeEndpoints={routeEndpoints}
-            trail={trail.map(({ lat, lon }) => ({ lat, lon }))}
-            onSelectAircraft={selectAircraft}
-            onSelectedAircraftUpdate={updateSelectedAircraft}
-            onCountChange={(n, meta) => {
-              setCount(n);
-              setSourceLabel(meta.source);
-              setDegraded(meta.degraded);
-            }}
-            onDegradedChange={(d, source) => {
-              setDegraded(d);
-              if (source) setSourceLabel(source);
-            }}
-          />
-          <div className="space-y-4">
-            {selected ? (
-              <AircraftSelectionPanel
-                aircraft={selected}
-                trail={trail}
-                onClose={() => selectAircraft(null)}
-                onRouteResolved={setRoute}
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed border-border p-4 font-mono text-xs text-muted-foreground">
-                Click an aircraft on the map or search a callsign to inspect identity, route, and
-                weather.
-              </div>
-            )}
-            <FlightWeatherBrief origin={route.origin} destination={route.destination} />
-          </div>
-        </div>
-
-        <div className="mt-10 space-y-6">
-          <div>
-            <h2
-              className={cn(
-                'mb-3 font-mono text-sm font-bold uppercase tracking-[0.2em]',
-                themeClasses.accentText,
-              )}
-            >
-              Hub Conditions
-            </h2>
-            <AirportMiseryBoard />
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => setExplorerOpen((v) => !v)}
-              className={cn(
-                'mb-3 inline-flex items-center gap-2 rounded border border-border px-3 py-2 font-mono text-xs uppercase tracking-wider',
-                'bg-card/40 hover:bg-card/70',
-              )}
-              aria-expanded={explorerOpen}
-            >
-              {explorerOpen ? 'Hide' : 'Show'} detail console (SIGMETs · turbulence · METARs)
-            </button>
-            {explorerOpen && (
-              <Suspense
-                fallback={
-                  <div className={cn('p-8 text-center font-mono', themeClasses.background)}>
-                    <div className="animate-pulse">Loading aviation terminal...</div>
-                  </div>
-                }
-              >
-                <FlightConditionsTerminal
-                  alerts={alerts}
-                  isLoading={isLoading}
-                  alertsFetchedAt={alertsFetchedAt}
-                />
-              </Suspense>
-            )}
-          </div>
-        </div>
+        <Suspense
+          fallback={
+            <div className="font-mono text-sm text-muted-foreground">Loading live sky map…</div>
+          }
+        >
+          <AviationPageInner />
+        </Suspense>
       </div>
-    </PageWrapper>
-  );
-}
 
-export default function AviationPage() {
-  return (
-    <Suspense
-      fallback={
-        <PageWrapper>
-          <div className="container mx-auto px-4 py-8 font-mono text-sm text-muted-foreground">
-            Loading aviation…
-          </div>
-        </PageWrapper>
-      }
-    >
-      <AviationPageInner />
-    </Suspense>
+      <AviationSeoContent />
+    </PageWrapper>
   );
 }

@@ -83,14 +83,10 @@ export default function WarningsClient() {
   } = desk
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+      {/* Heading and tagline are server-rendered by app/warnings/page.tsx so the
+          prerendered HTML carries exactly one page-specific H1. */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight font-mono uppercase">
-          Warning center
-        </h1>
-        <p className="text-sm font-mono text-muted-foreground tracking-wider">
-          // YOUR PIN FIRST · NATIONAL BROWSE · NWS POLYGONS //
-        </p>
         {freshness ? (
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
             Feed {freshness === 'fresh' ? 'canonical store' : freshness}

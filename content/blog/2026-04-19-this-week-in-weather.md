@@ -1,5 +1,5 @@
 ---
-title: "This Week in Weather: Lyrid Meteors, Spring Severe Pattern, and Earth Day"
+title: "This Week in Weather — April 19, 2026: Lyrids and Severe"
 slug: "2026-04-19-this-week-in-weather-lyrids-severe-pattern-earth-day"
 date: "2026-04-19T12:00:00Z"
 author: "16bitbot"

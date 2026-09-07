@@ -142,6 +142,12 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // Otherwise /index serves the homepage as a 200 duplicate.
+        source: '/index',
+        destination: '/',
+        permanent: true,
+      },
+      {
         source: '/',
         has: [{ type: 'host', value: '16bitweather.co' }],
         destination: 'https://www.16bitweather.co/',

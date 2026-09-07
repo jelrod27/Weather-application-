@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic'
 import { safeJsonLd } from '@/lib/utils'
 import { WeatherCardsSkeleton } from '@/components/home-shell'
 import FeaturedCityLinks from '@/components/featured-city-links'
+import HomeSeoContent from '@/components/home/home-seo-content'
 import {
   HOMEPAGE_DESCRIPTION,
   HOMEPAGE_OG_IMAGE,
@@ -70,7 +71,10 @@ const jsonLd = {
       '@id': `${SITE_URL}/#organization`,
       name: '16 Bit Weather',
       url: SITE_URL,
-      logo: `${SITE_URL}/favicon.svg`,
+      // Absolute raster logo: Google's Organization logo guidance rejects SVG.
+      logo: `${SITE_URL}/icon-512.png`,
+      // Profiles that already link back to the site (see app/about/page.tsx).
+      sameAs: ['https://github.com/jelrod27', 'https://x.com/Justin_Elrod'],
     },
     {
       '@type': 'WebSite',
@@ -179,7 +183,13 @@ export default function HomePage() {
       <Suspense fallback={<HomePageShell />}>
         <HomeClient />
       </Suspense>
-      {/* Crawlable city links — server-rendered (RandomCityLinks is client-only / ssr:false) */}
+      {/* Deliberately after PageWrapper rather than inside <main>. The live
+          weather card is ~2000px tall and arrives after a client fetch; a block
+          this size sitting below it inside the viewport gets shoved down when
+          it lands, which measured a 0.33 cumulative layout shift. Down here the
+          shift happens off-screen and costs nothing, and the copy is still
+          server-rendered and indexed. */}
+      <HomeSeoContent />
       <FeaturedCityLinks title="Weather by city" />
     </>
   )

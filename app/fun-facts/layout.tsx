@@ -6,8 +6,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Weather Fun Facts - Strange Phenomena & Trivia | 16 Bit Weather',
-  description: 'Discover amazing weather facts and rare phenomena. Learn about ball lightning, thundersnow, fire rainbows, and other incredible atmospheric events explained in 16-bit style.',
+  // The root layout's title template appends the brand.
+  title: 'Weather Fun Facts & Rare Phenomena',
+  description: 'Amazing weather facts and rare phenomena: ball lightning, thundersnow, fire rainbows and other atmospheric events, explained in 16-bit style.',
   keywords: 'weather facts, weather trivia, ball lightning, thundersnow, fire rainbow, weather phenomena, strange weather, rare weather events, atmospheric phenomena, cool weather facts, weird weather',
   openGraph: {
     title: '16-Bit Takes - Weather Fun Facts',

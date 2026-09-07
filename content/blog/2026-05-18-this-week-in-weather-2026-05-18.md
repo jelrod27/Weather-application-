@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-05-18
-title: This Week in Weather
+title: "This Week in Weather — May 18, 2026"
 date: 2026-05-18T02:20:16.986Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "Six Iowa tornado warnings in 13 minutes, a wind-dominant week of 694 severe thunderstorm warnings, and an M6.7 off Ōfunato, Japan."
 tags:
   - weekly-recap
   - forecast

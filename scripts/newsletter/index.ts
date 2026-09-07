@@ -10,6 +10,7 @@
  *   NEWSLETTER_MODEL   optional, defaults to claude-sonnet-4-6
  */
 
+import { deriveTheme } from './post-header';
 import { publishPost } from './publish';
 import { DEFAULT_MODEL } from './repetition';
 import { runSunday } from './sunday';
@@ -110,19 +111,6 @@ async function main() {
  * sentence of the body that isn't a heading, falls back to the news
  * angle, then to the topic title.
  */
-function deriveTheme(markdown: string, newsAngle: string, topicTitle: string): string {
-  const lines = markdown
-    .split(/\r?\n/)
-    .filter((l) => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('!'));
-  const firstParagraph = lines[0];
-  if (firstParagraph) {
-    const firstSentence = firstParagraph.split(/(?<=[.!?])\s/)[0];
-    if (firstSentence && firstSentence.length >= 20) return firstSentence.trim().slice(0, 120);
-  }
-  if (newsAngle) return newsAngle.slice(0, 120);
-  return topicTitle;
-}
-
 main().catch((err) => {
   console.error('[newsletter] fatal:', err);
   process.exit(1);

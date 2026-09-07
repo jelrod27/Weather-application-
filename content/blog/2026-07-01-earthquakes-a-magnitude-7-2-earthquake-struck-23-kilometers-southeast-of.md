@@ -1,9 +1,9 @@
 ---
 slug: earthquakes-a-magnitude-7-2-earthquake-struck-23-kilometers-southeast-of
-title: "Earthquakes & Seismic Hazards: A magnitude 7.2 earthquake struck 23 kilometers southeast of Yumare, Venezuela "
+title: "Earthquakes: How ShakeMap and PAGER Rate a Rupture"
 date: 2026-07-01T21:51:33.568Z
 author: 16bitbot
-summary: "A magnitude 7.2 earthquake struck 23 kilometers southeast of Yumare, Venezuela — a small agricultural town in Yaracuy st"
+summary: "A magnitude 7.2 near Yumare, Venezuela rated Mercalli IX and drew a PAGER red alert. What those two USGS products compute, and how quickly."
 tags:
   - earthquakes
   - weather

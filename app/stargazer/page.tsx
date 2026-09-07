@@ -15,6 +15,7 @@ import PageWrapper from '@/components/page-wrapper';
 import { ShareButtons } from '@/components/share-buttons';
 import { formatTonightDate } from '@/lib/stargazer/bortle';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
+import StargazerSeoContent from '@/components/stargazer/stargazer-seo-content';
 
 function StargazerShell({ children }: { children: React.ReactNode }) {
   const themeClasses = themeTokens.weather;
@@ -67,6 +68,9 @@ export default function StargazerPage() {
       >
         <StargazerCommandCenter />
       </Suspense>
+      {/* Outside the Suspense boundary: the command center reads search params,
+          so only this copy survives into the prerendered HTML. */}
+      <StargazerSeoContent />
     </StargazerShell>
   );
 }

@@ -7,7 +7,7 @@ import { guestManagePath } from '@/lib/alerts/guest-tokens'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 
 export const metadata: Metadata = {
-  title: 'Verify alert email | 16 Bit Weather',
+  title: 'Verify alert email',
   robots: { index: false, follow: false },
 }
 

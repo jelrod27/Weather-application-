@@ -253,6 +253,10 @@ test.describe('/aviation', () => {
     if (!(await demoToggle.isChecked())) {
       await demoToggle.check();
     }
+    // The search handler closes over demo mode, so a click landing before the
+    // re-render would query live data and never show the badge. This caption
+    // only appears once the component has re-rendered with demo mode on.
+    await expect(page.getByText('Forcing mock data')).toBeVisible({ timeout: 10000 });
 
     await flightInput.fill('AA123');
     await page.getByTestId('flight-search-button').click();

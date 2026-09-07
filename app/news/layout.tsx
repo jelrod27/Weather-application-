@@ -4,6 +4,7 @@
  */
 
 import type { Metadata } from 'next'
+import { safeJsonLd } from '@/lib/utils'
 
 const newsJsonLd = {
   "@context": "https://schema.org",
@@ -19,8 +20,9 @@ const newsJsonLd = {
 }
 
 export const metadata: Metadata = {
-  title: 'Weather News - Earthquakes, Volcanoes, Climate Updates | 16 Bit Weather',
-  description: 'Live weather news aggregated from USGS, NASA, and NOAA. Track earthquakes, volcanic activity, severe weather alerts, space weather, and climate updates in retro terminal style.',
+  // The root layout's title template appends the brand.
+  title: 'Weather News: Quakes, Volcanoes & Climate',
+  description: 'Live weather news from USGS, NASA and NOAA: earthquakes, volcanic activity, severe weather, space weather and climate updates in one retro terminal feed.',
   keywords: 'weather news, earthquake news, volcano updates, severe weather alerts, climate news, NOAA updates, NASA weather, space weather, natural disasters, weather alerts',
   openGraph: {
     title: 'Weather News Hub - 16 Bit Weather',
@@ -47,9 +49,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.16bitweather.co/news',
   },
-  other: {
-    'application/ld+json': JSON.stringify(newsJsonLd),
-  },
 }
 
 export default function NewsLayout({
@@ -57,5 +56,14 @@ export default function NewsLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return (
+    <>
+      {/* JSON-LD must be a <script>; metadata.other renders a <meta> tag that crawlers ignore. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(newsJsonLd) }}
+      />
+      {children}
+    </>
+  )
 }

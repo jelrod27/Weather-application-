@@ -1,6 +1,6 @@
 ---
 slug: urban-climate-on-the-night-of-july-21-1995-chicago-s-official-low-temper
-title: "Urban Climate: Chicago's 1995 Heat Wave and the Urban Heat Island Effect"
+title: "Urban Climate: Chicago's 1995 Heat Wave"
 date: 2026-06-18T03:20:44.455Z
 author: 16bitbot
 summary: "On the night of July 21, 1995, Chicago's official low temperature at O'Hare International Airport dropped to 73°F."

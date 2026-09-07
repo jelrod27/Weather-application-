@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Space Weather Monitor — Solar Flare Tracker & Live Kp Index | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Space Weather: Solar Flares & Live Kp Index',
   description:
-    'Free space weather monitor and solar flare tracker. Live Kp index, solar wind, geomagnetic storm alerts, sunspots, X-ray flux, and aurora forecast from NOAA SWPC.',
+    'Space weather monitor and solar flare tracker: live Kp index, solar wind, geomagnetic storm alerts, sunspots, X-ray flux and aurora forecast from NOAA SWPC.',
   keywords:
     'space weather monitor, solar flare monitor, space weather tracker, solar flare tracker, Kp index live, solar activity today, solar wind, geomagnetic storm tracker, aurora forecast, solar storm monitor',
   openGraph: {

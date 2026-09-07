@@ -1,7 +1,7 @@
 export const HOMEPAGE_TITLE = 'Live Weather, Radar & Space Weather | 16 Bit Weather'
 
 export const HOMEPAGE_DESCRIPTION =
-  'Live city forecasts, US radar, NWS warnings, tropical satellite, and space weather with Kp index and solar flares. Climate guides and an English weather glossary.'
+  'Live city forecasts, US radar, NWS warnings, tropical satellite and space weather with Kp index and solar flares, plus climate guides and a glossary.'
 
 export const HOMEPAGE_OG_TITLE = 'Live Weather, Radar & Space Weather'
 

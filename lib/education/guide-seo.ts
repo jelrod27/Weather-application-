@@ -11,6 +11,7 @@ import type { Metadata } from 'next'
 
 import type { GuideContent } from '@/lib/education/content'
 import { getEducationDetailHref, type EducationEntryKind } from '@/lib/education/entries'
+import { clampDescription } from '@/lib/seo/clamp-description'
 
 const BASE_URL = 'https://www.16bitweather.co'
 const PUBLISHER = { '@type': 'Organization', name: '16 Bit Weather', url: BASE_URL }
@@ -62,7 +63,8 @@ function resolve(input: GuideSeoInput) {
     section,
     name,
     title: `${name} — ${section.headlineSuffix}`,
-    description: guide?.summary ?? input.fallbackDescription,
+    // Guide summaries run to 190 characters; the snippet shows about 158.
+    description: clampDescription(guide?.summary ?? input.fallbackDescription),
     url: guideUrl(kind, slug),
     image: guideOgImagePath(kind, name),
   }
@@ -71,7 +73,8 @@ function resolve(input: GuideSeoInput) {
 export function buildGuideMetadata(input: GuideSeoInput): Metadata {
   const { title, description, url, image } = resolve(input)
   return {
-    title: `${title} | 16 Bit Weather`,
+    // The root layout's title template appends the brand.
+    title,
     description,
     alternates: { canonical: url },
     openGraph: {

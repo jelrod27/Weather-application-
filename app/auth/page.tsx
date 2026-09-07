@@ -3,7 +3,7 @@ import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Sign In | 16-Bit Weather',
+  title: 'Sign In',
   description: 'Sign in or create an account to save locations and customize your weather experience.',
 }
 

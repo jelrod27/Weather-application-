@@ -21,20 +21,47 @@ type CityMeta = {
   state: string
 }
 
+/**
+ * Canonical slug for a bare city name, e.g. `new-york` → `new-york-ny`.
+ *
+ * The catalog keys carry a state suffix, so a visitor or link that drops it
+ * would otherwise land on the noindex fallback page — a duplicate of the real
+ * city page. Only unambiguous names resolve: `portland` matches two states and
+ * stays unresolved, because guessing one would send readers to the wrong coast.
+ */
+export function resolveCitySlugAlias(
+  slug: string,
+  catalogSlugs: readonly string[],
+): string | null {
+  if (catalogSlugs.includes(slug)) return null
+
+  const matches = catalogSlugs.filter((candidate) => {
+    const withoutState = candidate.replace(/-[a-z]{2}$/, '')
+    return withoutState === slug
+  })
+
+  return matches.length === 1 ? matches[0] : null
+}
+
+/**
+ * The root layout's title template appends " | 16 Bit Weather" (17 chars), so
+ * the page part stays at or under 43 characters: long city names drop the
+ * state abbreviation rather than push the whole title past 60.
+ */
 export function buildCityPageTitle(city: CityMeta, citySlug: string): string {
-  const label = `${city.name}, ${city.state}`
+  const label = city.name.length <= 10 ? `${city.name} ${city.state}` : city.name
   if ((PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
-    return `${city.name} ${city.state} Climate & Year-Round Weather Guide | 16 Bit Weather`
+    return `${label} Climate & Year-Round Weather`
   }
-  return `${label} Climate & Year-Round Weather | 16 Bit Weather`
+  return `${city.name}, ${city.state} Climate & Weather Guide`
 }
 
 export function buildCityPageDescription(city: CityMeta, citySlug?: string): string {
   if (citySlug === 'boston-ma') {
-    return `Boston MA climate and year-round weather guide: monthly averages, nor'easter winters, humid summers, and best time to visit. Live forecast plus New England climate patterns.`
+    return `Boston MA climate and year-round weather guide: monthly averages, nor'easter winters, humid summers, and best time to visit, plus a live forecast.`
   }
   if (citySlug === 'atlanta-ga') {
-    return `Atlanta Georgia climate and summer weather guide: humid subtropical seasons, monthly averages, severe storm risk, and best time to visit. Live forecast included.`
+    return `Atlanta Georgia climate and summer weather guide: humid subtropical seasons, monthly averages, severe storm risk, and best time to visit, with a live forecast.`
   }
   if (citySlug && (PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
     return `${city.name}, ${city.state} climate averages, monthly weather patterns, and year-round temperature guide. Live forecast, 7-day outlook, and best time to visit.`

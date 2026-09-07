@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import PageWrapper from '@/components/page-wrapper'
+import AlertsSeoContent from '@/components/alerts/alerts-seo-content'
 import AlertsLanding from './alerts-landing'
 
 const BASE_URL = 'https://www.16bitweather.co'
@@ -24,6 +25,17 @@ export const metadata: Metadata = {
 export default function AlertsPage() {
   return (
     <PageWrapper>
+      {/* Server-rendered heading and explainer: AlertsLanding is client-only, so
+          without this the prerendered <main> is just the loading state. */}
+      <header className="max-w-3xl mx-auto px-4 pt-10 space-y-3 font-mono">
+        <p className="text-xs uppercase tracking-[0.25em] text-primary">Bitwatch</p>
+        <h1 className="text-3xl font-bold uppercase">Free NWS warning alerts</h1>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Email and optional browser push when a National Weather Service Tornado, Severe
+          Thunderstorm, or Flash Flood Warning covers your pin. No account. Supplemental only — this
+          does not replace Wireless Emergency Alerts, NOAA Weather Radio, or local officials.
+        </p>
+      </header>
       <Suspense
         fallback={
           <div className="max-w-3xl mx-auto px-4 py-10 font-mono text-muted-foreground animate-pulse">
@@ -33,6 +45,7 @@ export default function AlertsPage() {
       >
         <AlertsLanding />
       </Suspense>
+      <AlertsSeoContent />
     </PageWrapper>
   )
 }

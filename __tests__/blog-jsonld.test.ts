@@ -1,11 +1,15 @@
 /**
- * Tests for Article JSON-LD structured data on blog post pages
- * Ensures blog posts include proper schema.org Article markup for SEO
+ * Article JSON-LD for blog posts.
+ *
+ * The route used to hand this to Next as `metadata.other`, which renders as
+ * `<meta name="application/ld+json" content="…">` — markup no structured-data
+ * parser reads. These tests pin the replacement: a pure builder the page
+ * renders inside a real <script>, and metadata that no longer carries `other`.
  */
 
 import type { BlogPost } from '@/lib/blog'
+import { buildBlogPostJsonLd } from '@/lib/blog/post-jsonld'
 
-// Mock the blog module before importing the page
 const mockPost: BlogPost = {
   slug: 'test-weather-post',
   title: 'Test Weather Post',
@@ -27,40 +31,145 @@ jest.mock('@/lib/blog', () => ({
   getRelatedPosts: jest.fn(() => []),
 }))
 
-describe('Blog post JSON-LD structured data', () => {
-  it('should include Article JSON-LD in generateMetadata', async () => {
+function graphNode(jsonLd: Record<string, unknown>, type: string): Record<string, unknown> {
+  const graph = jsonLd['@graph'] as Array<Record<string, unknown>>
+  const node = graph.find(entry => entry['@type'] === type)
+  if (!node) throw new Error(`no ${type} in @graph`)
+  return node
+}
+
+describe('buildBlogPostJsonLd', () => {
+  it('emits an Article and a BreadcrumbList in one @graph', () => {
+    const jsonLd = buildBlogPostJsonLd(mockPost)
+    expect(jsonLd['@context']).toBe('https://schema.org')
+    expect((jsonLd['@graph'] as unknown[]).length).toBe(2)
+  })
+
+  it('describes the post on the Article node', () => {
+    const article = graphNode(buildBlogPostJsonLd(mockPost), 'Article')
+
+    expect(article.headline).toBe('Test Weather Post')
+    expect(article.description).toBe('A test blog post about weather')
+    expect(article.datePublished).toBe('2026-01-15T00:00:00.000Z')
+    expect(article.author).toEqual({ '@type': 'Person', name: '16bitbot' })
+    expect(article.mainEntityOfPage).toEqual({
+      '@type': 'WebPage',
+      '@id': 'https://www.16bitweather.co/blog/test-weather-post',
+    })
+    expect(article.keywords).toBe('weather, testing')
+    expect(article.articleSection).toBe('Weather')
+  })
+
+  it('names 16 Bit Weather as publisher with an absolute logo', () => {
+    const article = graphNode(buildBlogPostJsonLd(mockPost), 'Article')
+
+    expect(article.publisher).toEqual({
+      '@type': 'Organization',
+      name: '16 Bit Weather',
+      url: 'https://www.16bitweather.co',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.16bitweather.co/icon-512.png',
+        width: 512,
+        height: 512,
+      },
+    })
+  })
+
+  it('reports dateModified from `updated` when the post has been revised', () => {
+    const revised = { ...mockPost, updated: '2026-03-02T12:00:00.000Z' }
+    expect(graphNode(buildBlogPostJsonLd(revised), 'Article').dateModified).toBe(
+      '2026-03-02T12:00:00.000Z',
+    )
+  })
+
+  it('falls back to datePublished for posts never revised', () => {
+    expect(graphNode(buildBlogPostJsonLd(mockPost), 'Article').dateModified).toBe(
+      '2026-01-15T00:00:00.000Z',
+    )
+  })
+
+  it('uses the hero image when it is already an absolute URL', () => {
+    const post = { ...mockPost, heroImage: 'https://cdn.star.nesdis.noaa.gov/hero.jpg' }
+    expect(graphNode(buildBlogPostJsonLd(post), 'Article').image).toBe(
+      'https://cdn.star.nesdis.noaa.gov/hero.jpg',
+    )
+  })
+
+  it('falls back to the absolute generated banner for a relative or empty hero', () => {
+    for (const heroImage of ['/images/test.png', '']) {
+      const image = graphNode(buildBlogPostJsonLd({ ...mockPost, heroImage }), 'Article').image
+      expect(image).toBe(
+        'https://www.16bitweather.co/api/og/blog?title=Test%20Weather%20Post&subtitle=16bitbot+Weekly+Dispatch',
+      )
+    }
+  })
+
+  it('walks Home → Blog → post in the BreadcrumbList', () => {
+    const breadcrumb = graphNode(buildBlogPostJsonLd(mockPost), 'BreadcrumbList')
+
+    expect(breadcrumb.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.16bitweather.co' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.16bitweather.co/blog' },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Test Weather Post',
+        item: 'https://www.16bitweather.co/blog/test-weather-post',
+      },
+    ])
+  })
+})
+
+describe('Blog post metadata', () => {
+  it('no longer smuggles JSON-LD through metadata.other', async () => {
     const { generateMetadata } = await import('@/app/blog/[slug]/page')
 
     const metadata = await generateMetadata({
       params: Promise.resolve({ slug: 'test-weather-post' }),
     })
 
-    expect(metadata.other).toBeDefined()
-    const jsonLd = (metadata.other as Record<string, string>)['application/ld+json']
-    expect(jsonLd).toBeDefined()
-
-    const parsed = JSON.parse(jsonLd)
-    expect(parsed['@context']).toBe('https://schema.org')
-    expect(parsed['@type']).toBe('Article')
-    expect(parsed.headline).toBe('Test Weather Post')
-    expect(parsed.description).toBe('A test blog post about weather')
-    expect(parsed.datePublished).toBe('2026-01-15T00:00:00.000Z')
-    expect(parsed.dateModified).toBe('2026-01-15T00:00:00.000Z')
-    expect(parsed.author).toEqual({ '@type': 'Person', name: '16bitbot' })
-    expect(parsed.publisher).toEqual({
-      '@type': 'Organization',
-      name: '16 Bit Weather',
-      url: 'https://www.16bitweather.co',
-    })
-    expect(parsed.mainEntityOfPage).toEqual({
-      '@type': 'WebPage',
-      '@id': 'https://www.16bitweather.co/blog/test-weather-post',
-    })
-    expect(parsed.keywords).toBe('weather, testing')
-    expect(parsed.articleSection).toBe('Weather')
+    expect(metadata.other).toBeUndefined()
   })
 
-  it('should not include JSON-LD when post is not found', async () => {
+  it('opts out of the brand template so a headline is not cut mid-phrase', async () => {
+    const { generateMetadata } = await import('@/app/blog/[slug]/page')
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ slug: 'test-weather-post' }),
+    })
+
+    // Post headlines run to 60 characters on their own; adding the 17-character
+    // brand suffix would render a title Google truncates.
+    expect(metadata.title).toEqual({ absolute: 'Test Weather Post' })
+  })
+
+  it('keeps every published post headline inside the search-result budget', async () => {
+    const { getAllPosts } = await import('@/lib/blog')
+
+    const overBudget = getAllPosts()
+      .filter((post) => post.title.length > 60)
+      .map((post) => `${post.slug} (${post.title.length})`)
+
+    expect(overBudget).toEqual([])
+  })
+
+  it('advertises the RSS feed alongside the canonical', async () => {
+    const { generateMetadata } = await import('@/app/blog/[slug]/page')
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ slug: 'test-weather-post' }),
+    })
+
+    expect(metadata.alternates?.canonical).toBe(
+      'https://www.16bitweather.co/blog/test-weather-post',
+    )
+    expect(metadata.alternates?.types).toEqual({
+      'application/rss+xml': 'https://www.16bitweather.co/blog/rss.xml',
+    })
+  })
+
+  it('noindexes a missing post', async () => {
     const { generateMetadata } = await import('@/app/blog/[slug]/page')
 
     const metadata = await generateMetadata({
@@ -69,6 +178,5 @@ describe('Blog post JSON-LD structured data', () => {
 
     expect(metadata.title).toBe('Post Not Found')
     expect(metadata.robots).toEqual({ index: false, follow: false })
-    expect(metadata.other).toBeUndefined()
   })
 })

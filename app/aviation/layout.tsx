@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Live Flight Tracker & Aviation Weather | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Live Flight Tracker & Aviation Weather',
   description:
     'ADS-B live flight tracker with callsign search, route weather briefs, SIGMETs, AIRMETs, and turbulence maps. Educational only — not for operational dispatch.',
   keywords:
@@ -25,5 +26,12 @@ export const metadata: Metadata = {
 }
 
 export default function AviationLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <>
+      {/* The aircraft map draws Carto basemap tiles; preconnect here, not site-wide. */}
+      <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
+      <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
+      {children}
+    </>
+  )
 }

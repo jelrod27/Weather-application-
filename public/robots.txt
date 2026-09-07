@@ -1,37 +1,21 @@
 # 16 Bit Weather - robots.txt
-# Updated: June 2026
+# Updated: September 2026
 #
 # Policy: allow search/browse AI crawlers on public content; block training
-# crawlers and keep API, auth, and user-private routes out of all crawlers.
+# crawlers; keep the API out of every crawler except the OG image renderer,
+# which social and image crawlers must be able to fetch.
+#
+# Do not disallow /_next/: Googlebot needs the JS and CSS bundles to render
+# pages, and blocking them hides every client-rendered section from indexing.
+# Private routes (/dashboard, /profile, /auth, /hourly, /gfs-model,
+# /radar-diagnostic) carry noindex, which a crawler can only see if it is
+# allowed to fetch the page, so they are deliberately not disallowed here.
 
 User-agent: *
 Allow: /
-Allow: /weather/
-Allow: /blog
-Allow: /news
-Allow: /education
-Allow: /aviation
-Allow: /severe
-Allow: /tropical
-Allow: /winter
-Allow: /radar
-Allow: /space-weather
-Allow: /stargazer
-Allow: /warnings
-Allow: /travel
-Allow: /about
-Allow: /cloud-types
-Allow: /weather-systems
-Allow: /fun-facts
-
+Allow: /api/og
+Allow: /api/og/
 Disallow: /api/
-Disallow: /_next/
-Disallow: /admin/
-Disallow: /auth/
-Disallow: /radar-diagnostic
-Disallow: /gfs-model/
-Disallow: /dashboard
-Disallow: /profile
 
 Sitemap: https://www.16bitweather.co/sitemap.xml
 
@@ -45,6 +29,8 @@ Allow: /
 # AI search and browse (ChatGPT search, user link previews, Perplexity, Claude)
 User-agent: OAI-SearchBot
 Allow: /
+Allow: /api/og
+Allow: /api/og/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
@@ -52,6 +38,8 @@ Disallow: /profile
 
 User-agent: ChatGPT-User
 Allow: /
+Allow: /api/og
+Allow: /api/og/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
@@ -59,6 +47,8 @@ Disallow: /profile
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /api/og
+Allow: /api/og/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
@@ -66,6 +56,8 @@ Disallow: /profile
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /api/og
+Allow: /api/og/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard

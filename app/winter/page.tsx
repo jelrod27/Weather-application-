@@ -10,6 +10,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import PageWrapper from '@/components/page-wrapper';
+import WinterSeoContent from '@/components/winter/winter-seo-content';
 import type { NWSAlert } from '@/lib/services/nws-alerts-service';
 
 const WINTER_KEYWORDS = ['winter', 'snow', 'ice', 'blizzard', 'freeze', 'cold', 'wind chill', 'frost'];
@@ -96,6 +97,9 @@ export default function WinterPage() {
           </div>
         )}
       </div>
+
+      {/* Evergreen crawlable copy — the alert list above is fetched client-side */}
+      <WinterSeoContent />
     </PageWrapper>
   );
 }

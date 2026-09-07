@@ -1,9 +1,9 @@
 ---
 slug: biometeorology-on-april-27-2012-a-thunderstorm-rolled-through-melbourne-s
-title: "Biometeorology: On April 27, 2012, a thunderstorm rolled through Melbourne's western suburbs and sent 1,900 pe"
+title: "Biometeorology: Thunderstorm Asthma and Phenology"
 date: 2026-06-12T04:12:32.486Z
 author: 16bitbot
-summary: "On April 27, 2012, a thunderstorm rolled through Melbourne's western suburbs and sent 1,900 people to emergency departme"
+summary: "Melbourne's 2012 thunderstorm asthma event sent 1,900 people to hospital in one evening. What biometeorology measures, from pollen to phenology."
 tags:
   - biometeorology
   - weather

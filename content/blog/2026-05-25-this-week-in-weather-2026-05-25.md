@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-05-25
-title: This Week in Weather
+title: "This Week in Weather — May 25, 2026"
 date: 2026-05-25T00:09:09.956Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "63 tornadoes and 936 wind reports led by Kansas, plus a 20-hour warning corridor running from South Texas into Kentucky and Georgia."
 tags:
   - weekly-recap
   - forecast

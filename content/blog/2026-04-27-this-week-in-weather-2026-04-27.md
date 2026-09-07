@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-04-27
-title: This Week in Weather
+title: "This Week in Weather — April 27, 2026"
 date: 2026-04-27T02:14:18.263Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "67 tornadoes in seven days across Kansas, Texas and Missouri, an X2.5 flare with no geomagnetic follow-through, and 8.42 inches aimed at Dallas."
 tags:
   - weekly-recap
   - forecast

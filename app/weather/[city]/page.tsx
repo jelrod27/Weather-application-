@@ -7,17 +7,23 @@
 
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { permanentRedirect } from 'next/navigation'
 
 import { safeJsonLd } from '@/lib/utils'
 import CityWeatherClient from './client'
 import CityClimateGuide from '@/components/city/city-climate-guide'
 import {
+  CITY_DATA,
   cityData as cityMetadata,
   getCityEnrichment,
   getNearbyCities,
 } from '@/lib/cities'
 import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
-import { buildCityPageMetadata, PRIORITY_SEO_CITY_SLUGS } from '@/lib/seo/city-page-seo'
+import {
+  buildCityPageMetadata,
+  PRIORITY_SEO_CITY_SLUGS,
+  resolveCitySlugAlias,
+} from '@/lib/seo/city-page-seo'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -32,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   if (!city) {
     const displayName = slugToDisplayName(citySlug)
     return {
-      title: `${displayName} Weather Forecast | 16 Bit Weather`,
+      title: `${displayName} Weather Forecast`,
       description: `Live weather conditions and forecast for ${displayName}.`,
       robots: { index: false, follow: true },
       alternates: { canonical: `${BASE_URL}/weather/${citySlug}` },
@@ -48,6 +54,19 @@ interface PageParams {
 
 export default async function CityWeatherPage({ params }: PageParams) {
   const { city: citySlug } = await params
+
+  // `/weather/New-York-NY` and `/weather/new-york` would otherwise render
+  // noindex duplicates of `/weather/new-york-ny`. Arbitrary slugs still render
+  // (the home search routes any typed location here), they just stay noindex.
+  const lowerSlug = citySlug.toLowerCase()
+  if (citySlug !== lowerSlug && cityMetadata[lowerSlug]) {
+    permanentRedirect(`/weather/${lowerSlug}`)
+  }
+  const aliasTarget = resolveCitySlugAlias(lowerSlug, Object.keys(cityMetadata))
+  if (aliasTarget) {
+    permanentRedirect(`/weather/${aliasTarget}`)
+  }
+
   const city = cityMetadata[citySlug]
 
   const cityInfo = city || {
@@ -67,6 +86,7 @@ export default async function CityWeatherPage({ params }: PageParams) {
   const enrichment = isPredefinedCity ? getCityEnrichment(citySlug) : null
   const nearbyCities = isPredefinedCity ? getNearbyCities(citySlug) : []
   const fullLocation = cityInfo.state ? `${cityInfo.name}, ${cityInfo.state}` : cityInfo.name
+  const coordinates = (CITY_DATA as Record<string, { lat: number; lon: number } | undefined>)[citySlug]
 
   const webPageJsonLd = {
     '@context': 'https://schema.org',
@@ -83,10 +103,16 @@ export default async function CityWeatherPage({ params }: PageParams) {
         addressRegion: cityInfo.state || undefined,
         addressCountry: 'US',
       },
-    },
-    mainEntity: {
-      '@type': 'WeatherForecast',
-      location: { '@type': 'Place', name: fullLocation },
+      // schema.org has no WeatherForecast type; coordinates are what a Place can carry.
+      ...(coordinates
+        ? {
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: coordinates.lat,
+              longitude: coordinates.lon,
+            },
+          }
+        : {}),
     },
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -120,6 +146,13 @@ export default async function CityWeatherPage({ params }: PageParams) {
     />
   ) : null
 
+  // Server-rendered so the page has its topic heading before the live card loads.
+  const heading = (
+    <h1 className="mb-3 font-mono text-lg font-bold uppercase tracking-wider text-primary sm:text-xl">
+      {fullLocation} Weather{isPredefinedCity ? ' & Climate Guide' : ''}
+    </h1>
+  )
+
   return (
     <>
       <script
@@ -145,6 +178,7 @@ export default async function CityWeatherPage({ params }: PageParams) {
         <CityWeatherClient
           city={cityInfo}
           citySlug={citySlug}
+          heading={heading}
           climateGuide={climateGuide}
         />
       </Suspense>

@@ -4,6 +4,7 @@
  */
 
 import type { Metadata } from 'next'
+import { safeJsonLd } from '@/lib/utils'
 
 // Force dynamic rendering to avoid edge function size limits
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,8 @@ const radarJsonLd = {
 }
 
 export const metadata: Metadata = {
-  title: 'Live Weather Radar Map - Global Precipitation Radar | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Live Weather Radar Map',
   description: 'Animated global precipitation radar from RainViewer with NWS alerts, SPC outlooks, and storm report overlays.',
   keywords: 'weather radar, RainViewer radar, live radar, precipitation map, rain radar, storm tracker, severe weather radar, global radar',
   openGraph: {
@@ -52,9 +54,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.16bitweather.co/radar',
   },
-  other: {
-    'application/ld+json': JSON.stringify(radarJsonLd),
-  },
 }
 
 export default function RadarLayout({
@@ -62,5 +61,20 @@ export default function RadarLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return (
+    <>
+      {/* JSON-LD must be a <script>; metadata.other renders a <meta> tag that crawlers ignore. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(radarJsonLd) }}
+      />
+      {/* Only the radar map pulls Carto basemap tiles and IEM NEXRAD frames. */}
+      <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
+      <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
+      <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com" />
+      <link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com" />
+      <link rel="dns-prefetch" href="https://mesonet.agron.iastate.edu" />
+      {children}
+    </>
+  )
 }

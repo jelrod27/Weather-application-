@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import deepSkyCatalog from '@/data/deep-sky-catalog.json'
 import { cityData as cityMetadata } from '@/lib/cities'
 import { getAllPosts } from '@/lib/blog'
 import { getGuideLastModified } from '@/lib/education/content'
@@ -14,7 +15,15 @@ import {
   startOfUtcMonth,
   startOfUtcWeek,
 } from '@/lib/seo/sitemap-lastmod'
+import type { DeepSkyObject } from '@/lib/stargazer/types'
 
+/**
+ * lastmod describes when the server-rendered HTML changed, not when the live
+ * data behind a page did. Tool pages fetch their data client-side, so their
+ * HTML only changes on deploy; claiming an hourly change there teaches Google
+ * to ignore lastmod site-wide. Only /space-weather stamps live values into
+ * its HTML.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.16bitweather.co'
   const hourly = startOfUtcHour()
@@ -40,23 +49,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       : weekly
 
     const staticPages: MetadataRoute.Sitemap = [
-      { url: baseUrl, lastModified: daily, changeFrequency: 'daily', priority: 1 },
+      { url: baseUrl, lastModified: weekly, changeFrequency: 'weekly', priority: 1 },
       { url: `${baseUrl}/about`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.6 },
 
-      { url: `${baseUrl}/radar`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.9 },
-      { url: `${baseUrl}/severe`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.9 },
-      { url: `${baseUrl}/warnings`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.95 },
-      { url: `${baseUrl}/alerts`, lastModified: daily, changeFrequency: 'daily', priority: 0.9 },
+      { url: `${baseUrl}/radar`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.9 },
+      { url: `${baseUrl}/severe`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.9 },
+      { url: `${baseUrl}/warnings`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.95 },
+      { url: `${baseUrl}/alerts`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.9 },
       { url: `${baseUrl}/space-weather`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.9 },
-      { url: `${baseUrl}/stargazer`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.85 },
+      { url: `${baseUrl}/stargazer`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.85 },
+      { url: `${baseUrl}/stargazer/objects`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${baseUrl}/tropical`, lastModified: daily, changeFrequency: 'daily', priority: 0.8 },
-      { url: `${baseUrl}/aviation`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.8 },
-      { url: `${baseUrl}/travel`, lastModified: daily, changeFrequency: 'daily', priority: 0.8 },
-      { url: `${baseUrl}/winter`, lastModified: daily, changeFrequency: 'daily', priority: 0.7 },
-      { url: `${baseUrl}/earth-sciences`, lastModified: hourly, changeFrequency: 'hourly', priority: 0.8 },
+      { url: `${baseUrl}/aviation`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
+      { url: `${baseUrl}/travel`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
+      { url: `${baseUrl}/winter`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.7 },
+      { url: `${baseUrl}/earth-sciences`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
 
       { url: `${baseUrl}/blog`, lastModified: latestPostDate, changeFrequency: 'weekly', priority: 0.9 },
-      { url: `${baseUrl}/news`, lastModified: daily, changeFrequency: 'daily', priority: 0.8 },
+      { url: `${baseUrl}/news`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
       { url: `${baseUrl}/education`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
       { url: `${baseUrl}/cloud-types`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
       { url: `${baseUrl}/weather-systems`, lastModified: monthly, changeFrequency: 'monthly', priority: 0.8 },
@@ -79,21 +89,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => educationDetailPage('phenomenon', slug)),
     ]
 
+    // Climate copy is static; only the client-fetched forecast changes.
     const cityPages: MetadataRoute.Sitemap = Object.keys(cityMetadata || {}).map(citySlug => ({
       url: `${baseUrl}/weather/${citySlug}`,
-      lastModified: weekly,
-      changeFrequency: 'weekly' as const,
+      lastModified: monthly,
+      changeFrequency: 'monthly' as const,
       priority: 0.9,
     }))
 
-    // Deep-sky object pages stay indexable via internal links but are omitted
-    // from the sitemap to focus crawl budget on city, education, and tool pages.
+    // Deep-sky object pages already rank for object names; without the sitemap
+    // their only inlinks were a client-rendered highlights list.
+    const deepSkyPages: MetadataRoute.Sitemap = (deepSkyCatalog as DeepSkyObject[]).map(obj => ({
+      url: `${baseUrl}/stargazer/objects/${obj.id}`,
+      lastModified: monthly,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
+    }))
 
-    return [...staticPages, ...educationDetailPages, ...cityPages, ...blogPosts]
+    return [...staticPages, ...educationDetailPages, ...cityPages, ...blogPosts, ...deepSkyPages]
   } catch (error) {
     console.error('Error generating sitemap:', error)
     return [
-      { url: baseUrl, lastModified: startOfUtcDay(), changeFrequency: 'daily' as const, priority: 1 },
+      { url: baseUrl, lastModified: startOfUtcWeek(), changeFrequency: 'weekly' as const, priority: 1 },
       { url: `${baseUrl}/about`, lastModified: startOfUtcMonth(), changeFrequency: 'monthly' as const, priority: 0.8 },
     ]
   }

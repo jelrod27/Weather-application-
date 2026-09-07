@@ -24,6 +24,11 @@ export interface BlogPost {
   slug: string
   title: string
   date: string
+  /**
+   * Last substantive edit, when the post has been revised. Feeds `dateModified`
+   * in the Article JSON-LD; posts without it report `date` for both.
+   */
+  updated?: string
   author: string
   summary: string
   tags: string[]
@@ -71,10 +76,20 @@ export function getAllPosts(): BlogPost[] {
           ? rawDate
           : new Date().toISOString();
 
+    // Same YAML-timestamp coercion as `date`; absent on posts never revised.
+    const rawUpdated = data.updated;
+    const updatedString =
+      rawUpdated instanceof Date
+        ? rawUpdated.toISOString()
+        : typeof rawUpdated === 'string' && rawUpdated
+          ? rawUpdated
+          : undefined;
+
     return {
       slug: data.slug || filename.replace(/\.mdx?$/, ''),
       title: data.title || 'Untitled',
       date: dateString,
+      updated: updatedString,
       author: data.author || '16bitbot',
       summary: data.summary || '',
       tags: data.tags || [],
@@ -108,13 +123,10 @@ export function getPostBySlug(slug: string): BlogPost | null {
 }
 
 /** Categories that have at least one published post, in canonical order. */
-export function getCategoriesInUse(): BlogCategory[] {
-  const used = new Set(getAllPosts().flatMap(p => getPostCategoryIds(p.tags)))
+/** Accepts an already-loaded post list so a caller need not re-read the disk. */
+export function getCategoriesInUse(posts: BlogPost[] = getAllPosts()): BlogCategory[] {
+  const used = new Set(posts.flatMap(p => getPostCategoryIds(p.tags)))
   return BLOG_CATEGORIES.filter(c => used.has(c.id))
-}
-
-function getPostsByTag(tag: string): BlogPost[] {
-  return getAllPosts().filter(p => p.tags.some(t => t.toLowerCase() === tag.toLowerCase()))
 }
 
 export function getRelatedPosts(currentSlug: string, limit = 3): BlogPost[] {

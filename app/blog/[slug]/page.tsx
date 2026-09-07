@@ -1,7 +1,17 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/blog'
+import {
+  blogPostOgImagePath,
+  blogPostUrl,
+  buildBlogPostJsonLd,
+} from '@/lib/blog/post-jsonld'
+import { clampDescription } from '@/lib/seo/clamp-description'
+import { safeJsonLd } from '@/lib/utils'
 import { BlogArticle } from './blog-article'
+
+const BASE_URL = 'https://www.16bitweather.co'
+const RSS_URL = `${BASE_URL}/blog/rss.xml`
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -12,49 +22,40 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = getPostBySlug(slug)
   if (!post) return { title: 'Post Not Found', robots: { index: false, follow: false } }
 
-  const ogImage = `/api/og/blog?title=${encodeURIComponent(post.title)}&subtitle=16bitbot+Weekly+Dispatch`
-
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    description: post.summary,
-    datePublished: post.date,
-    dateModified: post.date,
-    author: { '@type': 'Person', name: post.author },
-    publisher: { '@type': 'Organization', name: '16 Bit Weather', url: 'https://www.16bitweather.co' },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://www.16bitweather.co/blog/${post.slug}` },
-    keywords: post.tags.join(', '),
-    articleSection: 'Weather',
-  }
+  const ogImage = blogPostOgImagePath(post)
+  const description = clampDescription(post.summary)
 
   return {
-    title: `${post.title} | 16 Bit Weather Blog`,
-    description: post.summary,
+    // A post headline is already 34-60 characters and reads as its own name.
+    // Letting the root template append the brand would push it past 77 and
+    // Google would cut it mid-phrase, so this one route opts out.
+    title: { absolute: post.title },
+    description,
     keywords: post.tags.join(', '),
     openGraph: {
       title: post.title,
-      description: post.summary,
-      url: `https://www.16bitweather.co/blog/${post.slug}`,
+      description,
+      url: blogPostUrl(post.slug),
       siteName: '16 Bit Weather',
       images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
       locale: 'en_US',
       type: 'article',
       publishedTime: post.date,
+      modifiedTime: post.updated || post.date,
       authors: [post.author],
       tags: post.tags,
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.summary,
+      description,
       images: [ogImage],
     },
+    // `alternates` is replaced wholesale per segment, so the feed link has to
+    // be repeated here as well as on /blog or posts advertise no feed.
     alternates: {
-      canonical: `https://www.16bitweather.co/blog/${post.slug}`,
-    },
-    other: {
-      'application/ld+json': JSON.stringify(structuredData),
+      canonical: blogPostUrl(post.slug),
+      types: { 'application/rss+xml': RSS_URL },
     },
   }
 }
@@ -69,5 +70,15 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) notFound()
 
   const related = getRelatedPosts(slug)
-  return <BlogArticle post={post} relatedPosts={related} />
+  return (
+    <>
+      {/* A real <script>, not metadata.other — Next renders `other` entries as
+          <meta name=… content=…>, which no structured-data parser reads. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildBlogPostJsonLd(post)) }}
+      />
+      <BlogArticle post={post} relatedPosts={related} />
+    </>
+  )
 }

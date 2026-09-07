@@ -8,6 +8,7 @@
 import PageWrapper from '@/components/page-wrapper';
 import SPCOutlookTabs from '@/components/severe/SPCOutlookTabs';
 import { ShareButtons } from '@/components/share-buttons';
+import SevereSeoContent from '@/components/severe/severe-seo-content';
 import SevereAlerts from './severe-alerts';
 
 export default function SeverePage() {
@@ -33,6 +34,9 @@ export default function SeverePage() {
         {/* Alerts panel — polls every 5 min */}
         <SevereAlerts />
       </div>
+
+      {/* Evergreen crawlable copy — the maps and alert list above are client-only */}
+      <SevereSeoContent />
     </PageWrapper>
   );
 }

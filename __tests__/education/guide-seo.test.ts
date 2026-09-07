@@ -87,7 +87,8 @@ describe('buildGuideJsonLd', () => {
 describe('buildGuideMetadata', () => {
   it('sets an Open Graph and Twitter image for every kind, not just weather systems', () => {
     const metadata = buildGuideMetadata(cirrusInput())
-    expect(metadata.title).toBe('Cirrus — Cloud Atlas | 16 Bit Weather')
+    // The root layout's title template appends " | 16 Bit Weather".
+    expect(metadata.title).toBe('Cirrus — Cloud Atlas')
     expect(metadata.alternates?.canonical).toBe('https://www.16bitweather.co/education/cloud-types/cirrus')
     const og = metadata.openGraph as { images: { url: string; alt: string }[] }
     expect(og.images[0].url).toMatch(/^\/api\/og\?title=Cirrus/)

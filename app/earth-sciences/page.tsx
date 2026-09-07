@@ -9,6 +9,7 @@
 import type { Metadata } from 'next';
 import PageWrapper from '@/components/page-wrapper';
 import { ShareButtons } from '@/components/share-buttons';
+import EarthSciencesSeoContent from '@/components/earth-sciences/earth-sciences-seo-content';
 import EarthSciencesClient from './earth-sciences-client';
 
 const BASE_URL = 'https://www.16bitweather.co';
@@ -59,6 +60,9 @@ export default function EarthSciencesPage() {
 
         <EarthSciencesClient />
       </div>
+
+      {/* Evergreen crawlable copy — the quake table above is fetched client-side */}
+      <EarthSciencesSeoContent />
     </PageWrapper>
   );
 }
