@@ -134,3 +134,18 @@ describe('blogPostHref', () => {
     expect(blogPostHref('../escape')).toBe('/blog')
   })
 })
+
+describe('every published post is reachable from the index', () => {
+  it('produces a real href for every slug on disk', async () => {
+    const { getAllPosts } = await import('@/lib/blog')
+
+    // blogPostHref degrades to /blog for a slug it does not recognise, which
+    // would leave that post linked from nowhere on the index while still
+    // existing at its own URL and in the sitemap. Nothing else would fail.
+    const unreachable = getAllPosts()
+      .filter((post) => blogPostHref(post.slug) === '/blog')
+      .map((post) => post.slug)
+
+    expect(unreachable).toEqual([])
+  })
+})

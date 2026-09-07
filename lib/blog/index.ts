@@ -123,8 +123,9 @@ export function getPostBySlug(slug: string): BlogPost | null {
 }
 
 /** Categories that have at least one published post, in canonical order. */
-export function getCategoriesInUse(): BlogCategory[] {
-  const used = new Set(getAllPosts().flatMap(p => getPostCategoryIds(p.tags)))
+/** Accepts an already-loaded post list so a caller need not re-read the disk. */
+export function getCategoriesInUse(posts: BlogPost[] = getAllPosts()): BlogCategory[] {
+  const used = new Set(posts.flatMap(p => getPostCategoryIds(p.tags)))
   return BLOG_CATEGORIES.filter(c => used.has(c.id))
 }
 

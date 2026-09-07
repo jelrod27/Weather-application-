@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { getAllPosts, getCategoriesInUse, BLOG_CATEGORIES } from '@/lib/blog'
+import { getAllPosts, getCategoriesInUse, BLOG_CATEGORIES, type BlogPost } from '@/lib/blog'
 import {
   blogIndexHref,
   blogPageSlice,
@@ -24,9 +24,15 @@ interface PageProps {
   searchParams: Promise<BlogIndexSearchParams>
 }
 
-/** Display label for an active tag: the first spelling any post used for it. */
-function tagLabel(slug: string): string {
-  for (const post of getAllPosts()) {
+/**
+ * Display label for an active tag: the first spelling any post used for it.
+ *
+ * Takes the posts it scans rather than loading them, because `getAllPosts`
+ * re-reads and re-parses every markdown file on each call and `/blog` is
+ * request-time dynamic.
+ */
+function tagLabel(posts: BlogPost[], slug: string): string {
+  for (const post of posts) {
     const match = post.tags.find(t => tagSlug(t) === slug)
     if (match) return match
   }
@@ -43,7 +49,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   // Filtered URLs are near-duplicates of the index — keep them out of the
   // index so crawl budget concentrates on canonical /blog and the posts.
   const categoryLabel = BLOG_CATEGORIES.find(c => c.id === category)?.label
-  const filterLabel = categoryLabel ?? (tag ? tagLabel(tag) : null)
+  const filterLabel = categoryLabel ?? (tag ? tagLabel(getAllPosts(), tag) : null)
   if (filterLabel) {
     return {
       title: `${filterLabel} — Weather Blog`,
@@ -107,7 +113,9 @@ function toCard(post: ReturnType<typeof getAllPosts>[number]): BlogIndexCard {
 export default async function BlogPage({ searchParams }: PageProps) {
   const { category, tag, page } = parseBlogIndexQuery(await searchParams)
 
-  const filtered = filterBlogPosts(getAllPosts(), { category, tag })
+  // One read per request: getAllPosts hits the filesystem for every post.
+  const allPosts = getAllPosts()
+  const filtered = filterBlogPosts(allPosts, { category, tag })
   const totalPages = blogTotalPages(filtered.length)
 
   // A non-integer or out-of-range ?page= is a URL that never existed.
@@ -116,10 +124,10 @@ export default async function BlogPage({ searchParams }: PageProps) {
   return (
     <BlogIndex
       posts={blogPageSlice(filtered, page).map(toCard)}
-      categories={getCategoriesInUse()}
+      categories={getCategoriesInUse(allPosts)}
       activeCategory={category}
       activeTag={tag}
-      activeTagLabel={tag ? tagLabel(tag) : null}
+      activeTagLabel={tag ? tagLabel(allPosts, tag) : null}
       page={page}
       totalPages={totalPages}
       totalPosts={filtered.length}
