@@ -6,8 +6,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About 16 Bit Weather - Retro Weather App Story | 16 Bit Weather',
-  description: 'Discover the story behind 16 Bit Weather. A passion project combining meteorology with retro 16-bit terminal aesthetics, built with Next.js 16 and real-time weather data.',
+  // The root layout's title template appends the brand.
+  title: 'About 16 Bit Weather',
+  description: 'The story behind 16 Bit Weather: a passion project pairing real meteorology with a retro 16-bit terminal look, built on Next.js and live Open-Meteo data.',
   keywords: 'about 16 bit weather, retro weather app, weather app story, next.js weather, terminal weather, pixel weather app, weather developer',
   openGraph: {
     title: 'About - 16 Bit Weather',

@@ -33,7 +33,7 @@ export async function generateMetadata({
   const regionName = REGION_NAMES[region] || region.toUpperCase();
   const runTime = run.replace('z', ':00 UTC');
 
-  const title = `GFS Model ${regionName} ${runTime} Run | 16 Bit Weather`;
+  const title = `GFS Model ${regionName} ${runTime} Run`;
   const description = `NOAA GFS ${regionName} model forecast for the ${runTime} run — mean sea level pressure and precipitation forecast graphics updated 4 times daily.`;
 
   return {

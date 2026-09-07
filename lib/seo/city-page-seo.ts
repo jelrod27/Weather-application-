@@ -21,20 +21,25 @@ type CityMeta = {
   state: string
 }
 
+/**
+ * The root layout's title template appends " | 16 Bit Weather" (17 chars), so
+ * the page part stays at or under 43 characters: long city names drop the
+ * state abbreviation rather than push the whole title past 60.
+ */
 export function buildCityPageTitle(city: CityMeta, citySlug: string): string {
-  const label = `${city.name}, ${city.state}`
+  const label = city.name.length <= 10 ? `${city.name} ${city.state}` : city.name
   if ((PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
-    return `${city.name} ${city.state} Climate & Year-Round Weather Guide | 16 Bit Weather`
+    return `${label} Climate & Year-Round Weather`
   }
-  return `${label} Climate & Year-Round Weather | 16 Bit Weather`
+  return `${city.name}, ${city.state} Climate & Weather Guide`
 }
 
 export function buildCityPageDescription(city: CityMeta, citySlug?: string): string {
   if (citySlug === 'boston-ma') {
-    return `Boston MA climate and year-round weather guide: monthly averages, nor'easter winters, humid summers, and best time to visit. Live forecast plus New England climate patterns.`
+    return `Boston MA climate and year-round weather guide: monthly averages, nor'easter winters, humid summers, and best time to visit, plus a live forecast.`
   }
   if (citySlug === 'atlanta-ga') {
-    return `Atlanta Georgia climate and summer weather guide: humid subtropical seasons, monthly averages, severe storm risk, and best time to visit. Live forecast included.`
+    return `Atlanta Georgia climate and summer weather guide: humid subtropical seasons, monthly averages, severe storm risk, and best time to visit, with a live forecast.`
   }
   if (citySlug && (PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
     return `${city.name}, ${city.state} climate averages, monthly weather patterns, and year-round temperature guide. Live forecast, 7-day outlook, and best time to visit.`

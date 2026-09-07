@@ -8,7 +8,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '48-Hour Forecast | 16 Bit Weather',
+  title: '48-Hour Forecast',
   description:
     'Hour-by-hour weather forecast for the next 48 hours — temperature, precipitation chance, wind, and conditions.',
   robots: { index: false, follow: true },

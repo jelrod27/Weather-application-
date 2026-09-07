@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Winter Weather Alerts - Snow, Ice & Blizzard Warnings | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Winter Weather Alerts & Blizzard Warnings',
   description:
     'Active NWS winter weather alerts: snow, ice, blizzard, freeze, and wind chill warnings. Filtered winter storm outlook for your region in retro terminal style.',
   keywords:
     'winter weather, snow alert, blizzard warning, ice storm, freeze warning, wind chill, NWS winter alerts, winter storm',
   openGraph: {
-    title: 'Winter Weather Alerts | 16 Bit Weather',
+    title: 'Winter Weather Alerts',
     description: 'Snow, ice, blizzard, and freeze warnings from the National Weather Service.',
     url: 'https://www.16bitweather.co/winter',
     siteName: '16 Bit Weather',
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Winter Weather Alerts | 16 Bit Weather',
+    title: 'Winter Weather Alerts',
     description: 'Snow, ice, blizzard, and freeze warnings from the National Weather Service.',
     images: ['/api/og?title=Winter+Weather&subtitle=NWS+Snow+%26+Ice+Alerts'],
   },

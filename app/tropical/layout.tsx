@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tropical Weather Tracker — Atlantic Satellite & NHC Outlooks | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Tropical Tracker: Atlantic Satellite & NHC',
   description:
     'Track Atlantic tropical weather with live NHC outlooks, tropical Atlantic satellite imagery, and sea surface temperatures in a retro terminal UI.',
   keywords:
     'tropical weather, Atlantic tropical satellite, tropical Atlantic satellite, NHC outlook, hurricane tracker, tropical storm, satellite imagery, sea surface temperature',
   openGraph: {
-    title: 'Tropical Weather Tracker — Atlantic Satellite & NHC | 16 Bit Weather',
+    title: 'Tropical Weather Tracker — Atlantic Satellite & NHC',
     description:
       'Live NHC tropical outlooks, Atlantic basin satellite imagery, and sea surface temperature analysis.',
     url: 'https://www.16bitweather.co/tropical',

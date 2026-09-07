@@ -33,23 +33,54 @@ async function loadAlert(rawId: string) {
   return alerts.find((alert) => alert.id === matchedId) ?? null
 }
 
+/** areaDesc is a semicolon list of counties that can run to hundreds of characters. */
+function shortenAreaDesc(areaDesc: string): string {
+  const parts = areaDesc.split(/;\s*/).filter(Boolean)
+  const shown = parts.slice(0, 2).join('; ')
+  const rest = parts.length - 2
+  const label = rest > 0 ? `${shown} +${rest} more` : shown
+  return label.length > 60 ? `${label.slice(0, 57).trimEnd()}…` : label
+}
+
+/** ISO timestamp for robots unavailable_after, or undefined when NWS gave no usable expiry. */
+function expiryForRobots(expires: string | undefined): string | undefined {
+  if (!expires) return undefined
+  const time = new Date(expires).getTime()
+  return Number.isFinite(time) ? new Date(time).toISOString() : undefined
+}
+
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
   const { id } = await params
+  // The root layout's title template appends the brand. Expired and failed
+  // loads stay noindex and point at the warning center rather than inheriting
+  // the homepage canonical.
   try {
     const alert = await loadAlert(id)
     if (!alert) {
       return {
-        title: 'Warning expired | 16 Bit Weather',
+        title: 'Warning expired',
         robots: { index: false, follow: true },
+        alternates: { canonical: `${BASE_URL}/warnings` },
       }
     }
+    const unavailableAfter = expiryForRobots(alert.expires)
     return {
-      title: `${alert.event} — ${alert.areaDesc} | 16 Bit Weather`,
+      title: `${alert.event} — ${shortenAreaDesc(alert.areaDesc)}`,
       description: alert.headline || alert.instruction || `Active ${alert.event} from the National Weather Service.`,
       alternates: { canonical: `${BASE_URL}/warnings/${encodeURIComponent(warningIdSlug(alert.id))}` },
+      // The page 404s once the alert expires; tell Google when to drop it.
+      robots: {
+        index: true,
+        follow: true,
+        ...(unavailableAfter ? { unavailable_after: unavailableAfter } : {}),
+      },
     }
   } catch {
-    return { title: 'Warning | 16 Bit Weather' }
+    return {
+      title: 'Warning',
+      robots: { index: false, follow: true },
+      alternates: { canonical: `${BASE_URL}/warnings` },
+    }
   }
 }
 

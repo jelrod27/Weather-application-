@@ -4,7 +4,7 @@ import PageWrapper from '@/components/page-wrapper'
 import AlertManageClient from './manage-client'
 
 export const metadata: Metadata = {
-  title: 'Manage alert pin | 16 Bit Weather',
+  title: 'Manage alert pin',
   robots: { index: false, follow: false },
 }
 

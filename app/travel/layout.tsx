@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Travel Weather - Interstate Corridor Forecasts | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Travel Weather & Interstate Corridors',
   description: 'Travel weather forecasts with interstate corridor conditions. Plan your route with driving hazard maps and WPC daily outlooks.',
   keywords: 'travel weather, interstate weather, driving conditions, corridor forecast, road weather, WPC outlook',
   openGraph: {
@@ -36,5 +37,12 @@ export default function TravelLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return (
+    <>
+      {/* The corridor map draws Carto basemap tiles; preconnect here, not site-wide. */}
+      <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
+      <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
+      {children}
+    </>
+  )
 }

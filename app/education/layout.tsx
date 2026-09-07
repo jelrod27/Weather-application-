@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Weather Education Hub - Learn Meteorology | 16 Bit Weather',
+  // The root layout's title template appends the brand.
+  title: 'Weather Education Hub: Learn Meteorology',
   description: 'Learn meteorology with interactive lessons on weather systems, cloud types, weather phenomena, and extreme weather. Free educational resources.',
   keywords: 'weather education, learn meteorology, cloud types, weather systems, weather phenomena, weather science',
   openGraph: {

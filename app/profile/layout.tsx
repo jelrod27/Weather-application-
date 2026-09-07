@@ -6,7 +6,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'My Profile - 16 Bit Weather',
+  title: 'My Profile',
   description: 'Manage your 16 Bit Weather profile, preferences, and saved locations.',
   robots: {
     index: false,

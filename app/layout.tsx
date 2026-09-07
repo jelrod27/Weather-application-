@@ -56,7 +56,13 @@ const vt323 = VT323({
 })
 
 export const metadata: Metadata = {
-  title: HOMEPAGE_TITLE,
+  // Child segments set a bare page title (<= 43 chars) and the template
+  // appends the brand, so every <title> stays under 60 characters and the
+  // brand is spelled one way.
+  title: {
+    default: HOMEPAGE_TITLE,
+    template: '%s | 16 Bit Weather',
+  },
   description: HOMEPAGE_DESCRIPTION,
   keywords: "live weather, weather radar, space weather, kp index, solar flares, nws warnings, city climate, weather glossary, 16 bit weather",
   generator: 'Next.js',
@@ -145,20 +151,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning>
-      <head>
-        {/* PERFORMANCE: Preconnect to critical origins for faster resource loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Map tile sources - preconnect for faster map loading */}
-        <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
-        <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
-        <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com" />
-        <link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com" />
-        {/* Radar data sources */}
-        <link rel="dns-prefetch" href="https://mesonet.agron.iastate.edu" />
-        <link rel="dns-prefetch" href="https://pollen.googleapis.com" />
-        <link rel="dns-prefetch" href="https://www.google.com" />
-      </head>
+      {/* Fonts are self-hosted by next/font, pollen is fetched server-side, and
+          map tile hosts are preconnected from the layouts that draw maps. */}
       <body className={`${ibmPlexSans.variable} ${inconsolata.variable} ${vt323.variable} min-h-screen font-sans antialiased`} style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
         <ErrorBoundaryWrapper>
           <AuthProvider>
