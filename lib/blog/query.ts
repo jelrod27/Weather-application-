@@ -118,3 +118,13 @@ export function blogIndexHref({
   const query = params.toString()
   return query ? `/blog?${query}` : '/blog'
 }
+
+/**
+ * Path to a post. Slugs come from filenames under `content/blog`, so they are
+ * already constrained, but validating here gives the URL one definition and
+ * means a malformed filename degrades to the index instead of emitting a
+ * broken link.
+ */
+export function blogPostHref(slug: string): string {
+  return /^[a-z0-9][a-z0-9-]*$/.test(slug) ? `/blog/${slug}` : '/blog'
+}

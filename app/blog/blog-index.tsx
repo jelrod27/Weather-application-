@@ -9,7 +9,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogCategory, BlogCategoryId } from '@/lib/blog/categories'
 import { blogHeroImage } from '@/lib/blog/hero'
-import { blogIndexHref } from '@/lib/blog/query'
+import { blogIndexHref, blogPostHref } from '@/lib/blog/query'
 
 /**
  * The subset of a post a card renders. Deliberately not `BlogPost`: the index
@@ -169,7 +169,7 @@ export function BlogIndex({
         {/* Featured post (hero card) — page 1 only */}
         {featured && (
           <Link
-            href={`/blog/${encodeURIComponent(featured.slug)}`}
+            href={blogPostHref(featured.slug)}
             className={cn(
               'block rounded-lg border overflow-hidden transition-all duration-200',
               'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
@@ -237,7 +237,7 @@ export function BlogIndex({
             {gridPosts.map(post => (
               <Link
                 key={post.slug}
-                href={`/blog/${encodeURIComponent(post.slug)}`}
+                href={blogPostHref(post.slug)}
                 className={cn(
                   'block rounded-lg border p-5 transition-all duration-200',
                   'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_15px_hsl(var(--primary)/0.15)]',

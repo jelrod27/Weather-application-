@@ -8,6 +8,7 @@ import {
   POSTS_PER_PAGE,
   blogIndexHref,
   blogPageSlice,
+  blogPostHref,
   blogTotalPages,
   filterBlogPosts,
   parseBlogIndexQuery,
@@ -116,5 +117,20 @@ describe('blogIndexHref', () => {
       '/blog?category=space-weather&page=2',
     )
     expect(blogIndexHref({ tag: 'severe-weather' })).toBe('/blog?tag=severe-weather')
+  })
+})
+
+describe('blogPostHref', () => {
+  it('links a normal slug', () => {
+    expect(blogPostHref('this-week-in-weather-2026-09-06')).toBe(
+      '/blog/this-week-in-weather-2026-09-06',
+    )
+  })
+
+  it('falls back to the index rather than emitting a broken link', () => {
+    expect(blogPostHref('')).toBe('/blog')
+    expect(blogPostHref('-leading-dash')).toBe('/blog')
+    expect(blogPostHref('Has Spaces')).toBe('/blog')
+    expect(blogPostHref('../escape')).toBe('/blog')
   })
 })
