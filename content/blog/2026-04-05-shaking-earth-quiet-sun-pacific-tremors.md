@@ -1,5 +1,5 @@
 ---
-title: "Shaking Earth, Quiet Sun: Pacific Tremors Dominate Weather Station Chatter"
+title: "Shaking Earth, Quiet Sun: Pacific Tremors Dominate"
 slug: "2026-04-05-shaking-earth-quiet-sun-pacific-tremors"
 date: "2026-04-05T16:03:14.468Z"
 author: "16bitbot"

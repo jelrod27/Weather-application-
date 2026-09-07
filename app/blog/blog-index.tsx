@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -8,29 +7,87 @@ import { cn } from '@/lib/utils'
 import { themeTokens } from '@/lib/theme-tokens'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
-import type { BlogPost } from '@/lib/blog'
-import { getPostCategoryIds, type BlogCategory } from '@/lib/blog/categories'
+import type { BlogCategory, BlogCategoryId } from '@/lib/blog/categories'
 import { blogHeroImage } from '@/lib/blog/hero'
+import { blogIndexHref } from '@/lib/blog/query'
 
-const POSTS_PER_PAGE = 10
-
-interface BlogIndexProps {
-  posts: BlogPost[]
-  categories: BlogCategory[]
-  initialCategory: string | null
+/**
+ * The subset of a post a card renders. Deliberately not `BlogPost`: the index
+ * is a client component, so anything in these props is serialized into the
+ * page's inline RSC payload, and shipping `content` for every post is what
+ * made /blog 388 KB of HTML for ten cards.
+ */
+export interface BlogIndexCard {
+  slug: string
+  title: string
+  date: string
+  author: string
+  summary: string
+  tags: string[]
+  heroImage: string
+  readTime: number
 }
 
-export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory)
-  const [page, setPage] = useState(1)
+interface BlogIndexProps {
+  /** Only the current page's posts — filtering and paging happen server-side. */
+  posts: BlogIndexCard[]
+  categories: BlogCategory[]
+  activeCategory: BlogCategoryId | null
+  activeTag: string | null
+  activeTagLabel: string | null
+  page: number
+  totalPages: number
+  /** Posts matching the active filter across all pages. */
+  totalPosts: number
+}
+
+const CHIP_BASE =
+  'px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border transition-colors'
+const CHIP_ON =
+  'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
+const CHIP_OFF =
+  'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--primary))]'
+
+/**
+ * Page numbers to link: always the first, last and current page, plus two
+ * either side. Gaps render as an ellipsis.
+ */
+function pageWindow(page: number, totalPages: number): number[] {
+  if (totalPages <= 9) return Array.from({ length: totalPages }, (_, i) => i + 1)
+  const wanted = new Set<number>([1, totalPages, page])
+  for (let offset = 1; offset <= 2; offset++) {
+    wanted.add(page - offset)
+    wanted.add(page + offset)
+  }
+  return Array.from(wanted)
+    .filter(p => p >= 1 && p <= totalPages)
+    .sort((a, b) => a - b)
+}
+
+function formatDate(date: string, month: 'long' | 'short'): string {
+  return new Date(date)
+    .toLocaleDateString('en-US', { month, day: 'numeric', year: 'numeric' })
+    .toUpperCase()
+}
+
+export function BlogIndex({
+  posts,
+  categories,
+  activeCategory,
+  activeTag,
+  activeTagLabel,
+  page,
+  totalPages,
+  totalPosts,
+}: BlogIndexProps) {
   const themeClasses = themeTokens.card
 
-  const filtered = selectedCategory
-    ? posts.filter(p => getPostCategoryIds(p.tags).some(id => id === selectedCategory))
-    : posts
+  // The hero card only leads the archive; deeper pages are a plain grid.
+  const featured = page === 1 ? posts[0] : undefined
+  const gridPosts = featured ? posts.slice(1) : posts
 
-  const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE)
-  const paginated = filtered.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE)
+  const filterHref = (category: BlogCategoryId | null) =>
+    blogIndexHref({ category, tag: activeTag })
 
   return (
     <PageWrapper>
@@ -66,199 +123,229 @@ export function BlogIndex({ posts, categories, initialCategory }: BlogIndexProps
           />
         </div>
 
-        {/* Category filter */}
+        {/* Category filter — links, not state, so every filtered view is a
+            crawlable URL and the server can page within the filter. */}
         {categories.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-center">
-            <button
-              onClick={() => { setSelectedCategory(null); setPage(1) }}
-              className={cn(
-                'px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border transition-colors',
-                !selectedCategory
-                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
-                  : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--primary))]'
-              )}
+            <Link
+              href={filterHref(null)}
+              className={cn(CHIP_BASE, !activeCategory ? CHIP_ON : CHIP_OFF)}
             >
               ALL
-            </button>
+            </Link>
             {categories.map(category => (
-              <button
+              <Link
                 key={category.id}
-                onClick={() => { setSelectedCategory(category.id); setPage(1) }}
-                className={cn(
-                  'px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border transition-colors',
-                  selectedCategory === category.id
-                    ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]'
-                    : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--primary))]'
-                )}
+                href={filterHref(category.id)}
+                className={cn(CHIP_BASE, activeCategory === category.id ? CHIP_ON : CHIP_OFF)}
               >
                 {category.label}
-              </button>
+              </Link>
             ))}
+          </div>
+        )}
+
+        {/* Active tag filter */}
+        {activeTag && (
+          <div className="flex flex-wrap gap-2 justify-center items-center">
+            <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+              TAG:
+            </span>
+            <span className={cn(CHIP_BASE, CHIP_ON)}>{activeTagLabel ?? activeTag}</span>
+            <Link
+              href={blogIndexHref({ category: activeCategory })}
+              className={cn(CHIP_BASE, CHIP_OFF)}
+            >
+              CLEAR
+            </Link>
           </div>
         )}
 
         {/* Post count */}
         <p className="text-xs font-mono text-muted-foreground text-center tracking-wider">
-          SHOWING {paginated.length} OF {filtered.length} DISPATCHES
+          SHOWING {posts.length} OF {totalPosts} DISPATCHES
         </p>
 
         {/* Featured post (hero card) — page 1 only */}
-        {page === 1 && paginated[0] && (() => {
-          const feat = paginated[0]
-          return (
-            <Link
-              href={`/blog/${encodeURIComponent(feat.slug)}`}
-              className={cn(
-                'block rounded-lg border overflow-hidden transition-all duration-200',
-                'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
-                'border-[hsl(var(--primary)/0.5)]',
-                'bg-[hsl(var(--card))]'
-              )}
-            >
-              {/* blogHeroImage falls back to a generated OG banner when the
-                  frontmatter heroImage is empty, so the featured card always
-                  has art (the old imageless branch rendered its title in
-                  accentText, which was invisible on light themes). */}
-              {(
-                <div className="relative w-full h-56 sm:h-72 md:h-80">
-                  <Image
-                    src={blogHeroImage(feat)}
-                    alt={feat.title}
-                    fill
-                    priority
-                    unoptimized
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 100vw, 1024px"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <span className="inline-block px-2 py-0.5 text-xs font-mono uppercase tracking-widest text-[hsl(var(--primary))] border border-[hsl(var(--primary))] rounded mb-3">
-                      FEATURED INTEL
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold font-mono uppercase tracking-tight text-white mb-2">
-                      {feat.title}
-                    </h2>
-                    <div className="flex items-center gap-2 text-xs font-mono text-gray-300 tracking-wider">
-                      <span>{new Date(feat.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
-                      <span>|</span>
-                      <span>{feat.readTime} MIN READ</span>
-                      <span>|</span>
-                      <span>BY {feat.author.toUpperCase()}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="p-6 pt-0">
-                <p className="text-sm font-mono text-muted-foreground mb-4 leading-relaxed">
-                  {feat.summary}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap gap-2">
-                    {feat.tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-xs font-mono uppercase tracking-wider text-[hsl(var(--primary))] whitespace-nowrap ml-4">
-                    ACCESS FULL REPORT &rarr;
-                  </span>
+        {featured && (
+          <Link
+            href={`/blog/${encodeURIComponent(featured.slug)}`}
+            className={cn(
+              'block rounded-lg border overflow-hidden transition-all duration-200',
+              'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)]',
+              'border-[hsl(var(--primary)/0.5)]',
+              'bg-[hsl(var(--card))]'
+            )}
+          >
+            {/* blogHeroImage falls back to a generated OG banner when the
+                frontmatter heroImage is empty, so the featured card always
+                has art (the old imageless branch rendered its title in
+                accentText, which was invisible on light themes). */}
+            <div className="relative w-full h-56 sm:h-72 md:h-80">
+              <Image
+                src={blogHeroImage(featured)}
+                alt={featured.title}
+                fill
+                priority
+                unoptimized
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 100vw, 1024px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <span className="inline-block px-2 py-0.5 text-xs font-mono uppercase tracking-widest text-[hsl(var(--primary))] border border-[hsl(var(--primary))] rounded mb-3">
+                  FEATURED INTEL
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold font-mono uppercase tracking-tight text-white mb-2">
+                  {featured.title}
+                </h2>
+                <div className="flex items-center gap-2 text-xs font-mono text-gray-300 tracking-wider">
+                  <span>{formatDate(featured.date, 'long')}</span>
+                  <span>|</span>
+                  <span>{featured.readTime} MIN READ</span>
+                  <span>|</span>
+                  <span>BY {featured.author.toUpperCase()}</span>
                 </div>
               </div>
-            </Link>
-          )
-        })()}
+            </div>
+            <div className="p-6 pt-0">
+              <p className="text-sm font-mono text-muted-foreground mb-4 leading-relaxed">
+                {featured.summary}
+              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {featured.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[hsl(var(--primary))] whitespace-nowrap ml-4">
+                  ACCESS FULL REPORT &rarr;
+                </span>
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Grid posts (smaller cards) */}
-        {(() => {
-          const gridPosts = page === 1 ? paginated.slice(1) : paginated
-          if (gridPosts.length === 0) return null
-          return (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {gridPosts.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${encodeURIComponent(post.slug)}`}
-                  className={cn(
-                    'block rounded-lg border p-5 transition-all duration-200',
-                    'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_15px_hsl(var(--primary)/0.15)]',
-                    'border-[hsl(var(--border))]',
-                    'bg-[hsl(var(--card))]'
+        {gridPosts.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {gridPosts.map(post => (
+              <Link
+                key={post.slug}
+                href={`/blog/${encodeURIComponent(post.slug)}`}
+                className={cn(
+                  'block rounded-lg border p-5 transition-all duration-200',
+                  'hover:border-[hsl(var(--primary))] hover:shadow-[0_0_15px_hsl(var(--primary)/0.15)]',
+                  'border-[hsl(var(--border))]',
+                  'bg-[hsl(var(--card))]'
+                )}
+              >
+                <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground tracking-wider mb-3">
+                  <span>{formatDate(post.date, 'short')}</span>
+                  <span>|</span>
+                  <span>{post.readTime} MIN</span>
+                </div>
+                <h3 className="text-base font-bold font-mono uppercase tracking-tight mb-2 line-clamp-2">
+                  {post.title}
+                </h3>
+                <p className="text-xs font-mono text-muted-foreground line-clamp-3 mb-3">
+                  {post.summary}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {post.tags.slice(0, 3).map(tag => (
+                    <span
+                      key={tag}
+                      className="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {post.tags.length > 3 && (
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      +{post.tags.length - 3}
+                    </span>
                   )}
-                >
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground tracking-wider mb-3">
-                    <span>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
-                    <span>|</span>
-                    <span>{post.readTime} MIN</span>
-                  </div>
-                  <h3 className="text-base font-bold font-mono uppercase tracking-tight mb-2 line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-xs font-mono text-muted-foreground line-clamp-3 mb-3">
-                    {post.summary}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {post.tags.slice(0, 3).map(tag => (
-                      <span
-                        key={tag}
-                        className="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {post.tags.length > 3 && (
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        +{post.tags.length - 3}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs font-mono uppercase tracking-wider text-[hsl(var(--primary))]">
-                    ACCESS FILE &rarr;
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )
-        })()}
+                </div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[hsl(var(--primary))]">
+                  ACCESS FILE &rarr;
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Empty state */}
-        {paginated.length === 0 && (
+        {posts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-lg font-mono text-muted-foreground">NO DISPATCHES FOUND</p>
             <p className="text-sm font-mono text-muted-foreground mt-2">Check back soon for weather intelligence.</p>
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Pagination — real links so every post is reachable from the server
+            HTML. The old buttons paged in React state, which left posts 11+
+            unlinked from /blog entirely. */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-4 pt-4">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 text-xs font-mono uppercase tracking-wider border border-[hsl(var(--border))] rounded disabled:opacity-30 hover:border-[hsl(var(--primary))] transition-colors"
-            >
-              PREV
-            </button>
-            <span className="px-4 py-2 text-xs font-mono tracking-wider text-muted-foreground">
-              {page} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-4 py-2 text-xs font-mono uppercase tracking-wider border border-[hsl(var(--border))] rounded disabled:opacity-30 hover:border-[hsl(var(--primary))] transition-colors"
-            >
-              NEXT
-            </button>
-          </div>
+          <nav
+            aria-label="Blog pagination"
+            className="flex flex-wrap justify-center items-center gap-2 pt-4"
+          >
+            {page > 1 ? (
+              <Link
+                href={blogIndexHref({ category: activeCategory, tag: activeTag, page: page - 1 })}
+                rel="prev"
+                className={cn(CHIP_BASE, CHIP_OFF)}
+              >
+                NEWER
+              </Link>
+            ) : (
+              <span className={cn(CHIP_BASE, 'border-[hsl(var(--border))] opacity-30')}>NEWER</span>
+            )}
+
+            {pageWindow(page, totalPages).map((target, index, all) => (
+              <span key={target} className="flex items-center gap-2">
+                {index > 0 && target - all[index - 1] > 1 && (
+                  <span className="text-xs font-mono text-muted-foreground">…</span>
+                )}
+                {target === page ? (
+                  <span aria-current="page" className={cn(CHIP_BASE, CHIP_ON)}>
+                    {target}
+                  </span>
+                ) : (
+                  <Link
+                    href={blogIndexHref({ category: activeCategory, tag: activeTag, page: target })}
+                    className={cn(CHIP_BASE, CHIP_OFF)}
+                  >
+                    {target}
+                  </Link>
+                )}
+              </span>
+            ))}
+
+            {page < totalPages ? (
+              <Link
+                href={blogIndexHref({ category: activeCategory, tag: activeTag, page: page + 1 })}
+                rel="next"
+                className={cn(CHIP_BASE, CHIP_OFF)}
+              >
+                OLDER
+              </Link>
+            ) : (
+              <span className={cn(CHIP_BASE, 'border-[hsl(var(--border))] opacity-30')}>OLDER</span>
+            )}
+          </nav>
         )}
 
         {/* RSS link */}
         <div className="text-center pt-4 border-t border-[hsl(var(--border))]">
           <a
             href="/blog/rss.xml"
+            type="application/rss+xml"
             className="text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-[hsl(var(--primary))] transition-colors"
           >
             RSS FEED

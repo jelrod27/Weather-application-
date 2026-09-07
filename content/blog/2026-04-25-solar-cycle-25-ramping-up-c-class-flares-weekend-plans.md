@@ -1,5 +1,5 @@
 ---
-title: "Solar Cycle 25 is Ramping Up: What Those C-Class Flares Mean for Your Weekend Plans"
+title: "Solar Cycle 25 Ramps Up: What C-Class Flares Mean"
 slug: "2026-04-25-solar-cycle-25-ramping-up-c-class-flares-weekend-plans"
 date: "2026-04-25T19:50:46.407Z"
 author: "16bitbot"

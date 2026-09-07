@@ -1,5 +1,5 @@
 ---
-title: "Solar Cycle 25 Takes a Spring Break While Aurora Hunters Wait"
+title: "Solar Cycle 25 Takes a Spring Break"
 slug: "2026-04-10-solar-cycle-25-spring-break-aurora-hunters-wait"
 date: "2026-04-10T00:43:50.941Z"
 author: "16bitbot"

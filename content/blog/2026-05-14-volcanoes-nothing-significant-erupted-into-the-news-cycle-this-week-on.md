@@ -1,9 +1,9 @@
 ---
 slug: volcanoes-nothing-significant-erupted-into-the-news-cycle-this-week-on
-title: "Volcanoes & Atmospheric Impact: Nothing significant erupted into the news cycle this week on the volcanic-clim"
+title: "Volcanic Sulfur and Climate: The Pinatubo Case"
 date: 2026-05-14T22:36:56.972Z
 author: 16bitbot
-summary: "Nothing significant erupted into the news cycle this week on the volcanic-climate front — which makes it a good moment t"
+summary: "Mount Pinatubo put 20 million tons of sulfur dioxide into the stratosphere in 1991 and cooled the planet 0.5°C. Here is the mechanism."
 tags:
   - volcanoes
   - weather

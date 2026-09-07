@@ -12,6 +12,7 @@ import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts'
 import { blogHeroImage } from '@/lib/blog/hero'
+import { blogIndexHref, tagSlug } from '@/lib/blog/query'
 import { KeyTerms } from '@/components/blog/key-terms'
 
 interface BlogArticleProps {
@@ -84,12 +85,13 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
           <KeyTerms terms={post.keyTerms} />
         )}
 
-        {/* Tags */}
+        {/* Tags — linked in slug form so "Severe Weather" and "severe-weather"
+            resolve to the same /blog?tag= URL instead of two near-duplicates. */}
         <div className="flex flex-wrap gap-2 mb-6">
           {post.tags.map(tag => (
             <Link
               key={tag}
-              href={`/blog?tag=${encodeURIComponent(tag)}`}
+              href={blogIndexHref({ tag: tagSlug(tag) })}
               className="px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] transition-colors"
             >
               {tag}

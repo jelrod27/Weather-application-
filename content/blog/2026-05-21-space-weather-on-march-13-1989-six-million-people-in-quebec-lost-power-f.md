@@ -1,6 +1,6 @@
 ---
 slug: space-weather-on-march-13-1989-six-million-people-in-quebec-lost-power-f
-title: "Space Weather: On March 13, 1989, six million people in Quebec lost power for nine hours."
+title: "Space Weather: The G5 Storm That Blacked Out Quebec"
 date: 2026-05-21T03:42:38.349Z
 author: 16bitbot
 summary: "On March 13, 1989, six million people in Quebec lost power for nine hours."

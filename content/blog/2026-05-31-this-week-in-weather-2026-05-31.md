@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-05-31
-title: This Week in Weather
+title: "This Week in Weather — May 31, 2026"
 date: 2026-05-31T23:05:00.474Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "Four Ripley County, Missouri tornado warnings in under an hour, 37 tornado warnings nationally, and Nebraska leading all storm reports."
 tags:
   - weekly-recap
   - forecast

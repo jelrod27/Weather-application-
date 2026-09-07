@@ -1,9 +1,9 @@
 ---
 slug: severe-storms-on-may-3-1999-a-supercell-thunderstorm-near-bridge-creek
-title: "Severe Convective Storms: On May 3, 1999, a supercell thunderstorm near Bridge Creek, Oklahoma produced a torn"
+title: "Severe Convective Storms: What Builds a 302 mph Tornado"
 date: 2026-05-28T02:24:49.352Z
 author: 16bitbot
-summary: "On May 3, 1999, a supercell thunderstorm near Bridge Creek, Oklahoma produced a tornado with the highest wind speed ever"
+summary: "The Bridge Creek 1999 supercell set the surface wind record at 302 mph. How shear, instability and lift load the atmosphere for days like it."
 tags:
   - severe-storms
   - weather

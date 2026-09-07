@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-05-03
-title: This Week in Weather
+title: "This Week in Weather — May 3, 2026"
 date: 2026-05-03T14:59:53.865Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "61 tornadoes from Arkansas to Indiana, 892 severe thunderstorm warnings, an M6.0 flare, and a trough carrying the severe risk east."
 tags:
   - weekly-recap
   - forecast

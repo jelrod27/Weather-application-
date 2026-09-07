@@ -1,5 +1,6 @@
 /**
- * Tests for blog index layout: featured hero card + smaller grid cards
+ * Tests for blog index layout: featured hero card + smaller grid cards, plus
+ * the link-driven filters and pagination that replaced the old React state.
  */
 
 import React from 'react'
@@ -20,11 +21,12 @@ jest.mock('@/components/share-buttons', () => ({
   ShareButtons: () => <div data-testid="share-buttons" />,
 }))
 
-import { render, screen, fireEvent } from '@testing-library/react'
-import type { BlogPost, BlogCategory } from '@/lib/blog'
+import { render, screen } from '@testing-library/react'
 import { getAllPosts, getPostCategoryIds, BLOG_CATEGORIES } from '@/lib/blog'
+import type { BlogCategory } from '@/lib/blog'
+import type { BlogIndexCard } from '@/app/blog/blog-index'
 
-const makePosts = (count: number): BlogPost[] =>
+const makePosts = (count: number): BlogIndexCard[] =>
   Array.from({ length: count }, (_, i) => ({
     slug: `post-${i}`,
     title: `Post Title ${i}`,
@@ -34,42 +36,74 @@ const makePosts = (count: number): BlogPost[] =>
     tags: ['weather', 'testing'],
     heroImage: i === 0 ? '/api/og/blog?title=Featured' : '',
     readTime: 3,
-    content: `Content for post ${i}`,
   }))
 
-let BlogIndex: React.ComponentType<{
-  posts: BlogPost[]
+type BlogIndexProps = {
+  posts: BlogIndexCard[]
   categories: BlogCategory[]
-  initialCategory: string | null
-}>
+  activeCategory: string | null
+  activeTag: string | null
+  activeTagLabel: string | null
+  page: number
+  totalPages: number
+  totalPosts: number
+}
+
+let BlogIndex: React.ComponentType<BlogIndexProps>
+
+const defaults = {
+  categories: [] as BlogCategory[],
+  activeCategory: null,
+  activeTag: null,
+  activeTagLabel: null,
+  page: 1,
+  totalPages: 1,
+}
+
+const renderIndex = (props: Partial<BlogIndexProps> & { posts: BlogIndexCard[] }) =>
+  render(
+    <BlogIndex
+      {...defaults}
+      totalPosts={props.posts.length}
+      {...(props as BlogIndexProps)}
+    />,
+  )
 
 beforeAll(async () => {
   const mod = await import('@/app/blog/blog-index')
-  BlogIndex = mod.BlogIndex
+  BlogIndex = mod.BlogIndex as React.ComponentType<BlogIndexProps>
 })
 
 describe('Blog index layout', () => {
   it('should render a FEATURED INTEL badge on the first post', () => {
-    render(<BlogIndex posts={makePosts(4)} categories={[]} initialCategory={null} />)
+    renderIndex({ posts: makePosts(4) })
     expect(screen.getByText('FEATURED INTEL')).toBeInTheDocument()
   })
 
   it('should render remaining posts in a grid container', () => {
-    const { container } = render(<BlogIndex posts={makePosts(4)} categories={[]} initialCategory={null} />)
+    const { container } = renderIndex({ posts: makePosts(4) })
     const grid = container.querySelector('.grid')
     expect(grid).toBeInTheDocument()
     // Grid should contain 3 posts (4 total minus 1 featured)
-    const gridLinks = grid!.querySelectorAll('a')
-    expect(gridLinks).toHaveLength(3)
+    expect(grid!.querySelectorAll('a')).toHaveLength(3)
+  })
+
+  it('drops the hero card on pages after the first', () => {
+    renderIndex({ posts: makePosts(4), page: 2, totalPages: 3, totalPosts: 24 })
+    expect(screen.queryByText('FEATURED INTEL')).not.toBeInTheDocument()
+    expect(screen.getByText('Post Title 0')).toBeInTheDocument()
   })
 })
 
 describe('Blog category filter', () => {
-  it('renders an ALL button plus one button per provided category', () => {
-    render(<BlogIndex posts={makePosts(3)} categories={BLOG_CATEGORIES} initialCategory={null} />)
-    expect(screen.getByText('ALL')).toBeInTheDocument()
+  it('renders an ALL link plus one link per provided category', () => {
+    renderIndex({ posts: makePosts(3), categories: BLOG_CATEGORIES })
+    expect(screen.getByText('ALL')).toHaveAttribute('href', '/blog')
     for (const category of BLOG_CATEGORIES) {
-      expect(screen.getByText(category.label)).toBeInTheDocument()
+      expect(screen.getByText(category.label)).toHaveAttribute(
+        'href',
+        `/blog?category=${category.id}`,
+      )
     }
   })
 
@@ -82,18 +116,49 @@ describe('Blog category filter', () => {
     expect(orphans).toEqual([])
   })
 
-  it('filters the list to posts in the selected category', () => {
-    const [base] = makePosts(1)
-    const posts: BlogPost[] = [
-      { ...base, slug: 'space-post', title: 'Solar Flare Watch', tags: ['space weather'] },
-      { ...base, slug: 'severe-post', title: 'Tornado Outbreak', tags: ['tornadoes'] },
-    ]
-    render(<BlogIndex posts={posts} categories={BLOG_CATEGORIES} initialCategory={null} />)
-    expect(screen.getByText('Solar Flare Watch')).toBeInTheDocument()
-    expect(screen.getByText('Tornado Outbreak')).toBeInTheDocument()
+  it('keeps an active tag when switching category', () => {
+    renderIndex({
+      posts: makePosts(2),
+      categories: BLOG_CATEGORIES,
+      activeTag: 'tornadoes',
+      activeTagLabel: 'tornadoes',
+    })
+    expect(screen.getByText('Severe Weather')).toHaveAttribute(
+      'href',
+      '/blog?category=severe-weather&tag=tornadoes',
+    )
+    expect(screen.getByText('CLEAR')).toHaveAttribute('href', '/blog')
+  })
+})
 
-    fireEvent.click(screen.getByText('Severe Weather'))
-    expect(screen.queryByText('Solar Flare Watch')).not.toBeInTheDocument()
-    expect(screen.getByText('Tornado Outbreak')).toBeInTheDocument()
+describe('Blog pagination', () => {
+  it('renders nothing when there is a single page', () => {
+    const { container } = renderIndex({ posts: makePosts(3) })
+    expect(container.querySelector('nav[aria-label="Blog pagination"]')).toBeNull()
+  })
+
+  it('links every page, with page 1 on the bare /blog URL', () => {
+    renderIndex({ posts: makePosts(10), page: 2, totalPages: 3, totalPosts: 24 })
+
+    expect(screen.getByText('NEWER')).toHaveAttribute('href', '/blog')
+    expect(screen.getByText('OLDER')).toHaveAttribute('href', '/blog?page=3')
+    expect(screen.getByText('1')).toHaveAttribute('href', '/blog')
+    expect(screen.getByText('3')).toHaveAttribute('href', '/blog?page=3')
+    // The current page is marked, not linked.
+    expect(screen.getByText('2')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('carries the active filter into every page link', () => {
+    renderIndex({
+      posts: makePosts(10),
+      page: 1,
+      totalPages: 2,
+      totalPosts: 14,
+      activeCategory: 'space-weather',
+    })
+    expect(screen.getByText('OLDER')).toHaveAttribute(
+      'href',
+      '/blog?category=space-weather&page=2',
+    )
   })
 })

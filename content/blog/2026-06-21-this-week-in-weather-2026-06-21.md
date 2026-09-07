@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-06-21
-title: This Week in Weather
+title: "This Week in Weather — June 21, 2026"
 date: 2026-06-21T14:12:11.499Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "Six tornado warnings from Weld County, Colorado to southwest Missouri, 1,713 wind reports, and an M6.7 near Palu, Indonesia."
 tags:
   - weekly-recap
   - forecast

@@ -1,9 +1,9 @@
 ---
 slug: marine-on-february-11-1995-the-queen-elizabeth-2-encountered-a
-title: "Marine Weather: On February 11, 1995, the *Queen Elizabeth 2* encountered a wave estimated at 29 meters — roug"
+title: "Marine Weather: Rogue Waves and the Limits of Models"
 date: 2026-06-25T22:18:33.459Z
 author: 16bitbot
-summary: "On February 11, 1995, the *Queen Elizabeth 2* encountered a wave estimated at 29 meters — roughly the height of a nine-s"
+summary: "The Queen Elizabeth 2 met a 29-meter wave in 1995. How wind, fetch and duration drive wave forecasts, and where the models still fall short."
 tags:
   - marine
   - weather

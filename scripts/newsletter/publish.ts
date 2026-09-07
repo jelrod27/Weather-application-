@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { blogHeroImage } from '@/lib/blog/hero';
 import type { ImageAuditEntry, ImageEntry } from './images';
+import { buildPostSummary, buildPostTitle } from './post-header';
 import type { TopicSlug } from './topics';
 
 const BLOG_DIR = path.join(process.cwd(), 'content/blog');
@@ -135,11 +136,10 @@ function buildHeader(input: PublishInput, datePrefix: string): { title: string; 
   if (input.cadence === 'wednesday_topic') {
     // Keyword-led slug: topic + date (not first-sentence theme prose).
     const slug = slugify(`${input.topicSlug}-${datePrefix}`);
-    const themeSnippet = input.theme.slice(0, 50).replace(/[.!?]+$/, '');
-    const title = input.theme.length > 0
-      ? `${input.topicTitle}: ${themeSnippet}`.slice(0, 70)
-      : input.topicTitle.slice(0, 70);
-    const summary = input.theme.length > 0 ? input.theme.slice(0, 155) : input.topicTitle;
+    // Title and summary are cut on word boundaries by ./post-header. Raw
+    // .slice() here is what shipped titles like "Two volcanoes on U.S".
+    const title = buildPostTitle(input.topicTitle, input.theme);
+    const summary = buildPostSummary(input.theme, input.topicTitle);
     return { title, summary, slug };
   }
   const dateLabel = formatDateLabel(datePrefix);

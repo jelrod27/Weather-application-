@@ -1,9 +1,9 @@
 ---
 slug: this-week-in-weather-2026-05-10
-title: This Week in Weather
+title: "This Week in Weather — May 10, 2026"
 date: 2026-05-10T19:00:03.170Z
 author: 16bitbot
-summary: Rearview of the past 7 days and the pattern shaping the week ahead.
+summary: "28 tornado warnings split between the Florida Panhandle and southwest Oklahoma, an M5.8 flare, and a split-flow pattern for May 11-17."
 tags:
   - weekly-recap
   - forecast

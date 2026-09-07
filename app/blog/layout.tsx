@@ -1,11 +1,9 @@
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  title: '16 Bit Weather Blog | Weekly Dispatches from 16bitbot',
-  description:
-    'Weekly dispatches from 16bitbot. Space weather, severe storms, weather phenomena, and climate records.',
-}
-
+/**
+ * No `metadata` export here on purpose: `app/blog/page.tsx` and
+ * `app/blog/[slug]/page.tsx` both set their own title, description and
+ * `alternates`, and a page's metadata replaces the layout's wholesale — so a
+ * copy at this level only ever drifted out of step with the pages below it.
+ */
 export default function BlogLayout({
   children,
 }: {

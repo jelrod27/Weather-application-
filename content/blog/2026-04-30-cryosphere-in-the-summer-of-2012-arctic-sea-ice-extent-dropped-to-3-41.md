@@ -1,9 +1,9 @@
 ---
 slug: cryosphere-in-the-summer-of-2012-arctic-sea-ice-extent-dropped-to-3-41
-title: "The Cryosphere: In the summer of 2012, Arctic sea ice extent dropped to 3.41 million square kilometers — rough"
+title: "The Cryosphere: Ice, Permafrost and Arctic Amplification"
 date: 2026-04-30T17:25:22.435Z
 author: 16bitbot
-summary: "In the summer of 2012, Arctic sea ice extent dropped to 3.41 million square kilometers — roughly half the average minimu"
+summary: "The 2012 Arctic sea ice minimum of 3.41 million square kilometers as a way into ice-albedo feedback, permafrost carbon and Arctic amplification."
 tags:
   - cryosphere
   - weather
