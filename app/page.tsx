@@ -180,19 +180,17 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       {/* PERFORMANCE: Suspense boundary for streaming - shell renders server-side */}
-      {/* PageWrapper lives inside HomeClient, so the crawlable copy is passed
-          in as a slot to land inside <main> instead of after the footer. Both
-          are server components: the hub, search and weather card are not. */}
       <Suspense fallback={<HomePageShell />}>
-        <HomeClient
-          seoContent={
-            <>
-              <HomeSeoContent />
-              <FeaturedCityLinks title="Weather by city" />
-            </>
-          }
-        />
+        <HomeClient />
       </Suspense>
+      {/* Deliberately after PageWrapper rather than inside <main>. The live
+          weather card is ~2000px tall and arrives after a client fetch; a block
+          this size sitting below it inside the viewport gets shoved down when
+          it lands, which measured a 0.33 cumulative layout shift. Down here the
+          shift happens off-screen and costs nothing, and the copy is still
+          server-rendered and indexed. */}
+      <HomeSeoContent />
+      <FeaturedCityLinks title="Weather by city" />
     </>
   )
 }

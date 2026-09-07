@@ -22,6 +22,8 @@ test('Bitwatch landing exposes GPS pin search and guest signup', async ({ page }
   await expect(main.getByTestId('warning-pin-search')).toBeVisible()
   await expect(main.getByRole('button', { name: /Use my location/i })).toBeVisible()
   await expect(main.getByTestId('bitwatch-signup')).toBeVisible()
-  await expect(main.getByText('Tornado Warning')).toBeVisible()
+  // Scoped to the signup form: the page's FAQ also names the warning types, so
+  // an unscoped match now resolves to two elements.
+  await expect(main.getByTestId('bitwatch-signup').getByText('Tornado Warning')).toBeVisible()
   await expect(main.getByTestId('bitwatch-signup')).toContainText(/not an all-clear/i)
 })
