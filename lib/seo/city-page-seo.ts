@@ -22,6 +22,28 @@ type CityMeta = {
 }
 
 /**
+ * Canonical slug for a bare city name, e.g. `new-york` → `new-york-ny`.
+ *
+ * The catalog keys carry a state suffix, so a visitor or link that drops it
+ * would otherwise land on the noindex fallback page — a duplicate of the real
+ * city page. Only unambiguous names resolve: `portland` matches two states and
+ * stays unresolved, because guessing one would send readers to the wrong coast.
+ */
+export function resolveCitySlugAlias(
+  slug: string,
+  catalogSlugs: readonly string[],
+): string | null {
+  if (catalogSlugs.includes(slug)) return null
+
+  const matches = catalogSlugs.filter((candidate) => {
+    const withoutState = candidate.replace(/-[a-z]{2}$/, '')
+    return withoutState === slug
+  })
+
+  return matches.length === 1 ? matches[0] : null
+}
+
+/**
  * The root layout's title template appends " | 16 Bit Weather" (17 chars), so
  * the page part stays at or under 43 characters: long city names drop the
  * state abbreviation rather than push the whole title past 60.

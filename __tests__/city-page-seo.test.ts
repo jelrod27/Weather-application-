@@ -3,6 +3,7 @@ import {
   buildCityPageMetadata,
   buildCityPageTitle,
   PRIORITY_SEO_CITY_SLUGS,
+  resolveCitySlugAlias,
 } from '@/lib/seo/city-page-seo'
 
 describe('city-page-seo', () => {
@@ -40,5 +41,26 @@ describe('city-page-seo', () => {
   it('does not sell retro styling in city descriptions', () => {
     const description = buildCityPageDescription({ name: 'Boise', state: 'ID' }, 'boise-id')
     expect(description.toLowerCase()).not.toContain('retro terminal')
+  })
+})
+
+describe('resolveCitySlugAlias', () => {
+  const catalog = ['new-york-ny', 'boston-ma', 'portland-or', 'portland-me']
+
+  it('resolves a bare city name to its canonical slug', () => {
+    expect(resolveCitySlugAlias('new-york', catalog)).toBe('new-york-ny')
+    expect(resolveCitySlugAlias('boston', catalog)).toBe('boston-ma')
+  })
+
+  it('leaves a canonical slug alone', () => {
+    expect(resolveCitySlugAlias('boston-ma', catalog)).toBeNull()
+  })
+
+  it('refuses to guess when a name spans two states', () => {
+    expect(resolveCitySlugAlias('portland', catalog)).toBeNull()
+  })
+
+  it('leaves a slug with no catalog match alone', () => {
+    expect(resolveCitySlugAlias('notacity-xyz', catalog)).toBeNull()
   })
 })
