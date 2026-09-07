@@ -15,7 +15,7 @@
  */
 
 
-import React, { memo } from "react"
+import React, { memo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { LoadingSpinner } from "@/components/ui/loading-state"
 import { useTheme } from '@/components/theme-provider'
@@ -53,7 +53,16 @@ import { useHubLocation } from "@/hooks/use-hub-location"
 
 // API keys are now handled by internal API routes
 
-function WeatherApp() {
+interface WeatherAppProps {
+  /**
+   * Server-rendered copy for crawlers. PageWrapper owns the nav, <main> and
+   * footer, so this arrives as a slot to land inside <main> rather than after
+   * the footer, where Google would read it as boilerplate.
+   */
+  seoContent?: ReactNode
+}
+
+function WeatherApp({ seoContent }: WeatherAppProps) {
   const { theme } = useTheme()
   const router = useRouter()
 
@@ -185,6 +194,8 @@ function WeatherApp() {
           {/* SEO City Links Section with Random Display — deferred until the weather
               region above has settled, so it appends instead of being shoved (CLS). */}
           {showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
+
+          {seoContent}
         </ResponsiveContainer>
       </div>
     </PageWrapper>

@@ -9,17 +9,9 @@ export default function AlertsLanding() {
   const { pin, label, isResolving } = useActivePinState()
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10 space-y-8" data-testid="bitwatch-landing">
-      <header className="space-y-3 font-mono">
-        <p className="text-xs uppercase tracking-[0.25em] text-primary">Bitwatch</p>
-        <h1 className="text-3xl font-bold uppercase">Free NWS warning alerts</h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Email and optional browser push when a National Weather Service Tornado, Severe Thunderstorm,
-          or Flash Flood Warning covers your pin. No account. Supplemental only — this does not replace
-          Wireless Emergency Alerts, NOAA Weather Radio, or local officials.
-        </p>
-      </header>
-
+    <div className="max-w-3xl mx-auto px-4 pt-8 pb-10 space-y-8" data-testid="bitwatch-landing">
+      {/* Heading and intro copy are server-rendered by app/alerts/page.tsx so
+          they land inside <main> instead of streaming in after the footer. */}
       <section className="space-y-3">
         <h2 className="font-mono text-sm uppercase tracking-wider">Protected Place</h2>
         <WarningPinSearch label={label} />

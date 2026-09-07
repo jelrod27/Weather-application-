@@ -16,6 +16,7 @@ import NewsSkeleton from '@/components/news/NewsSkeleton';
 import NewsFeedBanner from '@/components/news/NewsFeedBanner';
 import NewsSourceRow from '@/components/news/NewsSourceRow';
 import NewsCategorySections from '@/components/news/NewsCategorySections';
+import NewsSeoContent from '@/components/news/news-seo-content';
 import { excludeRailIds, groupItemsByCategory } from '@/lib/news/rails';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
@@ -283,6 +284,9 @@ export default function NewsPage() {
           </div>
         )}
       </div>
+
+      {/* Evergreen crawlable copy — the wire above is fetched client-side */}
+      <NewsSeoContent />
     </PageWrapper>
   );
 }

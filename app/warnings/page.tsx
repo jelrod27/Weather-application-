@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import PageWrapper from '@/components/page-wrapper'
+import WarningsSeoContent from '@/components/warnings/warnings-seo-content'
 import WarningsClient from './warnings-client'
 
 const BASE_URL = 'https://www.16bitweather.co'
@@ -40,6 +41,16 @@ export const metadata: Metadata = {
 export default function WarningsPage() {
   return (
     <PageWrapper>
+      {/* Server-rendered page H1: WarningsClient reads search params, so it and
+          its heading are excluded from the prerendered HTML. */}
+      <div className="max-w-7xl mx-auto px-4 pt-8 text-center space-y-2">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight font-mono uppercase">
+          Warning center
+        </h1>
+        <p className="text-sm font-mono text-muted-foreground tracking-wider">
+          // YOUR PIN FIRST · NATIONAL BROWSE · NWS POLYGONS //
+        </p>
+      </div>
       <Suspense
         fallback={
           <div className="max-w-7xl mx-auto px-4 py-8 text-center font-mono text-muted-foreground animate-pulse">
@@ -49,6 +60,7 @@ export default function WarningsPage() {
       >
         <WarningsClient />
       </Suspense>
+      <WarningsSeoContent />
     </PageWrapper>
   )
 }
