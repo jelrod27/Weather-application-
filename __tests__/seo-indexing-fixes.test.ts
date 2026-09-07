@@ -13,13 +13,20 @@ describe('SEO Indexing Fixes', () => {
     expect(content.toLowerCase()).not.toContain('crawl-delay')
   })
 
-  it('robots.txt should explicitly allow key indexable sections', () => {
+  it('robots.txt lets crawlers render pages and fetch OG images', () => {
     const robotsPath = path.join(process.cwd(), 'public', 'robots.txt')
     const content = fs.readFileSync(robotsPath, 'utf-8')
+    const defaultBlock = content.split('User-agent: *')[1]?.split('User-agent:')[0] ?? ''
 
-    const requiredAllows = ['/blog', '/news', '/education', '/aviation', '/weather/']
-    for (const route of requiredAllows) {
-      expect(content).toContain(`Allow: ${route}`)
+    expect(defaultBlock).toContain('Allow: /')
+    // Googlebot needs the JS/CSS bundles to render client-hydrated sections.
+    expect(defaultBlock).not.toContain('Disallow: /_next/')
+    // Every og:image is served from /api/og, so it must be reachable
+    // even though the rest of the API stays out of the index.
+    expect(defaultBlock).toContain('Allow: /api/og')
+    expect(defaultBlock).toContain('Disallow: /api/')
+    for (const route of ['/blog', '/news', '/education', '/aviation', '/weather/']) {
+      expect(defaultBlock).not.toContain(`Disallow: ${route}`)
     }
   })
 
@@ -71,8 +78,10 @@ describe('SEO Indexing Fixes', () => {
     const { default: sitemap } = await import('../app/sitemap')
     const entries = await sitemap()
 
-    // ~100 cities, blog posts, education detail pages, and static routes (no deep-sky objects).
-    expect(entries.length).toBeLessThan(250)
+    // 45 cities, blog posts, education detail pages, static routes, and the
+    // 151-object deep-sky catalog; well under the 50k limit and small enough
+    // that Google reads it in one fetch.
+    expect(entries.length).toBeLessThan(450)
   })
 
   it('city pages should use ISR revalidate instead of force-dynamic', () => {
