@@ -89,6 +89,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => educationDetailPage('phenomenon', slug)),
     ]
 
+    // The directory hub: the only indexable page that links every city.
+    staticPages.push({
+      url: `${baseUrl}/weather`,
+      lastModified: monthly,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    })
+
     // Climate copy is static; only the client-fetched forecast changes.
     const cityPages: MetadataRoute.Sitemap = Object.keys(cityMetadata || {}).map(citySlug => ({
       url: `${baseUrl}/weather/${citySlug}`,
