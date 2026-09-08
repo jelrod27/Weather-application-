@@ -68,12 +68,12 @@ export default function RadarLayout({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(radarJsonLd) }}
       />
-      {/* Only the radar map pulls Carto basemap tiles and IEM NEXRAD frames. */}
+      {/* Only the radar map pulls Carto basemap tiles and RainViewer composite frames. */}
       <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
       <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
       <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com" />
       <link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com" />
-      <link rel="dns-prefetch" href="https://mesonet.agron.iastate.edu" />
+      <link rel="preconnect" href="https://tilecache.rainviewer.com" />
       {children}
     </>
   )

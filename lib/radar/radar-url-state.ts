@@ -19,14 +19,12 @@ export const DEFAULT_RADAR_LAYERS: RadarShareLayerState = {
 }
 
 export interface RadarTilePreferences {
-  colorScheme: number
   smooth: boolean
   snow: boolean
   coverage: boolean
 }
 
 export const DEFAULT_RADAR_TILE_PREFERENCES: RadarTilePreferences = {
-  colorScheme: 6,
   smooth: true,
   snow: true,
   coverage: false,
@@ -100,11 +98,6 @@ export function parseRadarUrlState(searchParams: URLSearchParams): ParsedRadarUr
   const zoom = Number.isFinite(zoomParsed) && zoomParsed >= 1 && zoomParsed <= 18 ? zoomParsed : null
 
   const tilePreferences = { ...DEFAULT_RADAR_TILE_PREFERENCES }
-  const schemeRaw = searchParams.get('scheme')
-  const schemeParsed = schemeRaw != null ? Number.parseInt(schemeRaw, 10) : Number.NaN
-  if (Number.isFinite(schemeParsed) && schemeParsed >= 0) {
-    tilePreferences.colorScheme = schemeParsed
-  }
   if (searchParams.has('smooth')) {
     tilePreferences.smooth = searchParams.get('smooth') !== '0'
   }
@@ -129,8 +122,7 @@ export function layersMatchDefault(layers: RadarShareLayerState): boolean {
 
 export function tilePreferencesMatchDefault(preferences: RadarTilePreferences): boolean {
   return (
-    preferences.colorScheme === DEFAULT_RADAR_TILE_PREFERENCES.colorScheme
-    && preferences.smooth === DEFAULT_RADAR_TILE_PREFERENCES.smooth
+    preferences.smooth === DEFAULT_RADAR_TILE_PREFERENCES.smooth
     && preferences.snow === DEFAULT_RADAR_TILE_PREFERENCES.snow
     && preferences.coverage === DEFAULT_RADAR_TILE_PREFERENCES.coverage
   )
@@ -198,9 +190,6 @@ export function serializeRadarUrlParams(state: {
 
   const tilePreferences = state.tilePreferences ?? DEFAULT_RADAR_TILE_PREFERENCES
   if (!tilePreferencesMatchDefault(tilePreferences)) {
-    if (tilePreferences.colorScheme !== DEFAULT_RADAR_TILE_PREFERENCES.colorScheme) {
-      params.set('scheme', String(tilePreferences.colorScheme))
-    }
     if (tilePreferences.smooth !== DEFAULT_RADAR_TILE_PREFERENCES.smooth) {
       params.set('smooth', tilePreferences.smooth ? '1' : '0')
     }

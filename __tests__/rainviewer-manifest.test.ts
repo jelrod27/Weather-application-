@@ -24,7 +24,7 @@ describe('RainViewer manifest helpers', () => {
     expect(manifest.past).toHaveLength(3)
   })
 
-  it('builds frames with LIVE on the newest frame', () => {
+  it('marks the newest frame as the latest available frame', () => {
     const manifest = normalizeRainViewerManifest(sampleManifest)
     const frames = buildFramesFromRainViewerPast(manifest.past)
 

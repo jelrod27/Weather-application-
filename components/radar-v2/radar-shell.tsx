@@ -1,8 +1,6 @@
 'use client'
 
-import type { CSSProperties } from 'react'
 import type { ThemeType } from '@/lib/theme-config'
-import { getRainViewerDisplayFilter } from '@/lib/radar/rainviewer'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
 import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
@@ -46,7 +44,6 @@ function RadarShell(props: RadarShellProps) {
     frames,
     metadataError,
     updatedLabel,
-    statusClass,
     activeLayers,
     layerSheetOpen,
     setLayerSheetOpen,
@@ -79,10 +76,6 @@ function RadarShell(props: RadarShellProps) {
       data-radar-container
       data-radar-v2
       data-radar-widget={isWidget ? 'true' : undefined}
-      data-radar-color-scheme={tilePreferences.colorScheme}
-      style={{
-        '--radar-scheme-filter': getRainViewerDisplayFilter(tilePreferences.colorScheme),
-      } as CSSProperties}
       className={`relative flex w-full flex-col ${isFullPage ? 'h-full min-h-0 bg-black' : 'h-full min-h-0'}`}
     >
       <div className={`relative min-h-0 flex-1 ${isFullPage ? 'h-full' : 'h-full min-h-[280px]'}`}>
@@ -102,20 +95,16 @@ function RadarShell(props: RadarShellProps) {
         ) : null}
 
         {isFullPage && metadata && frames.length > 0 && activeLayers.precipitation ? (
-          <RadarPrecipLegend />
+          <RadarPrecipLegend snowColorsEnabled={tilePreferences.snow} />
         ) : null}
 
-        {isFullPage && metadata && frames.length > 0 ? (
+        {isFullPage && metadata && frames.length > 0 && metadataError ? (
           <RadarStatusChip
-            providerLabel={`${metadata.selectedProvider.shortName.toUpperCase()} RADAR`}
             updatedLabel={updatedLabel ?? ''}
-            freshnessClassName={statusClass}
-            isPlaying={isPlaying}
-            isLiveFrame={isLiveFrame}
           />
         ) : null}
 
-        {metadataError ? (
+        {metadataError && !metadata ? (
           <div className="absolute inset-0 z-[2100] flex items-center justify-center bg-black/70 p-6 text-center text-white">
             <div>
               <p className="text-lg font-semibold">Radar unavailable</p>

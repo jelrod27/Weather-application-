@@ -2,14 +2,18 @@
 
 import { RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
 
-export function RadarPrecipLegend() {
+interface RadarPrecipLegendProps {
+  snowColorsEnabled: boolean
+}
+
+export function RadarPrecipLegend({ snowColorsEnabled }: RadarPrecipLegendProps) {
   return (
     <div
       data-testid="radar-precip-legend"
       className="pointer-events-none absolute bottom-[11.5rem] left-3 z-[2400] rounded-xl border border-white/10 bg-zinc-950/85 px-3 py-2 shadow-lg backdrop-blur-md sm:bottom-[12rem]"
     >
       <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-        Precipitation intensity
+        Rain intensity
       </p>
       <div className="flex flex-col gap-1">
         {RAINVIEWER_LEGEND.map((item) => (
@@ -23,6 +27,11 @@ export function RadarPrecipLegend() {
           </div>
         ))}
       </div>
+      {snowColorsEnabled ? (
+        <p className="mt-1.5 max-w-36 text-[9px] leading-tight text-zinc-400">
+          Snow uses a separate RainViewer color scale.
+        </p>
+      ) : null}
     </div>
   )
 }

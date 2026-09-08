@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef } from 'react'
 import type { RadarShareLayerState, RadarTilePreferences } from '@/lib/radar/radar-url-state'
-import { RAINVIEWER_COLOR_SCHEMES, RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
+import { RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
 
 interface RadarLayerSheetProps {
   open: boolean
@@ -120,29 +120,6 @@ export function RadarLayerSheet({
               onChange={(event) => onTilePreferencesChange({ ...tilePreferences, snow: event.target.checked })}
             />
           </label>
-          <label className="flex flex-col gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
-            <span>Color scheme</span>
-            <select
-              value={tilePreferences.colorScheme}
-              onChange={(event) =>
-                onTilePreferencesChange({
-                  ...tilePreferences,
-                  colorScheme: Number.parseInt(event.target.value, 10),
-                })
-              }
-              className="rounded-md border border-white/10 bg-black/40 px-2 py-2 text-sm text-white"
-              aria-label="Radar color scheme"
-            >
-              {RAINVIEWER_COLOR_SCHEMES.map((scheme) => (
-                <option key={scheme.id} value={scheme.id}>
-                  {scheme.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-zinc-400">
-              Remaps the radar palette on your device. Changes apply instantly — no reload needed.
-            </p>
-          </label>
           <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
             <span>Coverage mask</span>
             <input
@@ -157,7 +134,7 @@ export function RadarLayerSheet({
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Severe overlays</h3>
           <div className="space-y-2">
             <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-              <span>NWS Alerts ({alertCount})</span>
+              <span>NWS Alerts at location ({alertCount})</span>
               <input
                 type="checkbox"
                 checked={layers.alerts}
@@ -184,7 +161,14 @@ export function RadarLayerSheet({
         </section>
 
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Legend</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Universal Blue rain legend
+          </h3>
+          {tilePreferences.snow ? (
+            <p className="mb-2 text-xs text-zinc-400">
+              Snow uses a separate RainViewer color scale.
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {RAINVIEWER_LEGEND.map((item) => (
               <div key={item.value} className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-xs text-zinc-200">

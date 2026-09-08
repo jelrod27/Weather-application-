@@ -24,5 +24,7 @@ describe('Radar SEO', () => {
     expect(content).toContain('href="/warnings"')
     expect(content).toContain('href="/severe"')
     expect(content).toContain('RADAR_FAQS')
+    expect(content).not.toContain('echo tops')
+    expect(content).toContain('precipitation echoes')
   })
 })

@@ -30,6 +30,16 @@ describe('radar-url-state', () => {
     expect(parsed.zoom).toBe(8)
   })
 
+  it('ignores legacy simulated scheme params', () => {
+    const parsed = parseRadarUrlState(new URLSearchParams('scheme=4&smooth=0'))
+
+    expect(parsed.tilePreferences).toEqual({
+      smooth: false,
+      snow: true,
+      coverage: false,
+    })
+  })
+
   it('omits default radar params when serializing', () => {
     const params = serializeRadarUrlParams({
       layers: DEFAULT_RADAR_LAYERS,
@@ -71,5 +81,15 @@ describe('radar-url-state', () => {
     expect(merged.get('layers')).toBe('precip,spc')
     expect(merged.get('frame')).toBe('3')
     expect(merged.get('zoom')).toBe('9')
+  })
+
+  it('removes a legacy scheme while preserving non-radar params', () => {
+    const merged = mergeRadarUrlParams(
+      new URLSearchParams('location=Chicago&scheme=4'),
+      new URLSearchParams(),
+    )
+
+    expect(merged.get('location')).toBe('Chicago')
+    expect(merged.has('scheme')).toBe(false)
   })
 })
