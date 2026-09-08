@@ -32,10 +32,58 @@ describe('parsePlanetaryKpIndex', () => {
 
 describe('parseKpForecast', () => {
   it('averages object forecast rows', () => {
+    // The clock is injected: the window is relative to now, so a fixed
+    // fixture would otherwise start failing once it fell into the past.
     const payload = [
       { time_tag: '2026-07-17T21:00:00', kp: 2.0, observed: 'predicted' },
       { time_tag: '2026-07-18T00:00:00', kp: 4.0, observed: 'predicted' },
     ];
-    expect(parseKpForecast(payload)).toEqual({ expected: 3, maxExpected: 4 });
+    const now = new Date('2026-07-17T21:30:00Z');
+    expect(parseKpForecast(payload, now)).toEqual({ expected: 3, maxExpected: 4 });
   });
 });
+
+describe('parseKpForecast selects the coming 24 hours', () => {
+  const NOW = new Date('2026-09-08T01:00:00Z')
+
+  /**
+   * The forecast product leads with roughly a week of already-observed rows.
+   * Taking the first eight returned last week's observations and presented
+   * them as an outlook.
+   */
+  it('skips the observed history the feed leads with', () => {
+    const payload = [
+      { time_tag: '2026-09-01T00:00:00', kp: 1, observed: 'observed' },
+      { time_tag: '2026-09-01T03:00:00', kp: 1.33, observed: 'observed' },
+      { time_tag: '2026-09-02T00:00:00', kp: 2, observed: 'observed' },
+      { time_tag: '2026-09-08T03:00:00', kp: 4, observed: 'predicted' },
+      { time_tag: '2026-09-08T06:00:00', kp: 5, observed: 'predicted' },
+    ]
+    expect(parseKpForecast(payload, NOW)).toEqual({ expected: 4.5, maxExpected: 5 })
+  })
+
+  it('keeps the three-hour block already in progress', () => {
+    const payload = [
+      { time_tag: '2026-09-08T00:00:00', kp: 6, observed: 'observed' },
+      { time_tag: '2026-09-08T03:00:00', kp: 4, observed: 'predicted' },
+    ]
+    expect(parseKpForecast(payload, NOW)).toEqual({ expected: 5, maxExpected: 6 })
+  })
+
+  it('caps the window at eight three-hour blocks', () => {
+    const payload = Array.from({ length: 20 }, (_, i) => ({
+      time_tag: new Date(NOW.getTime() + (i + 1) * 3 * 3600_000).toISOString(),
+      kp: i < 8 ? 2 : 9,
+      observed: 'predicted',
+    }))
+    expect(parseKpForecast(payload, NOW)).toEqual({ expected: 2, maxExpected: 2 })
+  })
+
+  it('returns null when the payload holds nothing ahead', () => {
+    const payload = [
+      { time_tag: '2026-09-01T00:00:00', kp: 1, observed: 'observed' },
+      { time_tag: '2026-09-02T00:00:00', kp: 2, observed: 'observed' },
+    ]
+    expect(parseKpForecast(payload, NOW)).toBeNull()
+  })
+})

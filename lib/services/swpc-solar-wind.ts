@@ -86,31 +86,73 @@ function hasSpeed(row: WindRow): boolean {
   return typeof row.proton_speed === 'number' && row.proton_speed > 0;
 }
 
+/** Epoch ms for an RTSW time tag, which omits the zone but means UTC. */
+function rowTimeMs(row: { time_tag?: string }): number {
+  const raw = typeof row.time_tag === 'string' ? row.time_tag.trim() : '';
+  if (!raw) return Number.NaN;
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
+  const withT = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  return Date.parse(hasZone ? withT : `${withT}Z`);
+}
+
+/**
+ * The newest row satisfying `usable`, chosen by time tag rather than array
+ * position.
+ *
+ * These feeds are served newest-first, so walking from the end of the array
+ * returned the *oldest* sample in the 24-hour window: the hub and the
+ * solar-wind and plasma API routes were reporting yesterday's solar wind as
+ * current. Reading the time tag is correct whichever way SWPC orders the feed.
+ */
+function newestBy<T extends { time_tag?: string }>(
+  rows: T[],
+  usable: (row: T) => boolean,
+): T | null {
+  let best: T | null = null;
+  let bestMs = Number.NEGATIVE_INFINITY;
+  for (const row of rows) {
+    if (!usable(row)) continue;
+    const ms = rowTimeMs(row);
+    // A row with an unreadable tag still beats having nothing at all.
+    const rank = Number.isFinite(ms) ? ms : Number.NEGATIVE_INFINITY;
+    if (best === null || rank > bestMs) {
+      best = row;
+      bestMs = rank;
+    }
+  }
+  return best;
+}
+
+/**
+ * Rows oldest-first. Rows with an unreadable time tag keep their relative
+ * order at the front, so they can never be taken for the newest sample.
+ */
+function oldestFirst<T extends { time_tag?: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
+    const aMs = rowTimeMs(a);
+    const bMs = rowTimeMs(b);
+    if (!Number.isFinite(aMs) && !Number.isFinite(bMs)) return 0;
+    if (!Number.isFinite(aMs)) return -1;
+    if (!Number.isFinite(bMs)) return 1;
+    return aMs - bMs;
+  });
+}
+
 /** Prefer active RTSW samples; fall back to any positive speed. */
 export function pickLatestWind(rows: WindRow[]): WindRow | null {
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i]!;
-    if (row.active && hasSpeed(row)) return row;
-  }
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i]!;
-    if (hasSpeed(row)) return row;
-  }
-  return null;
+  return (
+    newestBy(rows, (row) => Boolean(row.active) && hasSpeed(row)) ??
+    newestBy(rows, hasSpeed)
+  );
 }
 
 export function pickLatestMag(rows: MagRow[]): MagRow | null {
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i]!;
-    if (row.active && typeof row.bz_gsm === 'number' && typeof row.bt === 'number') {
-      return row;
-    }
-  }
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const row = rows[i]!;
-    if (typeof row.bz_gsm === 'number' && typeof row.bt === 'number') return row;
-  }
-  return null;
+  const hasField = (row: MagRow) =>
+    typeof row.bz_gsm === 'number' && typeof row.bt === 'number';
+  return (
+    newestBy(rows, (row) => Boolean(row.active) && hasField(row)) ??
+    newestBy(rows, hasField)
+  );
 }
 
 export function determineSpeedTrend(values: number[]): 'increasing' | 'decreasing' | 'stable' {
@@ -136,8 +178,12 @@ export function parseRtswSolarWind(
   trend: 'increasing' | 'decreasing' | 'stable';
   available: boolean;
 } {
-  const windRows = asWindRows(windPayload);
-  const magRows = asMagRows(magPayload);
+  // Chronological order once, here, so everything below can rely on it. SWPC
+  // serves RTSW newest-first, and the `recent` series and its trend both read
+  // the tail of the array as the most recent samples: unsorted, the chart drew
+  // the oldest 360 samples and the trend arrow pointed the wrong way.
+  const windRows = oldestFirst(asWindRows(windPayload));
+  const magRows = oldestFirst(asMagRows(magPayload));
   const latestWind = pickLatestWind(windRows);
   const latestMag = pickLatestMag(magRows);
 

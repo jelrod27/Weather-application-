@@ -60,28 +60,59 @@ export function parsePlanetaryKpIndex(payload: unknown): {
   return { current, recent };
 }
 
-export function parseKpForecast(payload: unknown): {
+/** Epoch ms for a SWPC time tag, which omits the zone but means UTC. */
+function timeTagMs(timeTag: string): number {
+  const trimmed = timeTag.trim();
+  if (!trimmed) return Number.NaN;
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  const withT = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+  return Date.parse(hasZone ? withT : `${withT}Z`);
+}
+
+/**
+ * Expected and peak Kp over the next 24 hours.
+ *
+ * The forecast product leads with roughly a week of already-observed rows
+ * before the predicted ones, so taking the first eight returned last week's
+ * observations and called them a forecast. Select by time instead: the eight
+ * three-hour blocks at or after `now`, which is the next 24 hours whatever
+ * order or mix of observed and predicted rows SWPC ships.
+ *
+ * Returns null when nothing in the payload lies ahead, so a caller can say
+ * "unavailable" rather than present stale history as an outlook.
+ */
+export function parseKpForecast(
+  payload: unknown,
+  now: Date = new Date(),
+): {
   expected: number;
   maxExpected: number;
 } | null {
   if (!Array.isArray(payload) || payload.length === 0) return null;
 
-  const rows = dataRows(payload).slice(0, 8);
+  // Allow the block already in progress: its tag is up to 3 hours behind now.
+  const cutoff = now.getTime() - 3 * 60 * 60 * 1000;
+
+  const upcoming = dataRows(payload)
+    .map(readKpFromRow)
+    .filter((sample): sample is KpSample => sample !== null)
+    .map((sample) => ({ sample, ms: timeTagMs(sample.timeTag) }))
+    .filter(({ ms }) => Number.isFinite(ms) && ms >= cutoff)
+    .sort((a, b) => a.ms - b.ms)
+    .slice(0, 8)
+    .map(({ sample }) => sample);
+
+  if (upcoming.length === 0) return null;
+
   let maxKp = 0;
   let sumKp = 0;
-  let count = 0;
-
-  for (const row of rows) {
-    const sample = readKpFromRow(row);
-    if (!sample) continue;
+  for (const sample of upcoming) {
     maxKp = Math.max(maxKp, sample.kp);
     sumKp += sample.kp;
-    count++;
   }
 
-  if (count === 0) return null;
   return {
-    expected: Math.round((sumKp / count) * 10) / 10,
+    expected: Math.round((sumKp / upcoming.length) * 10) / 10,
     maxExpected: maxKp,
   };
 }
