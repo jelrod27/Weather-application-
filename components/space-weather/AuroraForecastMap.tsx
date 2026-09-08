@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { viewlineFor } from '@/lib/space-weather/kp-scale';
 
 export interface AuroraForecastData {
   currentKp: number | null;
@@ -36,32 +37,6 @@ const AURORA_IMAGES = {
   north: 'https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg',
   south: 'https://services.swpc.noaa.gov/images/aurora-forecast-southern-hemisphere.jpg',
 };
-
-// Get viewline description based on Kp
-function getViewlineDescription(kp: number): string {
-  if (kp < 2) return 'Far northern latitudes only (Alaska, northern Canada, Scandinavia)';
-  if (kp < 3) return 'Northern Alaska, northern Canada, Iceland, northern Scandinavia';
-  if (kp < 4) return 'Southern Alaska, central Canada, northern UK, central Scandinavia';
-  if (kp < 5) return 'Northern US border states, southern UK, northern Europe';
-  if (kp < 6) return 'Northern US (WA, MT, MN, MI, NY), central UK, central Europe';
-  if (kp < 7) return 'Oregon, Nebraska, Great Lakes region, southern UK';
-  if (kp < 8) return 'Northern California, Colorado, Illinois, Virginia';
-  if (kp < 9) return 'Central California, Texas, Georgia - rare event!';
-  return 'Potentially visible across most of US/Europe - extremely rare!';
-}
-
-// Get viewline latitude based on Kp
-function getViewlineLatitude(kp: number): number {
-  if (kp < 2) return 66;
-  if (kp < 3) return 64;
-  if (kp < 4) return 58;
-  if (kp < 5) return 55;
-  if (kp < 6) return 50;
-  if (kp < 7) return 48;
-  if (kp < 8) return 45;
-  if (kp < 9) return 42;
-  return 40;
-}
 
 // Get color based on Kp level
 function getKpColor(kp: number): string {
@@ -88,12 +63,13 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
 
   const currentKp = data?.currentKp;
   const currentKpDisplay = currentKp ?? null;
+  // One viewline table for the whole site: this map and the aurora intent page
+  // used to carry separate ladders that disagreed by up to five degrees.
   const viewlineLatitude =
-    data?.viewline?.latitude
-    ?? (currentKp != null ? getViewlineLatitude(currentKp) : null);
+    data?.viewline?.latitude ?? (currentKp != null ? viewlineFor(currentKp).latitude : null);
   const viewlineDescription =
     data?.viewline?.description
-    ?? (currentKp != null ? getViewlineDescription(currentKp) : 'Kp unavailable');
+    ?? (currentKp != null ? viewlineFor(currentKp).description : 'Kp unavailable');
 
   // Reset image state when hemisphere changes
   useEffect(() => {

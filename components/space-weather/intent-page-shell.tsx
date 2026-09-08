@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { safeJsonLd } from '@/lib/utils'
@@ -9,6 +10,46 @@ import {
 } from '@/lib/space-weather/intents'
 
 const BASE_URL = 'https://www.16bitweather.co'
+
+/**
+ * Metadata for an intent page, from the registry entry alone.
+ *
+ * The four pages carried a hand-maintained copy of this block each — the same
+ * canonical, openGraph and twitter fields, differing only in the OG image
+ * wording. That is precisely the drift the registry exists to prevent, and
+ * metadata is the part of these pages that the whole exercise is about: a
+ * canonical or a title that silently diverges on one page is a ranking bug
+ * nothing in CI would catch.
+ */
+export function buildIntentMetadata(
+  intent: SpaceWeatherIntent,
+  og: { title: string; subtitle: string },
+): Metadata {
+  const canonical = `${BASE_URL}${intentHref(intent.slug)}`
+  const image = `/api/og?title=${encodeURIComponent(og.title)}&subtitle=${encodeURIComponent(og.subtitle)}`
+
+  return {
+    title: intent.title,
+    description: intent.description,
+    keywords: intent.keywords,
+    alternates: { canonical },
+    openGraph: {
+      title: intent.title,
+      description: intent.description,
+      url: canonical,
+      siteName: '16 Bit Weather',
+      type: 'website',
+      locale: 'en_US',
+      images: [{ url: image, width: 1200, height: 630, alt: og.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: intent.title,
+      description: intent.description,
+      images: [image],
+    },
+  }
+}
 
 export interface IntentFaq {
   question: string
@@ -66,6 +107,8 @@ interface IntentPageShellProps {
   reading: ReactNode
   /** When the live reading was taken, for the dateModified stamp and caption. */
   updatedLabel?: string | null
+  /** How often this page's reading refreshes, e.g. "every five minutes". */
+  refreshLabel?: string
   children: ReactNode
   faqs: readonly IntentFaq[]
 }
@@ -79,6 +122,7 @@ export default function IntentPageShell({
   intent,
   reading,
   updatedLabel = null,
+  refreshLabel = 'every five minutes',
   children,
   faqs,
 }: IntentPageShellProps) {
@@ -117,7 +161,7 @@ export default function IntentPageShell({
         {reading}
         {updatedLabel ? (
           <p className="mt-2 text-xs text-weather-muted">
-            NOAA SWPC, {updatedLabel}. Refreshes every five minutes.
+            NOAA SWPC, {updatedLabel}. Refreshes {refreshLabel}.
           </p>
         ) : null}
       </section>

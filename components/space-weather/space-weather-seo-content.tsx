@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SPACE_WEATHER_INTENTS, intentHref } from '@/lib/space-weather/intents'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -36,18 +37,6 @@ export function buildSpaceWeatherFaqJsonLd() {
       acceptedAnswer: { '@type': 'Answer', text: faq.answer },
     })),
   }
-}
-
-export function formatSwpcTimeTag(timeTag: string): { iso: string; label: string } | null {
-  const trimmed = timeTag.trim()
-  if (!trimmed) return null
-  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)
-  const withT = /T/.test(trimmed) ? trimmed : trimmed.replace(' ', 'T')
-  const normalized = hasZone ? withT : `${withT}Z`
-  const ms = Date.parse(normalized)
-  if (Number.isNaN(ms)) return null
-  const iso = new Date(ms).toISOString()
-  return { iso, label: `${iso.slice(0, 16).replace('T', ' ')} UTC` }
 }
 
 export function buildSpaceWeatherAppJsonLd(dateModified?: string): {

@@ -2,40 +2,21 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageWrapper from '@/components/page-wrapper'
 import IntentPageShell, {
+  buildIntentMetadata,
   buildIntentPageJsonLd,
   type IntentFaq,
 } from '@/components/space-weather/intent-page-shell'
-import { formatSwpcTimeTag } from '@/components/space-weather/space-weather-seo-content'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 import { getSpaceWeatherIntent, intentHref } from '@/lib/space-weather/intents'
 import { loadCurrentFlare } from '@/lib/space-weather/xray'
 import { safeJsonLd } from '@/lib/utils'
 
-const BASE_URL = 'https://www.16bitweather.co'
 const INTENT = getSpaceWeatherIntent('solar-flares')!
-const CANONICAL = `${BASE_URL}${intentHref(INTENT.slug)}`
-const OG_IMAGE = `/api/og?title=${encodeURIComponent('Solar Flare Monitor')}&subtitle=${encodeURIComponent('Live GOES X-Ray Class')}`
 
-export const metadata: Metadata = {
-  title: INTENT.title,
-  description: INTENT.description,
-  keywords: INTENT.keywords,
-  alternates: { canonical: CANONICAL },
-  openGraph: {
-    title: INTENT.title,
-    description: INTENT.description,
-    url: CANONICAL,
-    siteName: '16 Bit Weather',
-    type: 'website',
-    locale: 'en_US',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Solar Flare Monitor' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: INTENT.title,
-    description: INTENT.description,
-    images: [OG_IMAGE],
-  },
-}
+export const metadata: Metadata = buildIntentMetadata(INTENT, {
+  title: 'Solar Flare Monitor',
+  subtitle: 'Live GOES X-Ray Class',
+})
 
 /** Live values are stamped into the copy, so refresh alongside the hub. */
 export const revalidate = 300

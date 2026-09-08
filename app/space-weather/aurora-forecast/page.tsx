@@ -2,81 +2,25 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageWrapper from '@/components/page-wrapper'
 import IntentPageShell, {
+  buildIntentMetadata,
   buildIntentPageJsonLd,
   type IntentFaq,
 } from '@/components/space-weather/intent-page-shell'
-import { formatSwpcTimeTag } from '@/components/space-weather/space-weather-seo-content'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 import { getSpaceWeatherIntent, intentHref } from '@/lib/space-weather/intents'
-import { kpLevel } from '@/lib/space-weather/kp-scale'
-import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
-import { parseKpForecast, parsePlanetaryKpIndex, type KpSample } from '@/lib/services/swpc-kp'
+import { kpLevel, viewlineFor } from '@/lib/space-weather/kp-scale'
+import { loadCurrentKp, loadKpOutlook } from '@/lib/space-weather/kp'
 import { safeJsonLd } from '@/lib/utils'
 
-const BASE_URL = 'https://www.16bitweather.co'
 const INTENT = getSpaceWeatherIntent('aurora-forecast')!
-const CANONICAL = `${BASE_URL}${intentHref(INTENT.slug)}`
-const OG_IMAGE = `/api/og?title=${encodeURIComponent('Aurora Forecast Tonight')}&subtitle=${encodeURIComponent('Live Kp and the Viewline')}`
 
-const KP_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
-const KP_FORECAST_URL =
-  'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
-
-export const metadata: Metadata = {
-  title: INTENT.title,
-  description: INTENT.description,
-  keywords: INTENT.keywords,
-  alternates: { canonical: CANONICAL },
-  openGraph: {
-    title: INTENT.title,
-    description: INTENT.description,
-    url: CANONICAL,
-    siteName: '16 Bit Weather',
-    type: 'website',
-    locale: 'en_US',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Aurora Forecast Tonight' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: INTENT.title,
-    description: INTENT.description,
-    images: [OG_IMAGE],
-  },
-}
+export const metadata: Metadata = buildIntentMetadata(INTENT, {
+  title: 'Aurora Forecast Tonight',
+  subtitle: 'Live Kp and the Viewline',
+})
 
 /** Live values are stamped into the copy, so refresh alongside the hub. */
 export const revalidate = 300
-
-/** Current planetary Kp, or null when SWPC is unreachable. */
-async function loadCurrentKp(): Promise<KpSample | null> {
-  try {
-    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: 300 } })
-    return parsePlanetaryKpIndex(payload).current
-  } catch (error) {
-    console.error('[space-weather/aurora-forecast]', error)
-    return null
-  }
-}
-
-/** Kp expected over the next day, or null when the feed carries nothing ahead. */
-async function loadTonightOutlook(): Promise<{
-  expected: number
-  maxExpected: number
-  hours: number
-} | null> {
-  try {
-    const payload = await fetchSwpcJson(KP_FORECAST_URL, { next: { revalidate: 900 } })
-    if (!Array.isArray(payload)) return null
-
-    // parseKpForecast owns the window: the eight three-hour blocks at or after
-    // now, keeping the one already in progress. Filtering here as well used to
-    // drop that block, so the outlook skipped the most immediate period.
-    const forecast = parseKpForecast(payload)
-    return forecast ? { ...forecast, hours: forecast.blocks * 3 } : null
-  } catch (error) {
-    console.error('[space-weather/aurora-forecast]', error)
-    return null
-  }
-}
 
 const FAQS: readonly IntentFaq[] = [
   {
@@ -87,7 +31,7 @@ const FAQS: readonly IntentFaq[] = [
   {
     question: 'What Kp do I need at my latitude?',
     answer:
-      'From central Alaska, northern Canada or northern Scandinavia, quiet conditions are often enough. The far north of the lower 48 generally needs Kp 5, the northern tier around Kp 6, and states such as Iowa, New York or Washington want Kp 7. Seeing it from the latitude of Kansas or Virginia takes a G5 storm, which happens a few times a solar cycle.',
+      'From northern Alaska, northern Canada or Tromsø, quiet conditions are often enough, and Fairbanks or Reykjavík need only Kp 2. Kp 5 brings the viewline to the US–Canada border near 50°N, Kp 6 to the northern edge of Washington, Montana and North Dakota, and Kp 7 as far south as Minnesota, Wisconsin and Maine. Oregon, Iowa and Pennsylvania take a G4, and seeing it from the latitude of Kansas or Virginia takes a G5, which happens a few times a solar cycle.',
   },
   {
     question: 'What time of night and which direction?',
@@ -102,9 +46,13 @@ const FAQS: readonly IntentFaq[] = [
 ] as const
 
 export default async function AuroraForecastPage() {
-  const [current, outlook] = await Promise.all([loadCurrentKp(), loadTonightOutlook()])
+  const [current, outlook] = await Promise.all([
+    loadCurrentKp('space-weather/aurora-forecast'),
+    loadKpOutlook('space-weather/aurora-forecast'),
+  ])
   const updated = current ? formatSwpcTimeTag(current.timeTag) : null
   const level = current ? kpLevel(current.kp) : null
+  const viewline = current ? viewlineFor(current.kp) : null
 
   return (
     <PageWrapper>
@@ -130,7 +78,8 @@ export default async function AuroraForecastPage() {
               <p className="mt-2 text-weather-text">
                 On a clear, dark night the aurora may come into view low on the northern horizon
                 from about{' '}
-                <strong className="text-weather-primary">{level.viewlineExample}</strong>.
+                <strong className="text-weather-primary">{viewline!.latitude}°N</strong> —{' '}
+                <strong className="text-weather-primary">{viewline!.places}</strong>.
               </p>
               {outlook ? (
                 <p className="mt-2 text-weather-text">
@@ -155,6 +104,7 @@ export default async function AuroraForecastPage() {
           )
         }
         faqs={FAQS}
+        refreshLabel="every five minutes"
       >
         <p>
           The place list above is the viewline: roughly where the aurora may become visible low on

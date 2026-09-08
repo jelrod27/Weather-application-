@@ -27,6 +27,8 @@ export interface KpIndexData {
   forecast: {
     expected: number;
     maxExpected: number;
+    /** Three-hour blocks the average covers, so a client can label the window. */
+    blocks: number;
   } | null;
 }
 

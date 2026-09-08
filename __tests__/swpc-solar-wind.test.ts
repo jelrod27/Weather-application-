@@ -148,3 +148,80 @@ describe('parseRtswSolarWind', () => {
     expect(descending.trend).toBe('increasing');
   });
 });
+
+describe('parseRtswSolarWind stays on one spacecraft', () => {
+  /**
+   * RTSW is a merged feed. A live sample carried 1433 active SOLAR1 rows
+   * interleaved with 1350 ACE and 953 IMAP rows, so filtering on speed alone
+   * built a series that alternated instruments reading ~35 km/s apart: the
+   * chart drew that sawtooth as solar wind and the trend averaged whichever
+   * source happened to land in each half.
+   */
+  const merged = (count: number) =>
+    Array.from({ length: count * 2 }, (_, i) => {
+      const minute = Math.floor(i / 2);
+      const isPrimary = i % 2 === 0;
+      return {
+        time_tag: `2026-07-17T04:${String(minute).padStart(2, '0')}:00`,
+        source: isPrimary ? 'SOLAR1' : 'ACE',
+        active: isPrimary,
+        // The inactive spacecraft reads high and falling while the active one
+        // reads low and rising, so a mixed series cannot pass by accident.
+        proton_speed: isPrimary ? 300 + minute * 5 : 900 - minute * 5,
+        proton_density: isPrimary ? 2 : 9,
+        proton_temperature: 100000,
+      };
+    });
+
+  it('builds the recent series from the active source alone', () => {
+    const parsed = parseRtswSolarWind(merged(60), []);
+
+    expect(parsed.recent.every((point) => point.speed < 600)).toBe(true);
+    expect(parsed.recent.every((point) => point.density === 2)).toBe(true);
+  });
+
+  it('reads the active source trend, not the mixture', () => {
+    // SOLAR1 climbs, ACE falls. Averaged together the direction is noise.
+    expect(parseRtswSolarWind(merged(60), []).trend).toBe('increasing');
+  });
+
+  it('reports the time tag of the row the current values came from', () => {
+    // The newest row in the feed is ACE; the newest *active* row is SOLAR1 a
+    // minute earlier. Taking the tag off the tail of `recent` stamped one
+    // spacecraft's timestamp on the other's reading, dateModified included.
+    const rows = [
+      { time_tag: '2026-09-08T15:55:00', source: 'ACE', active: false, proton_speed: 520 },
+      { time_tag: '2026-09-08T15:54:00', source: 'SOLAR1', active: true, proton_speed: 484 },
+    ];
+    const parsed = parseRtswSolarWind(rows, []);
+
+    expect(parsed.current.speed).toBe(484);
+    expect(parsed.current.timeTag).toBe('2026-09-08T15:54:00');
+  });
+
+  it('says nothing rather than printing a density that never happened', () => {
+    const rows = [
+      {
+        time_tag: '2026-09-08T15:54:00',
+        active: true,
+        proton_speed: 484,
+        proton_density: null,
+        proton_temperature: null,
+      },
+    ];
+    const parsed = parseRtswSolarWind(rows, []);
+
+    expect(parsed.current.density).toBeNull();
+    expect(parsed.current.temperature).toBeNull();
+  });
+
+  it('falls back to every usable row when the feed distinguishes no source', () => {
+    const rows = Array.from({ length: 4 }, (_, i) => ({
+      time_tag: `2026-07-17T04:0${i}:00`,
+      proton_speed: 300 + i,
+    }));
+
+    expect(parseRtswSolarWind(rows, []).recent).toHaveLength(1);
+    expect(parseRtswSolarWind(rows, []).current.speed).toBe(303);
+  });
+});

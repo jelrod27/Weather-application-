@@ -7,9 +7,9 @@ import path from 'path'
 import {
   buildSpaceWeatherAppJsonLd,
   buildSpaceWeatherFaqJsonLd,
-  formatSwpcTimeTag,
   SPACE_WEATHER_FAQS,
 } from '@/components/space-weather/space-weather-seo-content'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 
 describe('Space Weather SEO', () => {
   it('space-weather page should be a server component with crawlable SEO content', () => {

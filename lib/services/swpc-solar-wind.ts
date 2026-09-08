@@ -6,6 +6,7 @@
 
 import { fetchSwpc } from '@/lib/services/swpc-proxy'
 import type { FetchWithTimeoutOptions } from '@/lib/fetch-with-timeout'
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 
 export const RTSW_WIND_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json'
 export const RTSW_MAG_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json'
@@ -44,9 +45,17 @@ export async function fetchRtswFeeds(
 }
 
 export type SolarWindCurrent = {
+  /**
+   * Time tag of the row these values came from. Callers used to infer it from
+   * the tail of `recent`, which is a different row whenever the newest sample
+   * in the feed is not from the active spacecraft — the page then stamped one
+   * instrument's timestamp on another's reading.
+   */
+  timeTag: string;
   speed: number;
-  density: number;
-  temperature: number;
+  /** Null when the row carried no density (do not invent a quiet 0). */
+  density: number | null;
+  temperature: number | null;
   /** Null when RTSW mag feed has no usable sample (do not invent quiet 0). */
   bz: number | null;
   bt: number | null;
@@ -61,6 +70,8 @@ export type SolarWindRecentPoint = {
 
 type WindRow = {
   time_tag?: string;
+  /** RTSW spacecraft: SOLAR1, DSCOVR, ACE, IMAP. The feed interleaves them. */
+  source?: string;
   active?: boolean;
   proton_speed?: number | null;
   proton_density?: number | null;
@@ -69,6 +80,7 @@ type WindRow = {
 
 type MagRow = {
   time_tag?: string;
+  source?: string;
   active?: boolean;
   bz_gsm?: number | null;
   bt?: number | null;
@@ -86,13 +98,9 @@ function hasSpeed(row: WindRow): boolean {
   return typeof row.proton_speed === 'number' && row.proton_speed > 0;
 }
 
-/** Epoch ms for an RTSW time tag, which omits the zone but means UTC. */
+/** Epoch ms for a row's RTSW time tag. */
 function rowTimeMs(row: { time_tag?: string }): number {
-  const raw = typeof row.time_tag === 'string' ? row.time_tag.trim() : '';
-  if (!raw) return Number.NaN;
-  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
-  const withT = raw.includes('T') ? raw : raw.replace(' ', 'T');
-  return Date.parse(hasZone ? withT : `${withT}Z`);
+  return swpcTimeTagMs(row.time_tag);
 }
 
 /**
@@ -121,6 +129,34 @@ function newestBy<T extends { time_tag?: string }>(
     }
   }
   return best;
+}
+
+/**
+ * The subset of `rows` produced by the same spacecraft as `reference`.
+ *
+ * RTSW is a merged feed: SOLAR1, DSCOVR, ACE and IMAP rows are interleaved,
+ * one of them flagged `active` as the designated primary, and their readings
+ * differ by tens of km/s at the same minute. A series built across all of them
+ * is an instrument-switching sawtooth, not a measurement.
+ *
+ * Falls back to the `active` flag when the feed omits `source`, and to every
+ * usable row when neither distinguishes anything, so a format change degrades
+ * to the old behaviour rather than to an empty chart.
+ */
+function sameSourceAs<T extends { source?: string; active?: boolean }>(
+  reference: T,
+  rows: T[],
+  usable: (row: T) => boolean,
+): T[] {
+  const usableRows = rows.filter(usable);
+
+  if (reference.source) {
+    const sameSource = usableRows.filter((row) => row.source === reference.source);
+    if (sameSource.length > 0) return sameSource;
+  }
+
+  const sameFlag = usableRows.filter((row) => Boolean(row.active) === Boolean(reference.active));
+  return sameFlag.length > 0 ? sameFlag : usableRows;
 }
 
 /**
@@ -189,15 +225,30 @@ export function parseRtswSolarWind(
 
   if (!latestWind) {
     return {
-      current: { speed: 0, density: 0, temperature: 0, bz: null, bt: null },
+      current: {
+        timeTag: '',
+        speed: 0,
+        density: null,
+        temperature: null,
+        bz: null,
+        bt: null,
+      },
       recent: [],
       trend: 'stable',
       available: false,
     };
   }
 
-  const withSpeed = windRows.filter(hasSpeed);
-  const last360 = withSpeed.slice(-360);
+  // One spacecraft, not three. The feed interleaves every RTSW source — a
+  // live sample carried 1433 active SOLAR1 rows against 1350 ACE and 953 IMAP
+  // — so filtering on speed alone built a series that alternated instruments
+  // reading ~35 km/s apart. The chart drew that sawtooth as solar wind, the
+  // trend averaged whichever source happened to land in each half, and 360
+  // rows spanned 111 minutes rather than the ~6 hours the label claimed.
+  // `active` flags the designated primary, which is the same preference
+  // pickLatestWind applies, so the series and `current` stay on one source.
+  const series = sameSourceAs(latestWind, windRows, hasSpeed);
+  const last360 = series.slice(-360);
   const speedValues: number[] = [];
   const recent: SolarWindRecentPoint[] = [];
 
@@ -215,16 +266,21 @@ export function parseRtswSolarWind(
     });
   }
 
-  // Attach nearest mag Bz samples to recent points
+  // Attach nearest mag Bz samples to recent points. Both sides go through
+  // swpcTimeTagMs: a bare Date.parse reads an unzoned SWPC tag as local time,
+  // and across a DST boundary two rows minutes apart pick up offsets an hour
+  // apart, which silently blows the 15-minute match window below.
   if (magRows.length > 0 && recent.length > 0) {
-    const magWithBz = magRows.filter((r) => typeof r.bz_gsm === 'number');
+    const magWithBz = latestMag
+      ? sameSourceAs(latestMag, magRows, (r) => typeof r.bz_gsm === 'number')
+      : magRows.filter((r) => typeof r.bz_gsm === 'number');
     for (const point of recent) {
-      const t = Date.parse(point.timeTag);
+      const t = swpcTimeTagMs(point.timeTag);
       if (Number.isNaN(t)) continue;
       let best: MagRow | null = null;
       let bestDelta = Infinity;
       for (const m of magWithBz.slice(-400)) {
-        const mt = Date.parse(String(m.time_tag ?? ''));
+        const mt = swpcTimeTagMs(m.time_tag);
         if (Number.isNaN(mt)) continue;
         const delta = Math.abs(mt - t);
         if (delta < bestDelta) {
@@ -244,9 +300,16 @@ export function parseRtswSolarWind(
 
   return {
     current: {
+      timeTag: String(latestWind.time_tag ?? ''),
       speed: Math.round(latestWind.proton_speed ?? 0),
-      density: Math.round((latestWind.proton_density ?? 0) * 10) / 10,
-      temperature: Math.round(latestWind.proton_temperature ?? 0),
+      density:
+        typeof latestWind.proton_density === 'number'
+          ? Math.round(latestWind.proton_density * 10) / 10
+          : null,
+      temperature:
+        typeof latestWind.proton_temperature === 'number'
+          ? Math.round(latestWind.proton_temperature)
+          : null,
       bz:
         magFresh && typeof latestMag?.bz_gsm === 'number'
           ? Math.round(latestMag.bz_gsm * 10) / 10

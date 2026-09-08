@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       {
         data: {
           timestamp: new Date().toISOString(),
-          current: { speed: 0, density: 0, temperature: 0, bz: 0, bt: 0 },
+          current: { timeTag: '', speed: 0, density: null, temperature: null, bz: null, bt: null },
           trend: 'stable' as const,
           recent: [],
         },

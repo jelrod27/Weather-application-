@@ -2,58 +2,25 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageWrapper from '@/components/page-wrapper'
 import IntentPageShell, {
+  buildIntentMetadata,
   buildIntentPageJsonLd,
   type IntentFaq,
 } from '@/components/space-weather/intent-page-shell'
-import { formatSwpcTimeTag } from '@/components/space-weather/space-weather-seo-content'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 import { getSpaceWeatherIntent, intentHref } from '@/lib/space-weather/intents'
 import { KP_LEVELS, kpLevel } from '@/lib/space-weather/kp-scale'
-import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
-import { parsePlanetaryKpIndex, type KpSample } from '@/lib/services/swpc-kp'
+import { loadCurrentKp } from '@/lib/space-weather/kp'
 import { safeJsonLd } from '@/lib/utils'
 
-const BASE_URL = 'https://www.16bitweather.co'
 const INTENT = getSpaceWeatherIntent('kp-index')!
-const CANONICAL = `${BASE_URL}${intentHref(INTENT.slug)}`
-const OG_IMAGE = `/api/og?title=${encodeURIComponent('Live Kp Index')}&subtitle=${encodeURIComponent('Geomagnetic Storm Scale')}`
 
-const KP_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
-
-export const metadata: Metadata = {
-  title: INTENT.title,
-  description: INTENT.description,
-  keywords: INTENT.keywords,
-  alternates: { canonical: CANONICAL },
-  openGraph: {
-    title: INTENT.title,
-    description: INTENT.description,
-    url: CANONICAL,
-    siteName: '16 Bit Weather',
-    type: 'website',
-    locale: 'en_US',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Live Kp Index' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: INTENT.title,
-    description: INTENT.description,
-    images: [OG_IMAGE],
-  },
-}
+export const metadata: Metadata = buildIntentMetadata(INTENT, {
+  title: 'Live Kp Index',
+  subtitle: 'Geomagnetic Storm Scale',
+})
 
 /** Live values are stamped into the copy, so refresh alongside the hub. */
 export const revalidate = 300
-
-/** Current planetary Kp, or null when SWPC is unreachable. */
-async function loadCurrentKp(): Promise<KpSample | null> {
-  try {
-    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: 300 } })
-    return parsePlanetaryKpIndex(payload).current
-  } catch (error) {
-    console.error('[space-weather/kp-index]', error)
-    return null
-  }
-}
 
 /**
  * The whole-number Kp band a level covers. `KP_LEVELS` runs high to low, so a
@@ -80,17 +47,17 @@ const FAQS: readonly IntentFaq[] = [
   {
     question: 'What Kp do I need to see the aurora?',
     answer:
-      'It depends entirely on your latitude. From Alaska or northern Scandinavia, Kp 3 is often enough. From the northern tier of the United States you generally want Kp 5 or higher, and seeing it from the Midwest or the mid-Atlantic means waiting on a G4 or G5 storm. Each step up the scale drags the viewline roughly five degrees further south.',
+      'It depends entirely on your latitude. From Fairbanks or Reykjavík, Kp 2 is often enough, and southern Alaska or northern Scotland want Kp 3. Kp 5 brings the viewline to the US–Canada border, Kp 6 to the northern edge of Washington, Montana and North Dakota, and Kp 7 as far south as Minnesota, Wisconsin and Maine. Oregon, Iowa and Pennsylvania need a G4, and northern California, Kansas and Virginia a G5. Each step up the scale drags the viewline roughly two to three degrees further south.',
   },
   {
     question: 'How does Kp map to the NOAA G-scale?',
     answer:
-      'Kp 5 is G1 minor, 6 is G2 moderate, 7 is G3 strong, 8 is G4 severe and 9 is G5 extreme. Below Kp 5 there is no G number at all — conditions are described as quiet or unsettled. The G-scale is the one written for operators, because it describes consequences rather than a magnetometer deflection.',
+      'Kp 5 is G1 minor, 6 is G2 moderate, 7 is G3 strong, 8 is G4 severe and 9 is G5 extreme. Below Kp 5 there is no G number at all — Kp 4 is described as active, Kp 3 as unsettled, and anything below that as quiet. The G-scale is the one written for operators, because it describes consequences rather than a magnetometer deflection.',
   },
 ] as const
 
 export default async function KpIndexPage() {
-  const current = await loadCurrentKp()
+  const current = await loadCurrentKp('space-weather/kp-index')
   const updated = current ? formatSwpcTimeTag(current.timeTag) : null
   const level = current ? kpLevel(current.kp) : null
 
@@ -131,6 +98,7 @@ export default async function KpIndexPage() {
           )
         }
         faqs={FAQS}
+        refreshLabel="every five minutes"
       >
         <p>
           The number in the box is the planetary K index: one figure, 0 to 9, for how disturbed

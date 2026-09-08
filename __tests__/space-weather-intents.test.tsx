@@ -18,7 +18,7 @@ import {
   siblingIntents,
 } from '@/lib/space-weather/intents'
 import { classifyXrayFlux, parseLatestXrayFlux } from '@/lib/space-weather/xray'
-import { KP_LEVELS, kpLevel } from '@/lib/space-weather/kp-scale'
+import { KP_LEVELS, kpLevel, viewlineFor } from '@/lib/space-weather/kp-scale'
 import { buildIntentFaqJsonLd, buildIntentPageJsonLd } from '@/components/space-weather/intent-page-shell'
 
 const BRAND_SUFFIX_LENGTH = ' | 16 Bit Weather'.length
@@ -179,14 +179,11 @@ describe('kpLevel', () => {
     expect(kpLevel(9).storm).toBe('G5 Extreme')
     expect(kpLevel(7).storm).toBe('G3 Strong')
     expect(kpLevel(5).storm).toBe('G1 Minor')
-    expect(kpLevel(4).storm).toBe('Unsettled')
+    expect(kpLevel(4).storm).toBe('Active')
+    expect(kpLevel(3).storm).toBe('Unsettled')
     expect(kpLevel(0).storm).toBe('Quiet')
   })
 
-  it('pushes the viewline south as the storm strengthens', () => {
-    expect(kpLevel(9).viewlineLatitude).toBeLessThan(kpLevel(5).viewlineLatitude)
-    expect(kpLevel(5).viewlineLatitude).toBeLessThan(kpLevel(0).viewlineLatitude)
-  })
 
   it('clamps rather than throwing on a value outside the scale', () => {
     expect(kpLevel(Number.NaN).storm).toBe('Quiet')
@@ -197,6 +194,57 @@ describe('kpLevel', () => {
   it('is ordered high to low so the lookup returns the first level reached', () => {
     const mins = KP_LEVELS.map((level) => level.minKp)
     expect(mins).toEqual([...mins].sort((a, b) => b - a))
+  })
+})
+
+describe('viewlineFor', () => {
+  it('pushes the viewline south as the storm strengthens', () => {
+    const latitudes = [0, 2, 3, 4, 5, 6, 7, 8, 9].map((kp) => viewlineFor(kp).latitude)
+    expect(latitudes).toEqual([...latitudes].sort((a, b) => b - a))
+    expect(viewlineFor(9).latitude).toBeLessThan(viewlineFor(0).latitude)
+  })
+
+  it('clamps rather than throwing on a value outside the scale', () => {
+    expect(viewlineFor(Number.NaN).latitude).toBe(viewlineFor(0).latitude)
+    expect(viewlineFor(-1).latitude).toBe(viewlineFor(0).latitude)
+    expect(viewlineFor(99).latitude).toBe(viewlineFor(9).latitude)
+  })
+
+  /**
+   * The hub's aurora map and the aurora intent page used to carry separate
+   * Kp-to-latitude ladders that disagreed by up to five degrees, so two
+   * cross-linked pages answered the same question differently.
+   */
+  it('is the only Kp-to-viewline table in the codebase', () => {
+    const map = fs.readFileSync(
+      path.join(process.cwd(), 'components', 'space-weather', 'AuroraForecastMap.tsx'),
+      'utf-8',
+    )
+    expect(map).toContain('viewlineFor')
+    expect(map).not.toContain('function getViewlineLatitude')
+    expect(map).not.toContain('function getViewlineDescription')
+  })
+
+  it('names places that sit at the latitude it reports', () => {
+    // Kp 5 reaches the Canadian border, not the Great Lakes; the old table
+    // paired 60°N with "northern Michigan, Maine", which is nearer 46°N.
+    expect(viewlineFor(5).latitude).toBe(50)
+    expect(viewlineFor(5).places).toContain('Canadian border')
+    expect(viewlineFor(9).latitude).toBe(40)
+    expect(viewlineFor(9).places).toContain('Kansas')
+  })
+})
+
+describe('the two Kp pages answer the aurora question the same way', () => {
+  const read = (slug: string) =>
+    fs.readFileSync(path.join(process.cwd(), 'app', 'space-weather', slug, 'page.tsx'), 'utf-8')
+
+  it.each([
+    ['Minnesota, Wisconsin and Maine', 7],
+    ['Oregon, Iowa and Pennsylvania', 8],
+  ])('places %s on the same side of Kp %i on both pages', (places) => {
+    expect(read('kp-index')).toContain(places)
+    expect(read('aurora-forecast')).toContain(places)
   })
 })
 

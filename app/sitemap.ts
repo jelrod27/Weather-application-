@@ -22,8 +22,8 @@ import type { DeepSkyObject } from '@/lib/stargazer/types'
  * lastmod describes when the server-rendered HTML changed, not when the live
  * data behind a page did. Tool pages fetch their data client-side, so their
  * HTML only changes on deploy; claiming an hourly change there teaches Google
- * to ignore lastmod site-wide. Only /space-weather stamps live values into
- * its HTML.
+ * to ignore lastmod site-wide. Only /space-weather and its four intent pages
+ * stamp live values into their HTML, so only they take the hourly bucket.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.16bitweather.co'

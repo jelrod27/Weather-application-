@@ -8,6 +8,8 @@
  */
 
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
+import { logRouteError } from '@/lib/error-utils'
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 
 export const GOES_XRAY_URL =
   'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json'
@@ -18,7 +20,7 @@ const LONG_BAND = '0.1-0.8nm'
 export type FlareClass = 'A' | 'B' | 'C' | 'M' | 'X'
 
 export interface FlareReading {
-  /** Peak flux in W/m². */
+  /** Flux of this sample in W/m². */
   flux: number
   /** Letter class alone, e.g. "M". */
   flareClass: FlareClass
@@ -64,6 +66,9 @@ export function parseLatestXrayFlux(payload: unknown): FlareReading | null {
   if (!Array.isArray(payload)) return null
 
   let latest: FlareReading | null = null
+  // Compared as instants, not as strings: a lexicographic `>` only happens to
+  // work while every tag SWPC ships is byte-identical in format.
+  let latestMs = Number.NEGATIVE_INFINITY
   for (const entry of payload as XrayRow[]) {
     if (!entry || typeof entry !== 'object') continue
     if (entry.energy !== LONG_BAND) continue
@@ -72,9 +77,13 @@ export function parseLatestXrayFlux(payload: unknown): FlareReading | null {
     const timeTag = typeof entry.time_tag === 'string' ? entry.time_tag : ''
     if (!Number.isFinite(flux) || flux <= 0 || !timeTag) continue
 
-    if (!latest || timeTag > latest.timeTag) {
+    const ms = swpcTimeTagMs(timeTag)
+    if (Number.isNaN(ms)) continue
+
+    if (!latest || ms > latestMs) {
       const { flareClass, label } = classifyXrayFlux(flux)
       latest = { flux, flareClass, label, timeTag }
+      latestMs = ms
     }
   }
   return latest
@@ -86,7 +95,7 @@ export async function loadCurrentFlare(): Promise<FlareReading | null> {
     const payload = await fetchSwpcJson(GOES_XRAY_URL, { next: { revalidate: 300 } })
     return parseLatestXrayFlux(payload)
   } catch (error) {
-    console.error('[space-weather/solar-flares]', error)
+    logRouteError('space-weather/solar-flares', error)
     return null
   }
 }

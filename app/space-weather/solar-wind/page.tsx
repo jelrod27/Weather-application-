@@ -2,51 +2,31 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageWrapper from '@/components/page-wrapper'
 import IntentPageShell, {
+  buildIntentMetadata,
   buildIntentPageJsonLd,
   type IntentFaq,
 } from '@/components/space-weather/intent-page-shell'
-import { formatSwpcTimeTag } from '@/components/space-weather/space-weather-seo-content'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 import { getSpaceWeatherIntent, intentHref } from '@/lib/space-weather/intents'
 import {
   fetchRtswFeeds,
   parseRtswSolarWind,
   type SolarWindCurrent,
 } from '@/lib/services/swpc-solar-wind'
+import { logRouteError } from '@/lib/error-utils'
 import { safeJsonLd } from '@/lib/utils'
 
-const BASE_URL = 'https://www.16bitweather.co'
 const INTENT = getSpaceWeatherIntent('solar-wind')!
-const CANONICAL = `${BASE_URL}${intentHref(INTENT.slug)}`
-const OG_IMAGE = `/api/og?title=${encodeURIComponent('Real-Time Solar Wind')}&subtitle=${encodeURIComponent('Speed, Density and Bz')}`
 
-export const metadata: Metadata = {
-  title: INTENT.title,
-  description: INTENT.description,
-  keywords: INTENT.keywords,
-  alternates: { canonical: CANONICAL },
-  openGraph: {
-    title: INTENT.title,
-    description: INTENT.description,
-    url: CANONICAL,
-    siteName: '16 Bit Weather',
-    type: 'website',
-    locale: 'en_US',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Real-Time Solar Wind' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: INTENT.title,
-    description: INTENT.description,
-    images: [OG_IMAGE],
-  },
-}
+export const metadata: Metadata = buildIntentMetadata(INTENT, {
+  title: 'Real-Time Solar Wind',
+  subtitle: 'Speed, Density and Bz',
+})
 
 /** Live values are stamped into the copy, so refresh alongside the hub. */
 export const revalidate = 300
 
 interface SolarWindReading extends SolarWindCurrent {
-  /** SWPC time tag of the newest plasma sample, when the feed carried one. */
-  timeTag: string
   trend: 'increasing' | 'decreasing' | 'stable'
 }
 
@@ -60,10 +40,12 @@ async function loadSolarWind(): Promise<SolarWindReading | null> {
     const parsed = parseRtswSolarWind(windJson, magJson)
     if (!parsed.available) return null
 
-    const newest = parsed.recent[parsed.recent.length - 1]
-    return { ...parsed.current, timeTag: newest?.timeTag ?? '', trend: parsed.trend }
+    // current.timeTag is the tag of the row these values came from. Reading it
+    // off the tail of `recent` instead attributed the active spacecraft's
+    // numbers to whichever source happened to publish last.
+    return { ...parsed.current, trend: parsed.trend }
   } catch (error) {
-    console.error('[space-weather/solar-wind]', error)
+    logRouteError('space-weather/solar-wind', error)
     return null
   }
 }
@@ -130,8 +112,12 @@ export default async function SolarWindPage() {
                 <span className="text-weather-muted">({TREND_LABEL[wind.trend]})</span>
               </p>
               <p className="mt-2 text-weather-text">
-                Density {wind.density} protons/cm³
-                {wind.temperature > 0 ? (
+                {wind.density !== null ? (
+                  <>Density {wind.density} protons/cm³</>
+                ) : (
+                  <span className="text-weather-muted">Density unavailable in this sample</span>
+                )}
+                {wind.temperature !== null ? (
                   <> · Temperature {wind.temperature.toLocaleString('en-US')} K</>
                 ) : null}
               </p>
@@ -169,6 +155,7 @@ export default async function SolarWindPage() {
           )
         }
         faqs={FAQS}
+        refreshLabel="every five minutes"
       >
         <p>
           These numbers come from a spacecraft, not a model. NOAA&apos;s real-time solar wind feed
