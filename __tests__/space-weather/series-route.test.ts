@@ -178,6 +178,25 @@ describe('magnetometer route', () => {
     expect(body.data).toEqual([{ time: 't1', hp: 12.35 }]);
     expect(body.source).toBe(SWPC_GOES_SOURCE);
   });
+
+  it('drops samples NOAA flagged as arcjet-contaminated', async () => {
+    // A thruster firing deflects the magnetometer by several nT. A live day
+    // carried 74 flagged rows out of 1439, the worst 10.3 nT off its nearest
+    // clean neighbour, which plots as a step a reader takes for geomagnetic
+    // activity. NOAA sets the flag so consumers can drop them.
+    const { GET } = await import('@/app/api/space-weather/magnetometer/route');
+    mockFetch.mockResolvedValue([
+      { time_tag: 't1', satellite: '19', He: 1, Hp: 52.5, Hn: 1, total: 1 },
+      { time_tag: 't2', satellite: '19', He: 1, Hp: 62.8, Hn: 1, total: 1, arcjet_flag: true },
+      { time_tag: 't3', satellite: '19', He: 1, Hp: 53.1, Hn: 1, total: 1, arcjet_flag: false },
+    ]);
+
+    const body = await (await GET(makeRequest('/api/space-weather/magnetometer'))).json();
+    expect(body.data).toEqual([
+      { time: 't1', hp: 52.5 },
+      { time: 't3', hp: 53.1 },
+    ]);
+  });
 });
 
 describe('proton-flux route', () => {

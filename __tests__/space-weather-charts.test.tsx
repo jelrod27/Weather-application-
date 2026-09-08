@@ -61,12 +61,19 @@ describe('SpaceWeatherCharts', () => {
 
   it('should fetch data from all four endpoints on mount and render 10 chart titles', async () => {
     const now = new Date().toISOString();
-    const plasmaData = [
-      { time_tag: now, speed: 400, density: 5.2, temperature: 120000, bz_gsm: -3.1, bx_gsm: 1.2, by_gsm: -0.5, bt: 4.5 },
-    ];
-    const protonData = [{ time_tag: now, flux: 0.5 }];
-    const magnetometerData = [{ time: now, hp: 45.2 }];
-    const xrayData = { data: { recent: [{ timeTag: now, flux: 1.2e-6 }] } };
+    // Envelopes as the routes actually send them: `{ data, source }`, with the
+    // field names our own routes emit rather than NOAA's raw spellings.
+    const plasmaData = {
+      data: [
+        { time: now, speed: 400, density: 5.2, temperature: 120000, bz: -3.1, bx: 1.2, by: -0.5, bt: 4.5 },
+      ],
+      range: '2h',
+      source: 'NOAA SWPC (RTSW)',
+      magneticAvailable: true,
+    };
+    const protonData = { data: [{ time: now, flux: 0.5 }], source: 'GOES' };
+    const magnetometerData = { data: [{ time: now, hp: 45.2 }], source: 'GOES' };
+    const xrayData = { data: { recent: [{ timeTag: now, flux: 1.2e-6 }] }, source: 'GOES' };
 
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('plasma')) return Promise.resolve({ ok: true, json: () => Promise.resolve(plasmaData) });
@@ -138,5 +145,104 @@ describe('SpaceWeatherCharts', () => {
     render(<SpaceWeatherCharts />);
     const loadingElements = screen.getAllByText('Loading...');
     expect(loadingElements.length).toBe(10);
+  });
+});
+
+/**
+ * The regression this file previously let through.
+ *
+ * Every route answers with a `{ data, source }` envelope, but the component
+ * read the body as the series and gated on `Array.isArray`, so plasma, proton
+ * flux and magnetometer were always `[]`. The chart *titles* still rendered,
+ * which is why the assertions above passed while three charts on the site's
+ * highest-impression page had never plotted a point. Assert on the data.
+ */
+describe('SpaceWeatherCharts renders live values from real route envelopes', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  /** A SWPC-style tag: no zone, meaning UTC, a minute ago. */
+  const tag = (minutesAgo: number) =>
+    new Date(Date.now() - minutesAgo * 60_000).toISOString().slice(0, 19);
+
+  const respondWithRealEnvelopes = () => {
+    const points = [tag(3), tag(2), tag(1)];
+    const plasma = {
+      data: points.map((time, i) => ({
+        time,
+        speed: 480 + i,
+        density: 6.7,
+        temperature: 117171,
+        bz: -0.7,
+        by: 1.2,
+        bx: 0.3,
+        bt: 5.7,
+      })),
+      range: '2h',
+      source: 'NOAA SWPC (RTSW)',
+      magneticAvailable: true,
+    };
+    const proton = { data: points.map((time) => ({ time, flux: 0.21 })), source: 'GOES' };
+    const magnetometer = { data: points.map((time) => ({ time, hp: 45.2 })), source: 'GOES' };
+    const xray = {
+      data: { recent: points.map((timeTag) => ({ timeTag, flux: 5.2e-7 })) },
+      source: 'GOES',
+    };
+
+    mockFetch.mockImplementation((url: string) => {
+      const body = url.includes('plasma')
+        ? plasma
+        : url.includes('proton-flux')
+          ? proton
+          : url.includes('magnetometer')
+            ? magnetometer
+            : xray;
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    });
+  };
+
+  it('plots every chart instead of falling back to "No data available"', async () => {
+    respondWithRealEnvelopes();
+
+    await act(async () => {
+      render(<SpaceWeatherCharts />);
+    });
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(4));
+
+    expect(screen.queryAllByText('No data available')).toHaveLength(0);
+  });
+
+  it('shows the current reading for each source', async () => {
+    respondWithRealEnvelopes();
+
+    await act(async () => {
+      render(<SpaceWeatherCharts />);
+    });
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(4));
+
+    // One value per dataset, so a broken envelope on any of the four fails.
+    expect(screen.getAllByText(/482/).length).toBeGreaterThan(0); // plasma speed
+    expect(screen.getAllByText(/45\.2/).length).toBeGreaterThan(0); // magnetometer hp
+    expect(screen.getAllByText(/6\.7/).length).toBeGreaterThan(0); // plasma density
+    expect(screen.getAllByText(/-0\.7/).length).toBeGreaterThan(0); // plasma bz
+  });
+
+  it('keeps points that carry a zone-less UTC tag, whatever the viewer timezone', async () => {
+    // `new Date('2026-09-08T15:54:00')` resolves in the viewer's zone; east of
+    // UTC that pushed every point outside the 30m window and emptied the charts.
+    respondWithRealEnvelopes();
+
+    await act(async () => {
+      render(<SpaceWeatherCharts />);
+    });
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(4));
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('Set time range to 30M'));
+    });
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(8));
+
+    expect(screen.queryAllByText('No data available')).toHaveLength(0);
   });
 });
