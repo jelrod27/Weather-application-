@@ -87,6 +87,8 @@ export function parseKpForecast(
 ): {
   expected: number;
   maxExpected: number;
+  /** Three-hour blocks the average covers, so a caller can label the window. */
+  blocks: number;
 } | null {
   if (!Array.isArray(payload) || payload.length === 0) return null;
 
@@ -114,5 +116,6 @@ export function parseKpForecast(
   return {
     expected: Math.round((sumKp / upcoming.length) * 10) / 10,
     maxExpected: maxKp,
+    blocks: upcoming.length,
   };
 }

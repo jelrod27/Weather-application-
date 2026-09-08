@@ -57,25 +57,7 @@ async function loadCurrentKp(): Promise<KpSample | null> {
   }
 }
 
-/** Milliseconds for a forecast row in either the array or object SWPC shape. */
-function rowTimeMs(row: unknown): number | null {
-  const raw = Array.isArray(row)
-    ? String(row[0] ?? '')
-    : row && typeof row === 'object'
-      ? String((row as Record<string, unknown>).time_tag ?? '')
-      : ''
-  const stamp = formatSwpcTimeTag(raw)
-  return stamp ? Date.parse(stamp.iso) : null
-}
-
-/** Kp is forecast in the same three-hour blocks it is measured in. */
-const FORECAST_BLOCKS = 8
-
-/**
- * Kp expected over the next day. SWPC's forecast product leads with several
- * days of already-observed rows, so trim to the rows ahead of now before
- * averaging — otherwise the "outlook" is last week's weather.
- */
+/** Kp expected over the next day, or null when the feed carries nothing ahead. */
 async function loadTonightOutlook(): Promise<{
   expected: number
   maxExpected: number
@@ -85,17 +67,11 @@ async function loadTonightOutlook(): Promise<{
     const payload = await fetchSwpcJson(KP_FORECAST_URL, { next: { revalidate: 900 } })
     if (!Array.isArray(payload)) return null
 
-    const now = Date.now()
-    const ahead = payload
-      .filter((row) => {
-        const ms = rowTimeMs(row)
-        return ms !== null && ms > now
-      })
-      .slice(0, FORECAST_BLOCKS)
-    if (ahead.length === 0) return null
-
-    const forecast = parseKpForecast(ahead)
-    return forecast ? { ...forecast, hours: ahead.length * 3 } : null
+    // parseKpForecast owns the window: the eight three-hour blocks at or after
+    // now, keeping the one already in progress. Filtering here as well used to
+    // drop that block, so the outlook skipped the most immediate period.
+    const forecast = parseKpForecast(payload)
+    return forecast ? { ...forecast, hours: forecast.blocks * 3 } : null
   } catch (error) {
     console.error('[space-weather/aurora-forecast]', error)
     return null
