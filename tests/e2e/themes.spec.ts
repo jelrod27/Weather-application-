@@ -60,6 +60,21 @@ test.describe('Theme System', () => {
     // Polling removes the race without weakening the check: it still fails if
     // the theme never persists, and now only tolerates persistence being slow.
     await expect.poll(() => getCurrentTheme(page)).toBe('nord');
+
+    // Now prove the value came from storage rather than from the fixture.
+    //
+    // setTheme seeds localStorage through page.addInitScript, which re-runs on
+    // every navigation — so the reload above would still read "nord" even if
+    // the app had dropped the theme entirely. Init scripts are page-scoped
+    // while localStorage is shared across the context, so a sibling page loads
+    // with the stored value and none of the re-seeding.
+    const withoutFixtureSeed = await page.context().newPage();
+    try {
+      await withoutFixtureSeed.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect.poll(() => getCurrentTheme(withoutFixtureSeed)).toBe('nord');
+    } finally {
+      await withoutFixtureSeed.close();
+    }
   });
 
   test('radar remains visible in synthwave theme', async ({ page }) => {
