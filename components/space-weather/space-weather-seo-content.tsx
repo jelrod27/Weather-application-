@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SPACE_WEATHER_INTENTS, intentHref } from '@/lib/space-weather/intents'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -143,6 +144,25 @@ export default function SpaceWeatherSeoContent({
           </div>
         ))}
       </dl>
+
+      {/* The hub answers every space-weather question at once, which is why it
+          ranks for none of them. These pages each take one. */}
+      <h3 className="mb-3 mt-8 text-lg font-semibold text-weather-primary">
+        Go deeper on one reading
+      </h3>
+      <ul className="space-y-1.5">
+        {SPACE_WEATHER_INTENTS.map((intent) => (
+          <li key={intent.slug}>
+            <Link
+              href={intentHref(intent.slug)}
+              className="text-weather-primary underline underline-offset-2"
+            >
+              {intent.label}
+            </Link>
+            <span className="text-weather-muted"> — {intent.blurb}</span>
+          </li>
+        ))}
+      </ul>
     </article>
   )
 }

@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import deepSkyCatalog from '@/data/deep-sky-catalog.json'
 import { cityData as cityMetadata } from '@/lib/cities'
 import { getAllPosts } from '@/lib/blog'
+import { SPACE_WEATHER_INTENTS, intentHref } from '@/lib/space-weather/intents'
 import { getGuideLastModified } from '@/lib/education/content'
 import {
   FEATURED_DETAIL_SLUGS,
@@ -88,6 +89,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...FEATURED_DETAIL_SLUGS.cloud.map((slug) => educationDetailPage('cloud', slug)),
       ...FEATURED_DETAIL_SLUGS.phenomenon.map((slug) => educationDetailPage('phenomenon', slug)),
     ]
+
+    // Each intent page stamps its own live SWPC reading into the HTML, so they
+    // share /space-weather's hourly bucket rather than the static-shell monthly.
+    for (const intent of SPACE_WEATHER_INTENTS) {
+      staticPages.push({
+        url: `${baseUrl}${intentHref(intent.slug)}`,
+        lastModified: hourly,
+        changeFrequency: 'hourly',
+        priority: 0.8,
+      })
+    }
 
     // The directory hub: the only indexable page that links every city.
     staticPages.push({
