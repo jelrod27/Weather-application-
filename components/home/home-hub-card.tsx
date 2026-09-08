@@ -4,6 +4,18 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { isExternalHubHref } from '@/lib/home/hub-links';
 
+/**
+ * Every hub chip is this tall whether it is loading or loaded.
+ *
+ * The rail sits above the live weather card and the climate guide, so any
+ * change in chip height reflows the whole page below it. The loading skeleton
+ * used to be `h-16` against chips that render at 98px, which shifted the page
+ * by 34px the moment the first card resolved — on top of the larger shift from
+ * the rail appearing at all. Pinned here so the skeleton and the card cannot
+ * drift apart again.
+ */
+export const HUB_CARD_MIN_HEIGHT = 'min-h-[6.125rem]';
+
 export interface HomeHubCardProps {
   title: string;
   value: string;
@@ -26,6 +38,7 @@ export default function HomeHubCard({
   const classNames = cn(
     'group block shrink-0 rounded-md border border-border/80 bg-card/50 px-2.5 py-2 font-mono',
     'w-[9.25rem] sm:w-[10rem]',
+    HUB_CARD_MIN_HEIGHT,
     'transition-colors hover:border-primary/50 hover:bg-card/80 focus-visible:outline-2',
     'focus-visible:outline-primary focus-visible:outline-offset-2',
     className,

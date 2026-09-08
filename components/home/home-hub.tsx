@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { getCategoryConfig } from '@/components/news/CategoryBadge';
-import HomeHubCard from '@/components/home/home-hub-card';
+import HomeHubCard, { HUB_CARD_MIN_HEIGHT } from '@/components/home/home-hub-card';
 import HappeningNowCard from '@/components/home/happening-now-card';
 import { stargazerCardDetail } from '@/lib/home/hub-location';
 import {
@@ -60,8 +60,22 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
           </h2>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-0.5">
-          <div className="h-16 min-w-[140px] animate-pulse rounded-md bg-gray-800/40" aria-hidden />
-          <div className="h-16 min-w-[140px] animate-pulse rounded-md bg-gray-800/40" aria-hidden />
+          {/* Same height as a resolved chip, so the rail does not resize when
+              the first card lands and push the page below it down. */}
+          <div
+            className={cn(
+              'w-[9.25rem] shrink-0 animate-pulse rounded-md bg-gray-800/40 sm:w-[10rem]',
+              HUB_CARD_MIN_HEIGHT,
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              'w-[9.25rem] shrink-0 animate-pulse rounded-md bg-gray-800/40 sm:w-[10rem]',
+              HUB_CARD_MIN_HEIGHT,
+            )}
+            aria-hidden
+          />
         </div>
       </section>
     );

@@ -53,7 +53,13 @@ export default function WarningsPage() {
       </div>
       <Suspense
         fallback={
-          <div className="max-w-7xl mx-auto px-4 py-8 text-center font-mono text-muted-foreground animate-pulse">
+          /* The desk that replaces this is tens of thousands of pixels tall.
+             With a one-line fallback the SEO copy below sat near the top of the
+             prerendered page and was thrown off-screen on hydration — a single
+             0.667 layout shift, most of this route's CLS. Holding a viewport
+             here puts that copy below the fold at first paint, so its move
+             happens where the user cannot see it and CLS does not count it. */
+          <div className="max-w-7xl mx-auto min-h-screen px-4 py-8 text-center font-mono text-muted-foreground animate-pulse">
             Loading warnings…
           </div>
         }
