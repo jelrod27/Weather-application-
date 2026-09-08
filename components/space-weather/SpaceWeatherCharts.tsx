@@ -27,6 +27,8 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
+import { chartSeries, xrayChartSeries } from '@/lib/space-weather/chart-series';
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +62,13 @@ interface ChartDataSets {
 
 // ── Chart Configurations ────────────────────────────────────────────────────
 
+/**
+ * `fieldPath` names the key our own route emits, not NOAA's. The plasma route
+ * renames `bz_gsm`/`by_gsm`/`bx_gsm` to bare `bz`/`by`/`bx` and the
+ * magnetometer route lowercases `Hp` to `hp` while building their series;
+ * these configs had kept the upstream spellings, so four charts read undefined
+ * even once the response envelope was unwrapped correctly.
+ */
 const CHART_CONFIGS: ChartConfig[] = [
   {
     id: 'bz',
@@ -68,7 +77,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     color: '#06b6d4',
     dataKey: 'value',
     source: 'plasma',
-    fieldPath: 'bz_gsm',
+    fieldPath: 'bz',
     zeroLine: true,
     colorWhenNegative: '#ef4444',
   },
@@ -79,7 +88,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     color: '#a855f7',
     dataKey: 'value',
     source: 'magnetometer',
-    fieldPath: 'Hp',
+    fieldPath: 'hp',
   },
   {
     id: 'speed',
@@ -106,7 +115,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     color: '#f97316',
     dataKey: 'value',
     source: 'plasma',
-    fieldPath: 'bx_gsm',
+    fieldPath: 'bx',
     zeroLine: true,
   },
   {
@@ -116,7 +125,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     color: '#ec4899',
     dataKey: 'value',
     source: 'plasma',
-    fieldPath: 'by_gsm',
+    fieldPath: 'by',
     zeroLine: true,
   },
   {
@@ -188,8 +197,12 @@ function filterByRange(
   const minutes = getMinutesForRange(range);
   const cutoff = Date.now() - minutes * 60 * 1000;
   return data.filter((d) => {
-    const tag = d.time as string | undefined;
-    return tag ? new Date(tag).getTime() >= cutoff : false;
+    // swpcTimeTagMs, not `new Date(tag)`: SWPC tags omit the zone but mean UTC,
+    // and a bare parse resolves them in the *viewer's* timezone. East of UTC
+    // that shifts every point earlier than it really is, so a reader in Berlin
+    // picking the 30m range saw empty charts.
+    const ms = swpcTimeTagMs(d.time);
+    return Number.isFinite(ms) && ms >= cutoff;
   });
 }
 
@@ -202,7 +215,7 @@ function extractTimeSeries(
   return filtered.map((d) => {
     const raw = d[fieldPath];
     const val = typeof raw === 'number' ? raw : typeof raw === 'string' ? parseFloat(raw) : null;
-    const time = new Date(d.time as string);
+    const time = new Date(swpcTimeTagMs(d.time));
     return {
       time: time.toISOString(),
       timestamp: time.getTime(),
@@ -430,28 +443,13 @@ export default function SpaceWeatherCharts() {
         }),
       ]);
 
-      const plasmaData =
-        results[0].status === 'fulfilled' && Array.isArray(results[0].value)
-          ? results[0].value
-          : [];
-      const protonData =
-        results[1].status === 'fulfilled' && Array.isArray(results[1].value)
-          ? results[1].value
-          : [];
-      const magnetometerData =
-        results[2].status === 'fulfilled' && Array.isArray(results[2].value)
-          ? results[2].value
-          : [];
-      const xrayRaw = results[3].status === 'fulfilled' ? results[3].value : null;
-      const xrayData = xrayRaw
-        ? (Array.isArray(xrayRaw) ? xrayRaw : (xrayRaw.data?.recent || []).map((d: Record<string, unknown>) => ({ time: d.timeTag, flux: d.flux })))
-        : [];
-
+      // Each route answers with a `{ data, source }` envelope, so the series
+      // has to be unwrapped rather than read off the response body.
       setDatasets({
-        plasma: plasmaData,
-        proton: protonData,
-        magnetometer: magnetometerData,
-        xray: xrayData,
+        plasma: chartSeries(results[0]),
+        proton: chartSeries(results[1]),
+        magnetometer: chartSeries(results[2]),
+        xray: xrayChartSeries(results[3]),
       });
 
       const allFailed = results.every((r) => r.status === 'rejected');
