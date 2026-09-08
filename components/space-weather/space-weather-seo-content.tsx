@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { SPACE_WEATHER_INTENTS, intentHref } from '@/lib/space-weather/intents'
+import { formatSwpcTimeTag } from '@/lib/space-weather/time-tag'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
@@ -35,18 +37,6 @@ export function buildSpaceWeatherFaqJsonLd() {
       acceptedAnswer: { '@type': 'Answer', text: faq.answer },
     })),
   }
-}
-
-export function formatSwpcTimeTag(timeTag: string): { iso: string; label: string } | null {
-  const trimmed = timeTag.trim()
-  if (!trimmed) return null
-  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)
-  const withT = /T/.test(trimmed) ? trimmed : trimmed.replace(' ', 'T')
-  const normalized = hasZone ? withT : `${withT}Z`
-  const ms = Date.parse(normalized)
-  if (Number.isNaN(ms)) return null
-  const iso = new Date(ms).toISOString()
-  return { iso, label: `${iso.slice(0, 16).replace('T', ' ')} UTC` }
 }
 
 export function buildSpaceWeatherAppJsonLd(dateModified?: string): {
@@ -143,6 +133,25 @@ export default function SpaceWeatherSeoContent({
           </div>
         ))}
       </dl>
+
+      {/* The hub answers every space-weather question at once, which is why it
+          ranks for none of them. These pages each take one. */}
+      <h3 className="mb-3 mt-8 text-lg font-semibold text-weather-primary">
+        Go deeper on one reading
+      </h3>
+      <ul className="space-y-1.5">
+        {SPACE_WEATHER_INTENTS.map((intent) => (
+          <li key={intent.slug}>
+            <Link
+              href={intentHref(intent.slug)}
+              className="text-weather-primary underline underline-offset-2"
+            >
+              {intent.label}
+            </Link>
+            <span className="text-weather-muted"> — {intent.blurb}</span>
+          </li>
+        ))}
+      </ul>
     </article>
   )
 }
