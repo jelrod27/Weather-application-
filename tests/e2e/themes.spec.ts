@@ -43,23 +43,23 @@ test.describe('Theme System', () => {
     // Use nord (free theme) since premium themes require auth and get
     // reset to nord on reload when PLAYWRIGHT_TEST_MODE is not set
     await setTheme(page, 'nord');
+    await expect.poll(() => getCurrentTheme(page)).toBe('nord');
 
-    // Verify theme is set
-    let currentTheme = await getCurrentTheme(page);
-    expect(currentTheme).toBe('nord');
-
-    // Wait a bit for localStorage to be written
-    await page.waitForTimeout(300);
-
-    // Reload page
     await page.reload({ waitUntil: 'domcontentloaded' });
 
-    // Wait for page to fully load and theme to be applied
-    await page.waitForTimeout(500);
-
-    // Verify theme persisted
-    currentTheme = await getCurrentTheme(page);
-    expect(currentTheme).toBe('nord');
+    // Polled, not slept.
+    //
+    // getCurrentTheme reads data-theme before it falls back to localStorage,
+    // and on reload a guest gets the default theme written to that attribute
+    // before the stored one replaces it. So this assertion races the swap, not
+    // the localStorage write the old comment described — which is why two
+    // earlier attempts at this flake both kept a fixed wait and both came
+    // back. On a runner throttled by upstream 429s the swap lands after the
+    // 500ms the test allowed, and all three retries read "daybreak".
+    //
+    // Polling removes the race without weakening the check: it still fails if
+    // the theme never persists, and now only tolerates persistence being slow.
+    await expect.poll(() => getCurrentTheme(page)).toBe('nord');
   });
 
   test('radar remains visible in synthwave theme', async ({ page }) => {
