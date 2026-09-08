@@ -116,6 +116,16 @@ export default function WarningsClient() {
         />
       </div>
 
+      {/* The intensity panel and the severity chips below both land with the
+          alert fetch, and together they are ~389px on mobile — the whole desk
+          and the SEO copy under it used to jump by that much. Hold their slots
+          while the outcome is still unknown, and let them collapse only in the
+          rarer case where the feed came back with nothing. */}
+      <div
+        className={cn(
+          (loading || wis) && 'min-h-[238px] md:min-h-[190px]',
+        )}
+      >
       {wis && (
         <div
           className={cn(
@@ -155,7 +165,14 @@ export default function WarningsClient() {
           </div>
         </div>
       )}
+      </div>
 
+      <div
+        className={cn(
+          (loading || Object.keys(severityCounts).length > 0) &&
+            'min-h-[80px] md:min-h-[34px]',
+        )}
+      >
       {Object.keys(severityCounts).length > 0 && (
         <div className="flex flex-wrap gap-3">
           {(['Extreme', 'Severe', 'Moderate', 'Minor'] as const).map((sev) => {
@@ -178,6 +195,7 @@ export default function WarningsClient() {
           </span>
         </div>
       )}
+      </div>
 
       <SPCDay1RiskStrip />
 

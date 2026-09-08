@@ -101,7 +101,14 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
             hideLocationButton={true}
           />
 
-          <HomeHub userLocation={hubLocation} />
+          {/* The rail's location is derived from the weather fetch, so it
+              renders nothing until that resolves and then appears at full
+              height, shoving the live card and the climate guide down. It
+              always arrives on a city page, so hold its slot from first paint:
+              the chip strip plus its heading and margins. */}
+          <div className="min-h-[10rem]">
+            <HomeHub userLocation={hubLocation} />
+          </div>
 
           {/* The live card arrives after the fetch; reserve its height so the
               climate guide and footer do not jump when it lands (CLS). */}
