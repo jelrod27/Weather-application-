@@ -65,7 +65,7 @@ export function RadarPlayerDock({
             type="button"
             onClick={onSkipToEnd}
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10"
-            aria-label="Go to live frame"
+            aria-label="Go to latest frame"
           >
             <SkipForward className="h-4 w-4" />
           </button>
@@ -95,7 +95,7 @@ export function RadarPlayerDock({
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${isLiveFrame ? 'animate-pulse bg-red-500' : 'bg-zinc-500'}`} />
-            Live
+            Latest
           </button>
         </div>
 
@@ -108,13 +108,14 @@ export function RadarPlayerDock({
             onChange={(event) => onFrameChange(Number.parseInt(event.target.value, 10))}
             className="h-2 w-full cursor-pointer appearance-none rounded-full bg-zinc-800 accent-cyan-400"
             aria-label="Radar timeline"
+            aria-valuetext={relativeTime}
           />
           <div className="mt-1 flex items-center justify-between text-[11px] text-zinc-400">
             <span>{historyLabel}</span>
             <span>
               Frame {frameIndex + 1} / {frameCount}
             </span>
-            <span className={isLiveFrame ? 'font-semibold text-red-300' : ''}>{isLiveFrame ? 'LIVE' : 'NOW'}</span>
+            <span className={isLiveFrame ? 'font-semibold text-red-300' : ''}>LATEST</span>
           </div>
           <div className="mt-1 h-1 overflow-hidden rounded-full bg-zinc-800">
             <div className="h-full rounded-full bg-cyan-400 transition-all" style={{ width: `${progress}%` }} />

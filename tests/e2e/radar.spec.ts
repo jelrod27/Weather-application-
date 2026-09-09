@@ -21,9 +21,7 @@ test.describe('Radar Map', () => {
     
     const radarContainer = page.locator('[data-radar-container]').first();
     await expect(radarContainer).toBeVisible();
-    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByTestId('radar-status-chip')).toHaveCount(0);
   });
 
   test('radar visible in synthwave theme', async ({ page }) => {
@@ -61,16 +59,19 @@ test.describe('Radar Map', () => {
     
     await expect(page.getByRole('button', { name: /^(Play|Pause)$/i })).toBeVisible();
     await page.getByRole('button', { name: /LAYERS/i }).click();
-    await expect(page.getByRole('checkbox', { name: /NWS Alerts/i })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /NWS Alerts at location/i })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: /SPC Outlook/i })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: /Storm Reports/i })).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByText('Snow uses a separate RainViewer color scale.'),
+    ).toBeVisible();
   });
 
-  test('radar map displays provider status badge and source attribution', async ({ page }) => {
+  test('radar map keeps source attribution without a persistent status panel', async ({ page }) => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
     
-    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible();
+    await expect(page.getByTestId('radar-status-chip')).toHaveCount(0);
     await expect(page.getByTestId('radar-player-dock').getByText(/Source:\s*RainViewer/i)).toBeVisible();
   });
 
@@ -85,9 +86,7 @@ test.describe('Radar Map', () => {
     await navigateToRadarPage(page, 'Edmonton, CA');
     await waitForRadarToLoad(page);
 
-    await expect(page.getByTestId('radar-status-chip').getByText(/RAINVIEWER RADAR/i)).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByTestId('radar-player-dock').getByText(/Source:\s*RainViewer/i)).toBeVisible();
   });
 
   test('radar map fills the viewport below the page header', async ({ page }) => {
@@ -118,6 +117,14 @@ test.describe('Radar Map', () => {
     await expect(page.getByRole('button', { name: /^Severe$/i })).toBeVisible();
   });
 
+  test('reduced motion starts radar animation paused', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    await expect(page.getByRole('button', { name: /^Play$/i })).toBeVisible();
+  });
+
   test('radar honors shareable URL layer and frame params', async ({ page }) => {
     await page.goto('/radar?location=Chicago&layers=precip,spc&frame=5&zoom=8');
     await waitForRadarToLoad(page);
@@ -130,16 +137,33 @@ test.describe('Radar Map', () => {
     await expect(page).toHaveURL(/(?:^|[?&])zoom=8(?:&|$)/);
   });
 
-  test('radar color scheme selection updates shareable URL', async ({ page }) => {
+  test('opens a warning radar link that only contains coordinates', async ({ page }) => {
+    const metadataRequestPromise = page.waitForRequest((request) =>
+      request.url().includes('/api/radar/metadata'));
+    await page.goto('/radar?lat=39.8000&lon=-105.0000');
+    await waitForRadarToLoad(page);
+    const metadataUrl = new URL((await metadataRequestPromise).url());
+
+    expect(metadataUrl.searchParams.get('lat')).toBe('39.8');
+    expect(metadataUrl.searchParams.get('lon')).toBe('-105');
+    await expect(page.getByTestId('radar-top-bar')).toContainText('39.8000, -105.0000');
+    await expect(page.locator('[data-radar-container] .ol-viewport')).toBeVisible();
+  });
+
+  test('uses Latest terminology and exposes one supported radar palette', async ({ page }) => {
     await navigateToRadarPage(page);
     await waitForRadarToLoad(page);
 
+    await page.getByRole('button', { name: /^Latest$/i }).click();
+    await expect(page.getByText(/^Live$/i)).toHaveCount(0);
+    await expect(page.getByRole('slider', { name: /Radar timeline/i })).toHaveAttribute(
+      'aria-valuetext',
+      'LATEST',
+    );
+    await page.getByRole('slider', { name: /Radar timeline/i }).fill('5');
+    await expect(page.getByTestId('radar-player-dock').getByText(/^Now$/i)).toHaveCount(0);
     await page.getByRole('button', { name: /LAYERS/i }).click();
-    await page.getByLabel('Radar color scheme').selectOption('1');
-
-    await expect(page).toHaveURL(/(?:^|[?&])scheme=1(?:&|$)/, { timeout: 5000 });
-
-    await page.getByLabel('Radar color scheme').selectOption('4');
-    await expect(page).toHaveURL(/(?:^|[?&])scheme=4(?:&|$)/, { timeout: 5000 });
+    await expect(page.getByText(/Universal Blue/i)).toBeVisible();
+    await expect(page.getByLabel('Radar color scheme')).toHaveCount(0);
   });
 });

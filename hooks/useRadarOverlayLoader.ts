@@ -1,17 +1,23 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState, type RefObject } from 'react'
 import type {
   ParsedRadarUrlState,
+  RadarFeatureCollection,
   RadarFrame,
   RadarMetadata,
   RadarPreset,
   RadarShareLayerState,
+  RadarStormReport,
   RadarTilePreferences,
 } from '@/lib/radar'
 import {
   getDefaultLayersForRegion,
   getPresetLayers,
+  fetchRadarOverlaySnapshot,
+  initialRadarRefreshState,
+  reduceRadarRefreshState,
+  shouldAutoplayRadar,
 } from '@/lib/radar'
 import {
   buildRainViewerCoverageTileTemplate,
@@ -19,10 +25,13 @@ import {
   RAINVIEWER_MAX_NATIVE_ZOOM,
   RAINVIEWER_TILE_COLOR_PARAM,
 } from '@/lib/radar/rainviewer'
-import { MANIFEST_REFRESH_MS } from '@/components/radar-v2/radar-constants'
+import {
+  MANIFEST_REFRESH_MS,
+  RADAR_OVERLAY_REFRESH_MS,
+} from '@/components/radar-v2/radar-constants'
 import { alertStyle, spcStyle, stormReportStyle } from '@/components/radar-v2/radar-styles'
 
-import Map from 'ol/Map'
+import type Map from 'ol/Map'
 import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
@@ -31,27 +40,6 @@ import Feature from 'ol/Feature'
 import Point from 'ol/geom/Point'
 import GeoJSON from 'ol/format/GeoJSON'
 import { fromLonLat } from 'ol/proj'
-
-export type RadarFeatureCollection = {
-  type: 'FeatureCollection'
-  features: Array<{
-    type?: string
-    geometry?: unknown
-    properties?: Record<string, unknown>
-  }>
-}
-
-export interface RadarStormReport {
-  category: 'tornado' | 'hail' | 'wind'
-  time: string
-  size: string
-  location: string
-  state: string
-  lat: number | null
-  lon: number | null
-  comments: string
-  date: string
-}
 
 export interface UseRadarOverlayLoaderProps {
   latitude?: number
@@ -109,8 +97,10 @@ export function useRadarOverlayLoader({
   coverageLayerRef,
 }: UseRadarOverlayLoaderProps): UseRadarOverlayLoaderResult {
   const [isMounted, setIsMounted] = useState(false)
-  const [metadata, setMetadata] = useState<RadarMetadata | null>(null)
-  const [metadataError, setMetadataError] = useState<string | null>(null)
+  const [{ metadata, error: metadataError }, dispatchMetadata] = useReducer(
+    reduceRadarRefreshState,
+    initialRadarRefreshState,
+  )
   const [activeLayers, setActiveLayers] = useState<RadarShareLayerState>(() => parsedUrlStateRef.current.layers)
   const [tilePreferences, setTilePreferences] = useState<RadarTilePreferences>(() => parsedUrlStateRef.current.tilePreferences)
   const [activePreset, setActivePreset] = useState<RadarPreset>('radar')
@@ -135,14 +125,15 @@ export function useRadarOverlayLoader({
 
   useEffect(() => {
     if (!isMounted || latitude == null || longitude == null) {
-      setMetadata(null)
+      dispatchMetadata({ type: 'reset' })
       return
     }
 
     const controller = new AbortController()
+    dispatchMetadata({ type: 'reset' })
+    let refreshTimer: number | null = null
 
     async function loadMetadata() {
-      setMetadataError(null)
       try {
         const params = new URLSearchParams({
           lat: String(latitude),
@@ -155,7 +146,7 @@ export function useRadarOverlayLoader({
         const nextMetadata = (await response.json()) as RadarMetadata
         if (controller.signal.aborted) return
 
-        setMetadata(nextMetadata)
+        dispatchMetadata({ type: 'loaded', metadata: nextMetadata })
 
         const liveIndex = Math.max(0, nextMetadata.frames.length - 1)
 
@@ -178,7 +169,10 @@ export function useRadarOverlayLoader({
           frameIndexRef.current = nextIndex
           setFrameIndex(nextIndex)
           urlStateInitializedRef.current = true
-          setIsPlaying(isFullPage)
+          const prefersReducedMotion = window.matchMedia?.(
+            '(prefers-reduced-motion: reduce)',
+          ).matches ?? false
+          setIsPlaying(shouldAutoplayRadar(isFullPage, prefersReducedMotion))
         } else {
           const clampedIndex = Math.min(frameIndexRef.current, liveIndex)
           if (clampedIndex !== frameIndexRef.current) {
@@ -189,51 +183,67 @@ export function useRadarOverlayLoader({
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
         console.error('[radar-v2] metadata load failed', error)
-        setMetadata(null)
-        setMetadataError('Radar is temporarily unavailable. Try again shortly.')
+        dispatchMetadata({
+          type: 'failed',
+          message: 'Radar is temporarily unavailable. Try again shortly.',
+        })
+      } finally {
+        if (isFullPage && !controller.signal.aborted) {
+          refreshTimer = window.setTimeout(() => {
+            void loadMetadata()
+          }, MANIFEST_REFRESH_MS)
+        }
       }
     }
 
-    loadMetadata()
-    const refreshTimer = isFullPage
-      ? window.setInterval(loadMetadata, MANIFEST_REFRESH_MS)
-      : null
+    void loadMetadata()
     return () => {
-      if (refreshTimer != null) window.clearInterval(refreshTimer)
+      if (refreshTimer != null) window.clearTimeout(refreshTimer)
       controller.abort()
     }
   }, [isMounted, isFullPage, isWidget, latitude, longitude, parsedUrlStateRef])
 
   useEffect(() => {
-    if (!isMounted || latitude == null || longitude == null || isWidget) return
+    if (!isMounted || latitude == null || longitude == null || !isFullPage || isWidget) return
+    const resolvedLatitude = latitude
+    const resolvedLongitude = longitude
     const controller = new AbortController()
+    setAlertsGeoJson(null)
+    setSpcGeoJson(null)
+    setStormReports([])
+    let refreshTimer: number | null = null
 
     async function loadOverlays() {
       try {
-        const point = `${latitude},${longitude}`
-        const [alertsRes, spcRes, reportsRes] = await Promise.all([
-          fetch(`/api/weather/alerts?geojson=1&point=${encodeURIComponent(point)}`, { signal: controller.signal }),
-          fetch('/api/weather/spc-outlook?day=1&type=cat', { signal: controller.signal }),
-          fetch('/api/weather/storm-reports?days=2', { signal: controller.signal }),
-        ])
+        const snapshot = await fetchRadarOverlaySnapshot(
+          resolvedLatitude,
+          resolvedLongitude,
+          controller.signal,
+        )
 
         if (controller.signal.aborted) return
 
-        setAlertsGeoJson(alertsRes.ok ? await alertsRes.json() : null)
-        setSpcGeoJson(spcRes.ok ? await spcRes.json() : null)
-        const reportsJson = reportsRes.ok ? await reportsRes.json() : { reports: [] }
-        setStormReports(reportsJson.reports ?? [])
+        if (snapshot.alerts !== undefined) setAlertsGeoJson(snapshot.alerts)
+        if (snapshot.spc !== undefined) setSpcGeoJson(snapshot.spc)
+        if (snapshot.stormReports !== undefined) setStormReports(snapshot.stormReports)
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
-        setAlertsGeoJson(null)
-        setSpcGeoJson(null)
-        setStormReports([])
+        console.error('[radar-v2] overlay refresh failed', error)
+      } finally {
+        if (!controller.signal.aborted) {
+          refreshTimer = window.setTimeout(() => {
+            void loadOverlays()
+          }, RADAR_OVERLAY_REFRESH_MS)
+        }
       }
     }
 
-    loadOverlays()
-    return () => controller.abort()
-  }, [isMounted, isWidget, latitude, longitude])
+    void loadOverlays()
+    return () => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer)
+      controller.abort()
+    }
+  }, [isFullPage, isMounted, isWidget, latitude, longitude])
 
   const updateRadarTiles = useCallback(() => {
     const map = mapInstanceRef.current

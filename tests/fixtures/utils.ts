@@ -894,7 +894,7 @@ export async function stubRadarApis(page: Page): Promise<void> {
         host: 'https://tilecache.rainviewer.com',
         generated: 1718841600,
         version: '2.0',
-        colorScheme: 6,
+        colorScheme: 2,
         smooth: true,
         snow: true,
         tileSize: 512,
@@ -1246,6 +1246,5 @@ export async function stubNewsApi(page: Page): Promise<void> {
     });
   });
 }
-
 
 

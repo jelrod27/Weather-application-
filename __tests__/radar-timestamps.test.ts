@@ -1,5 +1,6 @@
 import {
   buildRadarFrames,
+  formatRadarFrameAgeLabel,
   normalizeRadarPastMinutes,
   normalizeRadarStepMinutes,
 } from '@/lib/radar/radar-timestamps'
@@ -38,5 +39,25 @@ describe('radar timestamps', () => {
 
     expect(frames).toHaveLength(3)
     expect(frames.map((frame) => frame.offsetMinutes)).toEqual([-20, -10, 0])
+  })
+
+  it('formats historical frame age from the current time, not the newest frame', () => {
+    expect(formatRadarFrameAgeLabel({
+      timestamp: now - (25 * 60 * 1000),
+      isoTime: new Date(now - (25 * 60 * 1000)).toISOString(),
+      epochSeconds: Math.floor((now - (25 * 60 * 1000)) / 1000),
+      offsetMinutes: -10,
+      isLive: false,
+    }, now)).toBe('25m ago')
+  })
+
+  it('labels the newest available frame as Latest', () => {
+    expect(formatRadarFrameAgeLabel({
+      timestamp: now - (15 * 60 * 1000),
+      isoTime: new Date(now - (15 * 60 * 1000)).toISOString(),
+      epochSeconds: Math.floor((now - (15 * 60 * 1000)) / 1000),
+      offsetMinutes: 0,
+      isLive: true,
+    }, now)).toBe('LATEST')
   })
 })

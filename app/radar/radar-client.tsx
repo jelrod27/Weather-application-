@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { Home, Map as MapIcon } from 'lucide-react'
 import { useLocationContext } from '@/components/location-context'
 import type { WeatherData } from '@/lib/types'
+import { parseRadarCoordinateTarget } from '@/lib/radar/radar-location-target'
 import { useTheme } from '@/components/theme-provider'
 import { fetchWeatherData } from '@/lib/weather'
 import WeatherSearch from '@/components/weather-search'
@@ -50,7 +51,7 @@ function RadarOverlayShell({
               <Home className="h-4 w-4" />
               HOME
             </Link>
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">Live Radar</span>
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">Weather Radar</span>
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
             <h2 className="text-xl font-bold font-mono text-cyan-300">{title}</h2>
@@ -79,16 +80,34 @@ export default function RadarClient() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchError, setSearchError] = useState<string | undefined>()
 
-  const targetLocation = urlLocation || currentLocation
+  const coordinateTarget = useMemo(
+    () => (urlLocation ? null : parseRadarCoordinateTarget(searchParams)),
+    [searchParams, urlLocation],
+  )
+  const targetLocation = coordinateTarget ? null : urlLocation || currentLocation
 
   useEffect(() => {
+    let cancelled = false
+
+    if (coordinateTarget) {
+      setWeatherData(null)
+      setIsLoading(false)
+      return () => {
+        cancelled = true
+      }
+    }
+
     const loadWeatherData = async () => {
       setIsLoading(true)
 
       if (targetLocation) {
         try {
           const freshData = await fetchWeatherData(targetLocation, 'imperial')
-          if (freshData?.coordinates?.lat != null && freshData?.coordinates?.lon != null) {
+          if (
+            !cancelled &&
+            freshData?.coordinates?.lat != null &&
+            freshData?.coordinates?.lon != null
+          ) {
             setWeatherData(freshData)
             setIsLoading(false)
             return
@@ -98,24 +117,44 @@ export default function RadarClient() {
         }
       }
 
-      setWeatherData(null)
-      setIsLoading(false)
+      if (!cancelled) {
+        setWeatherData(null)
+        setIsLoading(false)
+      }
     }
 
     void loadWeatherData()
-  }, [targetLocation, urlLocation])
+
+    return () => {
+      cancelled = true
+    }
+  }, [coordinateTarget, targetLocation])
+
+  const activeTarget = useMemo(() => {
+    if (weatherData?.coordinates) {
+      return {
+        latitude: weatherData.coordinates.lat,
+        longitude: weatherData.coordinates.lon,
+        label: weatherData.location,
+      }
+    }
+
+    return coordinateTarget
+  }, [coordinateTarget, weatherData])
 
   const shareUrl = useMemo(() => {
-    if (!weatherData) return 'https://www.16bitweather.co/radar'
+    if (!activeTarget) return 'https://www.16bitweather.co/radar'
 
     const params = new URLSearchParams(searchParams.toString())
-    params.set('location', weatherData.location)
-    if (weatherData.coordinates) {
-      params.set('lat', String(weatherData.coordinates.lat))
-      params.set('lon', String(weatherData.coordinates.lon))
+    if (weatherData) {
+      params.set('location', weatherData.location)
+    } else {
+      params.delete('location')
     }
+    params.set('lat', String(activeTarget.latitude))
+    params.set('lon', String(activeTarget.longitude))
     return `https://www.16bitweather.co/radar?${params.toString()}`
-  }, [weatherData, searchParams])
+  }, [activeTarget, weatherData, searchParams])
 
   const handleRadarSearch = (location: string) => {
     const trimmed = location.trim()
@@ -131,7 +170,7 @@ export default function RadarClient() {
     return <RadarOverlayShell message="Initializing radar terminal" />
   }
 
-  if (!weatherData) {
+  if (!activeTarget) {
     return (
       <RadarOverlayShell
         title="Choose a location"
@@ -149,44 +188,24 @@ export default function RadarClient() {
     )
   }
 
-  const hasValidCoordinates =
-    weatherData.coordinates?.lat != null && weatherData.coordinates?.lon != null
-
-  if (!hasValidCoordinates) {
-    return (
-      <RadarOverlayShell
-        title="Coordinates unavailable"
-        body={`Could not resolve map coordinates for ${weatherData.location}. Try searching again.`}
-      >
-        <div className="w-full max-w-xl">
-          <WeatherSearch
-            onSearch={handleRadarSearch}
-            isLoading={isLoading}
-            error={searchError}
-            hideLocationButton
-          />
-        </div>
-      </RadarOverlayShell>
-    )
-  }
-
   return (
     <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-black">
       <RadarShell
-        latitude={weatherData.coordinates!.lat}
-        longitude={weatherData.coordinates!.lon}
-        locationName={weatherData.location}
+        latitude={activeTarget.latitude}
+        longitude={activeTarget.longitude}
+        locationName={activeTarget.label}
+        timeZone={weatherData?.timezone}
         theme={theme || 'nord'}
         displayMode="full-page"
         onLocationSearch={handleRadarSearch}
         searchError={searchError}
         shareConfig={{
-          title: weatherData.location
-            ? `Live Weather Radar - ${weatherData.location}`
-            : 'Live Weather Radar',
-          text: weatherData.location
-            ? `Live radar and severe weather overlays for ${weatherData.location}`
-            : 'Live global precipitation radar at 16bitweather.co',
+          title: activeTarget.label
+            ? `Weather Radar - ${activeTarget.label}`
+            : 'Weather Radar',
+          text: activeTarget.label
+            ? `Latest radar and severe weather overlays for ${activeTarget.label}`
+            : 'Latest global precipitation radar at 16bitweather.co',
           url: shareUrl,
         }}
       />

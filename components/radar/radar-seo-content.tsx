@@ -58,7 +58,7 @@ export default function RadarSeoContent() {
       </p>
       <p className="mb-4">
         Use this page as your radar command center during active weather: zoom to your location,
-        watch echo tops move, then jump to the{' '}
+        watch precipitation echoes move, then jump to the{' '}
         <Link href="/warnings" className="text-cyan-400 underline underline-offset-2">
           Warnings command center
         </Link>{' '}

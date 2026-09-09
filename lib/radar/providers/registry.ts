@@ -1,10 +1,11 @@
-import type { RadarFrame } from '@/lib/radar/radar-timestamps'
 import {
   buildFramesFromRainViewerPast,
   fetchRainViewerManifest,
   RAINVIEWER_ATTRIBUTION,
   RAINVIEWER_FRAME_STEP_MINUTES,
   RAINVIEWER_PAST_MINUTES,
+  RAINVIEWER_TILE_COLOR_PARAM,
+  RAINVIEWER_UNIVERSAL_BLUE_LEGEND,
 } from '@/lib/radar/rainviewer'
 import { getRadarCoverageRegion } from '@/lib/radar/providers/coverage'
 import type {
@@ -15,11 +16,7 @@ import type {
 } from '@/lib/radar/providers/types'
 
 export const REFLECTIVITY_LEGEND: RadarLegendBand[] = [
-  { color: '#93e4dd', label: 'Light', value: '5-20 dBZ' },
-  { color: '#00c800', label: 'Moderate', value: '20-35 dBZ' },
-  { color: '#ffff00', label: 'Heavy', value: '35-50 dBZ' },
-  { color: '#ff8c00', label: 'Very Heavy', value: '50-65 dBZ' },
-  { color: '#ff0000', label: 'Extreme', value: '65+ dBZ' },
+  ...RAINVIEWER_UNIVERSAL_BLUE_LEGEND,
 ]
 
 export const RAINVIEWER_PROVIDER: RadarProvider = {
@@ -35,7 +32,7 @@ export const RAINVIEWER_PROVIDER: RadarProvider = {
   supportsAnimation: true,
   qualityTier: 'community',
   xyz: {
-    urlTemplate: 'https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/512/{z}/{x}/{y}/6/1_1.png',
+    urlTemplate: `https://tilecache.rainviewer.com/v2/radar/{epochSeconds}/512/{z}/{x}/{y}/${RAINVIEWER_TILE_COLOR_PARAM}/1_1.png`,
     direct: true,
   },
   notes: [
@@ -74,7 +71,7 @@ export async function buildRadarMetadata(
       host: manifest.host,
       generated: manifest.generated,
       version: manifest.version,
-      colorScheme: 6,
+      colorScheme: RAINVIEWER_TILE_COLOR_PARAM,
       smooth: true,
       snow: true,
       tileSize: 512,

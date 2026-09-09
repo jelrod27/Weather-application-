@@ -2,10 +2,18 @@
 
 import type { RefObject } from 'react'
 import type { ThemeType } from '@/lib/theme-config'
-import type { RadarFrame, RadarMetadata, RadarPreset, RadarShareLayerState, RadarTilePreferences } from '@/lib/radar'
+import type {
+  RadarFeatureCollection,
+  RadarFrame,
+  RadarMetadata,
+  RadarPreset,
+  RadarShareLayerState,
+  RadarStormReport,
+  RadarTilePreferences,
+} from '@/lib/radar'
+import { formatRadarFrameAgeLabel } from '@/lib/radar'
 import { formatLocationTime } from '@/lib/format-location-time'
 import { useRadarMapEngine } from '@/hooks/useRadarMapEngine'
-import type { RadarFeatureCollection, RadarStormReport } from '@/hooks/useRadarOverlayLoader'
 import { useRadarOverlayLoader } from '@/hooks/useRadarOverlayLoader'
 import { useRadarUrlSnapshot, useRadarUrlState } from '@/hooks/useRadarUrlState'
 
@@ -26,24 +34,6 @@ export interface UseRadarControllerProps {
   }
 }
 
-function getFreshnessClass(generatedAt: string | null): string {
-  if (!generatedAt) return 'bg-black/70 text-zinc-200'
-  const ageMinutes = (Date.now() - new Date(generatedAt).getTime()) / 60000
-  if (ageMinutes < 5) return 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
-  if (ageMinutes < 15) return 'bg-amber-500/20 text-amber-100 border border-amber-400/30'
-  return 'bg-red-500/20 text-red-100 border border-red-400/30'
-}
-
-function getRelativeTimeLabel(frame: RadarFrame | undefined): string {
-  if (!frame) return '—'
-  if (frame.isLive) return 'LIVE'
-  const minutes = Math.abs(frame.offsetMinutes)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder > 0 ? `${hours}h ${remainder}m ago` : `${hours}h ago`
-}
-
 export type UseRadarControllerResult = {
   mapRef: RefObject<HTMLDivElement | null>
   isFullPage: boolean
@@ -61,7 +51,6 @@ export type UseRadarControllerResult = {
   frames: RadarFrame[]
   metadataError: string | null
   updatedLabel: string | null
-  statusClass: string
   activeLayers: RadarShareLayerState
   layerSheetOpen: boolean
   setLayerSheetOpen: (open: boolean) => void
@@ -141,7 +130,6 @@ export function useRadarController({
   const updatedLabel = overlay.metadata?.generatedAt
     ? formatLocationTime(overlay.metadata.generatedAt, timeZone)
     : null
-  const statusClass = getFreshnessClass(overlay.metadata?.generatedAt ?? null)
 
   return {
     mapRef: map.mapRef,
@@ -156,7 +144,6 @@ export function useRadarController({
     frames: overlay.frames,
     metadataError: overlay.metadataError,
     updatedLabel,
-    statusClass,
     activeLayers: overlay.activeLayers,
     layerSheetOpen: overlay.layerSheetOpen,
     setLayerSheetOpen: overlay.setLayerSheetOpen,
@@ -172,7 +159,7 @@ export function useRadarController({
     frameIndex: overlay.frameIndex,
     isPlaying: overlay.isPlaying,
     isLiveFrame,
-    relativeTime: getRelativeTimeLabel(currentFrame),
+    relativeTime: formatRadarFrameAgeLabel(currentFrame),
     speed: url.speed,
     setSpeed: url.setSpeed,
     handleLayersChange: overlay.handleLayersChange,

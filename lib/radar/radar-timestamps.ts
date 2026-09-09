@@ -14,6 +14,22 @@ export interface RadarFrame {
   tilePath?: string
 }
 
+export function formatRadarFrameAgeLabel(
+  frame: RadarFrame | undefined,
+  now = Date.now(),
+): string {
+  if (!frame) return '—'
+  if (frame.isLive) return 'LATEST'
+  if (!Number.isFinite(frame.timestamp) || !Number.isFinite(now)) return '—'
+
+  const minutes = Math.max(0, Math.floor((now - frame.timestamp) / 60000))
+  if (minutes < 60) return `${minutes}m ago`
+
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return remainder > 0 ? `${hours}h ${remainder}m ago` : `${hours}h ago`
+}
+
 const DEFAULT_STEP_MINUTES = 5
 const DEFAULT_PAST_MINUTES = 240
 const MAX_PAST_MINUTES = 12 * 60
