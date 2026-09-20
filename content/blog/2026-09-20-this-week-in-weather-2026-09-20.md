@@ -11,7 +11,7 @@ tags:
   - space-weather
   - roadmap
 heroImage: "/api/og/blog?title=This%20Week%20in%20Weather&type=severe"
-readTime: 6
+readTime: 5
 cadence: sunday_rearview
 opener_hash: a6250040
 key_phrases:
@@ -34,11 +34,11 @@ images_used:
   - fault-types-usgs
 image_audit:
   - "id=wpc-day1-qpf; lane=forecast; anchor=as consequential as severe wind this period.; tags=atmosphere_layers,tech_and_models; caption=NWS/WPC Day 1 Quantitative Precipitation Forecast — expected accumulated rainfall across the contiguous US."
-  - "id=jet-stream-pattern; lane=forecast; anchor=progressive trough pattern drives the northern corridor.; tags=atmosphere_layers,aviation; caption=Polar and subtropical jet stream configuration."
+  - "id=jet-stream-pattern; lane=forecast; anchor=Conceptual illustration of polar and subtropical jet streams.; tags=atmosphere_layers,aviation; caption=Polar and subtropical jet stream configuration."
   - "id=fault-types-usgs; lane=earthquake; anchor=Neither generated a destructive tsunami, but the Aleutian event was the week's largest recorded ground motion globally.; tags=earthquakes; caption=USGS diagram of normal, reverse, and strike-slip fault motion."
 spotlight_active: null
 generation_retries: 0
-word_count: 1030
+word_count: 994
 closer_used: field-notes
 ---
 
@@ -46,7 +46,7 @@ closer_used: field-notes
 
 The week's most geographically improbable entry: a tornado warning issued at 1:44 p.m. MDT on September 18 covering Davis, Morgan, and Weber counties in Utah — a state that averages roughly two confirmed tornadoes per year. The Salt Lake City forecast office (SLC) issued the warning; whether it verified is unconfirmed in the dataset, but the atmospheric setup that produced it is worth noting on its own terms.
 
-The Great Plains delivered more expected violence. Two overlapping tornado warnings out of the Omaha office (OAX) on the evening of September 14 — the first at 6:40 p.m. CDT, the second at 6:55 p.m. — covered Fremont and Cass counties in Iowa and Nebraska's Otoe County. The week's final tornado warning came Saturday, September 20, when the Goodland, Kansas office (GLD) flagged Cheyenne County, Colorado and Wallace County, Kansas at 6:36 p.m. MDT.
+The Great Plains delivered more expected violence. Two overlapping tornado warnings out of the Omaha office (OAX) on the evening of September 14 — the first at 6:40 p.m. CDT, the second at 6:55 p.m. — covered Fremont and Cass counties in Iowa and Nebraska's Otoe County. The week's final tornado warning came [Saturday, September 19](https://mesonet.agron.iastate.edu/wx/afos/p.php?pil=TORGLD&e=202609200036), when the Goodland, Kansas office (GLD) flagged Cheyenne County, Colorado and Wallace County, Kansas at 6:36 p.m. MDT.
 
 Kansas led all states in SPC storm reports with 95, followed by North Carolina (40), Missouri (34), Ohio (33), and Nebraska (32). The week's total: 7 tornadoes, 87 hail reports, 420 wind reports — 531 severe thunderstorm warnings in all, against only 5 tornado warnings, a ratio that reflects the week's dominant convective character: wind-driven and widespread rather than discrete and rotating.
 
@@ -62,10 +62,6 @@ Seismically, a M6.5 struck 169 km west of Nikolski, Alaska on September 17 at 14
 
 ---
 
-*Composite base reflectivity, 14–20 September 2026. The convective axis shifted from the central Plains mid-week toward the Ohio Valley and mid-Atlantic by the weekend.*
-
----
-
 ## Roadmap
 
 The pattern entering the new week is organized around a persistent ridge over the southern tier and a more active, amplified flow across the northern half of the country. A shortwave trough tracking out of the Rockies is the primary forcing mechanism for the early-week severe weather window, particularly across the Midwest. Behind it, a reinforcing cold push drops mean heights across the Great Lakes and Northeast, keeping temperatures well below the seasonal norm for late September in those regions.
@@ -78,7 +74,7 @@ The South Plains sits under the ridge's direct influence. Dallas is looking at a
 
 ---
 
-*Forecast 500 hPa pattern, 21–27 September 2026. Ridge anchors the southern tier; progressive trough pattern drives the northern corridor.*
+*Conceptual illustration of polar and subtropical jet streams.*
 
 ![Polar and subtropical jet stream configuration.](https://commons.wikimedia.org/wiki/Special:FilePath/Jetstreamconfig.jpg?width=1280)
 *NOAA*
