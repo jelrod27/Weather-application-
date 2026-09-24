@@ -4,6 +4,41 @@
 
 import { test, expect } from './fixtures';
 import { setTheme } from '../fixtures/utils';
+import type { Page } from '@playwright/test';
+import type { FlightLookupResponse } from '@/app/api/aviation/flight-lookup/route';
+
+const SAMPLE_FLIGHT_LOOKUP = {
+  success: true,
+  data: {
+    flightNumber: 'AA123',
+    airline: { name: 'American Airlines', iata: 'AA', icao: 'AAL' },
+    departure: {
+      icao: 'KLAX', iata: 'LAX', name: 'Los Angeles International',
+      city: 'Los Angeles', lat: 33.94, lon: -118.41,
+    },
+    arrival: {
+      icao: 'KJFK', iata: 'JFK', name: 'John F. Kennedy International',
+      city: 'New York', lat: 40.64, lon: -73.78,
+    },
+    status: 'scheduled',
+    mock: true,
+    source: 'mock',
+  },
+} satisfies FlightLookupResponse;
+
+async function openDetailConsole(page: Page): Promise<void> {
+  // This request starts in AviationPageInner's effect, after hydration. A
+  // server-rendered disclosure can be visible before its click handler exists.
+  const alertsLoaded = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/aviation/alerts' && response.ok(),
+  );
+  await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
+  await alertsLoaded;
+
+  const detailButton = page.getByRole('button', { name: /detail console/i });
+  await detailButton.click();
+  await expect(detailButton).toHaveAttribute('aria-expanded', 'true');
+}
 
 const SAMPLE_ALERTS = {
   alerts: [
@@ -118,6 +153,9 @@ const SAMPLE_AIRCRAFT = {
 
 test.describe('/aviation', () => {
   test.beforeEach(async ({ page }) => {
+    await page.route('**/api/aviation/airport-misery**', (route) =>
+      route.fulfill({ json: { airports: [], fetchedAt: new Date().toISOString() } }),
+    );
     await page.route('**/api/aviation/alerts**', (route) =>
       route.fulfill({ status: 200, body: JSON.stringify(SAMPLE_ALERTS) }),
     );
@@ -228,26 +266,24 @@ test.describe('/aviation', () => {
   });
 
   test('detail console reveals flight lookup demo badge', async ({ page }) => {
-    await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
-
-    await page.getByRole('button', { name: /detail console/i }).click();
+    // Demo mode selects synthetic data on the server, but the real endpoint
+    // still shares a rate-limit bucket with every other test on the runner.
+    // Keep this UI check isolated, as with the other aviation API fixtures.
+    await page.route('**/api/aviation/flight-lookup**', (route) =>
+      route.fulfill({ json: SAMPLE_FLIGHT_LOOKUP }),
+    );
+    await openDetailConsole(page);
 
     const routeButton = page.getByRole('button', { name: /Flight Route Lookup/i });
     await routeButton.waitFor({ state: 'visible', timeout: 30000 });
     await routeButton.click();
-
-    try {
-      await expect(routeButton).toHaveAttribute('aria-expanded', 'true', { timeout: 5000 });
-    } catch {
-      await routeButton.click();
-      await expect(routeButton).toHaveAttribute('aria-expanded', 'true', { timeout: 10000 });
-    }
+    await expect(routeButton).toHaveAttribute('aria-expanded', 'true');
 
     const flightInput = page.getByTestId('flight-number-input');
     await expect(flightInput).toBeVisible({ timeout: 30000 });
 
-    // Force mock routes so the Demo badge appears even when AeroAPI is configured
-    // (e.g. Vercel preview). Without this, live AA123 responses omit `mock: true`.
+    // Exercise the demo toggle and verify it is sent to the API, rather than
+    // letting a successful fixture hide a regression in the request parameters.
     const demoToggle = page.getByTestId('aviation-demo-mode-toggle');
     await expect(demoToggle).toBeVisible();
     if (!(await demoToggle.isChecked())) {
@@ -259,13 +295,23 @@ test.describe('/aviation', () => {
     await expect(page.getByText('Forcing mock data')).toBeVisible({ timeout: 10000 });
 
     await flightInput.fill('AA123');
+    const lookupResponse = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/aviation/flight-lookup',
+    );
     await page.getByTestId('flight-search-button').click();
-    await expect(page.getByText(/Demo data/i)).toBeVisible({ timeout: 15000 });
+    const response = await lookupResponse;
+    const params = new URL(response.url()).searchParams;
+    expect(params.get('flight')).toBe('AA123');
+    expect(params.get('mock')).toBe('1');
+    expect(response.status()).toBe(200);
+
+    const flightCard = page.getByLabel('Flight AA123 from Los Angeles to New York', { exact: true });
+    await expect(flightCard.getByText('Demo data', { exact: true })).toBeVisible();
+    await expect(flightInput).toHaveValue('');
   });
 
   test('detail console turbulence map mounts with OpenLayers viewport', async ({ page }) => {
-    await page.goto('/aviation', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /detail console/i }).click();
+    await openDetailConsole(page);
 
     const mapRegion = page.getByRole('region', {
       name: /Turbulence pilot reports map/i,
