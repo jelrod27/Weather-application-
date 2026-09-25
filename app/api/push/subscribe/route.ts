@@ -6,9 +6,10 @@ import { findGuestByManageToken } from '@/lib/services/guest-alert-subscribers'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import { getVapidPublicKey } from '@/lib/push/vapid'
+import { isAllowedPushEndpoint } from '@/lib/push/endpoint'
 
 const bodySchema = z.object({
-  endpoint: z.string().url().max(2000),
+  endpoint: z.string().url().max(2000).refine(isAllowedPushEndpoint),
   keys: z.object({
     p256dh: z.string().min(8).max(200),
     auth: z.string().min(8).max(200),

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { ApiError, withApiRoute } from '@/lib/api/with-api-route'
 import { upsertGuestSubscriber } from '@/lib/services/guest-alert-subscribers'
 import { sendGuestManageEmail, sendGuestVerifyEmail } from '@/lib/services/guest-alert-email'
+import { claimGuestEmailSlot } from '@/lib/services/guest-alert-email-limit'
 import { requestIp, verifyTurnstileToken } from '@/lib/security/turnstile'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 
@@ -18,6 +19,12 @@ const bodySchema = z.object({
   notifyFlashFlood: z.boolean().optional(),
   notifyUpgrades: z.boolean().optional(),
 })
+
+const EMAIL_RESPONSE = {
+  ok: true,
+  status: 'email_sent',
+  message: 'If this address can receive Bitwatch mail, we sent the next step.',
+}
 
 export async function POST(request: NextRequest) {
   return withApiRoute(
@@ -43,6 +50,16 @@ export async function POST(request: NextRequest) {
         throw new ApiError(403, 'Security check failed. Refresh and try again.')
       }
 
+      let canSend: boolean
+      try {
+        canSend = await claimGuestEmailSlot(supabase, parsed.data.email)
+      } catch {
+        throw new ApiError(503, 'Email requests are temporarily unavailable')
+      }
+      // Identical response prevents exposing subscription state or quota. Do
+      // not rotate a pending verification/manage token when mail is suppressed.
+      if (!canSend) return NextResponse.json(EMAIL_RESPONSE)
+
       const result = await upsertGuestSubscriber(supabase, {
         email: parsed.data.email,
         latitude: parsed.data.lat,
@@ -63,11 +80,7 @@ export async function POST(request: NextRequest) {
         if (!emailResult.sent) {
           throw new ApiError(502, emailResult.reason ?? 'Could not send manage email')
         }
-        return NextResponse.json({
-          ok: true,
-          status: 'email_sent',
-          message: 'If this address can receive Bitwatch mail, we sent the next step.',
-        })
+        return NextResponse.json(EMAIL_RESPONSE)
       }
 
       if (!result.verifyToken) {
@@ -84,11 +97,7 @@ export async function POST(request: NextRequest) {
         throw new ApiError(502, emailResult.reason ?? 'Could not send verification email')
       }
 
-      return NextResponse.json({
-        ok: true,
-        status: 'email_sent',
-        message: 'If this address can receive Bitwatch mail, we sent the next step.',
-      })
+      return NextResponse.json(EMAIL_RESPONSE)
     },
     { context: 'alerts/guest-subscribe', errorMessage: 'Could not subscribe', rateLimitBucket: 'account' },
   )

@@ -81,6 +81,9 @@ jobs:
       - name: Run Jest test suite
         run: npm run test:ci
 
+      - name: Test security database migration
+        run: npm run test:security-db
+
   dead-code:
     name: Dead Code (Knip)
     runs-on: ubuntu-latest

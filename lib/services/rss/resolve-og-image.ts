@@ -6,6 +6,7 @@
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { decodeHtmlEntities } from '@/lib/services/rss/html-utils';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
+import { readPublicHtml } from '@/lib/security/public-https';
 
 const OG_CACHE = createTtlCache<string | null>({ ttlMs: 6 * 60 * 60 * 1000 });
 const FETCH_TIMEOUT_MS = 6000;
@@ -56,38 +57,11 @@ export async function resolveOgImage(articleUrl: string): Promise<string | null>
 }
 
 async function fetchOgImage(articleUrl: string): Promise<string | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const response = await fetch(articleUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': '16-Bit Weather RSS Aggregator/1.0',
-        Accept: 'text/html,application/xhtml+xml',
-      },
-      redirect: 'follow',
-      next: { revalidate: 3600 },
-    });
-    if (!response.ok) return null;
-
-    const reader = response.body?.getReader();
-    if (!reader) return null;
-
-    let html = '';
-    let bytes = 0;
-    while (bytes < MAX_HTML_BYTES) {
-      const { done, value } = await reader.read();
-      if (done || !value) break;
-      html += new TextDecoder().decode(value);
-      bytes += value.length;
-    }
-    reader.cancel().catch(() => undefined);
-
+    const html = await readPublicHtml(articleUrl, FETCH_TIMEOUT_MS, MAX_HTML_BYTES);
     return parseOgImageFromHtml(html, articleUrl);
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

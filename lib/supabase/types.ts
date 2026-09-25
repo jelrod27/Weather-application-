@@ -554,6 +554,10 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      claim_guest_alert_email_slot: {
+        Args: { p_recipient_hash: string }
+        Returns: boolean
+      }
       append_user_ai_memory_fact: {
         Args: { p_fact: string; p_user_id: string }
         Returns: undefined
