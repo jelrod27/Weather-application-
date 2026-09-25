@@ -5,19 +5,16 @@ export async function fetchUserEmailForAlert(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('email')
-    .eq('id', userId)
-    .maybeSingle()
+  // Profiles are editable by their owner. Only Auth proves mailbox ownership.
+  const { data, error } = await supabase.auth.admin.getUserById(userId)
 
   if (error) {
-    console.error('[severe-alert-email] profile lookup failed', error.message)
+    console.error('[severe-alert-email] Auth lookup failed', error.message)
     return null
   }
 
-  const email = (data as { email?: string } | null)?.email?.trim()
-  return email || null
+  const user = data.user
+  return user?.email_confirmed_at ? user.email?.trim() || null : null
 }
 
 export async function markSevereAlertEmailSent(

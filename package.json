@@ -4,7 +4,7 @@
   "description": "Retro weather education platform with live forecasts, earth-science and space data, aviation and stargazing tools, automated blog/newsletter, Supabase auth, themes, and Playwright-tested flows. Next.js 16, React 19.",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.19"
   },
   "scripts": {
     "dev": "next dev",
@@ -16,6 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand",
+    "test:security-db": "node --test tests/database/*.test.mjs",
     "test:profile": "tsx scripts/test-profile-save.ts",
     "analyze": "ANALYZE=true npm run build",
     "test:e2e": "playwright test",
@@ -52,6 +53,7 @@
     "clsx": "^2.1.1",
     "fast-xml-parser": "^5.11.1",
     "gray-matter": "^4.0.3",
+    "ipaddr.js": "^2.5.0",
     "lucide-react": "^1.39.0",
     "maplibre-gl": "^6.7.0",
     "next": "^16.3.4",
@@ -71,6 +73,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/eslintrc": "^3.3.7",
     "@jest/globals": "^30.5.1",
     "@lhci/cli": "^0.15.1",
@@ -110,8 +113,10 @@
     "lodash": "4.18.1",
     "tmp": "^0.2.5",
     "uuid": "^11.1.1",
-    "js-yaml@3": "3.15.1",
-    "js-yaml@4": "4.3.1",
+    "js-yaml@3": "3.15.2",
+    "js-yaml@4": "4.3.2",
+    "lighthouse": "13.5.0",
+    "qs": "^6.16.0",
     "nanoid@3": "3.3.18",
     "next": {
       "postcss": "8.5.25"
