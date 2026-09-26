@@ -115,12 +115,13 @@ Implement each task with focused failing tests then passing tests. Review the co
 
 **Files:** `tests/e2e/weather-data-reliability.spec.ts`, `tsconfig.tests.json`, spec/plan closeout. Existing fixtures supply isolated auth and network states.
 
-- [ ] Add deterministic dashboard recovery, radar age, Moon consistency and travel coverage journeys; check desktop and 390px layouts in Chromium/Firefox.
-- [ ] Run build, both type checks, full Jest, lint and Knip. Expected: no new errors; record pre-existing warnings.
-- [ ] Start owned production server on an unused port; run targeted new E2E plus existing dashboard/radar/travel/weather-journey regressions. Expected: pass. Stop only the server owned by this task.
-- [ ] Run full working-diff correctness review, fix verified issues, then arrange the focused commits through normal hooks.
-- [ ] Run the user's code-review skill: independent Standards/Spec agents, fixed merge base above, saved PRD as spec. Repair findings with focused regression tests; re-review affected changes.
+- [x] Add deterministic dashboard recovery, radar age, Moon consistency and travel coverage journeys; check desktop and 390px layouts in Chromium/Firefox.
+- [x] Run build, both type checks, full Jest, lint and Knip. Expected: no new errors; record pre-existing warnings.
+- [x] Start owned production server on an unused port; run targeted new E2E plus existing dashboard/radar/travel/weather-journey regressions. Expected: pass. Stop only the server owned by this task.
+- [x] Run full working-diff correctness review, fix verified issues, then arrange the focused commits through normal hooks.
+- [x] Run the user's code-review skill: independent Standards/Spec agents, fixed merge base above, saved PRD as spec. Repair findings with focused regression tests; re-review affected changes.
 - [ ] Summarize actual changes, tests and limitations; push branch, create one PR with a body file, attach it to the chat. No merge.
+
 
 ## Progress / rulings
 
@@ -136,3 +137,5 @@ Implement each task with focused failing tests then passing tests. Review the co
 Tasks1–5 implemented. Final production build and both TypeScript projects passed. Full unit suite:274 suites/2098 tests. Lint:0 errors/93 existing warnings. Knip passed. Initial independent Standards review clear; Spec found response-unit labels, corrected with a failing-then-passing mixed-unit regression and re-reviewed clear.
 
 Production Chromium/Firefox matrix:68 of70 passed initially; the two existing radar assertions expected the intentionally removed LATEST-only age label. Updated them to assert elapsed age and the separate Latest pressed state; both passed. All20 new desktop/mobile reliability scenarios passed, including one failed dashboard card alongside a successful card. Final review/PR closeout remains in Task6.
+
+Final live validation: clean server New York/London dashboard HTTP200 with independent m/s units and distinct receipt/source timestamps. New York forecast Moon shows Sep27 moonset with EDT and the Sep26 observing night. Live corridor list exposes worst-point risk and route average separately. Astronomy engine remains in a separate client chunk absent from initial forecast script tags. Clean desktop Lighthouse:97 performance/94 accessibility/96 best practices/100 SEO, CLS0.048; unchanged contrast and localhost Vercel analytics findings remain outside this scope. Initial Lighthouse/live probes hit the local rate limiter after70 browser cases; those results were discarded, and the local server was restarted before the clean read-only smoke/performance check. No production limiter/settings changed.
