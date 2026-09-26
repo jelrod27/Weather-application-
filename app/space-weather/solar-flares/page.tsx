@@ -25,22 +25,22 @@ const FAQS: readonly IntentFaq[] = [
   {
     question: 'What do the letters A, B, C, M and X mean?',
     answer:
-      'They are decades of X-ray brightness, each ten times the one below it. A and B are background, C flares are common and mostly harmless, M flares can cause brief radio blackouts on the sunlit side of Earth, and X flares are the strongest. The number after the letter is the multiplier inside that decade, so X2 is twice X1 and twenty times M1.',
+      'These classes describe X-ray flux in the 0.1–0.8 nanometre band. At the same numerical multiplier, each letter is ten times the preceding class: C1 to M1 is 10 times, and C1 to X1 is 100 times. X2 is twice X1. A flare is classified by its peak flux, not by its total energy or duration.',
   },
   {
     question: 'Does a solar flare mean I will see the aurora?',
     answer:
-      'Not on its own. A flare is light and arrives in about eight minutes, and light does not cause aurora. What matters is whether the flare came with a coronal mass ejection aimed at Earth, which takes one to three days to arrive and shows up as a rise in solar wind speed and a southward Bz. Watch the Kp index for the geomagnetic response instead.',
+      'No. A flare is a burst of radiation. A coronal mass ejection (CME) is an eruption of plasma and magnetic field that may accompany one. An Earth-directed CME can disturb our magnetic field, but travel time and impact vary. Solar-wind streams can also drive geomagnetic activity. Aurora visibility depends on that response, your location, darkness and clouds.',
   },
   {
     question: 'How current is the reading on this page?',
     answer:
-      'It is the most recent long-band sample from the GOES X-ray sensor, published by NOAA SWPC and refreshed every five minutes. Flares are classified on the 0.1 to 0.8 nanometre channel, which is the one this page reads.',
+      'This page requests the latest available GOES 0.1–0.8 nanometre sample from NOAA SWPC on a five-minute refresh schedule. Check the displayed observation time for its age. The class shown describes that sample, which can include background emission; it is not necessarily the peak class of a flare event.',
   },
   {
     question: 'What does a flare actually affect?',
     answer:
-      'The X-rays ionise the dayside upper atmosphere, which absorbs high-frequency radio. Aviation and marine HF users, and amateur radio operators, notice it first as a fadeout lasting minutes to an hour. Strong flares can also add noise to GPS and briefly upset satellite instruments. Nothing on the ground is at risk from the flare itself.',
+      'Strong flares increase ionisation on the sunlit side of Earth and can disrupt high-frequency radio communication. NOAA rates these radio blackouts on its R scale. Geomagnetic storms from disturbed solar wind are a separate process, with possible effects on navigation, satellites and power systems.',
   },
 ] as const
 
@@ -84,32 +84,28 @@ export default async function SolarFlaresPage() {
         faqs={FAQS}
       >
         <p>
-          This page tracks one number: how brightly the Sun is shining in X-rays right now, measured
-          by the GOES satellites and published by NOAA. That number is what a solar flare is. When
-          a magnetic field on the Sun snaps into a simpler shape, the energy released heats plasma
-          to tens of millions of degrees, and the X-ray flux jumps for anywhere from a few minutes
-          to a few hours.
+          A solar flare is a burst of radiation released as magnetic energy in the Sun&apos;s
+          atmosphere is converted into heat and particle motion. GOES satellites measure the
+          resulting X-ray flux, alongside background emission. The reading here is a current
+          sample; an event&apos;s class is assigned using its peak.
         </p>
         <p>
-          The classification is logarithmic, which is why it looks strange at first. Each letter is
-          ten times brighter than the one before, so the difference between a C1 and an X1 is a
-          factor of a thousand. Most days sit in the B or C range and nothing happens. An M flare
-          is worth noticing. An X flare is worth watching, and the largest on record, in November
-          2003, saturated the sensors somewhere past X28.
+          In the 0.1–0.8 nanometre band, C1 is 10⁻⁶ W/m², M1 is 10⁻⁵ W/m² and X1 is
+          10⁻⁴ W/m². C1 → M1 → X1 is two tenfold steps: X1 has 100 times the X-ray flux of
+          C1. The number multiplies the class threshold, so X2 has twice the flux of X1.
+          These are flux comparisons, not comparisons of total energy released.
         </p>
         <p>
-          The thing most people get wrong is the connection to aurora. A flare travels at the speed
-          of light and reaches Earth in about eight minutes, and it produces no aurora at all. What
-          produces aurora is a coronal mass ejection, a slower cloud of magnetised plasma that may
-          or may not accompany a flare and may or may not be aimed at us. If one is, it arrives a
-          day or three later, and you will see it first as a jump in{' '}
+          Flare radiation reaches Earth in about eight minutes. CMEs travel much more slowly,
+          and only some encounter Earth. Their magnetic orientation matters as well as speed.
+          For possible geomagnetic effects, follow{' '}
           <Link
             href={intentHref('solar-wind')}
             className="text-weather-primary underline underline-offset-2"
           >
             solar wind speed
           </Link>{' '}
-          and then as a rising{' '}
+          and the{' '}
           <Link
             href={intentHref('kp-index')}
             className="text-weather-primary underline underline-offset-2"
@@ -119,13 +115,17 @@ export default async function SolarFlaresPage() {
           .
         </p>
         <p>
-          Flare activity follows the roughly eleven-year solar cycle, and the current cycle has been
-          running ahead of forecast, which is why X flares have been common enough recently to reach
-          the general news. For what a given flare means for a night of{' '}
+          A large flare alone cannot predict aurora at your location. For a night of{' '}
           <Link href="/stargazer" className="text-weather-primary underline underline-offset-2">
             observing
           </Link>
-          , the honest answer is usually nothing at all, unless it came with a CME.
+          , also check your local cloud cover, darkness and NOAA&apos;s aurora forecast.
+        </p>
+        <p>
+          Sources:{' '}
+          <a href="https://www.swpc.noaa.gov/products/goes-x-ray-flux" className="text-weather-primary underline underline-offset-2">NOAA GOES X-ray flux</a>,{' '}
+          <a href="https://www.swpc.noaa.gov/noaa-scales-explanation" className="text-weather-primary underline underline-offset-2">NOAA space-weather scales</a>,{' '}
+          <a href="https://science.nasa.gov/sun/solar-storms-and-flares/" className="text-weather-primary underline underline-offset-2">NASA solar storms and flares</a>.
         </p>
       </IntentPageShell>
     </PageWrapper>
