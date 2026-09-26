@@ -2,6 +2,7 @@
 
 import type { RefObject } from 'react'
 import type { ThemeType } from '@/lib/theme-config'
+import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import type {
   RadarFeatureCollection,
   RadarFrame,
@@ -18,6 +19,7 @@ import { useRadarOverlayLoader } from '@/hooks/useRadarOverlayLoader'
 import { useRadarUrlSnapshot, useRadarUrlState } from '@/hooks/useRadarUrlState'
 
 export interface UseRadarControllerProps {
+  selectedWarning?: NWSAlertDetail | null
   latitude?: number
   longitude?: number
   locationName?: string
@@ -79,6 +81,7 @@ export type UseRadarControllerResult = {
 }
 
 export function useRadarController({
+  selectedWarning,
   latitude,
   longitude,
   locationName,
@@ -95,6 +98,7 @@ export function useRadarController({
   const parsedUrlStateRef = useRadarUrlSnapshot()
 
   const map = useRadarMapEngine({
+    selectedWarning,
     latitude,
     longitude,
     parsedUrlStateRef,

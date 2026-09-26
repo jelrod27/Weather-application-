@@ -7,6 +7,8 @@ import {
   resolveAuthenticatedAuthRouteRedirect,
 } from '@/lib/auth/middleware-redirects'
 import { supabaseTimedFetch } from '@/lib/supabase/timed-fetch'
+import { cityData } from '@/lib/cities'
+import { resolveCitySlugAlias } from '@/lib/seo/city-page-seo'
 import type { User } from '@supabase/supabase-js'
 
 /**
@@ -76,6 +78,21 @@ export async function middleware(request: NextRequest) {
     },
   })
   response.headers.set('Content-Security-Policy', csp)
+
+  // Normalize aliases before static page rendering. Reading searchParams in
+  // an on-demand static city page causes DYNAMIC_SERVER_USAGE in production.
+  const cityMatch = /^\/weather\/([^/]+)$/.exec(request.nextUrl.pathname)
+  if (cityMatch) {
+    const slug = cityMatch[1]
+    const lowerSlug = slug.toLowerCase()
+    const canonicalSlug = slug !== lowerSlug && cityData[lowerSlug]
+      ? lowerSlug : resolveCitySlugAlias(lowerSlug, Object.keys(cityData))
+    if (canonicalSlug) {
+      const destination = request.nextUrl.clone()
+      destination.pathname = `/weather/${canonicalSlug}`
+      return NextResponse.redirect(destination, 308)
+    }
+  }
 
   // Legacy URL — redirect before Playwright test-mode bypass so E2E and prod behave the same
   if (request.nextUrl.pathname.startsWith('/settings')) {

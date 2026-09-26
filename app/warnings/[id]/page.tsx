@@ -1,18 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import PageWrapper from '@/components/page-wrapper'
+import WarningRecovery from '@/components/warnings/warning-recovery'
+import WarningAreaMap from '@/components/warnings/warning-area-map'
 import { WarningDetailBody } from '@/components/warnings/warning-detail-body'
 import { loadCanonicalAlertBySlug } from '@/lib/bitwatch/ingest'
 import { findAlertByQueryParam } from '@/lib/home/hub-links'
 import { fetchActiveAlertsDetail } from '@/lib/services/nws-alerts-service'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
-import { warningIdSlug } from '@/lib/warnings/alert-links'
+import { warningIdSlug, warningReturnHref } from '@/lib/warnings/alert-links'
 
 const BASE_URL = 'https://www.16bitweather.co'
 
 type PageParams = {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ returnTo?: string }>
 }
 
 async function loadAlert(rawId: string) {
@@ -68,7 +70,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
       title: `${alert.event} — ${shortenAreaDesc(alert.areaDesc)}`,
       description: alert.headline || alert.instruction || `Active ${alert.event} from the National Weather Service.`,
       alternates: { canonical: `${BASE_URL}/warnings/${encodeURIComponent(warningIdSlug(alert.id))}` },
-      // The page 404s once the alert expires; tell Google when to drop it.
+      // Inactive pages are noindex; tell Google when this product expires.
       robots: {
         index: true,
         follow: true,
@@ -84,27 +86,30 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   }
 }
 
-export default async function WarningDetailPage({ params }: PageParams) {
+export default async function WarningDetailPage({ params, searchParams }: PageParams) {
   const { id } = await params
+  const returnTo = warningReturnHref((await searchParams)?.returnTo)
   let alert
   try {
     alert = await loadAlert(id)
-  } catch {
-    alert = null
+  } catch (error) {
+    console.error('[WarningDetailPage] Could not load warning', error)
+    return <PageWrapper><WarningRecovery id={id} returnTo={returnTo} reason="unavailable" /></PageWrapper>
   }
 
   if (!alert) {
-    notFound()
+    return <PageWrapper><WarningRecovery id={id} returnTo={returnTo} reason="inactive" /></PageWrapper>
   }
 
   return (
     <PageWrapper>
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        <Link href="/warnings" className="text-xs font-mono underline text-primary">
-          Back to warning center
+        <Link href={returnTo} className="text-xs font-mono underline text-primary">
+          {returnTo === '/severe' ? 'Back to severe weather' : 'Back to warning center'}
         </Link>
         <div className="rounded-lg border border-amber-500/50 bg-card/80 p-4 md:p-6">
-          <WarningDetailBody alert={alert} />
+          <WarningDetailBody alert={alert} returnTo={returnTo} />
+          <div className="mt-6"><WarningAreaMap alert={alert} /></div>
         </div>
       </div>
     </PageWrapper>

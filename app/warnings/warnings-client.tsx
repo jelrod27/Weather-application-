@@ -83,6 +83,7 @@ export default function WarningsClient() {
     detailRef,
     load,
   } = desk
+  const returnTo = `/warnings?${new URLSearchParams({ state: stateFilter, event: eventFilter, search, ...(selected ? { alert: selected.id } : {}) })}`
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
@@ -275,7 +276,7 @@ export default function WarningsClient() {
           id="warnings-alert-detail"
           className="rounded-lg border border-amber-500/50 bg-card/80 p-4 md:p-6 scroll-mt-24"
         >
-          <WarningDetailBody alert={selected} showDetailLink />
+          <WarningDetailBody alert={selected} showDetailLink returnTo={returnTo} />
         </div>
       )}
 
@@ -335,7 +336,7 @@ export default function WarningsClient() {
           />
           <div className="flex flex-wrap gap-3 text-xs font-mono">
             <Link
-              href={selected ? getWarningDetailHref(selected.id) : '/radar'}
+              href={selected ? getWarningDetailHref(selected.id, returnTo) : '/radar'}
               className="underline text-primary"
             >
               {selected ? 'Warning detail' : 'Open radar'}

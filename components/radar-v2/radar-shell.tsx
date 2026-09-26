@@ -1,6 +1,7 @@
 'use client'
 
 import type { ThemeType } from '@/lib/theme-config'
+import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
 import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
@@ -14,6 +15,8 @@ import { useRadarController } from '@/hooks/useRadarController'
 import 'ol/ol.css'
 
 interface RadarShellProps {
+  selectedWarning?: NWSAlertDetail | null
+  returnHref?: string
   latitude?: number
   longitude?: number
   locationName?: string
@@ -83,6 +86,7 @@ function RadarShell(props: RadarShellProps) {
 
         {isFullPage && locationName && onLocationSearch && shareConfig ? (
           <RadarTopBar
+            returnHref={props.returnHref}
             locationName={locationName}
             onSearch={onLocationSearch}
             searchError={searchError}

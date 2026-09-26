@@ -11,6 +11,12 @@ import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import XYZ from 'ol/source/XYZ'
 import { fromLonLat } from 'ol/proj'
+import GeoJSON from 'ol/format/GeoJSON'
+import VectorLayer from 'ol/layer/Vector'
+import VectorSource from 'ol/source/Vector'
+import { Fill, Stroke, Style } from 'ol/style'
+import { getOfficialWarningHref } from '@/lib/warnings/alert-links'
+import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 export interface RadarInspectorState {
   title: string
@@ -19,6 +25,7 @@ export interface RadarInspectorState {
 }
 
 export interface UseRadarMapEngineProps {
+  selectedWarning?: NWSAlertDetail | null
   latitude?: number
   longitude?: number
   parsedUrlStateRef: RefObject<ParsedRadarUrlState>
@@ -49,6 +56,7 @@ function getTrustedWeatherLink(uri: unknown): string | null {
 }
 
 export function useRadarMapEngine({
+  selectedWarning,
   latitude,
   longitude,
   parsedUrlStateRef,
@@ -123,6 +131,25 @@ export function useRadarMapEngine({
     map.getView().setCenter(fromLonLat([longitude, latitude]))
     map.getView().setZoom(parsedUrlStateRef.current.zoom ?? DEFAULT_RADAR_ZOOM)
   }, [latitude, longitude])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !selectedWarning?.geometry) return
+    const { geometry, ...properties } = selectedWarning
+    const source = new VectorSource({ features: new GeoJSON().readFeatures({
+      type: 'Feature', geometry,
+      properties: { ...properties, uri: getOfficialWarningHref(selectedWarning.id) },
+    }, { featureProjection: 'EPSG:3857' }) })
+    const layer = new VectorLayer({ source, zIndex: 500,
+      style: new Style({ stroke: new Stroke({ color: '#facc15', width: 4 }), fill: new Fill({ color: 'rgba(250,204,21,0.12)' }) }),
+    })
+    map.addLayer(layer)
+    const extent = source.getExtent()
+    if (extent && extent.every(Number.isFinite)) {
+      map.getView().fit(extent, { padding: [100, 50, 200, 50], maxZoom: 10 })
+    }
+    return () => { map.removeLayer(layer) }
+  }, [selectedWarning, latitude, longitude])
 
   return {
     mapRef,

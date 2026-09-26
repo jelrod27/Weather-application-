@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Search, X } from 'lucide-react'
 import { ShareButtons } from '@/components/share-buttons'
 
 interface RadarTopBarProps {
+  returnHref?: string
   locationName: string
   onSearch: (location: string) => void
   searchError?: string
@@ -16,7 +17,7 @@ interface RadarTopBarProps {
   }
 }
 
-export function RadarTopBar({ locationName, onSearch, searchError, shareConfig }: RadarTopBarProps) {
+export function RadarTopBar({ locationName, onSearch, searchError, shareConfig, returnHref }: RadarTopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
 
@@ -36,9 +37,9 @@ export function RadarTopBar({ locationName, onSearch, searchError, shareConfig }
       <div className="pointer-events-auto mx-auto flex max-w-5xl flex-col gap-2">
         <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-950/90 px-2 py-2 shadow-lg backdrop-blur-md">
           <Link
-            href="/"
+            href={returnHref ?? '/'}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10"
-            aria-label="Back to home"
+            aria-label={returnHref ? 'Back to warning' : 'Back to home'}
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>

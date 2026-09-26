@@ -7,7 +7,6 @@
 
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { permanentRedirect } from 'next/navigation'
 
 import { safeJsonLd } from '@/lib/utils'
 import CityWeatherClient from './client'
@@ -22,7 +21,6 @@ import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
 import {
   buildCityPageMetadata,
   PRIORITY_SEO_CITY_SLUGS,
-  resolveCitySlugAlias,
 } from '@/lib/seo/city-page-seo'
 
 const BASE_URL = 'https://www.16bitweather.co'
@@ -54,18 +52,6 @@ interface PageParams {
 
 export default async function CityWeatherPage({ params }: PageParams) {
   const { city: citySlug } = await params
-
-  // `/weather/New-York-NY` and `/weather/new-york` would otherwise render
-  // noindex duplicates of `/weather/new-york-ny`. Arbitrary slugs still render
-  // (the home search routes any typed location here), they just stay noindex.
-  const lowerSlug = citySlug.toLowerCase()
-  if (citySlug !== lowerSlug && cityMetadata[lowerSlug]) {
-    permanentRedirect(`/weather/${lowerSlug}`)
-  }
-  const aliasTarget = resolveCitySlugAlias(lowerSlug, Object.keys(cityMetadata))
-  if (aliasTarget) {
-    permanentRedirect(`/weather/${aliasTarget}`)
-  }
 
   const city = cityMetadata[citySlug]
 

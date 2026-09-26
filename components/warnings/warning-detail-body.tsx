@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { formatCoverageLabel } from '@/lib/bitwatch/coverage'
 import { warningDeskScore } from '@/lib/bitwatch/priority'
 import { warningRadarCropSrc } from '@/lib/bitwatch/radar-crop'
-import { getRadarHrefForGeometry, getWarningDetailHref } from '@/lib/warnings/alert-links'
+import { getOfficialWarningHref, getWarningRadarHref, getWarningDetailHref, nwsGeometryBBox } from '@/lib/warnings/alert-links'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { cn } from '@/lib/utils'
@@ -18,14 +18,16 @@ export type WarningDetailBodyProps = {
   alert: NWSAlertDetail
   compact?: boolean
   showDetailLink?: boolean
+  returnTo?: string
 }
 
 export function WarningDetailBody({
   alert,
   compact = false,
   showDetailLink = false,
+  returnTo,
 }: WarningDetailBodyProps) {
-  const radarHref = getRadarHrefForGeometry(alert.geometry)
+  const radarHref = getWarningRadarHref(alert, returnTo)
   const { maxHail, maxWind, source, damageThreat } = alert.hazard ?? {
     maxHail: null,
     maxWind: null,
@@ -170,20 +172,20 @@ export function WarningDetailBody({
 
       <div className="flex flex-wrap gap-3 text-xs">
         <Link href={radarHref} className="underline text-primary">
-          Open radar for this polygon
+          {nwsGeometryBBox(alert.geometry) ? 'Open radar for this polygon' : 'Open radar (polygon unavailable)'}
         </Link>
         {showDetailLink ? (
-          <Link href={getWarningDetailHref(alert.id)} className="underline text-primary">
+          <Link href={getWarningDetailHref(alert.id, returnTo)} className="underline text-primary">
             Full warning
           </Link>
         ) : null}
         <a
-          href="https://www.weather.gov"
+          href={getOfficialWarningHref(alert.id)}
           className="underline text-primary"
           rel="noreferrer"
           target="_blank"
         >
-          weather.gov
+          Official NWS alert
         </a>
       </div>
     </div>

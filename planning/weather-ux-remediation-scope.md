@@ -10,6 +10,8 @@ Use one PR per outcome, with multiple independently understandable commits. Incl
 
 ## PR 1: Weather data correctness and trust — seven commits
 
+Merged as PR #627 (`deda7e5`).
+
 1. **Consistent units.** Carry actual units through current, daily and expanded forecasts. Correct international temperature and pressure labels, and wind units where these views share the same data.
 2. **Honest missing data.** Remove placeholder daily humidity/cloud values and current pressure presented as future pressure. Do not fabricate missing daily forecasts. Keep unavailable values distinct from valid zeroes.
 3. **Correct local times.** Format hourly dates and astronomy in the viewed location's time zone. Distinguish sunset/sunrise from astronomical darkness and use consistent definitions.
@@ -22,7 +24,7 @@ Done means all seven behaviors have appropriate regression coverage, relevant ch
 
 ## PR 2: Repair existing journeys
 
-Separate commits for London lookup, Hourly location recovery, tropical feeds, aviation airport resolution, warning-to-radar/source links, and related loading/failure recovery.
+Six commits for London lookup, Hourly location recovery, warning-to-radar/source links, tropical feeds, aviation airport resolution, and related loading/failure recovery. See the [PR 2 acceptance scope](pr2-repair-weather-journeys.md).
 
 ## PR 3: Correct educational content
 

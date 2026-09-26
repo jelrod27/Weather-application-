@@ -10,6 +10,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { aircraftFeedLabel, INITIAL_AIRCRAFT_STATUS } from '@/lib/aviation/aircraft-feed-status';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
@@ -57,9 +58,8 @@ function AviationPageInner() {
     zoom?: number;
     token?: string;
   } | null>(null);
-  const [count, setCount] = useState(0);
-  const [sourceLabel, setSourceLabel] = useState('adsb.lol');
-  const [degraded, setDegraded] = useState(false);
+  const [trafficStatus, setTrafficStatus] = useState(INITIAL_AIRCRAFT_STATUS);
+  const [weatherOnly, setWeatherOnly] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteInfo>({
     origin: null,
@@ -179,15 +179,16 @@ function AviationPageInner() {
     };
   }, [flightParam, selectAircraft]);
 
-  const statusChip = useMemo(() => {
-    if (degraded) return `DEGRADED · ${sourceLabel} · ${count} ac`;
-    return `${sourceLabel} · ${count} aircraft in view`;
-  }, [count, degraded, sourceLabel]);
+  const showWeatherOnly = () => {
+    setWeatherOnly(true);
+    setExplorerOpen(true);
+    selectAircraft(null);
+  };
 
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <AircraftSearch
+        {!weatherOnly && <AircraftSearch
           initialQuery={flightParam}
           className="w-full max-w-xl"
           onFound={(a) => {
@@ -195,17 +196,18 @@ function AviationPageInner() {
             selectAircraft(a);
           }}
           onError={setSearchError}
-        />
+        />}
         <div
           className={cn(
             'rounded border px-3 py-2 font-mono text-xs',
-            degraded
+            trafficStatus.state === 'unavailable' || trafficStatus.degraded
               ? 'border-orange-500/50 bg-orange-500/10 text-orange-200'
               : 'border-border bg-card/50 text-muted-foreground',
           )}
           data-testid="aircraft-count-chip"
         >
-          {statusChip}
+          {weatherOnly ? 'Weather-only view' : aircraftFeedLabel(trafficStatus)}
+          {!weatherOnly && trafficStatus.updatedAt && <div className="mt-1">Last successful update: {new Date(trafficStatus.updatedAt).toUTCString()}</div>}
         </div>
       </div>
 
@@ -229,8 +231,12 @@ function AviationPageInner() {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <LiveAircraftMap
+      <button type="button" className="font-mono text-xs underline mb-3" onClick={() => {
+        if (weatherOnly) { setTrafficStatus(INITIAL_AIRCRAFT_STATUS); setWeatherOnly(false); }
+        else showWeatherOnly();
+      }}>{weatherOnly ? 'Show live aircraft traffic' : 'Use weather-only view'}</button>
+      <div className={cn(!weatherOnly && 'grid gap-4 lg:grid-cols-[1fr_320px]')}>
+        {!weatherOnly && <LiveAircraftMap
           selectedIcao24={selected?.icao24 ?? null}
           highlightAircraft={selected}
           flyTo={flyTo}
@@ -238,16 +244,9 @@ function AviationPageInner() {
           trail={trail.map(({ lat, lon }) => ({ lat, lon }))}
           onSelectAircraft={selectAircraft}
           onSelectedAircraftUpdate={updateSelectedAircraft}
-          onCountChange={(n, meta) => {
-            setCount(n);
-            setSourceLabel(meta.source);
-            setDegraded(meta.degraded);
-          }}
-          onDegradedChange={(d, source) => {
-            setDegraded(d);
-            if (source) setSourceLabel(source);
-          }}
-        />
+          onStatusChange={setTrafficStatus}
+          onWeatherOnly={showWeatherOnly}
+        />}
         <div className="space-y-4">
           {selected ? (
             <AircraftSelectionPanel
@@ -256,7 +255,7 @@ function AviationPageInner() {
               onClose={() => selectAircraft(null)}
               onRouteResolved={setRoute}
             />
-          ) : (
+          ) : !weatherOnly && (
             <div className="rounded-lg border border-dashed border-border p-4 font-mono text-xs text-muted-foreground">
               Click an aircraft on the map or search a callsign to inspect identity, route, and
               weather.

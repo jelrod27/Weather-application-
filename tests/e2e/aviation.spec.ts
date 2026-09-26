@@ -310,6 +310,22 @@ test.describe('/aviation', () => {
     await expect(flightInput).toHaveValue('');
   });
 
+  test('manual routes accept airport aliases and weather-only keeps weather tools available', async ({ page }) => {
+    await openDetailConsole(page);
+    await page.getByRole('button', { name: /Flight Route Lookup/i }).click();
+    await page.getByTestId('departure-input').fill('SFO');
+    await page.getByTestId('arrival-input').fill('KDEN');
+    await page.getByTestId('search-route-button').click();
+    await expect(page.getByText(/Unable to resolve airport coordinates/)).toBeHidden();
+    await expect(page.getByTestId('search-route-button')).toBeEnabled();
+    await expect(page.getByText(/No turbulence reports|PIREP.*along route|Reports Along Route/i).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Use weather-only view', exact: true }).first().click();
+    await expect(page.getByTestId('live-aircraft-map')).toBeHidden();
+    await expect(page.getByTestId('flight-weather-brief')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hub Conditions' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show live aircraft traffic' })).toBeVisible();
+  });
+
   test('detail console turbulence map mounts with OpenLayers viewport', async ({ page }) => {
     await openDetailConsole(page);
 
