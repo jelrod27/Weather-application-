@@ -4,16 +4,16 @@
  * NHC tropical outlooks, satellite imagery, and hurricane season info.
  * Official imagery with source-file update times and recoverable image loading.
  */
-import React from 'react';
+import React, { Suspense } from 'react';
 import PageWrapper from '@/components/page-wrapper';
 import TropicalGraphic from '@/components/tropical/tropical-graphic';
-import { TROPICAL_GRAPHICS, getGraphicUpdatedAt } from '@/lib/tropical/graphics';
+import TropicalSourceTime from '@/components/tropical/tropical-source-time';
+import { TROPICAL_GRAPHICS } from '@/lib/tropical/graphics';
 import { ShareButtons } from '@/components/share-buttons';
 
 const NHC_BASE = 'https://www.nhc.noaa.gov';
 
-export default async function TropicalPage(): Promise<React.JSX.Element> {
-  const updates = await Promise.all(TROPICAL_GRAPHICS.map((graphic) => getGraphicUpdatedAt(graphic.src)));
+export default function TropicalPage(): React.JSX.Element {
   return (
     <PageWrapper>
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -32,8 +32,12 @@ export default async function TropicalPage(): Promise<React.JSX.Element> {
 
         {/* NHC Graphics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {TROPICAL_GRAPHICS.map((graphic, index) => (
-            <TropicalGraphic key={graphic.title} graphic={graphic} updatedAt={updates[index]} />
+          {TROPICAL_GRAPHICS.map((graphic) => (
+            <TropicalGraphic key={graphic.title} graphic={graphic} sourceTime={
+              <Suspense fallback="Checking source update time…">
+                <TropicalSourceTime src={graphic.src} />
+              </Suspense>
+            } />
           ))}
         </div>
 

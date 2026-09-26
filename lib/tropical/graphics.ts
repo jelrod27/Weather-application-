@@ -17,7 +17,7 @@ export const TROPICAL_GRAPHICS: TropicalGraphicSource[] = [
   {
     title: '7-DAY TROPICAL OUTLOOK',
     desc: 'Extended tropical weather formation potential for the Atlantic Basin',
-    src: `https://www.nhc.noaa.gov/xgtwo/two_atl_5d0.png`,
+    src: `https://www.nhc.noaa.gov/xgtwo/two_atl_7d0.png`,
     link: `https://www.nhc.noaa.gov/gtwo.php`,
   },
   {

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import TropicalGraphic from '@/components/tropical/tropical-graphic';
+import TropicalSourceTime from '@/components/tropical/tropical-source-time';
 import { getGraphicUpdatedAt, TROPICAL_GRAPHICS } from '@/lib/tropical/graphics';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
@@ -9,8 +10,10 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
 afterEach(() => jest.useRealTimers());
 
 describe('Tropical image recovery', () => {
-  it('shows source time distinctly from valid time, and recovers a failed image', () => {
-    render(<TropicalGraphic graphic={TROPICAL_GRAPHICS[2]} updatedAt="2026-09-25T12:00:00Z" />);
+  it('shows source time distinctly from valid time, and recovers a failed image', async () => {
+    jest.mocked(fetchWithTimeout).mockResolvedValueOnce({ ok: true, headers: new Headers({ 'last-modified': 'Fri, 25 Sep 2026 12:00:00 GMT' }) } as Response);
+    const sourceTime = await TropicalSourceTime({ src: TROPICAL_GRAPHICS[2].src });
+    render(<TropicalGraphic graphic={TROPICAL_GRAPHICS[2]} sourceTime={sourceTime} />);
     expect(screen.getByText(/Source file updated/)).toHaveTextContent('Fri, 25 Sep 2026 12:00:00 GMT');
     expect(screen.getByText(/Observation or forecast valid time/)).toBeInTheDocument();
     const src = screen.getByRole('img').getAttribute('src');
@@ -25,9 +28,16 @@ describe('Tropical image recovery', () => {
   });
   it('offers recovery for an image that never loads without inventing an update time', () => {
     jest.useFakeTimers();
-    render(<TropicalGraphic graphic={TROPICAL_GRAPHICS[3]} updatedAt={null} />);
+    render(<TropicalGraphic graphic={TROPICAL_GRAPHICS[3]} sourceTime="Source update time unavailable." />);
     expect(screen.getByText(/Source update time unavailable/)).toBeInTheDocument();
     act(() => jest.advanceTimersByTime(15000));
+    expect(screen.getByRole('button', { name: 'Retry image' })).toBeInTheDocument();
+  });
+  it('renders images and recovery controls while source metadata is pending', () => {
+    render(<TropicalGraphic graphic={TROPICAL_GRAPHICS[0]} sourceTime="Checking source update time…" />);
+    expect(screen.getByRole('img')).toHaveAttribute('src', TROPICAL_GRAPHICS[0].src);
+    expect(screen.getByText(/Checking source update time/)).toBeInTheDocument();
+    fireEvent.error(screen.getByRole('img'));
     expect(screen.getByRole('button', { name: 'Retry image' })).toBeInTheDocument();
   });
   it('uses upstream modification time only when a successful response supplies a valid date', async () => {

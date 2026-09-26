@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
 import type { TropicalGraphicSource } from '@/lib/tropical/graphics';
 
 interface TropicalGraphicProps {
   graphic: TropicalGraphicSource;
-  updatedAt: string | null;
+  sourceTime: ReactNode;
 }
 
-export default function TropicalGraphic({ graphic, updatedAt }: TropicalGraphicProps): React.JSX.Element {
+export default function TropicalGraphic({ graphic, sourceTime }: TropicalGraphicProps): React.JSX.Element {
   const router = useRouter();
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -31,7 +32,7 @@ export default function TropicalGraphic({ graphic, updatedAt }: TropicalGraphicP
         <h2 className="font-mono font-bold text-sm">{graphic.title}</h2>
         <p className="font-mono text-xs text-muted-foreground mt-1">{graphic.desc}</p>
         <p className="font-mono text-xs text-muted-foreground mt-2">
-          {updatedAt ? <>Source file updated: <time dateTime={updatedAt}>{new Date(updatedAt).toUTCString()}</time></> : 'Source update time unavailable.'}
+          {sourceTime}
           {' '}Observation or forecast valid time is printed on the image.
         </p>
       </div>
