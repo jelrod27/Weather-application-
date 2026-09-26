@@ -34,21 +34,21 @@ interface LaunchLibraryResponse {
  */
 export async function fetchUpcomingLaunches(
   limit: number = 10
-): Promise<Launch[]> {
+): Promise<Launch[] | null> {
   try {
     const url = `${LAUNCH_LIBRARY_BASE}/launch/upcoming/?limit=${limit}&mode=normal`;
     const res = await fetchWithTimeout(url, { next: { revalidate: 1800 } });
 
     if (!res.ok) {
       console.error('[Launches] HTTP error:', res.status);
-      return [];
+      return null;
     }
 
     const data = (await res.json()) as LaunchLibraryResponse;
 
     if (!data.results || !Array.isArray(data.results)) {
       console.error('[Launches] Unexpected response format');
-      return [];
+      return null;
     }
 
     return data.results.map((item): Launch => {
@@ -85,6 +85,6 @@ export async function fetchUpcomingLaunches(
     });
   } catch (error) {
     console.error('[Launches] Fetch failed:', error);
-    return [];
+    return null;
   }
 }

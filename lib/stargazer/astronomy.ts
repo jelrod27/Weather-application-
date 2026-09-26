@@ -16,7 +16,11 @@ import {
   SearchMoonPhase,
   SearchAltitude,
   MakeTime,
-  SiderealTime,
+  Rotation_EQJ_EQD,
+  VectorFromSphere,
+  Spherical,
+  RotateVector,
+  EquatorFromVector,
   SearchLunarEclipse,
   SearchGlobalSolarEclipse,
 } from 'astronomy-engine';
@@ -131,7 +135,7 @@ export function calculateDarkWindow(
     }
     // With no crossings, the current altitude distinguishes darkness from daylight.
     const sunEq = Equator(Body.Sun, astroTime, observer, true, true);
-    const sunHor = Horizon(astroTime, observer, sunEq.ra, sunEq.dec, 'normal');
+    const sunHor = Horizon(astroTime, observer, sunEq.ra, sunEq.dec);
     if (sunHor.altitude < -18) {
       // Polar night: it's dark all day — return full 24hr dark window
       const start = new Date(date);
@@ -191,6 +195,10 @@ export function calculateDarkWindow(
       -18
     );
     finalDawn = dawnForward ? dawnForward.date : sunriseDate;
+  }
+
+  if (finalDawn.getTime() <= date.getTime()) {
+    return calculateDarkWindow(lat, lon, new Date(sunriseDate.getTime() + 60000));
   }
 
   return {
@@ -415,47 +423,18 @@ export function catalogObjectAltAz(
   lon: number,
   time: Date
 ): { altitude: number; azimuth: number } {
-  const astroTime = MakeTime(time);
+  const vector = VectorFromSphere(new Spherical(dec_degrees, ra_hours * 15, 1), time);
+  const equator = EquatorFromVector(RotateVector(Rotation_EQJ_EQD(time), vector));
+  const position = Horizon(time, new Observer(lat, lon, 0), equator.ra, equator.dec, 'normal');
+  return { altitude: position.altitude, azimuth: position.azimuth };
+}
 
-  // Get local sidereal time in hours
-  const lst = SiderealTime(astroTime) + lon / 15;
-
-  // Hour angle in hours, then convert to degrees
-  let ha = lst - ra_hours;
-  // Normalize to [-12, 12)
-  while (ha < -12) ha += 24;
-  while (ha >= 12) ha -= 24;
-  const haRad = (ha * 15 * Math.PI) / 180;
-
-  const latRad = (lat * Math.PI) / 180;
-  const decRad = (dec_degrees * Math.PI) / 180;
-
-  // Calculate altitude
-  const rawSinAlt =
-    Math.sin(latRad) * Math.sin(decRad) +
-    Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad);
-  const sinAlt = Math.max(-1, Math.min(1, rawSinAlt));
-  const altitude = (Math.asin(sinAlt) * 180) / Math.PI;
-
-  // Calculate azimuth
-  const denom = Math.cos(latRad) * Math.cos(Math.asin(sinAlt));
-  if (Math.abs(denom) < 1e-12) {
-    return { altitude: Math.round(altitude * 100) / 100, azimuth: 0 };
-  }
-  const cosAz = Math.max(-1, Math.min(1,
-    (Math.sin(decRad) - Math.sin(latRad) * sinAlt) / denom
-  ));
-  let azimuth = (Math.acos(cosAz) * 180) / Math.PI;
-
-  // Correct azimuth quadrant: if hour angle is positive, azimuth is west (> 180)
-  if (Math.sin(haRad) > 0) {
-    azimuth = 360 - azimuth;
-  }
-
-  return {
-    altitude: Math.round(altitude * 100) / 100,
-    azimuth: Math.round(azimuth * 100) / 100,
-  };
+/** Topocentric equator-of-date coordinates, then true-north horizontal position. */
+export function bodyAltAz(body: Body, lat: number, lon: number, time: Date, refraction: 'normal' | 'none' = 'normal'): { altitude: number; azimuth: number } {
+  const observer = new Observer(lat, lon, 0);
+  const equator = Equator(body, time, observer, true, true);
+  const position = Horizon(time, observer, equator.ra, equator.dec, refraction === 'none' ? undefined : refraction);
+  return { altitude: position.altitude, azimuth: position.azimuth };
 }
 
 // ============================================================================

@@ -2,7 +2,7 @@ import { WMO_CODES } from '@/lib/wmo-codes';
 import type { EnhancedHourlyForecast, WeatherData } from '@/lib/types';
 
 const HOUR = 3600;
-const OMITTED_CODES = new Set([48, 56, 57, 65, 66, 67, 75, 82, 86, 95, 96, 99]);
+export const OUTDOOR_EXCLUDED_WEATHER_CODES = new Set([48, 56, 57, 65, 66, 67, 75, 82, 86, 95, 96, 99]);
 
 export type OutdoorDay = 'today' | 'tomorrow';
 export type OutdoorDuration = 1 | 2;
@@ -92,7 +92,7 @@ export function getOutdoorPlan(
     if (!samples.every(isCompleteReading)) continue;
     const chances = samples.slice(1).map(hour => hour.precipChance);
     if (!chances.every((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100)) continue;
-    if (samples.some(hour => OMITTED_CODES.has(hour.weatherCode))) { excludedHazards = true; continue; }
+    if (samples.some(hour => OUTDOOR_EXCLUDED_WEATHER_CODES.has(hour.weatherCode))) { excludedHazards = true; continue; }
     const temperatures = samples.map(hour => hour.temp);
     candidates.push({
       start, end, priority: 'precipitation',

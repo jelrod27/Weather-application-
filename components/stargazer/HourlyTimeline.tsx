@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import type { HourlyCondition, DarkWindow } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
+import { formatObservingTime } from '@/lib/stargazer/context';
+import { useStargazerUnits } from '@/hooks/useStargazerUnits';
 
 interface HourlyTimelineProps {
   timeZone?: string;
@@ -36,52 +38,54 @@ const metricLabels: Record<MetricKey, string> = {
   dewRisk: 'Dew Risk',
 };
 
-function getCellColor(metric: MetricKey, value: number | string): string {
+function getCellColor(metric: MetricKey, value: number | string | null): string {
+  if (value == null) return 'bg-gray-700';
   if (metric === 'dewRisk') {
-    if (value === 'low') return 'bg-green-600';
-    if (value === 'moderate') return 'bg-yellow-600';
-    return 'bg-red-600';
+    if (value === 'low') return 'bg-green-700';
+    if (value === 'moderate') return 'bg-yellow-800';
+    return 'bg-red-700';
   }
 
   if (metric === 'seeing' || metric === 'transparency') {
     // 7Timer: 1 = best, 8 = worst -- lower is better
     const v = value as number;
-    if (v <= 2) return 'bg-green-600';
-    if (v <= 3) return 'bg-yellow-600';
-    if (v <= 4) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 2) return 'bg-green-700';
+    if (v <= 3) return 'bg-yellow-800';
+    if (v <= 4) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'windSpeed') {
     const v = value as number;
-    if (v <= 10) return 'bg-green-600';
-    if (v <= 20) return 'bg-yellow-600';
-    if (v <= 30) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 10) return 'bg-green-700';
+    if (v <= 20) return 'bg-yellow-800';
+    if (v <= 30) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'humidity') {
     const v = value as number;
-    if (v <= 60) return 'bg-green-600';
-    if (v <= 75) return 'bg-yellow-600';
-    if (v <= 85) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 60) return 'bg-green-700';
+    if (v <= 75) return 'bg-yellow-800';
+    if (v <= 85) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'temperature') {
-    return 'bg-blue-600';
+    return 'bg-blue-700';
   }
 
   // Cloud cover metrics (lower is better)
   const v = value as number;
-  if (v <= 20) return 'bg-green-600';
-  if (v <= 50) return 'bg-yellow-600';
-  if (v <= 75) return 'bg-orange-600';
-  return 'bg-red-600';
+  if (v <= 20) return 'bg-green-700';
+  if (v <= 50) return 'bg-yellow-800';
+  if (v <= 75) return 'bg-orange-700';
+  return 'bg-red-700';
 }
 
-function formatCellValue(metric: MetricKey, value: number | string): string {
-  if (metric === 'dewRisk') return String(value).charAt(0).toUpperCase();
+function formatCellValue(metric: MetricKey, value: number | string | null): string {
+  if (value == null) return 'Unavailable';
+  if (metric === 'dewRisk') return String(value);
   if (metric === 'temperature') return `${Math.round(value as number)}°`;
   if (metric === 'windSpeed') return `${Math.round(value as number)}`;
   if (metric === 'humidity' || metric.startsWith('cloudCover'))
@@ -103,11 +107,11 @@ const metrics: MetricKey[] = [
 ];
 
 function getScoreRowColor(score: number): string {
-  if (score >= 75) return 'bg-emerald-600';
-  if (score >= 60) return 'bg-green-600';
-  if (score >= 45) return 'bg-yellow-600';
-  if (score >= 30) return 'bg-orange-600';
-  return 'bg-red-600';
+  if (score >= 75) return 'bg-emerald-700';
+  if (score >= 60) return 'bg-green-700';
+  if (score >= 45) return 'bg-yellow-800';
+  if (score >= 30) return 'bg-orange-700';
+  return 'bg-red-700';
 }
 
 export default function HourlyTimeline({ timeZone = 'UTC',
@@ -115,6 +119,7 @@ export default function HourlyTimeline({ timeZone = 'UTC',
   darkWindow,
 }: HourlyTimelineProps) {
   const styles = themeTokens.card;
+  const units = useStargazerUnits();
 
   if (!conditions || conditions.length === 0) {
     return (
@@ -148,6 +153,7 @@ export default function HourlyTimeline({ timeZone = 'UTC',
         Dark window: {darkWindow.status === 'none' ? 'No astronomical darkness' : darkWindow.status === 'continuous' ? 'Continuous darkness (next 24 hours)' : <>{formatTime(darkWindow.astronomicalDusk, timeZone)} &ndash; {formatTime(darkWindow.astronomicalDawn, timeZone)}</>}
       </p>
 
+      <p className="mb-3 text-xs text-muted-foreground">Seeing and transparency: 1/8 is best, 8/8 is worst. Photography scores use /100. Unavailable means a required reading is missing.</p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
@@ -160,7 +166,7 @@ export default function HourlyTimeline({ timeZone = 'UTC',
                   key={i}
                   className="min-w-[3rem] px-1 py-1 text-center text-xs font-mono text-muted-foreground"
                 >
-                  {formatTime(c.time, timeZone)}
+                  {formatObservingTime(new Date(c.time).getTime(), timeZone)}
                 </th>
               ))}
             </tr>
@@ -169,17 +175,17 @@ export default function HourlyTimeline({ timeZone = 'UTC',
             {/* Per-hour composite score row — guide rail at the top */}
             <tr className="font-bold">
               <td className="sticky left-0 bg-inherit px-2 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-foreground">
-                Score
+                Photography /100
               </td>
               {conditions.map((c, i) => (
                 <td
                   key={i}
                   className={cn(
                     'border border-subtle px-1 py-1.5 text-center text-white text-sm font-mono font-bold',
-                    c.hourlyScore != null ? getScoreRowColor(c.hourlyScore) : 'bg-gray-600',
+                    c.hourlyScore != null ? getScoreRowColor(c.hourlyScore) : 'bg-gray-700',
                   )}
                 >
-                  {c.hourlyScore != null ? c.hourlyScore : '--'}
+                  {c.hourlyScore != null ? c.hourlyScore : 'Unavailable'}
                 </td>
               ))}
             </tr>
@@ -192,19 +198,17 @@ export default function HourlyTimeline({ timeZone = 'UTC',
                   )}
                 </td>
                 {conditions.map((c, i) => {
-                  const raw = c[metric as keyof HourlyCondition];
-                  const value =
-                    raw instanceof Date ? raw.toISOString() : raw;
+                  const value = c[metric];
                   return (
                     <td
                       key={i}
                       className={cn(
                         'border border-subtle px-1 py-1 text-center text-white text-xs font-mono',
-                        getCellColor(metric, value as number | string),
+                        getCellColor(metric, value),
                         metric === 'cloudCoverHigh' && c.cirrusWarning && 'ring-1 ring-inset ring-amber-400/60',
                       )}
                     >
-                      {formatCellValue(metric, value as number | string)}
+                      {metric === 'temperature' ? units.temperature(c.temperature) : metric === 'windSpeed' ? units.wind(c.windSpeed) : formatCellValue(metric, value)}
                     </td>
                   );
                 })}

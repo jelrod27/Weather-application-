@@ -1,0 +1,15 @@
+{
+  "id": "M31",
+  "ra": 0.712,
+  "dec": 41.27,
+  "lat": 40.7128,
+  "lon": -74.006,
+  "time": "2026-09-27T04:00:00Z",
+  "altitude": 75.619858626831,
+  "azimuth": 80.9136074364213,
+  "source": "https://docs.astropy.org/en/stable/coordinates/example_gallery_plot_obs_planning.html",
+  "astropy": "8.0.1",
+  "erfa": "2.0.1.5",
+  "method": "FK5(J2000) SkyCoord transformed to AltAz at sea level; 1013.25 hPa, 10 C, relative humidity 0, wavelength 0.55 micron; bundled IERS table, auto_download=False and auto_max_age=None. Tolerance 0.03 degree allows refraction/aberration model differences and rounded catalog coordinates.",
+  "recorded": "2026-09-26"
+}

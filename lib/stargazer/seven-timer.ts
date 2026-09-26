@@ -23,7 +23,7 @@ export async function fetchSevenTimerData(
 
     const data = (await res.json()) as SevenTimerResponse;
 
-    if (!data.dataseries || data.dataseries.length === 0) {
+    if (!Array.isArray(data?.dataseries) || data.dataseries.length === 0) {
       console.error('[7Timer] Empty dataseries');
       return null;
     }
@@ -41,14 +41,11 @@ export async function fetchSevenTimerData(
  * @param timepoint - Hours after init time
  */
 export function sevenTimerTimeToDate(init: string, timepoint: number): Date {
-  const year = parseInt(init.slice(0, 4), 10);
-  const month = parseInt(init.slice(4, 6), 10) - 1; // 0-indexed
-  const day = parseInt(init.slice(6, 8), 10);
-  const hour = parseInt(init.slice(8, 10), 10);
-
-  const date = new Date(Date.UTC(year, month, day, hour));
-  date.setUTCHours(date.getUTCHours() + timepoint);
-  return date;
+  if (typeof init !== 'string' || !/^\d{10}$/.test(init) || !Number.isInteger(timepoint) || timepoint < 0 || timepoint > 72) return new Date(NaN);
+  const iso = `${init.slice(0, 4)}-${init.slice(4, 6)}-${init.slice(6, 8)}T${init.slice(8, 10)}:00:00.000Z`;
+  const base = new Date(iso);
+  if (!Number.isFinite(base.getTime()) || base.toISOString() !== iso) return new Date(NaN);
+  return new Date(base.getTime() + timepoint * 3600000);
 }
 
 /**
@@ -56,11 +53,24 @@ export function sevenTimerTimeToDate(init: string, timepoint: number): Date {
  */
 export function getSevenTimerAtTime(
   data: SevenTimerResponse,
-  targetTime: Date
+  targetTime: Date,
+  now: Date = new Date(),
 ): SevenTimerDataPoint | null {
-  if (!data.dataseries || data.dataseries.length === 0) {
+  const init = sevenTimerTimeToDate(data.init, 0).getTime();
+  const age = now.getTime() - init;
+  // Product policy: an initialization up to 24 hours old, on ASTRO's three-hour grid.
+  if (!Number.isFinite(age) || age < 0 || age > 24 * 3600000 ||
+      !Array.isArray(data.dataseries) || data.dataseries.length === 0 ||
+      data.dataseries.some((point, index, points) => !point || !Number.isInteger(point.timepoint) ||
+        point.timepoint < 3 || point.timepoint > 72 || point.timepoint % 3 !== 0 ||
+        (index > 0 && point.timepoint <= points[index - 1].timepoint))) {
     return null;
   }
+
+  const target = targetTime.getTime();
+  const first = sevenTimerTimeToDate(data.init, data.dataseries[0].timepoint).getTime();
+  const last = sevenTimerTimeToDate(data.init, data.dataseries[data.dataseries.length - 1].timepoint).getTime();
+  if (!Number.isFinite(target) || target < first || target > last) return null;
 
   let closest: SevenTimerDataPoint | null = null;
   let minDiff = Infinity;
@@ -69,7 +79,9 @@ export function getSevenTimerAtTime(
     const dpTime = sevenTimerTimeToDate(data.init, dp.timepoint);
     const diff = Math.abs(dpTime.getTime() - targetTime.getTime());
 
-    if (diff < minDiff) {
+    if (!Number.isInteger(dp.seeing) || dp.seeing < 1 || dp.seeing > 8 ||
+        !Number.isInteger(dp.transparency) || dp.transparency < 1 || dp.transparency > 8) continue;
+    if (diff <= 90 * 60000 && diff < minDiff) {
       minDiff = diff;
       closest = dp;
     }

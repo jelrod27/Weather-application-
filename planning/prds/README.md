@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-beginner-stargazing.md](./PRD-beginner-stargazing.md) | PR 6 of the weather UX batch — approved beginner Stargazer path, suitable hours and targets, finding visuals, location continuity and data honesty; implemented, PR validation pending |
 | [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | Travel turbulence forecast — **not started**. Stargazer-style command center at `/travel/turbulence`; v1 scores existing AWC G-AIRMET + PIREPs (ops map already ships on `/aviation`) |
 | [PRD-bitwatch.md](./PRD-bitwatch.md) | Bitwatch — US NWS warning parity (guest push+email, Warning Event store, desk) plus Scout auto-detection |
 | [PRD-radar-v2.md](./PRD-radar-v2.md) | Radar v2 — RainViewer-only tiles + RainViewer-style UX, bottom player dock, Severe preset, new `components/radar-v2/` (v2.0 drops Iowa/MRMS/GeoMet) |

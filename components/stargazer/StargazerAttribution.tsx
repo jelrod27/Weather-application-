@@ -7,6 +7,7 @@ export default function StargazerAttribution() {
   const styles = themeTokens.card;
 
   const attributions = [
+    'Hourly weather from Open-Meteo; model issuance time unavailable',
     'Astronomical seeing and transparency data from 7Timer.info',
     'Celestial calculations powered by Astronomy Engine',
     'Launch data from The Space Devs',
