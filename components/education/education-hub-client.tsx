@@ -89,7 +89,7 @@ const LIVE_LABS: { href: string; icon: LucideIcon; title: string; description: s
     href: '/radar',
     icon: Radar,
     title: 'Radar',
-    description: 'Reflectivity and velocity loops.',
+    description: 'RainViewer precipitation history where radar coverage is available.',
   },
   {
     href: '/earth-sciences',
@@ -337,7 +337,6 @@ export default function EducationHubClient({ latestPosts, shareableGuides }: Edu
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               New guides, glossary terms, and blog dispatches added regularly.
             </p>
-            <p className="text-xs font-mono text-muted-foreground mt-4">Last updated: June 2026</p>
           </CardContent>
         </Card>
       </div>
