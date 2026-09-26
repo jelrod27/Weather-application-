@@ -17,6 +17,7 @@ jest.mock('@/lib/supabase/database', () => ({
 }))
 
 jest.mock('@/lib/dashboard-weather', () => ({
+  ...jest.requireActual('@/lib/dashboard-weather'),
   getDashboardWeather: jest.fn().mockResolvedValue(null),
   getWeatherIcon: () => '☀',
   getTemperatureColor: () => '',
@@ -42,6 +43,7 @@ const loc: SavedLocation = {
 
 const detailPayload = {
   current: {
+    fetchedAt: new Date().toISOString(),
     temperature: 72,
     feelsLike: 70,
     humidity: 50,
@@ -69,6 +71,7 @@ describe('LocationCard — detailed-weather fetches', () => {
     ) as jest.Mock
 
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+    await waitFor(() => expect(screen.getByText(/Click for detailed weather/i).closest('button')).not.toBeDisabled())
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2))
@@ -98,10 +101,11 @@ describe('LocationCard — detailed-weather fetches', () => {
     }) as jest.Mock
 
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+    await waitFor(() => expect(screen.getByText(/Click for detailed weather/i).closest('button')).not.toBeDisabled())
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
     await waitFor(() => expect(screen.getByText(/UV Index: 0/i)).toBeDefined())
-    await waitFor(() => expect(screen.getByText(/AQI: 0/i)).toBeDefined())
+    await waitFor(() => expect(screen.getByText(/AQI: Unavailable/i)).toBeDefined())
 
     expect(consoleError).not.toHaveBeenCalledWith(
       'Error fetching detailed weather:',
@@ -125,6 +129,7 @@ describe('LocationCard — detailed-weather fetches', () => {
     }) as jest.Mock
 
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+    await waitFor(() => expect(screen.getByText(/Click for detailed weather/i).closest('button')).not.toBeDisabled())
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
     await waitFor(() => expect(screen.getByText(/UV Index: 7/i)).toBeDefined())
@@ -145,6 +150,7 @@ describe('LocationCard — detailed-weather fetches', () => {
     }) as jest.Mock
 
     render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+    await waitFor(() => expect(screen.getByText(/Click for detailed weather/i).closest('button')).not.toBeDisabled())
     fireEvent.click(screen.getByText(/Click for detailed weather/i))
 
     await waitFor(() =>
@@ -156,4 +162,21 @@ describe('LocationCard — detailed-weather fetches', () => {
 
     expect(screen.queryByText(/UV Index/i)).toBeNull()
   })
+})
+
+it('labels basic and detailed values using each response unit, not account defaults', async () => {
+  const { getDashboardWeather } = await import('@/lib/dashboard-weather')
+  jest.mocked(getDashboardWeather).mockResolvedValueOnce({
+    temperature: 20, feelsLike: 19, humidity: 50, windSpeed: 5, pressure: 1013, visibility: 10,
+    description: 'clear', icon: '01d', units: 'metric', windUnit: 'ms', fetchedAt: new Date().toISOString(), observedAt: null, stale: false,
+  })
+  global.fetch = jest.fn((url: unknown) => Promise.resolve({ ok: String(url).includes('dashboard-weather'), json: async () => ({
+    ...detailPayload, current: { ...detailPayload.current, units: 'metric' },
+    forecast: [{ day: 'Sun', highTemp: 25, lowTemp: 15, condition: 'Clear' }],
+  }) })) as jest.Mock
+  render(<LocationCard location={loc} onUpdate={jest.fn()} />)
+  expect(await screen.findByText('20°C')).toBeInTheDocument()
+  expect(screen.getByText('5 m/s')).toBeInTheDocument()
+  fireEvent.click(screen.getByText('Click for detailed weather'))
+  expect(await screen.findByText('25°C')).toBeInTheDocument()
 })

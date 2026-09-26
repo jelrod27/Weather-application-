@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button'
 import { MapPin, Star, Trash2, RefreshCw, Thermometer, Droplets, Wind, Eye, Sun } from 'lucide-react'
 import type { SavedLocation, UserPreferences } from '@/lib/supabase/types'
 import { toggleLocationFavorite, deleteSavedLocation, getUserPreferences } from '@/lib/supabase/database'
-import { getDashboardWeather, getWeatherIcon, getTemperatureColor } from '@/lib/dashboard-weather'
+import { getWeatherIcon, getTemperatureColor } from '@/lib/dashboard-weather'
+import { useDashboardWeather } from '@/hooks/useDashboardWeather'
+import { DASHBOARD_WEATHER_MAX_AGE_MS } from '@/lib/dashboard-weather'
+import type { DashboardWeatherData } from '@/lib/dashboard-weather'
 import { useAuth } from '@/lib/auth'
 import { themeTokens } from '@/lib/theme-tokens'
 
@@ -16,104 +19,70 @@ interface LocationCardProps {
   onUpdate: () => void
 }
 
-const tempUnitLabel = (u: UserPreferences['temperature_unit'] | undefined) =>
-  u === 'celsius' ? '°C' : '°F'
+const tempUnitLabel = (u: DashboardWeatherData['units'] | undefined) =>
+  u === 'metric' ? '°C' : '°F'
 const windUnitLabel = (u: UserPreferences['wind_unit'] | undefined) =>
   u === 'kmh' ? 'km/h' : u === 'ms' ? 'm/s' : 'mph'
 const apiTempUnits = (u: UserPreferences['temperature_unit'] | undefined) =>
   u === 'celsius' ? 'metric' : 'imperial'
 
-interface BasicWeatherData {
-  temperature: number
-  description: string
-  humidity: number
-  windSpeed: number
-  icon: string
-  feelsLike: number
-  pressure: number
-  visibility: number
-  units?: 'metric' | 'imperial'
-}
-
 interface DetailedWeatherData {
-  current: BasicWeatherData
-  forecast: Array<{
-    day: string
-    highTemp: number
-    lowTemp: number
-    condition: string
-    description: string
-  }>
-  uvIndex: number
-  airQuality: {
-    aqi: number
-    category: string
-    pm25: number
-    pm10: number
-    o3: number
-    no2: number
-    so2: number
-    co: number
-  }
-  alerts: any[]
+  current: DashboardWeatherData
+  forecast: Array<{ day: string; highTemp: number | null; lowTemp: number | null; condition: string; description: string }>
+  uvIndex: number | null
+  airQuality: { aqi: number | null; category: string }
 }
 
 export default function LocationCard({ location, onUpdate }: LocationCardProps) {
-  const [weather, setWeather] = useState<BasicWeatherData | null>(null)
-  const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<'favorite' | 'delete' | null>(null)
   const [showDetailedWeather, setShowDetailedWeather] = useState(false)
   const [detailedWeatherData, setDetailedWeatherData] = useState<DetailedWeatherData | null>(null)
   const [detailedLoading, setDetailedLoading] = useState(false)
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
-  const detailRequestKeyRef = useRef<string>('')
+  const detailRequest = useRef<AbortController | null>(null)
+  const [preferenceUser, setPreferenceUser] = useState<string | null>(null)
   const { user } = useAuth()
   const themeClasses = themeTokens.dashboard
 
-  const tempUnit = tempUnitLabel(preferences?.temperature_unit)
-  const windUnit = windUnitLabel(preferences?.wind_unit)
   const apiUnits = apiTempUnits(preferences?.temperature_unit)
-  const detailRequestKey = `${location.latitude},${location.longitude},${apiUnits}`
-
-  const fetchWeather = async () => {
-    setLoading(true)
-    try {
-      const weatherData = await getDashboardWeather(location.latitude, location.longitude, apiUnits)
-      setWeather(weatherData)
-    } catch (error) {
-      console.error('Error fetching weather for location:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const windApiUnit = preferences?.wind_unit ?? 'mph'
+  const preferencesReady = preferenceUser === (user?.id ?? '')
+  const { weather, loading, error, refresh: fetchWeather } = useDashboardWeather({
+    latitude: location.latitude, longitude: location.longitude, units: apiUnits, windUnit: windApiUnit, enabled: preferencesReady,
+  })
+  const tempUnit = tempUnitLabel(weather?.units)
+  const windUnit = windUnitLabel(weather?.windUnit)
+  const detailTempUnit = tempUnitLabel(detailedWeatherData?.current.units)
+  const detailRequestKey = `${location.latitude},${location.longitude},${apiUnits},${windApiUnit},${preferencesReady}`
 
   useEffect(() => {
-    fetchWeather()
-    // Refresh when coordinates or unit pref change (not just id) so edits and pref toggles refetch.
-  }, [location.id, location.latitude, location.longitude, apiUnits])
-
-  useEffect(() => {
+    detailRequest.current?.abort()
     setDetailedWeatherData(null)
-    detailRequestKeyRef.current = ''
+    setDetailedLoading(false)
+    setShowDetailedWeather(false)
+    return () => detailRequest.current?.abort()
   }, [detailRequestKey])
 
   useEffect(() => {
     let cancelled = false
-    if (!user) {
-      setPreferences(null)
-      return
+    const userId = user?.id ?? ''
+    setPreferenceUser(null)
+    const resolvePreferences = async () => {
+      let prefs: UserPreferences | null = null
+      try { if (userId) prefs = await getUserPreferences(userId) } catch { /* Use existing default units. */ }
+      if (!cancelled) { setPreferences(prefs); setPreferenceUser(userId) }
     }
-    getUserPreferences(user.id)
-      .then((prefs) => {
-        if (!cancelled) setPreferences(prefs)
-      })
-      .catch(() => {
-        if (!cancelled) setPreferences(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [user])
+    void resolvePreferences()
+    return () => { cancelled = true }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!detailedWeatherData) return
+    const remaining = Date.parse(detailedWeatherData.current.fetchedAt) + DASHBOARD_WEATHER_MAX_AGE_MS - Date.now()
+    if (!Number.isFinite(remaining) || remaining <= 0) { setDetailedWeatherData(null); return }
+    const timer = setTimeout(() => setDetailedWeatherData(null), remaining + 1)
+    return () => clearTimeout(timer)
+  }, [detailedWeatherData])
 
   const handleToggleFavorite = async () => {
     if (!user) return
@@ -146,62 +115,57 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   }
 
   const fetchDetailedWeather = async () => {
-    const requestKey = detailRequestKey
-    detailRequestKeyRef.current = requestKey
+    if (!preferencesReady) return
+    detailRequest.current?.abort()
+    const controller = new AbortController()
+    detailRequest.current = controller
     setDetailedLoading(true)
 
     try {
       const base = `lat=${location.latitude}&lon=${location.longitude}`
       const [detailSettled, aqiSettled] = await Promise.allSettled([
-        fetch(`/api/dashboard-weather?${base}&units=${apiUnits}&detail=1`),
-        fetch(`/api/weather/air-quality?${base}`),
+        fetch(`/api/dashboard-weather?${base}&units=${apiUnits}&wind_unit=${windApiUnit}&detail=1&refresh=1`, { signal: controller.signal, cache: 'no-store' }),
+        fetch(`/api/weather/air-quality?${base}`, { signal: controller.signal }),
       ])
 
-      if (detailRequestKeyRef.current !== requestKey) return
+      if (controller.signal.aborted) return
 
       if (detailSettled.status === 'rejected' || !detailSettled.value.ok) {
         throw new Error('Failed to fetch detailed weather')
       }
       const detail = await detailSettled.value.json()
 
-      let aqi = 0
-      let aqiCategory = 'No Data'
+      let aqi: number | null = null
+      let aqiCategory = 'Unavailable'
       try {
         if (aqiSettled.status === 'fulfilled' && aqiSettled.value.ok) {
           const aqiData = await aqiSettled.value.json()
-          aqi = aqiData.aqi ?? 0
-          aqiCategory = aqiData.category || 'No Data'
+          aqi = typeof aqiData.aqi === 'number' && Number.isFinite(aqiData.aqi) ? aqiData.aqi : null
+          aqiCategory = aqi === null ? 'Unavailable' : aqiData.category || 'Unavailable'
         }
       } catch (err) {
         console.warn('Air quality fetch failed:', err)
       }
 
-      if (detailRequestKeyRef.current !== requestKey) return
+      if (controller.signal.aborted) return
 
       const fullWeatherData: DetailedWeatherData = {
         current: detail.current,
         forecast: detail.forecast ?? [],
-        uvIndex: detail.uvIndex ?? 0,
+        uvIndex: detail.uvIndex ?? null,
         airQuality: {
           aqi,
           category: aqiCategory,
-          pm25: 0,
-          pm10: 0,
-          o3: 0,
-          no2: 0,
-          so2: 0,
-          co: 0,
         },
-        alerts: [],
       }
 
       setDetailedWeatherData(fullWeatherData)
     } catch (error) {
-      if (detailRequestKeyRef.current === requestKey) {
+      if (!controller.signal.aborted) {
         console.error('Error fetching detailed weather:', error)
       }
     } finally {
-      if (detailRequestKeyRef.current === requestKey) {
+      if (!controller.signal.aborted) {
         setDetailedLoading(false)
       }
     }
@@ -217,12 +181,13 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
   const citySlug = `${location.city.toLowerCase().replace(/\s+/g, '-')}-${location.state?.toLowerCase().replace(/\s+/g, '-') || location.country.toLowerCase()}`
 
   return (
-    <Card className={`transition-all duration-200 hover:scale-[1.02] container-primary glow-interactive ${themeClasses.background}`}>
+    <Card data-testid={`saved-location-${location.id}`} className={`transition-all duration-200 hover:scale-[1.02] container-primary glow-interactive ${themeClasses.background}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <button
               onClick={toggleDetailedView}
+              disabled={!preferencesReady}
               className={`block text-left hover:underline transition-all duration-200 ${themeClasses.text}`}
             >
               <CardTitle className="font-mono font-bold text-lg uppercase tracking-wider mb-1">
@@ -281,8 +246,11 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
 
       <CardContent>
         {/* Weather Data */}
-        {loading ? (
-          <div className="flex items-center justify-center py-6">
+        {(error || weather?.stale) && <p role="status" className="mb-2 text-xs font-mono">{weather ? 'Showing older weather. Refresh to check for an update.' : error}</p>}
+        {loading && weather && <p role="status" className="text-xs font-mono">Refreshing weather…</p>}
+        {weather && <p className="mb-2 text-xs font-mono">Fetched <time dateTime={weather.fetchedAt}>{new Date(weather.fetchedAt).toLocaleString()}</time>{weather.observedAt && <> · Conditions at <time dateTime={weather.observedAt}>{new Date(weather.observedAt).toLocaleString()}</time></>}</p>}
+        {loading && !weather ? (
+          <div role="status" aria-label="Loading weather" className="flex items-center justify-center py-6">
             <div className={`animate-spin rounded-full h-6 w-6 border-b-2 border-terminal-accent`}></div>
           </div>
         ) : weather ? (
@@ -301,7 +269,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
                     {weather.description}
                   </p>
                   <p className={`text-xs font-mono ${themeClasses.mutedText}`}>
-                    Feels like {weather.feelsLike}{tempUnit}
+                    Feels like {weather.feelsLike ?? '—'}{tempUnit}
                   </p>
                 </div>
               </div>
@@ -311,26 +279,26 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className={`p-3 border-0 rounded-sm`}>
                 <Droplets className={`w-4 h-4 mx-auto mb-1 ${themeClasses.mutedText}`} />
-                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{weather.humidity}%</p>
+                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{weather.humidity ?? '—'}%</p>
                 <p className={`text-xs font-mono ${themeClasses.mutedText}`}>Humidity</p>
               </div>
 
               <div className={`p-3 border-0 rounded-sm`}>
                 <Wind className={`w-4 h-4 mx-auto mb-1 ${themeClasses.mutedText}`} />
-                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{Math.round(weather.windSpeed)} {windUnit}</p>
+                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{weather.windSpeed === null ? '—' : Math.round(weather.windSpeed)} {windUnit}</p>
                 <p className={`text-xs font-mono ${themeClasses.mutedText}`}>Wind Speed</p>
               </div>
 
               <div className={`p-3 border-0 rounded-sm`}>
                 <Thermometer className={`w-4 h-4 mx-auto mb-1 ${themeClasses.mutedText}`} />
-                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{weather.pressure} hPa</p>
+                <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>{weather.pressure ?? '—'} hPa</p>
                 <p className={`text-xs font-mono ${themeClasses.mutedText}`}>Pressure</p>
               </div>
 
               <div className={`p-3 border-0 rounded-sm`}>
                 <MapPin className={`w-4 h-4 mx-auto mb-1 ${themeClasses.mutedText}`} />
                 <p className={`text-sm font-mono font-bold ${themeClasses.text}`}>
-                  {weather.visibility} {(weather.units ?? apiUnits) === 'metric' ? 'km' : 'mi'}
+                  {weather.visibility ?? '—'} {(weather.units ?? apiUnits) === 'metric' ? 'km' : 'mi'}
                 </p>
                 <p className={`text-xs font-mono ${themeClasses.mutedText}`}>Visibility</p>
               </div>
@@ -340,6 +308,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
             <div className="mt-4">
               <Button
                 onClick={toggleDetailedView}
+                disabled={!preferencesReady}
                 className={`w-full font-mono uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90`}
               >
                 <Eye className="w-4 h-4 inline mr-2" />
@@ -395,11 +364,11 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
                         <p className={`font-mono text-xs font-bold mb-1 ${themeClasses.text}`}>
                           {day.day}
                         </p>
-                        <p className={`font-mono text-sm mb-1 ${getTemperatureColor(day.highTemp)}`}>
-                          {day.highTemp}{tempUnit}
+                        <p className={`font-mono text-sm mb-1 ${getTemperatureColor(day.highTemp ?? 60)}`}>
+                          {day.highTemp ?? '—'}{detailTempUnit}
                         </p>
                         <p className={`font-mono text-xs ${themeClasses.mutedText}`}>
-                          {day.lowTemp}{tempUnit}
+                          {day.lowTemp ?? '—'}{detailTempUnit}
                         </p>
                         <p className={`font-mono text-[10px] mt-1 ${themeClasses.mutedText} truncate`}>
                           {day.condition}
@@ -409,15 +378,16 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
                   </div>
                 </div>
 
+                {detailedWeatherData.current.stale && <p role="status" className="text-xs font-mono">Detailed weather could not refresh. Fetched {new Date(detailedWeatherData.current.fetchedAt).toLocaleString()}.</p>}
                 {/* Environmental Data */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 container-nested text-center">
                     <Sun className={`w-5 h-5 mx-auto mb-1 ${themeClasses.mutedText}`} />
                     <p className={`font-mono text-sm font-bold ${themeClasses.text}`}>
-                      UV Index: {detailedWeatherData.uvIndex}
+                      UV Index: {detailedWeatherData.uvIndex ?? 'Unavailable'}
                     </p>
                     <p className={`font-mono text-xs ${themeClasses.mutedText}`}>
-                      {detailedWeatherData.uvIndex < 3 ? 'Low' :
+                      {detailedWeatherData.uvIndex === null ? 'Unavailable' : detailedWeatherData.uvIndex < 3 ? 'Low' :
                         detailedWeatherData.uvIndex < 6 ? 'Moderate' :
                           detailedWeatherData.uvIndex < 8 ? 'High' : 'Very High'}
                     </p>
@@ -426,7 +396,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
                   <div className="p-3 container-nested text-center">
                     <Wind className={`w-5 h-5 mx-auto mb-1 ${themeClasses.mutedText}`} />
                     <p className={`font-mono text-sm font-bold ${themeClasses.text}`}>
-                      AQI: {detailedWeatherData.airQuality.aqi}
+                      AQI: {detailedWeatherData.airQuality.aqi ?? 'Unavailable'}
                     </p>
                     <p className={`font-mono text-xs ${themeClasses.mutedText}`}>
                       {detailedWeatherData.airQuality.category}
