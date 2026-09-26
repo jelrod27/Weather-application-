@@ -1,3 +1,5 @@
+import type { BeginnerNight } from '@/lib/stargazer/beginner-types';
+
 /**
  * Stargazer - Astrophotography Forecast Types
  */
@@ -277,6 +279,7 @@ export interface LimitingFactor {
 // ============================================================================
 
 export interface StargazerData {
+  beginnerNight?: BeginnerNight;
   score: StargazerScore | UnavailableStargazerScore;
   bestWindow: BestWindow | null;
   nightAverage: number | null;

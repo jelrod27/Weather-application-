@@ -3,6 +3,7 @@
  * Nominatim is reached only via reverseGeocodingForStargazer.
  */
 
+import { buildBeginnerNight } from '@/lib/stargazer/beginner-plan';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { reverseGeocodingForStargazer } from '@/lib/geocoding/lookup';
 import {
@@ -108,7 +109,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     : [];
 
   const sunsetMs = (darkWindow.sunset ?? darkWindow.astronomicalDusk).getTime();
-  const sunriseMs = (darkWindow.sunrise ?? darkWindow.astronomicalDawn).getTime();
+  const sunriseMs = darkWindow.sunrise?.getTime() ?? (darkWindow.status === 'none' ? now.getTime() + 86400000 : darkWindow.astronomicalDawn.getTime());
 
   const weatherHours = hours.filter(hour => hour.time.getTime() >= sunsetMs && hour.time.getTime() <= sunriseMs).map(hour => {
     const point = sevenTimerData ? getSevenTimerAtTime(sevenTimerData, hour.time, now) : null;
@@ -159,6 +160,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
 
   return {
     ...photography,
+    beginnerNight: buildBeginnerNight(weatherHours, { lat, lon, timezone: timeZone }, darkWindow, now.getTime()),
     darkWindow,
     moon: moonInfo,
     planets,
