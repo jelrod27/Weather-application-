@@ -37,6 +37,30 @@ describe('Weather skills lessons', () => {
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
   })
 
+  it('moves focus to the completion link when Next step finishes the lesson', () => {
+    render(<WeatherSkills returnHref="/radar" />)
+
+    const next = screen.getByRole('button', { name: 'Next step' })
+    next.focus()
+    fireEvent.click(next)
+    expect(next).toHaveFocus()
+    fireEvent.click(next)
+
+    const completionLink = within(screen.getByRole('region', { name: 'Read the clouds' }))
+      .getByRole('link', { name: 'Back to your weather' })
+    expect(completionLink).toHaveFocus()
+
+    const firstStep = screen.getByRole('button', { name: '1. Layers' })
+    firstStep.focus()
+    fireEvent.click(firstStep)
+    expect(firstStep).toHaveFocus()
+
+    const finalStep = screen.getByRole('button', { name: '3. Towers' })
+    finalStep.focus()
+    fireEvent.click(finalStep)
+    expect(finalStep).toHaveFocus()
+  })
+
   it('preserves the originating weather view in every lesson link and completion link', () => {
     const returnHref = '/radar?lat=47.6&lon=-122.33&location=Seattle'
     render(<WeatherSkills initialLesson="storms" returnHref={returnHref} />)

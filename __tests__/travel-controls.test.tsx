@@ -38,8 +38,10 @@ const flyResult: FlyTripScore = {
   },
 };
 
-function response(payload: unknown, ok = true): Response {
-  return { ok, status: ok ? 200 : 422, json: async () => payload } as Response;
+type TripResponse = Pick<Response, 'ok' | 'status' | 'json'>;
+
+function response(payload: unknown, ok = true): TripResponse {
+  return { ok, status: ok ? 200 : 422, json: async () => payload };
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
@@ -131,7 +133,7 @@ describe('shared travel controls', () => {
   });
 
   it.each(Object.entries(edits))('ignores a response arriving after editing %s', async (_name, edit) => {
-    const pending = deferred<Response>();
+    const pending = deferred<TripResponse>();
     tripFetch.mockReturnValueOnce(pending.promise);
     render(<TravelPage />);
     fillTrip();
@@ -186,8 +188,8 @@ describe('shared travel controls', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     fireEvent.change(screen.getByRole('combobox', { name: 'Destination' }), { target: { value: 'BOS' } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    const oldRequest = deferred<Response>();
-    const newRequest = deferred<Response>();
+    const oldRequest = deferred<TripResponse>();
+    const newRequest = deferred<TripResponse>();
     tripFetch.mockReturnValueOnce(oldRequest.promise).mockReturnValueOnce(newRequest.promise);
     fireEvent.click(screen.getByRole('button', { name: 'Plan trip' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Destination' }), { target: { value: 'SEA' } });

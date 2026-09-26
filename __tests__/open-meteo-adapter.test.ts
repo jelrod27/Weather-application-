@@ -33,6 +33,7 @@ jest.mock('@/lib/runtime-env', () => ({
 }));
 
 import { buildWeatherDataFromOpenMeteo } from '@/lib/weather/open-meteo-adapter';
+import { getForecastBrief } from '@/lib/weather/forecast-brief';
 import type {
   OpenMeteoAirQualityResponse,
   OpenMeteoForecastResponse,
@@ -235,6 +236,24 @@ describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
     expect(result.hourlyForecast![0].condition).toBe('Clouds');
     expect(result.hourlyForecast![0].precipChance).toBe(10);
     expect(result.hourlyForecast![0].windDirection).toBe('SW');
+  });
+
+  it.each(['null', 'truncated'])('preserves %s hourly readings through the adapter and briefing, alongside real zeroes', async (missing) => {
+    const forecast = makeForecastResponse();
+    forecast.utc_offset_seconds = 0;
+    forecast.timezone = 'UTC';
+    forecast.hourly!.time = ['2025-03-25T14:00', '2025-03-25T15:00'];
+    forecast.hourly!.temperature_2m = missing === 'null' ? [0, null] : [0];
+    forecast.hourly!.precipitation_probability = missing === 'null' ? [0, null] : [0];
+    stubClientApiFetches(forecast);
+
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+    expect(result.hourlyForecast?.[0]).toMatchObject({ temp: 0, precipChance: 0 });
+    expect(result.hourlyForecast?.[1]).toMatchObject({ temp: null, precipChance: null });
+    expect(getForecastBrief(result.hourlyForecast!, Date.now())).toMatchObject({ temperature: null, precipitation: null });
+    expect(getForecastBrief(result.hourlyForecast!.slice(0, 1), Date.now())).toMatchObject({
+      temperature: { low: 0, high: 0 }, precipitation: { low: 0, high: 0, trend: 'steady' },
+    });
   });
 
   // Regression: hourly.time[] entries are tz-naive wall-clock strings in the

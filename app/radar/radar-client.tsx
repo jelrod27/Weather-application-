@@ -10,7 +10,6 @@ import dynamicImport from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, Map as MapIcon } from 'lucide-react'
 import { useLocationContext } from '@/components/location-context'
-import type { WeatherData } from '@/lib/types'
 import { parseRadarCoordinateTarget } from '@/lib/radar/radar-location-target'
 import { useTheme } from '@/components/theme-provider'
 import { fetchWeatherData } from '@/lib/weather'
@@ -18,6 +17,7 @@ import WeatherSearch from '@/components/weather-search'
 import { getWeatherJourneyLinks, getWeatherLessonHref, getWeatherReturnHref } from '@/lib/weather/journey'
 import { useRadarWarning } from '@/hooks/useRadarWarning'
 import { getOfficialWarningHref, nwsGeometryBBox, radarWarningReturnHref } from '@/lib/warnings/alert-links'
+import type { WeatherData } from '@/lib/types'
 
 const RadarShell = dynamicImport(() => import('@/components/radar-v2/radar-shell'), {
   ssr: false,

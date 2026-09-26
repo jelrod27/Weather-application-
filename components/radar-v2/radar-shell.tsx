@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import 'ol/ol.css'
 import { formatLocationTimeWithZone } from '@/lib/format-location-time'
-import type { ThemeType } from '@/lib/theme-config'
-import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
+import { cn } from '@/lib/utils'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
 import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
@@ -16,7 +16,8 @@ import { RadarWidgetBadge } from '@/components/radar-v2/radar-widget-badge'
 import { useRadarController } from '@/hooks/useRadarController'
 import { ShareButtons } from '@/components/share-buttons'
 
-import 'ol/ol.css'
+import type { ThemeType } from '@/lib/theme-config'
+import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 
 interface RadarShellProps {
   selectedWarning?: NWSAlertDetail | null
@@ -89,10 +90,10 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
       data-radar-container
       data-radar-v2
       data-radar-widget={isWidget ? 'true' : undefined}
-      className={`relative flex w-full flex-col ${isFullPage ? 'h-full min-h-0 bg-black' : 'h-full min-h-0'}`}
+      className={cn('relative flex h-full min-h-0 w-full flex-col', isFullPage && 'bg-black')}
     >
-      <div className={`relative min-h-0 flex-1 ${isFullPage ? 'h-full' : 'h-full min-h-[280px]'}`}>
-        <div ref={mapRef} className={`h-full w-full ${isFullPage ? 'bg-black' : 'bg-[#e8e4dc]'} ${isFullPage ? '' : 'rounded-lg'}`} />
+      <div className={cn('relative min-h-0 flex-1 h-full', !isFullPage && 'min-h-[280px]')}>
+        <div ref={mapRef} className={cn('h-full w-full', isFullPage ? 'bg-black' : 'rounded-lg bg-[#e8e4dc]')} />
 
         {isFullPage && locationName && onLocationSearch && shareConfig ? (
           <RadarTopBar

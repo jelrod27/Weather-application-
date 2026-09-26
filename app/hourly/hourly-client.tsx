@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { WeatherJourney } from "@/components/weather-journey"
 import { formatLocationTimeWithZone } from "@/lib/format-location-time"
-import { Loader2 } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { useLocationContext } from "@/components/location-context"
 import WeatherSearch from "@/components/weather-search"
@@ -117,7 +117,7 @@ export default function HourlyClient(): React.JSX.Element {
           {hourDetail && <section aria-label="Selected hour details" className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-xl font-semibold tracking-tight">{formatLocationTimeWithZone(hourDetail.dt * 1000, weather.timezone || 'UTC')} · {hourDetail.condition}</h2>
             <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-4">
-              {Number.isFinite(hourDetail.temp) && <div><dt className="text-xs text-muted-foreground">Temperature</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.temp)}{weather.unit}</dd></div>}
+              {hourDetail.temp !== null && Number.isFinite(hourDetail.temp) && <div><dt className="text-xs text-muted-foreground">Temperature</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.temp)}{weather.unit}</dd></div>}
               {Number.isFinite(hourDetail.precipChance) && <div><dt className="text-xs text-muted-foreground">Precipitation chance</dt><dd className="text-xl tabular-nums">{hourDetail.precipChance}%</dd></div>}
               {hourDetail.windSpeed != null && Number.isFinite(hourDetail.windSpeed) && <div><dt className="text-xs text-muted-foreground">Wind</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.windSpeed)} {weather.unit === '°C' ? 'km/h' : 'mph'}</dd></div>}
             </dl>

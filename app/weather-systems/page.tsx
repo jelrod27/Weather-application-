@@ -22,6 +22,7 @@ import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { themeTokens } from '@/lib/theme-tokens'
+import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { weatherSystemsDatabase } from "@/data/weather-systems"
@@ -152,8 +153,10 @@ export default function WeatherSystemsPage() {
               <React.Fragment key={system.id}>
                 {/* System Card */}
                 <Card
-                  className={`transition-all duration-300 ${expandedSystemId === system.id ? themeClasses.borderColor : 'border-gray-600'
-                    }`}
+                  className={cn(
+                    'transition-all duration-300',
+                    expandedSystemId === system.id ? themeClasses.borderColor : 'border-gray-600',
+                  )}
                   style={{
                     borderColor: expandedSystemId === system.id ? themeClasses.shadowColor : '#666',
                     boxShadow: expandedSystemId === system.id
@@ -198,7 +201,10 @@ export default function WeatherSystemsPage() {
                       aria-expanded={expandedSystemId === system.id}
                       aria-controls={expandedSystemId === system.id ? `system-details-${system.id}` : undefined}
                       onClick={() => handleSystemToggle(system.id)}
-                      className={`mt-4 min-h-11 w-full rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)] ${themeClasses.accentText}`}
+                      className={cn(
+                        'mt-4 min-h-11 w-full rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)]',
+                        themeClasses.accentText,
+                      )}
                     >
                       {expandedSystemId === system.id ? 'Hide analysis' : 'Show full analysis'}
                     </button>

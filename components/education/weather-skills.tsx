@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Cloud, Radar, Wind } from 'lucide-react'
 import PageWrapper from '@/components/page-wrapper'
@@ -165,6 +165,7 @@ interface WeatherSkillsProps {
 
 export default function WeatherSkills({ initialLesson = 'clouds', returnHref }: WeatherSkillsProps): ReactElement {
   const [step, setStep] = useState(0)
+  const focusCompletionOnMount = useRef(false)
   const lesson = LESSONS[initialLesson]
   const current = lesson.steps[step]
   const cloud = cloudDatabase.find((entry) => entry.name === CLOUD_NAMES[step])
@@ -269,13 +270,22 @@ export default function WeatherSkills({ initialLesson = 'clouds', returnHref }: 
             {step < 2 ? (
               <button
                 type="button"
-                onClick={() => setStep((previous) => previous + 1)}
+                onClick={() => {
+                  focusCompletionOnMount.current = step === 1
+                  setStep((previous) => previous + 1)
+                }}
                 className={cn('inline-flex min-h-11 items-center gap-2 rounded-md border border-[var(--weather-primary)] px-4 py-2 text-sm font-semibold text-[var(--weather-primary)]', FOCUS_STYLE)}
               >
                 Next step<ArrowRight aria-hidden="true" className="h-4 w-4" />
               </button>
             ) : (
               <Link
+                ref={(link) => {
+                  if (link && focusCompletionOnMount.current) {
+                    focusCompletionOnMount.current = false
+                    link.focus()
+                  }
+                }}
                 href={returnHref ?? '/'}
                 className={cn('inline-flex min-h-11 items-center gap-2 rounded-md border border-[var(--weather-primary)] px-4 py-2 text-sm font-semibold text-[var(--weather-primary)]', FOCUS_STYLE)}
               >

@@ -24,9 +24,9 @@ export function getForecastBrief(hourly: EnhancedHourlyForecast[], now: number):
   const chances = hours.map(hour => hour.precipChance)
   const winds = hours.map(hour => hour.windSpeed)
   // A range over incomplete readings could understate the forecast. Omit that metric instead.
-  const temperature = temperatures.every(Number.isFinite)
+  const temperature = temperatures.every((value): value is number => typeof value === 'number' && Number.isFinite(value))
     ? { low: Math.min(...temperatures), high: Math.max(...temperatures) } : null
-  const precipitation = chances.every(value => Number.isFinite(value) && value >= 0 && value <= 100)
+  const precipitation = chances.every((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100)
     ? {
       low: Math.min(...chances), high: Math.max(...chances),
       trend: chances[chances.length - 1] - chances[0] >= 20 ? 'rising' as const

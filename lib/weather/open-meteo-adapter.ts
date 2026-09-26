@@ -316,15 +316,17 @@ export async function buildWeatherDataFromOpenMeteo(
       const timeString = formatHourlyLabel(hourTime);
 
       const hourWeatherCode = hourly.weather_code?.[i] ?? 0;
+      const temperature = hourly.temperature_2m?.[i];
+      const precipitationChance = hourly.precipitation_probability?.[i];
 
       hourlyForecast.push({
         dt,
         time: timeString,
-        temp: Math.round(hourly.temperature_2m?.[i] ?? 0),
+        temp: typeof temperature === 'number' && Number.isFinite(temperature) ? Math.round(temperature) : null,
         feelsLike: hourly.apparent_temperature?.[i],
         condition: wmoCodeToConditionLabel(hourWeatherCode),
         description: getWMODescription(hourWeatherCode).toLowerCase(),
-        precipChance: Math.round(hourly.precipitation_probability?.[i] ?? 0),
+        precipChance: typeof precipitationChance === 'number' && Number.isFinite(precipitationChance) && precipitationChance >= 0 && precipitationChance <= 100 ? Math.round(precipitationChance) : null,
         windSpeed: hourly.wind_speed_10m?.[i],
         windDirection: hourly.wind_direction_10m?.[i] != null
           ? getCompassDirection(hourly.wind_direction_10m[i])

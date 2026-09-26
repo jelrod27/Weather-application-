@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import { getWeatherJourneyLinks, getWeatherLessonHref } from '@/lib/weather/journey'
 import type { WeatherData } from '@/lib/types'
 
@@ -21,7 +22,7 @@ export function WeatherJourney({ weather, active }: WeatherJourneyProps): React.
   return (
     <nav aria-label={`Weather views for ${weather.location}`} className="border-b border-border">
       <ul className="flex gap-5 sm:gap-7 text-sm">
-        {items.map(item => <li key={item.key}><Link href={item.href} aria-current={active === item.key ? 'page' : undefined} className={`inline-flex min-h-11 items-center border-b-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${active === item.key ? 'border-primary font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-primary'}`}>{item.label}</Link></li>)}
+        {items.map(item => <li key={item.key}><Link href={item.href} aria-current={active === item.key ? 'page' : undefined} className={cn('inline-flex min-h-11 items-center border-b-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring', active === item.key ? 'border-primary font-semibold text-foreground' : 'border-transparent text-muted-foreground hover:text-primary')}>{item.label}</Link></li>)}
       </ul>
     </nav>
   )

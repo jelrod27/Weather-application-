@@ -31,7 +31,7 @@ export interface OpenMeteoCurrent {
 
 export interface OpenMeteoHourly {
   time: string[];
-  temperature_2m: number[];
+  temperature_2m: (number | null)[];
   apparent_temperature: number[];
   relative_humidity_2m: number[];
   weather_code: number[];
@@ -40,8 +40,8 @@ export interface OpenMeteoHourly {
   uv_index: number[];
   visibility: number[];
   precipitation: number[];
-  precipitation_probability: number[];
-  [key: string]: string[] | number[];
+  precipitation_probability: (number | null)[];
+  [key: string]: string[] | (number | null)[];
 }
 
 export interface OpenMeteoDaily {

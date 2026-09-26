@@ -10,20 +10,22 @@ const hour = (offset: number, overrides: Partial<EnhancedHourlyForecast> = {}): 
   condition: 'Clouds', description: 'Cloudy', ...overrides,
 })
 
-it('uses upcoming timestamps, sorts and deduplicates, and excludes ended or distant periods', () => {
-  const brief = getForecastBrief([hour(7), hour(-1), hour(6), hour(2), hour(0), hour(1), hour(1)], NOW)
-  expect(brief?.hours.map(value => value.dt)).toEqual([hour(1).dt, hour(2).dt, hour(6).dt])
-  expect(getForecastBrief([hour(-5), hour(8)], NOW)).toBeNull()
-})
+describe('forecast briefing data', () => {
+  it('uses upcoming timestamps, sorts and deduplicates, and excludes ended or distant periods', () => {
+    const brief = getForecastBrief([hour(7), hour(-1), hour(6), hour(2), hour(0), hour(1), hour(1)], NOW)
+    expect(brief?.hours.map(value => value.dt)).toEqual([hour(1).dt, hour(2).dt, hour(6).dt])
+    expect(getForecastBrief([hour(-5), hour(8)], NOW)).toBeNull()
+  })
 
-it('retains measured zero and omits incomplete or invalid metric ranges', () => {
-  expect(getForecastBrief([hour(1)], NOW)).toMatchObject({ temperature: { low: 15, high: 15 }, precipitation: { low: 0, high: 0 }, windHigh: 0 })
-  expect(getForecastBrief([hour(1), hour(2, { temp: NaN, precipChance: 110, windSpeed: undefined })], NOW)).toMatchObject({ temperature: null, precipitation: null, windHigh: null })
-})
+  it('retains measured zero and omits incomplete or invalid metric ranges', () => {
+    expect(getForecastBrief([hour(1)], NOW)).toMatchObject({ temperature: { low: 15, high: 15 }, precipitation: { low: 0, high: 0 }, windHigh: 0 })
+    expect(getForecastBrief([hour(1), hour(2, { temp: NaN, precipChance: 110, windSpeed: undefined })], NOW)).toMatchObject({ temperature: null, precipitation: null, windHigh: null })
+  })
 
-it('summarizes probability trends without promising rain arrival', () => {
-  expect(getForecastBrief([hour(1), hour(2, { precipChance: 60 })], NOW)?.precipitation?.trend).toBe('rising')
-  expect(getForecastBrief([hour(1, { precipChance: 60 }), hour(2)], NOW)?.precipitation?.trend).toBe('easing')
+  it('summarizes probability trends without promising rain arrival', () => {
+    expect(getForecastBrief([hour(1), hour(2, { precipChance: 60 })], NOW)?.precipitation?.trend).toBe('rising')
+    expect(getForecastBrief([hour(1, { precipChance: 60 }), hour(2)], NOW)?.precipitation?.trend).toBe('easing')
+  })
 })
 
 describe('local briefing display', () => {

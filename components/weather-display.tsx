@@ -9,34 +9,6 @@
 
 import React from "react"
 import Link from 'next/link'
-import { getTodayForecast } from '@/lib/weather/daily-forecast'
-import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
-import type { ThemeType } from '@/lib/theme-config'
-import { themeTokens } from '@/lib/theme-tokens'
-import { WeatherJourney } from "@/components/weather-journey"
-import { getWeatherJourneyLinks } from "@/lib/weather/journey"
-import { ForecastBrief } from "@/components/forecast-brief"
-import { HeroWeatherCard } from "@/components/hero-weather-card"
-import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
-import { AirQualityDisplay } from "@/components/air-quality-display"
-import { PollenDisplay } from "@/components/pollen-display"
-import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
-import { ResponsiveGrid } from "@/components/responsive-container"
-import LazyWeatherMap from '@/components/lazy-weather-map'
-import { MoonPhaseIcon } from '@/components/moon-phase-icon'
-import type { WeatherData } from "@/lib/types"
-import {
-  getUVSeverity,
-  getHumiditySeverity,
-  getPressureCategory,
-  getWindSeverity,
-  getVisibilitySeverity,
-  windDirectionToDegrees,
-} from "@/lib/weather-severity"
 import {
   Sun,
   Thermometer,
@@ -53,6 +25,36 @@ import {
   ArrowUp,
   Sunset,
 } from "lucide-react"
+import { getTodayForecast } from '@/lib/weather/daily-forecast'
+import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
+import { themeTokens } from '@/lib/theme-tokens'
+import { WeatherJourney } from "@/components/weather-journey"
+import { getWeatherJourneyLinks } from "@/lib/weather/journey"
+import { ForecastBrief } from "@/components/forecast-brief"
+import { HeroWeatherCard } from "@/components/hero-weather-card"
+import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
+import { AirQualityDisplay } from "@/components/air-quality-display"
+import { PollenDisplay } from "@/components/pollen-display"
+import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
+import { ResponsiveGrid } from "@/components/responsive-container"
+import LazyWeatherMap from '@/components/lazy-weather-map'
+import { MoonPhaseIcon } from '@/components/moon-phase-icon'
+import {
+  getUVSeverity,
+  getHumiditySeverity,
+  getPressureCategory,
+  getWindSeverity,
+  getVisibilitySeverity,
+  windDirectionToDegrees,
+} from "@/lib/weather-severity"
+
+
+import type { ThemeType } from '@/lib/theme-config'
+import type { WeatherData } from '@/lib/types'
 
 interface WeatherDisplayProps {
   weather: WeatherData

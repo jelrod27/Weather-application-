@@ -22,21 +22,9 @@ import { cn } from "@/lib/utils"
 import { formatLocationTime } from '@/lib/format-location-time'
 import WeatherIconModern from "./weather-icon-modern"
 import type { ThemeType } from "@/lib/theme-config"
+import type { EnhancedHourlyForecast } from '@/lib/types'
 
-export interface HourlyForecastData {
-  dt: number;
-  time: string;
-  temp: number;
-  feelsLike?: number;
-  condition: string;
-  description: string;
-  precipChance: number;
-  windSpeed?: number;
-  windDirection?: string;
-  humidity?: number;
-  uvIndex?: number;
-  icon?: string;
-}
+export type HourlyForecastData = EnhancedHourlyForecast;
 
 interface HourlyForecastProps {
   hourly: HourlyForecastData[];
@@ -197,7 +185,7 @@ function HourlyCard({
         "text-lg sm:text-xl font-bold mb-2 tabular-nums tracking-tight text-primary font-mono",
         isCurrentHour && "glow"
       )}>
-        {Math.round(hour.temp)}{tempUnit}
+        {hour.temp !== null && Number.isFinite(hour.temp) ? `${Math.round(hour.temp)}${tempUnit}` : <span aria-label="Temperature unavailable">—</span>}
       </div>
 
       {onSelect && <button type="button" aria-pressed={selected} aria-label={`Details for ${formatLocationTime(hour.dt * 1000, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric' })}`} onClick={onSelect} className="my-1 min-h-11 rounded px-2 text-xs font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">Details</button>}
@@ -207,10 +195,10 @@ function HourlyCard({
         {/* Precip */}
         <div className={cn(
           "flex items-center gap-0.5",
-          hour.precipChance > 0 ? "text-terminal-weather-precip" : "text-muted-foreground"
+          hour.precipChance !== null && hour.precipChance > 0 ? "text-terminal-weather-precip" : "text-muted-foreground"
         )}>
           <Droplets className="w-3 h-3" />
-          <span>{hour.precipChance}%</span>
+          <span>{hour.precipChance !== null && Number.isFinite(hour.precipChance) ? `${hour.precipChance}%` : 'Chance unavailable'}</span>
         </div>
       </div>
     </Card>

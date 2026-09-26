@@ -21,6 +21,7 @@ import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { themeTokens } from '@/lib/theme-tokens'
+import { cn } from '@/lib/utils'
 
 // Shadcn UI components
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
@@ -249,7 +250,7 @@ export default function CloudTypesPage() {
             <React.Fragment key={cloud.id}>
               {/* Cloud Card */}
               <Card
-                className={`transition-all duration-300 container-primary ${expandedCloudId === cloud.id ? themeClasses.glow : ''}`}
+                className={cn('transition-all duration-300 container-primary', expandedCloudId === cloud.id && themeClasses.glow)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -300,7 +301,10 @@ export default function CloudTypesPage() {
                     aria-expanded={expandedCloudId === cloud.id}
                     aria-controls={expandedCloudId === cloud.id ? `cloud-details-${cloud.id}` : undefined}
                     onClick={() => handleCloudToggle(cloud.id)}
-                    className={`mt-3 min-h-11 w-full rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)] ${themeClasses.accentText}`}
+                    className={cn(
+                      'mt-3 min-h-11 w-full rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)]',
+                      themeClasses.accentText,
+                    )}
                   >
                     {expandedCloudId === cloud.id ? 'Hide details' : 'Show details'}
                   </button>
@@ -309,7 +313,7 @@ export default function CloudTypesPage() {
 
               {/* Expanded Details */}
               {expandedCloudId === cloud.id && (
-                <Card id={`cloud-details-${cloud.id}`} role="region" aria-label={`${cloud.name} details`} className={`col-span-full mt-6 container-primary ${themeClasses.glow}`}>
+                <Card id={`cloud-details-${cloud.id}`} role="region" aria-label={`${cloud.name} details`} className={cn('col-span-full mt-6 container-primary', themeClasses.glow)}>
                   <CardHeader>
                     <CardTitle className={`text-2xl font-mono uppercase tracking-wider text-center ${themeClasses.accentText}`}>
                       [{cloud.abbreviation}] {cloud.name} TECHNICAL ANALYSIS
