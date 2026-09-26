@@ -1,11 +1,13 @@
 'use client';
 
+import { warningCoverageCopy, type AlertCoverage } from '@/lib/warnings/coverage-status';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { happeningNowEmptyCopy } from '@/lib/home/hub-utils';
 import { getHubAlertsHref } from '@/lib/home/hub-links';
 
 export type HappeningNowCardProps = {
+  coverage?: AlertCoverage;
   count: number | null;
   headline: string;
   severity: string | null;
@@ -17,6 +19,7 @@ export type HappeningNowCardProps = {
 };
 
 export default function HappeningNowCard({
+  coverage = 'supported',
   count,
   headline,
   severity,
@@ -58,6 +61,8 @@ export default function HappeningNowCard({
           <div className="h-4 w-4/5 rounded bg-muted/40" />
           <div className="h-3 w-full rounded bg-muted/30" />
         </div>
+      ) : coverage !== 'supported' || count == null ? (
+        <p className="text-sm font-bold leading-tight text-foreground">{warningCoverageCopy(coverage === 'supported' ? 'unavailable' : coverage)}</p>
       ) : covering ? (
         <>
           <p className="text-sm font-bold leading-tight text-foreground group-hover:text-primary line-clamp-2">

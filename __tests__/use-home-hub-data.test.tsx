@@ -72,3 +72,42 @@ describe('useHomeHubData', () => {
     expect(unhandled).not.toHaveBeenCalled()
   })
 })
+
+it('reports unsupported coverage for an international city instead of no warnings', async () => {
+  const realFetch = global.fetch
+  global.fetch = jest.fn().mockResolvedValue(okJson({ alerts: [], coverage: 'outside-nws', happeningNow: [] }))
+  try {
+    const { result } = renderHook(() => useHomeHubData({ lat: 51.5, lon: -0.12, country: 'GB', locationLabel: 'London' }))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.alerts.coverage).toBe('outside-nws')
+    expect(result.current.alerts.count).toBeNull()
+  } finally { global.fetch = realFetch }
+})
+
+it('keeps a point-feed warning nearby when its polygon excludes the viewed city', async () => {
+  const realFetch = global.fetch
+  const warning = { id: 'nearby', warningEventId: 'event', event: 'Tornado Warning', severity: 'Severe', urgency: 'Immediate', expires: '2099-01-01',
+    geometry: { type: 'Polygon', coordinates: [[[-121.7, 37.6], [-121.6, 37.6], [-121.6, 37.7], [-121.7, 37.7], [-121.7, 37.6]]] } }
+  global.fetch = jest.fn().mockResolvedValue(okJson({ alerts: [warning], happeningNow: [] }))
+  try {
+    const { result } = renderHook(() => useHomeHubData(PLEASANTON))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.alerts.count).toBe(0)
+    expect(result.current.alerts.nearbyCount).toBe(1)
+  } finally { global.fetch = realFetch }
+})
+
+it('counts one event when the national snapshot and local feed carry different updates', async () => {
+  const realFetch = global.fetch
+  const base = { warningEventId: 'same-event', event: 'Tornado Warning', severity: 'Severe', urgency: 'Immediate', expires: '2099-01-01',
+    geometry: { type: 'Polygon', coordinates: [[[-122, 37.5], [-121.7, 37.5], [-121.7, 37.8], [-122, 37.8], [-122, 37.5]]] } }
+  global.fetch = jest.fn(async (url) => okJson({ alerts: String(url).includes('point=')
+    ? [{ ...base, id: 'new', sent: '2026-09-25T12:00:00Z' }]
+    : [{ ...base, id: 'old', sent: '2026-09-25T11:00:00Z' }], happeningNow: [] }))
+  try {
+    const { result } = renderHook(() => useHomeHubData(PLEASANTON))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.alerts.count).toBe(1)
+    expect(result.current.alerts.topAlertId).toBe('new')
+  } finally { global.fetch = realFetch }
+})

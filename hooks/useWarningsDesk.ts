@@ -1,5 +1,6 @@
 'use client'
 
+import type { AlertCoverage } from '@/lib/warnings/coverage-status'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { findAlertByQueryParam } from '@/lib/home/hub-links'
@@ -36,6 +37,7 @@ export function useWarningsDesk() {
   const [stateFilter, setStateFilter] = useState('')
   const [freshness, setFreshness] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pointCoverage, setPointCoverage] = useState<AlertCoverage>('loading')
   const [pointActiveKeys, setPointActiveKeys] = useState<Set<string> | undefined>(undefined)
 
   const load = useCallback(async (signal?: AbortSignal, silent = false) => {
@@ -57,6 +59,7 @@ export function useWarningsDesk() {
         freshness?: string
       }
       if (signal?.aborted) return
+      setError(null)
       setAlerts(dJson.alerts ?? [])
       setWis(dJson.wis ?? null)
       setFreshness(dJson.freshness ?? null)
@@ -83,7 +86,10 @@ export function useWarningsDesk() {
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') return
       console.error('[warnings-client]', e)
-      if (!silent) setError('Could not load warnings data. Try again shortly.')
+      setError('Could not load warnings data. Current alert status is unavailable.')
+      setAlerts([])
+      setWis(null)
+      setGeoJson(null)
     } finally {
       if (!signal?.aborted && !silent) setLoading(false)
     }
@@ -106,17 +112,20 @@ export function useWarningsDesk() {
 
   useEffect(() => {
     setPointActiveKeys(undefined)
+    setPointCoverage('loading')
     if (!pin) return
     const { lat, lon } = pin
     const ctrl = new AbortController()
     const run = async () => {
       try {
         const res = await fetch(
-          `/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(`${lat},${lon}`)}`,
+          `/api/weather/alerts?detail=1&point=${encodeURIComponent(`${lat},${lon}`)}`,
           { cache: 'no-store', signal: ctrl.signal },
         )
-        if (!res.ok) return
-        const data = (await res.json()) as { alerts?: NWSAlertDetail[] }
+        if (!res.ok) throw new Error('point alerts unavailable')
+        const data = (await res.json()) as { alerts?: NWSAlertDetail[]; coverage?: string }
+        if (ctrl.signal.aborted) return
+        setPointCoverage(data.coverage === 'outside-nws' ? 'outside-nws' : 'supported')
         const keys = new Set<string>()
         for (const alert of data.alerts ?? []) {
           keys.add(alert.id)
@@ -125,6 +134,8 @@ export function useWarningsDesk() {
         setPointActiveKeys(keys)
       } catch (error) {
         if ((error as Error)?.name === 'AbortError') return
+        setPointCoverage('unavailable')
+        setPointActiveKeys(undefined)
         console.error('[warnings-client] point alerts', error)
       }
     }
@@ -142,8 +153,8 @@ export function useWarningsDesk() {
   )
   const stateOptions = useMemo(() => uniqueAlertStates(alerts), [alerts])
   const { onYou, nearby, elsewhere } = useMemo(
-    () => splitLocalWarnings(filtered, pin, pointActiveKeys),
-    [filtered, pin, pointActiveKeys],
+    () => splitLocalWarnings(filtered, pointCoverage === 'supported' ? pin : null, pointActiveKeys),
+    [filtered, pin, pointActiveKeys, pointCoverage],
   )
 
   const tickerAlerts = useMemo(
@@ -215,6 +226,7 @@ export function useWarningsDesk() {
     pin,
     pinLabel,
     pinResolving,
+    pointCoverage,
     alerts,
     wis,
     geoJson,
