@@ -65,6 +65,15 @@ export default function HourlyForecast({
     }
   }, [now]);
 
+  useEffect(() => {
+    if (selectedHour === undefined || !scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const selectedCard = container.querySelector(`[data-hour="${selectedHour}"]`);
+    if (selectedCard) {
+      container.scrollLeft += selectedCard.getBoundingClientRect().left - container.getBoundingClientRect().left;
+    }
+  }, [selectedHour]);
+
   if (!hourly || hourly.length === 0) {
     return null;
   }
@@ -95,15 +104,12 @@ export default function HourlyForecast({
               const hourTime = new Date(hour.dt * 1000);
               const isCurrentHour =
                 now !== null && Math.abs(hourTime.getTime() - now) < 1800000; // Within 30 min
-              // City wall-clock label is already local; don't use viewer getHours().
-              const isMidnight = hour.time === '12 AM';
 
               return (
                 <HourlyCard
                   key={hour.dt}
                   hour={hour}
                   isCurrentHour={isCurrentHour}
-                  isMidnight={isMidnight}
                   tempUnit={tempUnit}
                   timezone={timezone}
                   selected={selectedHour === hour.dt}
@@ -126,7 +132,6 @@ export default function HourlyForecast({
 function HourlyCard({
   hour,
   isCurrentHour,
-  isMidnight,
   tempUnit,
   timezone,
   selected,
@@ -134,14 +139,18 @@ function HourlyCard({
 }: {
   hour: HourlyForecastData;
   isCurrentHour: boolean;
-  isMidnight: boolean;
   tempUnit: string;
   timezone: string;
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  // Provider labels use one fixed offset, which can differ after a DST change.
+  const localTime = formatLocationTime(hour.dt * 1000, timezone, { hour: 'numeric' });
+  const isMidnight = localTime === '12 AM';
+
   return (
     <Card
+      data-hour={hour.dt}
       className={cn(
         "hourly-forecast-card flex-shrink-0 flex flex-col items-center justify-between snap-start",
         "rounded-xl p-3 sm:p-4 min-w-[84px] sm:min-w-[100px]",
@@ -160,7 +169,7 @@ function HourlyCard({
         "text-xs sm:text-sm font-bold mb-2 whitespace-nowrap text-foreground",
         isCurrentHour && "text-primary glow"
       )}>
-        {isCurrentHour ? 'NOW' : hour.time}
+        {isCurrentHour ? 'NOW' : localTime}
       </div>
 
       {/* Day marker for midnight */}
