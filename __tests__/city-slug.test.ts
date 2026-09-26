@@ -15,4 +15,14 @@ describe('city-slug', () => {
     expect(slugToSearchTerm('kansas-city')).toBe('Kansas City');
     expect(slugToDisplayName('london-uk')).toBe('London Uk');
   });
+  it.each([
+    ['London, UK', 'London, GB'],
+    ['London, United Kingdom', 'London, GB'],
+    ['Paris, France', 'Paris, FR'],
+    ['Tokyo, Japan', 'Tokyo, JP'],
+    ['New York, NY', 'New York, NY'],
+    ['90210', '90210'],
+  ])('preserves the geographic hint through routing: %s', (input, expected) => {
+    expect(slugToSearchTerm(locationInputToSlug(input))).toBe(expected);
+  });
 });

@@ -5,6 +5,7 @@
 
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { toStateAbbr } from '@/lib/us-states'
+import { normalizeCountryHint } from '@/lib/geocoding/country-hints'
 import type { GeocodingResponse } from '@/lib/weather'
 
 const OPEN_METEO_GEO = 'https://geocoding-api.open-meteo.com/v1/search'
@@ -112,7 +113,7 @@ export async function searchGeocodingDirect(
 ): Promise<GeocodingResponse[]> {
   const parts = q.split(',').map((s) => s.trim()).filter(Boolean)
   const cityName = parts[0] || q
-  const filterHint = parts[1]?.toUpperCase() || null
+  const filterHints = parts.slice(1)
 
   const url = `${OPEN_METEO_GEO}?name=${encodeURIComponent(cityName)}&count=10&language=en&format=json`
   const res = await fetchWithTimeout(url, { next: { revalidate: 3600 } })
@@ -125,16 +126,22 @@ export async function searchGeocodingDirect(
   let results = data.results || []
   if (results.length === 0) return []
 
-  if (filterHint) {
-    const filtered = results.filter((r) => {
+  if (filterHints.length) {
+    results = results.filter((r) => filterHints.every((hint, index) => {
+      const filterHint = hint.toUpperCase()
+      // A two-part US search keeps CA/Georgia as state hints. An explicit
+      // third country part disambiguates the full city/state/country form.
+      const stateHint = index === 0 ? toStateAbbr(hint) : null
+      if (stateHint) return r.country_code === 'US' && toStateAbbr(r.admin1) === stateHint
+      const countryHint = normalizeCountryHint(hint)
+      if (countryHint) return r.country_code?.toUpperCase() === countryHint
       const stateAbbr = toStateAbbr(r.admin1)
       if (stateAbbr && stateAbbr === filterHint) return true
       if (r.admin1 && r.admin1.toUpperCase() === filterHint) return true
       if (r.country_code && r.country_code.toUpperCase() === filterHint) return true
-      if (filterHint === 'UK' && r.country_code?.toUpperCase() === 'GB') return true
+      if (r.country?.toUpperCase() === filterHint) return true
       return false
-    })
-    if (filtered.length > 0) results = filtered
+    }))
   }
 
   return results.slice(0, limit).map(mapOpenMeteoResult)

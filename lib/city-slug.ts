@@ -1,4 +1,5 @@
 import { US_STATE_CODES } from '@/lib/us-states'
+import { normalizeCountryHint } from '@/lib/geocoding/country-hints'
 
 /** Normalize "San Ramon, CA" → "san-ramon-ca" for /weather/[city] routes. */
 export function locationInputToSlug(input: string): string {
@@ -27,6 +28,14 @@ export function slugToSearchTerm(slug: string): string {
       const cityParts = parts.slice(0, -1)
       const cityName = cityParts.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
       return `${cityName}, ${maybeState}`
+    }
+  }
+  for (let count = Math.min(3, parts.length - 1); count > 0; count--) {
+    const country = normalizeCountryHint(parts.slice(-count).join(' '))
+    if (country) {
+      // Full country names must not become ambiguous US state codes (Canada → CA).
+      const hint = US_STATE_CODES.has(country) ? slugToDisplayName(parts.slice(-count).join('-')) : country
+      return `${slugToSearchTerm(parts.slice(0, -count).join('-'))}, ${hint}`
     }
   }
   return slugToDisplayName(slug)

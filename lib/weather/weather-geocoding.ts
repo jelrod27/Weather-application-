@@ -9,6 +9,7 @@
 
 import { getApiUrl, normalizeInput } from './weather-utils'
 import { isUsState } from '@/lib/us-states'
+import { normalizeCountryHint } from '@/lib/geocoding/country-hints'
 
 // ============================================================================
 // Types
@@ -43,28 +44,6 @@ export interface GeocodedLocation {
   displayName: string;
   country?: string;
 }
-
-// ============================================================================
-// Location Lists
-// ============================================================================
-
-const COUNTRY_CODES = [
-  'US', 'GB', 'UK', 'CA', 'AU', 'DE', 'FR', 'IT', 'ES', 'JP', 'CN', 'IN',
-  'BR', 'RU', 'MX', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI',
-  'IE', 'PT', 'GR', 'TR', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR', 'SI',
-  'SK', 'LT', 'LV', 'EE', 'IS', 'MT', 'CY', 'LU'
-];
-
-const COUNTRY_NAMES = [
-  'united states', 'united kingdom', 'canada', 'australia', 'germany',
-  'france', 'italy', 'spain', 'japan', 'china', 'india', 'brazil',
-  'russia', 'mexico', 'netherlands', 'belgium', 'switzerland',
-  'austria', 'sweden', 'norway', 'denmark', 'finland', 'ireland',
-  'portugal', 'greece', 'turkey', 'poland', 'czech republic',
-  'hungary', 'romania', 'bulgaria', 'croatia', 'slovenia', 'slovakia',
-  'lithuania', 'latvia', 'estonia', 'iceland', 'malta', 'cyprus',
-  'luxembourg'
-];
 
 // ============================================================================
 // Location Parsing
@@ -140,6 +119,17 @@ export const parseLocationInput = (input: string): LocationQuery => {
         };
       }
 
+      // If we have a third part, assume middle is state/region and last is country
+      if (rest.length > 0) {
+        return {
+          query: cleanInput,
+          type: 'city_country',
+          city: cleanCity,
+          state: regionOrCountry,
+          country: rest[0]
+        };
+      }
+
       // Check if it's a US state (canonical list in lib/us-states)
       if (isUsState(regionOrCountry)) {
         return {
@@ -151,11 +141,8 @@ export const parseLocationInput = (input: string): LocationQuery => {
         };
       }
 
-      const regionOrCountryLower = regionOrCountry.toLowerCase();
-
       // Check if it's a known country
-      const isCountry = COUNTRY_CODES.includes(regionOrCountry.toUpperCase()) ||
-                       COUNTRY_NAMES.includes(regionOrCountryLower);
+      const isCountry = normalizeCountryHint(regionOrCountry) !== null;
 
       if (isCountry) {
         return {
@@ -163,17 +150,6 @@ export const parseLocationInput = (input: string): LocationQuery => {
           type: 'city_country',
           city: cleanCity,
           country: regionOrCountry
-        };
-      }
-
-      // If we have a third part, assume middle is state/region and last is country
-      if (rest.length > 0) {
-        return {
-          query: cleanInput,
-          type: 'city_country',
-          city: cleanCity,
-          state: regionOrCountry,
-          country: rest[0]
         };
       }
 
