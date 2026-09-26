@@ -34,7 +34,8 @@
     "tests/e2e/outdoor-planning.spec.ts",
     "__tests__/stargazer/**/*.test.ts",
     "__tests__/stargazer/**/*.test.tsx",
-    "tests/e2e/stargazer-beginner.spec.ts"
+    "tests/e2e/stargazer-beginner.spec.ts",
+    "tests/e2e/weather-ui-journey.spec.ts"
   ],
   "exclude": [
     "node_modules",

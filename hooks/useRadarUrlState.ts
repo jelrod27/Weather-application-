@@ -29,6 +29,7 @@ export interface UseRadarUrlStateProps {
 }
 
 export interface UseRadarUrlStateResult {
+  suspendUrlSync: () => void
   speed: 0.5 | 1 | 2
   setSpeed: (speed: 0.5 | 1 | 2) => void
   handlePlayPause: () => void
@@ -57,6 +58,7 @@ export function useRadarUrlState({
 
   const timerRef = useRef<number | null>(null)
   const urlSyncTimerRef = useRef<number | null>(null)
+  const urlSyncSuspendedRef = useRef(false)
   const [speed, setSpeed] = useState<0.5 | 1 | 2>(1)
 
   useEffect(() => {
@@ -80,10 +82,17 @@ export function useRadarUrlState({
     }
   }, [frames.length, isPlaying, speed, frameIndexRef, setFrameIndex])
 
+  const suspendUrlSync = useCallback(() => {
+    // Playback must not replace a pending navigation back with another radar URL.
+    urlSyncSuspendedRef.current = true
+    if (urlSyncTimerRef.current != null) window.clearTimeout(urlSyncTimerRef.current)
+  }, [])
+
   useEffect(() => {
     if (!isFullPage || !metadata || frames.length === 0) return
     if (urlSyncTimerRef.current != null) window.clearTimeout(urlSyncTimerRef.current)
     urlSyncTimerRef.current = window.setTimeout(() => {
+      if (urlSyncSuspendedRef.current) return
       const radarParams = serializeRadarUrlParams({
         layers: activeLayers,
         frameIndex,
@@ -129,6 +138,7 @@ export function useRadarUrlState({
   }, [frames.length, setIsPlaying, setFrameIndex])
 
   return {
+    suspendUrlSync,
     speed,
     setSpeed,
     handlePlayPause,

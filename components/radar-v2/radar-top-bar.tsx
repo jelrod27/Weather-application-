@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, MapPin, Search, X } from 'lucide-react'
 import { ShareButtons } from '@/components/share-buttons'
 
 interface RadarTopBarProps {
+  onNavigate?: () => void
   returnHref?: string
   returnLabel?: string
   learnHref?: string
@@ -19,7 +20,7 @@ interface RadarTopBarProps {
   }
 }
 
-export function RadarTopBar({ locationName, onSearch, searchError, shareConfig, returnHref, returnLabel, learnHref }: RadarTopBarProps): React.JSX.Element {
+export function RadarTopBar({ onNavigate, locationName, onSearch, searchError, shareConfig, returnHref, returnLabel, learnHref }: RadarTopBarProps): React.JSX.Element {
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
 
@@ -40,6 +41,7 @@ export function RadarTopBar({ locationName, onSearch, searchError, shareConfig, 
         <div className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elev)] px-2 py-1.5 text-[var(--text)] shadow-lg">
           <Link
             href={returnHref ?? '/'}
+            onNavigate={onNavigate}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             aria-label={returnLabel ?? (returnHref ? 'Back to warning' : 'Back to home')}
           >
@@ -61,7 +63,7 @@ export function RadarTopBar({ locationName, onSearch, searchError, shareConfig, 
                 <Search className="h-5 w-5" />
               </button>
               {learnHref ? (
-                <Link href={learnHref} className="hidden min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex">
+                <Link href={learnHref} onNavigate={onNavigate} className="hidden min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:inline-flex">
                   <BookOpen className="h-4 w-4" aria-hidden="true" />
                   Read this radar
                 </Link>

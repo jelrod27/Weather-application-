@@ -69,6 +69,7 @@ export type UseRadarControllerResult = {
   isPlaying: boolean
   isLiveFrame: boolean
   relativeTime: string
+  suspendUrlSync: () => void
   speed: 0.5 | 1 | 2
   setSpeed: (speed: 0.5 | 1 | 2) => void
   handleLayersChange: (layers: RadarShareLayerState) => void
@@ -164,6 +165,7 @@ export function useRadarController({
     isPlaying: overlay.isPlaying,
     isLiveFrame,
     relativeTime: formatRadarFrameAgeLabel(currentFrame),
+    suspendUrlSync: url.suspendUrlSync,
     speed: url.speed,
     setSpeed: url.setSpeed,
     handleLayersChange: overlay.handleLayersChange,

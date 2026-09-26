@@ -58,6 +58,7 @@ const retainedRadar: ReturnType<typeof useRadarController> = {
   setSpeed: jest.fn(),
   handleLayersChange: jest.fn(),
   handlePresetChange: jest.fn(),
+  suspendUrlSync: jest.fn(),
   handlePlayPause: jest.fn(),
   handleSkipToStart: jest.fn(),
   handleSkipToEnd: jest.fn(),

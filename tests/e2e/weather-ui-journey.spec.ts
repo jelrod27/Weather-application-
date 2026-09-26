@@ -9,6 +9,11 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await stubWeatherApis(page, { cityName: 'London', country: 'GB', lat: 51.5, lon: -0.12 })
       await stubHomeHubApis(page)
       await stubRadarApis(page)
+      // Reproduce a slow lesson response while radar frames continue advancing.
+      await page.route('**/education/weather-skills?**', async route => {
+        await new Promise(resolve => setTimeout(resolve, 1800))
+        await route.continue()
+      })
       await page.goto('/weather/london-uk?location=51.5%2C-0.12')
 
       const brief = page.getByRole('region', { name: 'Next few hours' })
@@ -27,7 +32,9 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await page.getByRole('navigation', { name: /Weather views for London/ }).getByRole('link', { name: 'Radar', exact: true }).click()
       await expect(page.getByTestId('radar-top-bar')).toContainText('London')
       await expect(page.getByRole('link', { name: 'Back to hourly' })).toHaveAttribute('href', /\/hourly\?.*lat=51.5&lon=-0.12/)
-      await expect(page.getByRole('button', { name: /^(Play|Pause)$/ })).toBeVisible()
+      const play = page.getByRole('button', { name: 'Play', exact: true })
+      if (await play.isVisible()) await play.click()
+      await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible()
       if (viewport.width < 640) await page.getByRole('button', { name: 'Controls', exact: true }).click()
       await page.getByRole('link', { name: 'Read this radar', exact: true }).click()
       await expect(page.getByRole('heading', { name: 'Read the legend before the color' })).toBeVisible()
@@ -40,6 +47,23 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await expect(page.getByRole('heading', { level: 1 })).toContainText('London')
       const size = await page.evaluate(() => ({ content: document.documentElement.scrollWidth, viewport: innerWidth }))
       expect(size.content).toBeLessThanOrEqual(size.viewport)
+    })
+
+    test('returns from playing radar while the hourly page loads slowly', async ({ page }) => {
+      await stubWeatherApis(page, { cityName: 'London', country: 'GB', lat: 51.5, lon: -0.12 })
+      await stubHomeHubApis(page)
+      await stubRadarApis(page)
+      await page.route('**/hourly?**', async route => {
+        await new Promise(resolve => setTimeout(resolve, 1800))
+        await route.continue()
+      })
+      const returnTo = encodeURIComponent('/hourly?lat=51.5&lon=-0.12&city=London')
+      await page.goto(`/radar?lat=51.5&lon=-0.12&label=London&returnTo=${returnTo}`)
+      await expect(page.getByTestId('radar-top-bar')).toContainText('London')
+      await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible()
+      await page.getByRole('link', { name: 'Back to hourly' }).click()
+      await expect(page).toHaveURL(/\/hourly\?lat=51.5&lon=-0.12/)
+      await expect(page.getByRole('button', { name: /^Details for/ }).first()).toBeVisible()
     })
 
     test('one travel mode and day choice control the whole outlook', async ({ page }) => {

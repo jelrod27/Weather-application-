@@ -74,6 +74,7 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
     setSpeed,
     handleLayersChange,
     handlePresetChange,
+    suspendUrlSync,
     handlePlayPause,
     handleSkipToStart,
     handleSkipToEnd,
@@ -97,6 +98,7 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
 
         {isFullPage && locationName && onLocationSearch && shareConfig ? (
           <RadarTopBar
+            onNavigate={suspendUrlSync}
             returnHref={props.returnHref}
             returnLabel={props.returnLabel}
             learnHref={props.learnHref}
@@ -146,7 +148,7 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
                     <ShareButtons config={shareConfig} className="[&>a]:min-h-11 [&>a]:min-w-11 [&>button]:min-h-11 [&>button]:min-w-11" />
                   </div>
                 ) : null}
-                {props.learnHref ? <Link href={props.learnHref} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Read this radar</Link> : null}
+                {props.learnHref ? <Link href={props.learnHref} onNavigate={suspendUrlSync} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Read this radar</Link> : null}
               </>
             )}
             layers={activeLayers}
