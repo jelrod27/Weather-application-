@@ -13,7 +13,7 @@
 
 import type { JSX, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import PageWrapper from '@/components/page-wrapper'
 import WeatherSearch from '@/components/weather-search'
 import { useTheme } from '@/components/theme-provider'
@@ -52,6 +52,8 @@ interface CityWeatherClientProps {
 
 export default function CityWeatherClient({ city, citySlug, heading, climateGuide }: CityWeatherClientProps): JSX.Element {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const routedLocation = searchParams.get('location')?.trim()
   const { theme } = useTheme()
 
   const {
@@ -59,7 +61,7 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
     loading,
     error,
     handleLocationSearch,
-  } = useCityWeatherSession(city.searchTerm)
+  } = useCityWeatherSession(routedLocation || city.searchTerm)
 
   const precipitation = usePrecipitationHistory(
     weather?.coordinates?.lat,

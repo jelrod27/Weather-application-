@@ -50,21 +50,21 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
 
 interface PageParams {
   params: Promise<{ city: string }>
+  searchParams?: Promise<{ location?: string | string[] }>
 }
 
-export default async function CityWeatherPage({ params }: PageParams) {
+export default async function CityWeatherPage({ params, searchParams }: PageParams) {
   const { city: citySlug } = await params
 
-  // `/weather/New-York-NY` and `/weather/new-york` would otherwise render
-  // noindex duplicates of `/weather/new-york-ny`. Arbitrary slugs still render
-  // (the home search routes any typed location here), they just stay noindex.
+  // Preserve Hourly's resolved location when normalizing an existing city route.
   const lowerSlug = citySlug.toLowerCase()
-  if (citySlug !== lowerSlug && cityMetadata[lowerSlug]) {
-    permanentRedirect(`/weather/${lowerSlug}`)
-  }
-  const aliasTarget = resolveCitySlugAlias(lowerSlug, Object.keys(cityMetadata))
-  if (aliasTarget) {
-    permanentRedirect(`/weather/${aliasTarget}`)
+  const canonicalSlug = citySlug !== lowerSlug && cityMetadata[lowerSlug]
+    ? lowerSlug : resolveCitySlugAlias(lowerSlug, Object.keys(cityMetadata))
+  if (canonicalSlug) {
+    const location = (await searchParams)?.location
+    const query = typeof location === 'string' && location.trim()
+      ? `?${new URLSearchParams({ location })}` : ''
+    permanentRedirect(`/weather/${canonicalSlug}${query}`)
   }
 
   const city = cityMetadata[citySlug]

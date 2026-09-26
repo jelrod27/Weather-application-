@@ -22,6 +22,15 @@ export const fetchWeatherData = async (
   unitSystem: 'metric' | 'imperial' = 'imperial'
 ): Promise<WeatherData> => {
   try {
+    // Coordinate links preserve the resolved location without another city search.
+    const coordinateMatch = locationInput.trim().match(/^([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)$/);
+    if (coordinateMatch) {
+      const lat = Number(coordinateMatch[1]);
+      const lon = Number(coordinateMatch[2]);
+      if (Math.abs(lat) > 90 || Math.abs(lon) > 180) throw new Error('Invalid coordinates');
+      return fetchWeatherByLocation(`${lat},${lon}`, unitSystem);
+    }
+
     // Parse location input
     const locationQuery = parseLocationInput(locationInput);
 
