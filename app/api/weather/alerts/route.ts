@@ -5,6 +5,7 @@
  * or point-based queries for the warnings command center.
  */
 
+import { selectActiveAlerts } from '@/lib/warnings/active-alerts'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import {
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     let { details, freshness, coverage } = await loadDetails({ harm, point })
+    details = selectActiveAlerts(details)
     const coverageField = coverage ? { coverage } : {}
 
     if (area) {
@@ -112,12 +114,8 @@ export async function GET(request: NextRequest) {
     const tiers = countNwsProductTiers(details)
     const wisMerged = { ...wis, ...tiers }
 
-    const cacheControl =
-      freshness === 'live-fallback'
-        ? geojson || detail
-          ? 'public, s-maxage=120, stale-while-revalidate=60'
-          : 'public, s-maxage=300, stale-while-revalidate=60'
-        : 'private, no-store'
+    // Provider requests retain their cache; response validity is checked on every read.
+    const cacheControl = 'private, no-store'
 
     if (geojson) {
       const maxChars = point ? 12_000 : 2_500

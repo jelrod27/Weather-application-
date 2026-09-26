@@ -40,11 +40,11 @@ export default function WISBadge() {
   const fetchWIS = useCallback(async () => {
     try {
       const response = await fetch('/api/weather/wis')
-      if (!response.ok) return
+      if (!response.ok) { setWis(null); return }
       const data = await response.json()
       setWis(data)
     } catch {
-      // Silently fail — badge just won't show
+      setWis(null)
     }
   }, [])
 
@@ -63,13 +63,14 @@ export default function WISBadge() {
         'flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-mono font-bold transition-all hover:scale-105',
         levelColors[wis.level]
       )}
-      title={`Weather Intensity: ${wis.label} (${wis.totalAlerts} active alerts)`}
+      title={`US nationwide weather intensity: ${wis.label} (${wis.totalAlerts} active alerts)`}
     >
       <span className={cn(
         'w-2 h-2 rounded-full',
         dotColors[wis.level],
         wis.level === 'red' && 'animate-pulse'
       )} />
+      <span>US</span>
       <span className="hidden sm:inline">{wis.label}</span>
       <span className="font-extrabold">{wis.score}</span>
     </Link>

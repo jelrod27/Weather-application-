@@ -134,7 +134,7 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
         <CardHeader className={'border-b border-subtle py-3'}>
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
             <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            SPACE WEATHER ALERTS
+            RECENT NOAA MESSAGES
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
@@ -149,23 +149,23 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
       <Card className={cn('container-primary', themeClasses.background)}>
         <CardHeader className={'border-b border-subtle py-3'}>
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <Radio className="w-5 h-5 text-green-500" />
-            SPACE WEATHER ALERTS
-            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded">
-              ALL QUIET
+            <Radio className="w-5 h-5 text-muted-foreground" />
+            RECENT NOAA MESSAGES
+            <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">
+              NO MESSAGES
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className={cn('text-center font-mono text-sm', themeClasses.text)}>
-            No active space weather alerts at this time.
+            No recent messages available. This does not establish current alert status.
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const currentAlert = alerts[currentIndex];
+  const currentAlert = alerts[currentIndex] ?? alerts[0];
   const Icon = getAlertIcon(currentAlert.type);
   const severityColors = getSeverityColors(currentAlert.severity);
 
@@ -175,9 +175,9 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
         <div className="flex items-center justify-between">
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
             <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            SPACE WEATHER ALERTS
+            RECENT NOAA MESSAGES
             <span className={cn('text-xs px-2 py-0.5 border', severityColors)}>
-              {alerts.length} ACTIVE
+              {alerts.length} RECENT
             </span>
           </CardTitle>
           {alerts.length > 1 && (
@@ -211,7 +211,7 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
               </div>
             </div>
             <span className={cn('text-xs font-mono', themeClasses.text, 'opacity-70')}>
-              {currentTime ? formatTimeAgo(currentAlert.issuedAt, { now: currentTime.getTime() }) : '--'}
+              {currentTime && Number.isFinite(Date.parse(currentAlert.issuedAt)) ? formatTimeAgo(currentAlert.issuedAt, { now: currentTime.getTime() }) : 'Issue time unavailable'}
             </span>
           </div>
 
@@ -226,6 +226,9 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
           </div>
         </div>
 
+        <p className="mt-3 text-xs font-mono text-muted-foreground">
+          Messages may be expired or superseded. Check the <a href="https://www.swpc.noaa.gov/products/alerts-watches-and-warnings" target="_blank" rel="noopener noreferrer" className="underline">official NOAA bulletin</a> for validity.
+        </p>
         {/* Progress indicators */}
         {alerts.length > 1 && (
           <div className="flex justify-center gap-1 mt-3">

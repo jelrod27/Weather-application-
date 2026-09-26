@@ -145,7 +145,7 @@ export default function SolarCommandTerminal({
             <StatusCell label="Kp Index" value={kpIndex?.current?.value?.toFixed(0) ?? '—'} color={themeClasses.accentText} />
             <StatusCell label="Sunspots" value={sunspots?.current?.sunspotNumber?.toString() ?? '—'} color="text-yellow-500" />
             <StatusCell label="Wind km/s" value={solarWind?.current?.speed?.toString() ?? '—'} color="text-cyan-500" />
-            <StatusCell label="Alerts" value={alerts.length > 0 ? alerts.length.toString() : 'OK'} color={alerts.length > 0 ? 'text-orange-500' : 'text-green-500'} />
+            <StatusCell label="Messages" value={alerts.length.toString()} color="text-muted-foreground" />
             <StatusCell label="R Scale" value={scales?.R?.scale?.toString() ?? '—'} color={scaleColor(scales?.R?.scale ?? 0)} />
             <StatusCell label="S Scale" value={scales?.S?.scale?.toString() ?? '—'} color={scaleColor(scales?.S?.scale ?? 0)} />
             <StatusCell label="G Scale" value={scales?.G?.scale?.toString() ?? '—'} color={scaleColor(scales?.G?.scale ?? 0)} />

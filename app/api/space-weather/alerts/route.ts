@@ -127,23 +127,21 @@ export async function GET(request: NextRequest) {
 
     // Parse and transform alerts (most recent first, limit to 20)
     const alerts: SpaceWeatherAlert[] = data
-      .slice(0, 20)
-      .map((alert) => ({
-        id: alert.product_id || `alert-${Date.now()}`,
+      .map((alert, index) => ({
+        id: `${alert.product_id || "message"}-${alert.issue_datetime || index}`,
         type: parseAlertType(alert.product_id || ''),
         severity: parseSeverity(alert.message || ''),
         title: extractTitle(alert.message || '', alert.product_id || ''),
-        issuedAt: alert.issue_datetime || new Date().toISOString(),
+        issuedAt: alert.issue_datetime ? (/Z$|[+-]\d{2}:?\d{2}$/.test(alert.issue_datetime) ? alert.issue_datetime : alert.issue_datetime.replace(' ', 'T') + 'Z') : '',
         summary: extractSummary(alert.message || ''),
         rawMessage: alert.message || '',
-      }));
-
-    // Sort by severity (most severe first)
-    const severityOrder = { extreme: 0, severe: 1, strong: 2, moderate: 3, minor: 4, info: 5 };
-    alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+      }))
+      .sort((a, b) => (Date.parse(b.issuedAt) || 0) - (Date.parse(a.issuedAt) || 0))
+      .slice(0, 20);
 
     return NextResponse.json({
       alerts,
+      validity: 'recent-messages',
       count: alerts.length,
       timestamp: new Date().toISOString(),
       source: 'NOAA Space Weather Prediction Center',

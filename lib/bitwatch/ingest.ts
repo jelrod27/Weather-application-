@@ -1,3 +1,4 @@
+import { selectActiveAlerts } from '@/lib/warnings/active-alerts'
 import { createHash } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { activeWarningDetails, applySourceMessage, type WarningEventRecord } from '@/lib/bitwatch/lifecycle'
@@ -468,7 +469,7 @@ export async function loadCanonicalActiveAlerts(
     .filter((alert) => alert && typeof alert.id === 'string')
 
   return {
-    alerts,
+    alerts: selectActiveAlerts(alerts, nowMs),
     freshness: age <= FRESH_MS ? 'fresh' : 'delayed',
     observedAt: successAt,
   }

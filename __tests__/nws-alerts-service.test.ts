@@ -74,13 +74,10 @@ describe('Weather Intensity Score (WIS)', () => {
   });
 
   describe('fetchAlertCounts', () => {
-    it('should return empty counts when API fails', async () => {
+    it('should report counts unavailable when API fails', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await fetchAlertCounts();
-
-      expect(result.total).toBe(0);
-      expect(result.severity.extreme).toBe(0);
+      await expect(fetchAlertCounts()).rejects.toThrow('Network error');
     });
 
     it('should count alerts by severity from the full alerts response', async () => {
@@ -89,11 +86,11 @@ describe('Weather Intensity Score (WIS)', () => {
         json: async () => ({
           type: 'FeatureCollection',
           features: [
-            { type: 'Feature', geometry: null, properties: { id: '1', headline: '', event: '', severity: 'Extreme', urgency: 'Immediate', expires: '', areaDesc: '' } },
-            { type: 'Feature', geometry: null, properties: { id: '2', headline: '', event: '', severity: 'Severe', urgency: 'Expected', expires: '', areaDesc: '' } },
-            { type: 'Feature', geometry: null, properties: { id: '3', headline: '', event: '', severity: 'Moderate', urgency: 'Expected', expires: '', areaDesc: '' } },
-            { type: 'Feature', geometry: null, properties: { id: '4', headline: '', event: '', severity: 'Minor', urgency: 'Future', expires: '', areaDesc: '' } },
-            { type: 'Feature', geometry: null, properties: { id: '5', headline: '', event: '', severity: 'Minor', urgency: 'Future', expires: '', areaDesc: '' } },
+            { type: 'Feature', geometry: null, properties: { id: '1', headline: '', event: '', severity: 'Extreme', urgency: 'Immediate', expires: '2099-01-01T00:00:00Z', areaDesc: '' } },
+            { type: 'Feature', geometry: null, properties: { id: '2', headline: '', event: '', severity: 'Severe', urgency: 'Expected', expires: '2099-01-01T00:00:00Z', areaDesc: '' } },
+            { type: 'Feature', geometry: null, properties: { id: '3', headline: '', event: '', severity: 'Moderate', urgency: 'Expected', expires: '2099-01-01T00:00:00Z', areaDesc: '' } },
+            { type: 'Feature', geometry: null, properties: { id: '4', headline: '', event: '', severity: 'Minor', urgency: 'Future', expires: '2099-01-01T00:00:00Z', areaDesc: '' } },
+            { type: 'Feature', geometry: null, properties: { id: '5', headline: '', event: '', severity: 'Minor', urgency: 'Future', expires: '2099-01-01T00:00:00Z', areaDesc: '' } },
           ]
         }),
       });
@@ -109,13 +106,10 @@ describe('Weather Intensity Score (WIS)', () => {
   });
 
   describe('getWISScore', () => {
-    it('should return a WISScore when API fails', async () => {
+    it('should report the WIS score unavailable when API fails', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await getWISScore();
-
-      expect(result.score).toBe(0);
-      expect(result.level).toBe('green');
+      await expect(getWISScore()).rejects.toThrow('Network error');
     });
 
     it('should count NWS warning products from event text', async () => {
@@ -178,12 +172,10 @@ describe('Weather Intensity Score (WIS)', () => {
   });
 
   describe('fetchActiveAlerts', () => {
-    it('should return empty array when API fails', async () => {
+    it('should report alerts unavailable when API fails', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await fetchActiveAlerts();
-
-      expect(result).toEqual([]);
+      await expect(fetchActiveAlerts()).rejects.toThrow('Network error');
     });
 
     it('should parse alerts from NWS GeoJSON response', async () => {
@@ -200,7 +192,7 @@ describe('Weather Intensity Score (WIS)', () => {
               event: 'Tornado Warning',
               severity: 'Extreme',
               urgency: 'Immediate',
-              expires: '2026-03-22T20:00:00Z',
+              expires: '2099-01-01T00:00:00Z',
               areaDesc: 'Oklahoma County, OK',
             }
           }]
@@ -226,7 +218,7 @@ describe('Weather Intensity Score (WIS)', () => {
             properties: {
               id: '1', headline: '', event: '',
               severity: 'Unknown',
-              urgency: '', expires: '', areaDesc: '',
+              urgency: '', expires: '2099-01-01T00:00:00Z', areaDesc: '',
             }
           }]
         }),
@@ -263,4 +255,21 @@ describe('nwsContinuationUrl', () => {
     expect(nwsContinuationUrl('https://api.weather.gov:8443/alerts')).toBeNull()
     expect(nwsContinuationUrl('http://api.weather.gov/alerts')).toBeNull()
   })
+})
+
+it('preserves a new warning in a message that also upgrades an old watch', async () => {
+  const { fetchActiveAlertsDetail } = await import('@/lib/services/nws-alerts-service')
+  jest.useFakeTimers().setSystemTime(new Date('2026-04-18T21:30:00Z'))
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ type: 'FeatureCollection', features: [{
+    properties: { id: 'upgrade', event: 'Tornado Warning', sent: '2026-04-18T21:00:00Z', expires: '2026-04-18T22:00:00Z', parameters: { VTEC: [
+      '/O.UPG.KLWX.TO.A.0012.260418T1800Z-260418T2200Z/',
+      '/O.NEW.KLWX.TO.W.0023.260418T2100Z-260418T2200Z/',
+    ] } },
+  }] }) })
+  try {
+    const result = await fetchActiveAlertsDetail()
+    expect(result).toHaveLength(1)
+    expect(result[0].warningEventId).toBe('KLWX.TO.W.0023.2026')
+    expect(result[0].vtecAction).toBe('NEW')
+  } finally { jest.useRealTimers() }
 })

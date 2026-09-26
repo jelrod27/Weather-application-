@@ -5,6 +5,7 @@
  * for the warnings command center, and computes WIS + NWS-style event counts.
  */
 
+import { selectActiveAlerts } from '@/lib/warnings/active-alerts'
 import { captureError } from '@/lib/error-utils'
 import { parseTimeMotLoc, type StormMotion } from '@/lib/bitwatch/motion'
 import { parseVtecFromParameters, provisionalWarningEventId } from '@/lib/bitwatch/vtec'
@@ -320,6 +321,19 @@ export function harmWarningCollectionUrl(startIso?: string): string {
   return `https://api.weather.gov/alerts?${params.toString()}`
 }
 
+/** One CAP message may end a watch and start its replacement warning. Resolve
+ * all event actions first, then return each surviving source product once. */
+function activeFeatureDetails(features: Parameters<typeof mapNwsFeatureToDetail>[0][]): NWSAlertDetail[] {
+  const messages = features.flatMap((feature) => {
+    const detail = mapNwsFeatureToDetail(feature)
+    const vtecs = parseVtecFromParameters({ VTEC: detail.vtecRaw }, detail.description, detail.sent)
+    return vtecs.length ? vtecs.map((vtec) => ({
+      ...detail, warningEventId: vtec.eventId, vtecAction: vtec.action,
+    })) : [detail]
+  })
+  return [...new Map(selectActiveAlerts(messages).map((alert) => [alert.id, alert])).values()]
+}
+
 export async function fetchActiveAlertsDetail(options?: {
   point?: { lat: number; lon: number }
 }): Promise<NWSAlertDetail[]> {
@@ -327,12 +341,12 @@ export async function fetchActiveAlertsDetail(options?: {
     ? pointActiveAlertsUrl(options.point.lat, options.point.lon)
     : nationalActiveAlertsUrl()
   const fc = await fetchNwsFeatureCollection(url)
-  return fc.features.map((f) => mapNwsFeatureToDetail(f))
+  return activeFeatureDetails(fc.features)
 }
 
 export async function fetchHarmWarningAlerts(): Promise<NWSAlertDetail[]> {
   const fc = await fetchNwsFeatureCollection(harmWarningActiveAlertsUrl())
-  return fc.features.map((f) => mapNwsFeatureToDetail(f))
+  return activeFeatureDetails(fc.features)
 }
 
 export async function fetchActiveAlerts(): Promise<NWSAlert[]> {
@@ -340,10 +354,9 @@ export async function fetchActiveAlerts(): Promise<NWSAlert[]> {
     const details = await fetchActiveAlertsDetail()
     return details.map(toSummary)
   } catch (error) {
-    // Surface NWS API outages instead of silently reporting "no alerts" — a
-    // dead upstream here means users see an all-clear that may be wrong.
+    // Preserve unavailable status; an upstream failure is not an all-clear.
     captureError(error, 'nws-alerts:fetchActiveAlerts')
-    return []
+    throw error
   }
 }
 
@@ -389,18 +402,11 @@ export function alertsToGeoJsonFeatureCollection(
 
 export async function fetchAlertCounts(): Promise<AlertCounts> {
   try {
-    // Call fetchActiveAlertsDetail directly (not fetchActiveAlerts, which
-    // swallows errors and returns []) so a real outage propagates here and is
-    // captured with this function's own context instead of being silently zeroed.
     const details = await fetchActiveAlertsDetail()
     return countsFromAlerts(details.map(toSummary))
   } catch (error) {
     captureError(error, 'nws-alerts:fetchAlertCounts')
-    return {
-      total: 0,
-      severity: { extreme: 0, severe: 0, moderate: 0, minor: 0 },
-      urgency: { immediate: 0, expected: 0, future: 0 },
-    }
+    throw error
   }
 }
 
@@ -414,18 +420,7 @@ export async function getWISScore(): Promise<WISScore> {
     return { ...wis, nwsWarnings, nwsWatches, nwsAdvisories }
   } catch (error) {
     captureError(error, 'nws-alerts:getWISScore')
-    return {
-      score: 0,
-      level: 'green',
-      label: 'LOW',
-      activeWarnings: 0,
-      activeWatches: 0,
-      activeAdvisories: 0,
-      totalAlerts: 0,
-      nwsWarnings: 0,
-      nwsWatches: 0,
-      nwsAdvisories: 0,
-    }
+    throw error
   }
 }
 

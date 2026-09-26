@@ -124,12 +124,12 @@ export default function CommandCenterTab({
               <div className={cn('text-center p-3 container-nested')}>
                 <div className={cn(
                   'text-2xl font-bold font-mono',
-                  alerts.length > 0 ? 'text-orange-500' : 'text-green-500'
+                  'text-muted-foreground'
                 )}>
-                  {alerts.length > 0 ? alerts.length : 'OK'}
+                  {alerts.length}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
-                  Alerts
+                  Recent messages
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
