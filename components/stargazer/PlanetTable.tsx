@@ -6,10 +6,11 @@ import type { PlanetVisibility } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
 interface PlanetTableProps {
+  timeZone?: string;
   planets: PlanetVisibility[];
 }
 
-export default function PlanetTable({ planets }: PlanetTableProps) {
+export default function PlanetTable({ timeZone = 'UTC', planets }: PlanetTableProps) {
   const styles = themeTokens.card;
 
   if (!planets || planets.length === 0) return null;
@@ -62,16 +63,16 @@ export default function PlanetTable({ planets }: PlanetTableProps) {
                   {planet.name}
                 </td>
                 <td className="px-2 py-1 font-mono">
-                  {formatTime(planet.rise)}
+                  {formatTime(planet.rise, timeZone)}
                 </td>
                 <td className="px-2 py-1 font-mono">
-                  {formatTime(planet.set)}
+                  {formatTime(planet.set, timeZone)}
                 </td>
                 <td className="px-2 py-1 font-mono">
                   {Math.round(planet.peakAltitude)}&deg;
                 </td>
                 <td className="px-2 py-1 font-mono">
-                  {formatTime(planet.peakTime)}
+                  {formatTime(planet.peakTime, timeZone)}
                 </td>
                 <td className="px-2 py-1 font-mono">
                   {planet.magnitude.toFixed(1)}

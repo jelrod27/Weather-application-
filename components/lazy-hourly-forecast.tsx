@@ -19,6 +19,7 @@ interface LazyHourlyForecastProps {
   hourly: HourlyForecastData[];
   theme?: ThemeType;
   tempUnit?: string;
+  timezone?: string;
 }
 
 export default function LazyHourlyForecast(props: LazyHourlyForecastProps) {

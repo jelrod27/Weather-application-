@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTime, nextCalendarDate } from '@/lib/stargazer/format';
 import { cn } from '@/lib/utils';
 import type { StargazerData } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
@@ -32,15 +33,6 @@ function scoreBarColor(score: number): string {
   if (score >= 40) return 'bg-yellow-400';
   if (score >= 20) return 'bg-orange-400';
   return 'bg-red-400';
-}
-
-// Intentionally local: unlike the shared 24-hour formatTime in
-// @/lib/stargazer/format, the page header uses 12-hour en-US time and
-// accepts ISO strings.
-function formatTime(date: Date | string | null): string {
-  if (!date) return '--:--';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 // ============================================================================
@@ -107,7 +99,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
             <div className="mb-2 px-3 py-1.5 bg-white/5 border border-subtle rounded inline-flex items-center gap-2 text-sm font-mono">
               <span className="text-muted-foreground">Best window:</span>
               <span className="font-bold">
-                {formatTime(bestWindow.startTime)} &ndash; {formatTime(bestWindow.endTime)}
+                {formatTime(bestWindow.startTime, data.location.timezone, true)} &ndash; {formatTime(bestWindow.endTime, data.location.timezone, true)}
               </span>
               <span className={cn('font-bold', scoreColor(bestWindow.score))}>
                 ({bestWindow.score})
@@ -148,17 +140,19 @@ function PersistentHeader({ data }: { data: StargazerData }) {
               <div>
                 <span className="text-xs font-mono uppercase text-muted-foreground block">Dark Window</span>
                 <span className="font-bold">
-                  {formatTime(darkWindow.astronomicalDusk)} &ndash; {formatTime(darkWindow.astronomicalDawn)}
+                  {darkWindow.status === 'none' ? 'No astronomical darkness' : darkWindow.status === 'continuous' ? 'Continuous darkness (next 24 hours)' : <>{formatTime(darkWindow.astronomicalDusk, data.location.timezone, true)} &ndash; {formatTime(darkWindow.astronomicalDawn, data.location.timezone, true)}</>}
                 </span>
               </div>
             )}
             {moon.set && (
               <div>
                 <span className="text-xs font-mono uppercase text-muted-foreground block">Moon Set</span>
-                <span className="font-bold">{formatTime(moon.set)}</span>
+                <span className="font-bold">{formatTime(moon.set, data.location.timezone, true)}</span>
               </div>
             )}
           </div>
+
+          <p className="text-xs font-mono text-muted-foreground mb-3">Times in {location.timezone || 'UTC'}</p>
 
           {/* Sub-score mini-bars with visible labels */}
           <div className="grid grid-cols-5 gap-2 max-w-lg text-xs font-mono">
@@ -201,6 +195,7 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
   })) ?? [];
 
   const rehydratedDarkWindow = darkWindow ? {
+    status: darkWindow.status,
     sunset: typeof darkWindow.sunset === 'string' ? new Date(darkWindow.sunset) : darkWindow.sunset,
     sunrise: typeof darkWindow.sunrise === 'string' ? new Date(darkWindow.sunrise) : darkWindow.sunrise,
     astronomicalDusk: typeof darkWindow.astronomicalDusk === 'string' ? new Date(darkWindow.astronomicalDusk) : darkWindow.astronomicalDusk,
@@ -238,16 +233,16 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
   return (
     <div className="space-y-6">
       {conditions.length > 0 && rehydratedDarkWindow && (
-        <FullHourlyTimeline conditions={conditions} darkWindow={rehydratedDarkWindow} />
+        <FullHourlyTimeline timeZone={data.location.timezone} conditions={conditions} darkWindow={rehydratedDarkWindow} />
       )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MoonIntel moon={moon} />
+        <MoonIntel timeZone={data.location.timezone} moon={moon} />
         {/* Ground conditions summary */}
         <div className="container-primary p-4 font-mono">
           <h2 className="border-b border-subtle py-3 mb-3 text-xs font-mono uppercase text-muted-foreground">
             Ground Conditions
             <span className="text-muted-foreground font-normal ml-2">
-              (at {groundConditions ? formatTime(groundConditions.time) : '--:--'})
+              (at {groundConditions ? formatTime(groundConditions.time, data.location.timezone, true) : '--:--'})
             </span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -289,8 +284,8 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
 function TargetsPanel({ data }: { data: StargazerData }) {
   return (
     <div className="space-y-6">
-      <PlanetTable planets={data.planets} />
-      <DeepSkyHighlights highlights={data.deepSkyHighlights} />
+      <PlanetTable timeZone={data.location.timezone} planets={data.planets} />
+      <DeepSkyHighlights timeZone={data.location.timezone} highlights={data.deepSkyHighlights} />
     </div>
   );
 }
@@ -298,12 +293,10 @@ function TargetsPanel({ data }: { data: StargazerData }) {
 function EventsPanel({ data }: { data: StargazerData }) {
   // Merge meteor shower events with sky events so they appear in the timeline
   const meteorShowerEvents = (data.meteorShowers ?? []).map(s => {
-    const now = new Date();
-    let year = now.getFullYear();
-    const peakDate = new Date(year, s.peakMonth - 1, s.peakDay);
-    if (peakDate.getTime() < now.getTime()) year++;
+    const calendarDate = nextCalendarDate(s.peakMonth, s.peakDay, data.location.timezone);
     return {
-    date: new Date(year, s.peakMonth - 1, s.peakDay),
+    date: new Date(`${calendarDate}T00:00:00Z`),
+    calendarDate,
     type: 'meteor_shower' as const,
     title: `${s.name} Meteor Shower Peak`,
     description: `ZHR: ${s.zhr} | Speed: ${s.speed} km/s | Parent: ${s.parentBody}`,
@@ -315,15 +308,15 @@ function EventsPanel({ data }: { data: StargazerData }) {
 
   return (
     <div className="space-y-6">
-      <SkyEvents events={combinedEvents} />
-      <ISSPasses passes={data.issPasses} />
+      <SkyEvents timeZone={data.location.timezone} events={combinedEvents} />
+      <ISSPasses timeZone={data.location.timezone} passes={data.issPasses} />
     </div>
   );
 }
 
 function LaunchesPanel({ data }: { data: StargazerData }) {
   return (
-    <LaunchSchedule launches={data.launches} />
+    <LaunchSchedule timeZone={data.location.timezone} launches={data.launches} />
   );
 }
 

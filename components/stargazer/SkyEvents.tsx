@@ -1,11 +1,13 @@
 'use client';
 
+import { formatDate } from '@/lib/stargazer/format';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import type { SkyEvent } from '@/lib/stargazer/types';
 
 interface SkyEventsProps {
   events: SkyEvent[];
+  timeZone?: string;
 }
 
 const eventBadgeColors: Record<string, string> = {
@@ -28,17 +30,7 @@ const eventTypeLabels: Record<string, string> = {
   solstice: 'Solstice',
 };
 
-// Intentionally local: unlike the shared formatDate in @/lib/stargazer/format,
-// sky events span months ahead so the year is included.
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString([], {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-export default function SkyEvents({ events }: SkyEventsProps) {
+export default function SkyEvents({ events, timeZone = 'UTC' }: SkyEventsProps) {
   const styles = themeTokens.card;
 
   if (!events || events.length === 0) {
@@ -78,7 +70,7 @@ export default function SkyEvents({ events }: SkyEventsProps) {
           >
             <div className="shrink-0 text-right">
               <p className="text-xs font-mono">
-                {formatDate(event.date)}
+                {formatDate(event.calendarDate ? `${event.calendarDate}T12:00:00Z` : event.date, event.calendarDate ? 'UTC' : timeZone, true)}
               </p>
             </div>
 

@@ -6,6 +6,7 @@ import type { HourlyCondition, DarkWindow } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
 interface HourlyTimelineProps {
+  timeZone?: string;
   conditions: HourlyCondition[];
   darkWindow: DarkWindow;
 }
@@ -109,7 +110,7 @@ function getScoreRowColor(score: number): string {
   return 'bg-red-600';
 }
 
-export default function HourlyTimeline({
+export default function HourlyTimeline({ timeZone = 'UTC',
   conditions,
   darkWindow,
 }: HourlyTimelineProps) {
@@ -144,8 +145,7 @@ export default function HourlyTimeline({
         Hourly Forecast
       </h2>
       <p className="mb-3 text-xs font-mono text-muted-foreground">
-        Dark window: {formatTime(darkWindow.sunset)} &ndash;{' '}
-        {formatTime(darkWindow.sunrise)}
+        Dark window: {darkWindow.status === 'none' ? 'No astronomical darkness' : darkWindow.status === 'continuous' ? 'Continuous darkness (next 24 hours)' : <>{formatTime(darkWindow.astronomicalDusk, timeZone)} &ndash; {formatTime(darkWindow.astronomicalDawn, timeZone)}</>}
       </p>
 
       <div className="overflow-x-auto">
@@ -160,7 +160,7 @@ export default function HourlyTimeline({
                   key={i}
                   className="min-w-[3rem] px-1 py-1 text-center text-xs font-mono text-muted-foreground"
                 >
-                  {formatTime(c.time)}
+                  {formatTime(c.time, timeZone)}
                 </th>
               ))}
             </tr>

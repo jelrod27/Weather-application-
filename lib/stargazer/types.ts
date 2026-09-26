@@ -29,10 +29,11 @@ export type ScoreLabel = 'Exceptional' | 'Excellent' | 'Good' | 'Fair' | 'Poor' 
 // ============================================================================
 
 export interface DarkWindow {
+  status?: 'normal' | 'none' | 'continuous';
   astronomicalDusk: Date;
   astronomicalDawn: Date;
-  sunset: Date;
-  sunrise: Date;
+  sunset: Date | null;
+  sunrise: Date | null;
 }
 
 // ============================================================================
@@ -210,6 +211,8 @@ export interface Launch {
 
 export interface SkyEvent {
   date: Date;
+  /** Approximate calendar date, not a timezone-convertible instant. */
+  calendarDate?: string;
   type: 'meteor_shower' | 'conjunction' | 'opposition' | 'lunar_eclipse' | 'solar_eclipse' | 'equinox' | 'solstice';
   title: string;
   description: string;
@@ -278,6 +281,7 @@ export interface StargazerData {
   launches: Launch[];
   meteorShowers: MeteorShowerEvent[];
   location: {
+    timezone?: string;
     lat: number;
     lon: number;
     name?: string;

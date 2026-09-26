@@ -109,6 +109,7 @@ export default function HourlyClient() {
         hourly={weather.hourlyForecast}
         theme={theme}
         tempUnit={weather.unit || '°F'}
+          timezone={weather.timezone}
       />
 
       <div className="mt-8 p-4 bg-[var(--card-bg)] border-0 text-[var(--text-secondary)] font-mono text-sm">

@@ -124,6 +124,7 @@ export function WeatherDisplay({
           hourly={weather.hourlyForecast}
           theme={theme as ThemeType}
           tempUnit={weather.unit || '°F'}
+          timezone={weather.timezone}
         />
       )}
 

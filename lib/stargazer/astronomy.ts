@@ -122,20 +122,25 @@ export function calculateDarkWindow(
   // current time is already past sunset (e.g., 10pm).
   const sunriseResult = SearchRiseSet(Body.Sun, observer, +1, astroTime, 2);
   if (!sunriseResult) {
-    // No sunrise found within 2 days — polar night or polar day
-    // Check sun altitude to determine which
+    // Polar night can still have daily astronomical twilight crossings.
+    const dawn = SearchAltitude(Body.Sun, observer, +1, astroTime, 2, -18);
+    const dusk = dawn && SearchAltitude(Body.Sun, observer, -1, MakeTime(dawn.date), -2, -18);
+    if (dawn && dusk) {
+      return { status: 'normal', sunset: null, sunrise: null,
+        astronomicalDusk: dusk.date, astronomicalDawn: dawn.date };
+    }
+    // With no crossings, the current altitude distinguishes darkness from daylight.
     const sunEq = Equator(Body.Sun, astroTime, observer, true, true);
     const sunHor = Horizon(astroTime, observer, sunEq.ra, sunEq.dec, 'normal');
     if (sunHor.altitude < -18) {
       // Polar night: it's dark all day — return full 24hr dark window
       const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
       const end = new Date(start.getTime() + 86400000);
-      return { sunset: start, sunrise: end, astronomicalDusk: start, astronomicalDawn: end };
+      return { status: 'continuous', sunset: null, sunrise: null, astronomicalDusk: start, astronomicalDawn: end };
     }
     // Polar day: sun never sets — no dark window
     const now = new Date(date);
-    return { sunset: now, sunrise: now, astronomicalDusk: now, astronomicalDawn: now };
+    return { status: 'none', sunset: null, sunrise: null, astronomicalDusk: now, astronomicalDawn: now };
   }
   const sunriseDate = sunriseResult.date;
 
@@ -163,6 +168,13 @@ export function calculateDarkWindow(
     -18
   );
 
+  if (!duskResult || !dawnResult) {
+    return {
+      status: 'none', sunset: sunsetResult?.date ?? null, sunrise: sunriseDate,
+      astronomicalDusk: sunriseDate, astronomicalDawn: sunriseDate,
+    };
+  }
+
   // Dawn should be AFTER dusk and BEFORE sunrise
   // If backward search found a dawn before dusk, search forward from dusk instead
   let finalDawn = dawnResult ? dawnResult.date : sunriseDate;
@@ -182,7 +194,8 @@ export function calculateDarkWindow(
   }
 
   return {
-    sunset: sunsetResult ? sunsetResult.date : date,
+    status: 'normal',
+    sunset: sunsetResult?.date ?? null,
     sunrise: sunriseDate,
     astronomicalDusk: finalDusk,
     astronomicalDawn: finalDawn,
@@ -205,6 +218,7 @@ export function calculateMoonInfo(
   const darkStart = darkWindow.astronomicalDusk;
   const darkEnd = darkWindow.astronomicalDawn;
   const darkStartTime = MakeTime(darkStart);
+  const moonSearchStart = darkWindow.sunset ?? darkStart;
 
   // Moon phase angle (0-360)
   const phaseAngle = MoonPhase(darkStartTime);
@@ -215,16 +229,16 @@ export function calculateMoonInfo(
 
   // Moon rise and set near dark window
   // Check if moon is already above horizon at sunset to choose correct search direction
-  const moonEqAtSunset = Equator(Body.Moon, MakeTime(darkWindow.sunset), observer, true, true);
-  const moonHorAtSunset = Horizon(MakeTime(darkWindow.sunset), observer, moonEqAtSunset.ra, moonEqAtSunset.dec, 'normal');
+  const moonEqAtSunset = Equator(Body.Moon, MakeTime(moonSearchStart), observer, true, true);
+  const moonHorAtSunset = Horizon(MakeTime(moonSearchStart), observer, moonEqAtSunset.ra, moonEqAtSunset.dec, 'normal');
   const moonAlreadyUp = moonHorAtSunset.altitude > 0;
 
   // If moon is already up, search forward for set and backward for the preceding rise
   // If moon is down, search forward for rise and forward for next set
   const moonRise = moonAlreadyUp
-    ? SearchRiseSet(Body.Moon, observer, +1, MakeTime(new Date(darkWindow.sunset.getTime() - 86400000)), 2)
-    : SearchRiseSet(Body.Moon, observer, +1, MakeTime(darkWindow.sunset), 1);
-  const moonSet = SearchRiseSet(Body.Moon, observer, -1, MakeTime(darkWindow.sunset), 1);
+    ? SearchRiseSet(Body.Moon, observer, +1, MakeTime(new Date(moonSearchStart.getTime() - 86400000)), 2)
+    : SearchRiseSet(Body.Moon, observer, +1, MakeTime(moonSearchStart), 1);
+  const moonSet = SearchRiseSet(Body.Moon, observer, -1, MakeTime(moonSearchStart), 1);
 
   // Calculate what percentage of the dark window the moon is above horizon
   const moonUpPercent = calculateMoonUpPercent(
@@ -247,8 +261,8 @@ export function calculateMoonInfo(
     rise: moonRise ? moonRise.date : null,
     set: moonSet ? moonSet.date : null,
     moonUpDuringDarkWindowPercent: moonUpPercent,
-    darkWindowStart: darkStart,
-    darkWindowEnd: darkEnd,
+    darkWindowStart: darkWindow.status === 'none' ? null : darkStart,
+    darkWindowEnd: darkWindow.status === 'none' ? null : darkEnd,
     nextNewMoon: nextNew ? nextNew.date : new Date(darkStart.getTime() + 29.5 * 86400000),
     nextFullMoon: nextFull ? nextFull.date : new Date(darkStart.getTime() + 14.75 * 86400000),
   };
@@ -312,13 +326,14 @@ export function calculatePlanetVisibility(
   lon: number,
   darkWindow: DarkWindow
 ): PlanetVisibility[] {
+  if (darkWindow.status === 'none' || darkWindow.astronomicalDawn <= darkWindow.astronomicalDusk) return [];
   const observer = new Observer(lat, lon, 0);
   const darkStart = darkWindow.astronomicalDusk;
   const darkEnd = darkWindow.astronomicalDawn;
   const results: PlanetVisibility[] = [];
 
   for (const planet of PLANET_BODIES) {
-    const startTime = MakeTime(darkWindow.sunset);
+    const startTime = MakeTime(darkWindow.sunset ?? darkStart);
 
     // Rise and set times
     const rise = SearchRiseSet(planet.body, observer, +1, startTime, 1);
@@ -464,10 +479,11 @@ function getEquinoxSolsticeDates(year: number): SkyEvent[] {
 
   for (const d of dates) {
     events.push({
-      date: new Date(year, d.month, d.day),
+      date: new Date(Date.UTC(year, d.month, d.day)),
+      calendarDate: new Date(Date.UTC(year, d.month, d.day)).toISOString().slice(0, 10),
       type: d.type,
       title: d.title,
-      description: d.desc,
+      description: `Approximate date. ${d.desc}`,
     });
   }
 

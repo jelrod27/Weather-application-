@@ -40,11 +40,13 @@ interface HourlyForecastProps {
   hourly: HourlyForecastData[];
   theme?: ThemeType; // Kept for API compat
   tempUnit?: string;
+  timezone?: string;
 }
 
 export default function HourlyForecast({
   hourly,
-  tempUnit = '°F'
+  tempUnit = '°F',
+  timezone = 'UTC'
 }: HourlyForecastProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   /** Client-only clock so server and client agree on first paint (no hydration mismatch for "NOW"). */
@@ -102,6 +104,7 @@ export default function HourlyForecast({
                   isCurrentHour={isCurrentHour}
                   isMidnight={isMidnight}
                   tempUnit={tempUnit}
+                  timezone={timezone}
                 />
               );
             })}
@@ -121,12 +124,14 @@ function HourlyCard({
   hour,
   isCurrentHour,
   isMidnight,
-  tempUnit
+  tempUnit,
+  timezone
 }: {
   hour: HourlyForecastData;
   isCurrentHour: boolean;
   isMidnight: boolean;
   tempUnit: string;
+  timezone: string;
 }) {
   return (
     <Card
@@ -153,7 +158,7 @@ function HourlyCard({
       {/* Day marker for midnight */}
       {isMidnight && !isCurrentHour && (
         <div className="text-xs mb-1 font-bold uppercase tracking-widest text-primary/90">
-          {new Date(hour.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' })}
+          {new Date(hour.dt * 1000).toLocaleDateString('en-US', { weekday: 'short', timeZone: timezone })}
         </div>
       )}
 
