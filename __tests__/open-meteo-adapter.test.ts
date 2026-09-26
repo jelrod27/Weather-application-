@@ -575,11 +575,11 @@ it('preserves each daily sunrise and sunset rather than repeating today', async 
 });
 
 it('uses supplied Moon enrichment without inventing a client moonset', async () => {
-  const without = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial')
-  expect(without.moonPhase).toBeNull()
-  const forecast = makeForecastResponse()
-  forecast.moonPhase = { phase: 'Full Moon', illumination: 99, emoji: '🌕', phaseAngle: 180, nextMoonset: 'Nov 1, 7:00 AM EST', nextFullMoon: 'Nov 25', timeZone: 'America/New_York', observingNight: 'Observing night of Oct 31' }
-  stubClientApiFetches(forecast)
-  const enriched = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial')
-  expect(enriched.moonPhase).toEqual(forecast.moonPhase)
-})
+  const without = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial');
+  expect(without.moonPhase).toBeNull();
+  const forecast = makeForecastResponse();
+  forecast.moonPhase = { phase: 'Full Moon', illumination: 99, emoji: '🌕', phaseAngle: 180, nextMoonset: 'Nov 1, 7:00 AM EST', nextFullMoon: 'Nov 25', timeZone: 'America/New_York', observingNight: 'Observing night of Oct 31' };
+  stubClientApiFetches(forecast);
+  const enriched = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial');
+  expect(enriched.moonPhase).toEqual(forecast.moonPhase);
+});
