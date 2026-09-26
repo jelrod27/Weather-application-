@@ -46,15 +46,25 @@ See the [PR 4 acceptance scope and approved design](pr4-improve-weather-ui.md).
 
 ## PR 5: Everyday outdoor planning
 
-Approved September 26, 2026. Extend the existing Hourly view with a **Plan time outdoors** panel and a location-preserving link from the forecast summary. Keep Daybreak styling and the existing detailed forecast available.
+Merged as PR #631 (`b6625a4`). Approved September 26, 2026. Extend the existing Hourly view with a **Plan time outdoors** panel and a location-preserving link from the forecast summary. Keep Daybreak styling and the existing detailed forecast available.
 
 - Choose Today/Tomorrow in the viewed city's calendar and a one- or two-hour outing. Compare up to three distinct future windows with local times, current units, temperature ranges, peak hourly wind, and highest hourly precipitation chance. Each opens the matching hourly details with a visible date and keyboard focus.
 - Explain tradeoffs rather than invent a combined probability or safety score. Select lower precipitation chance first, then lighter wind, then temperatures closest to 20°C/68°F among remaining non-overlapping periods; break ties by earlier time. The temperature target is an explicit product preference, not a scientific comfort threshold.
 - Compare 6 AM–9 PM city-local clock hours, explicitly distinct from daylight. Require contiguous readings covering the entire outing, including both temperature/wind endpoints. Precipitation probabilities describe the preceding hour, so use each interval's ending reading. Preserve unknown condition codes rather than defaulting them to clear in the planner.
 - Omit periods with thunderstorm, freezing-condition or heavy-precipitation codes. These comparisons do not assess official warnings, gusts, UV or air quality; keep a plain reminder to check alerts and local conditions. Missing readings, invalid units/time zones, elapsed windows and unavailable forecasts must produce honest recovery states. Do not imply the provider's issuance time is known.
-- Use existing data and dependencies. No new provider, route planning, account persistence or database change. Beginner astronomy remains a separately scoped PR 6 proposal.
+- Use existing data and dependencies. No new provider, route planning, account persistence or database change. Beginner astronomy is scoped separately in PR 6 below.
 
 Deliver in three focused commits: complete-window comparisons and data coverage; accessible comparison panel; forecast/hourly connections and full-journey checks. Validate missing data, true zeroes, chronology/gaps, unit equivalence, local calendars/DST, controls, mobile layout and keyboard navigation. Run the local code-review skill against `7ddf03a`, address findings, then push and open one PR. Do not merge automatically.
+
+## PR 6: Beginner stargazing — six commits
+
+Scope prepared September 26, 2026, on `codex/beginner-stargazing` from merged PR 5 (`b6625a4`). Design approved September 26, 2026; implementation in progress.
+
+Add a beginner entry to Stargazer that answers when to look, what to try with the chosen equipment, which direction to face, and what to expect. Preserve the existing enthusiast tools. Include the location, time, unit and missing-data repairs needed to trust those answers.
+
+Approved commit outcomes: consistent observing location/time; trustworthy forecast inputs; suitable-hour and target calculations; beginner entry view; illustrated finding guides and catalog discovery; complete-journey/accessibility validation. Use existing providers and dependencies, with local code review before one PR and the established CI/CD and bot-review babysit workflow afterward.
+
+See the [full PR 6 scope, data rules and acceptance criteria](prds/PRD-beginner-stargazing.md).
 
 ## Later, separately scoped
 

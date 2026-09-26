@@ -150,6 +150,11 @@ describe('GET /api/stargazer — validation and upstream failures', () => {
     expect(body.error).toMatch(/Invalid lat\/lon values/);
   });
 
+  it.each(['51garbage', '0x10', 'Infinity', '   '])('rejects malformed coordinate %s', async (lat) => {
+    const res = await GET(makeRequest({ lat, lon: '0' }));
+    expect(res.status).toBe(400);
+  });
+
   it('returns 400 for lon out of range (181)', async () => {
     const res = await GET(makeRequest({ lat: '0', lon: '181' }));
     expect(res.status).toBe(400);

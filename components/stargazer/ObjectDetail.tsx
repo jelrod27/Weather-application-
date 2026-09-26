@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Suspense } from 'react';
+import StargazerContextLink from '@/components/stargazer/StargazerContextLink';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import type { DeepSkyObject } from '@/lib/stargazer/types';
@@ -42,12 +43,11 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
     <div className="mx-auto max-w-4xl space-y-4 p-4 font-mono">
       {/* Header */}
       <div className={cn('container-primary p-4', styles)}>
-        <Link
-          href="/stargazer#targets"
+        <Suspense fallback={<a href="/stargazer#targets">Back to Stargazer</a>}><StargazerContextLink
           className="text-xs uppercase tracking-wider text-cyan-400 hover:underline"
         >
           {'\u25C0'} Back to Stargazer
-        </Link>
+        </StargazerContextLink></Suspense>
 
         <h1 className="mt-3 text-xl font-bold text-cyan-400">
           {obj.id} - {obj.name.toUpperCase()}
@@ -151,7 +151,9 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
       )}
 
       {/* Tonight's Visibility */}
-      <TonightVisibility ra={obj.ra} dec={obj.dec} objectName={obj.name} />
+      <Suspense fallback={<p>Loading observing location…</p>}>
+        <TonightVisibility ra={obj.ra} dec={obj.dec} objectName={obj.name} />
+      </Suspense>
 
       {/* Wikipedia link */}
       {obj.wikipediaSlug && (

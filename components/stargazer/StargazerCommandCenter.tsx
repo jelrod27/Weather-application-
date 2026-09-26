@@ -1,6 +1,9 @@
 'use client';
 
-import { formatTime, nextCalendarDate } from '@/lib/stargazer/format';
+import { formatDate, formatTime, nextCalendarDate } from '@/lib/stargazer/format';
+import { ShareButtons } from '@/components/share-buttons';
+import { getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
+import type { StargazerContext } from '@/lib/stargazer/context';
 import { cn } from '@/lib/utils';
 import type { StargazerData } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
@@ -282,11 +285,11 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
   );
 }
 
-function TargetsPanel({ data }: { data: StargazerData }) {
+function TargetsPanel({ data, context }: { data: StargazerData; context: StargazerContext }) {
   return (
     <div className="space-y-6">
       <PlanetTable timeZone={data.location.timezone} planets={data.planets} />
-      <DeepSkyHighlights timeZone={data.location.timezone} highlights={data.deepSkyHighlights} />
+      <DeepSkyHighlights context={context} timeZone={data.location.timezone} highlights={data.deepSkyHighlights} />
     </div>
   );
 }
@@ -332,7 +335,16 @@ export default function StargazerCommandCenter() {
     isSearching,
     handleTabChange,
     handleLocationSearch,
+    handleDeviceLocation,
+    refresh,
   } = useStargazerController();
+  const urlContext = readStargazerContext(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search));
+  const context: StargazerContext = {
+    ...urlContext,
+    coordinates: data?.location ?? null,
+    label: data?.location.displayName || data?.location.name || urlContext.label,
+    timeZone: data?.location.timezone,
+  };
 
   return (
     <>
@@ -356,6 +368,11 @@ export default function StargazerCommandCenter() {
             {isSearching ? '...' : 'Go'}
           </button>
         </form>
+        <div className="mb-4 flex gap-4 text-sm">
+          <button type="button" className="text-primary underline" onClick={() => void handleDeviceLocation()} disabled={isLoading}>Use my location</button>
+          {(data || error) && <button type="button" className="text-primary underline" onClick={() => void refresh()} disabled={isLoading}>Refresh forecast</button>}
+        </div>
+        {!data && !isLoading && !error && <p className="mb-4">Choose a city to see its night sky forecast.</p>}
 
         {/* Error */}
         {error && (
@@ -379,6 +396,8 @@ export default function StargazerCommandCenter() {
         {/* Content */}
         {data && !isLoading && (
           <div className="space-y-6">
+            <p className="text-sm">Observing night: {formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – {formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)} · {data.location.timezone || 'UTC'}</p>
+            <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerHref(context)}` }} />
             {/* Persistent Header Card */}
             <PersistentHeader data={data} />
 
@@ -392,7 +411,7 @@ export default function StargazerCommandCenter() {
               aria-labelledby={`tab-${activeTab}`}
             >
               {activeTab === 'conditions' && <ConditionsPanel data={data} />}
-              {activeTab === 'targets' && <TargetsPanel data={data} />}
+              {activeTab === 'targets' && <TargetsPanel data={data} context={context} />}
               {activeTab === 'events' && <EventsPanel data={data} />}
               {activeTab === 'launches' && <LaunchesPanel data={data} />}
             </div>

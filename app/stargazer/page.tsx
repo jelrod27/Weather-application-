@@ -12,8 +12,6 @@ import React, { Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
-import { ShareButtons } from '@/components/share-buttons';
-import { formatTonightDate } from '@/lib/stargazer/bortle';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 import StargazerSeoContent from '@/components/stargazer/stargazer-seo-content';
 
@@ -38,19 +36,7 @@ function StargazerShell({ children }: { children: React.ReactNode }) {
             Tonight&apos;s astrophotography forecast. Seeing, transparency, moon phase, planet
             visibility, deep sky targets, ISS passes, and upcoming launches -- all in one place.
           </p>
-          <p className="text-sm font-mono text-muted-foreground mt-2">
-            Tonight: {formatTonightDate(new Date())}
-          </p>
         </div>
-
-        <ShareButtons
-          config={{
-            title: 'Stargazer - Astrophotography Forecast',
-            text: "Tonight's stargazing conditions at 16bitweather.co",
-            url: 'https://www.16bitweather.co/stargazer',
-          }}
-          className="mt-3 mb-6"
-        />
 
         {children}
       </div>

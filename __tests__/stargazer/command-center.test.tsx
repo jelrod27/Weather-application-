@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 import { useStargazerController } from '@/hooks/useStargazerController';
 import type { StargazerData } from '@/lib/stargazer/types';
+import catalog from '@/data/deep-sky-catalog.json';
 
 jest.mock('@/hooks/useStargazerController');
 
@@ -21,7 +22,7 @@ const data: StargazerData = {
 function setData(value: StargazerData): void {
   mockController.mockReturnValue({
     data: value, isLoading: false, error: null, activeTab: 'events', searchQuery: '',
-    setSearchQuery: jest.fn(), isSearching: false, handleTabChange: jest.fn(), handleLocationSearch: jest.fn(),
+    setSearchQuery: jest.fn(), isSearching: false, handleTabChange: jest.fn(), handleLocationSearch: jest.fn(), handleDeviceLocation: jest.fn(), refresh: jest.fn(),
   });
 }
 
@@ -54,4 +55,25 @@ it('replaces the rating and its bars with an unavailable state when no darkness 
   expect(screen.queryByText('Good')).not.toBeInTheDocument();
   expect(screen.queryByText('transparency')).not.toBeInTheDocument();
   expect(screen.queryByText(/night avg:/)).not.toBeInTheDocument();
+});
+
+it('carries the selected hour and equipment through the rendered target link', () => {
+  window.history.replaceState(null, '', '/stargazer?at=2026-09-27T02%3A00%3A00Z&equipment=binoculars');
+  const object = catalog.find(item => item.id === 'M31')!;
+  setData({ ...data, deepSkyHighlights: [{ ...object, type: 'spiral_galaxy', difficulty: 'beginner', maxAltitude: 70, transitTime: date, transitsDuringDarkWindow: true }] });
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'targets' });
+  render(<StargazerCommandCenter />);
+  const href = screen.getByRole('link', { name: /M31 - Andromeda/ }).getAttribute('href')!;
+  expect(new URL(href, 'https://example.test').searchParams.get('at')).toBe('2026-09-27T02:00:00.000Z');
+  expect(href).toContain('equipment=binoculars');
+});
+
+it('does not label loaded coordinates with an unsubmitted search draft', () => {
+  window.history.replaceState(null, '', '/stargazer?lat=51.5&lon=-0.12&q=London');
+  const object = catalog.find(item => item.id === 'M31')!;
+  setData({ ...data, location: { lat: 51.5, lon: -0.12 }, deepSkyHighlights: [{ ...object, type: 'spiral_galaxy', difficulty: 'beginner', maxAltitude: 70, transitTime: date, transitsDuringDarkWindow: true }] });
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'targets', searchQuery: 'Sydney' });
+  render(<StargazerCommandCenter />);
+  const href = screen.getByRole('link', { name: /M31 - Andromeda/ }).getAttribute('href')!;
+  expect(new URL(href, 'https://example.test').searchParams.get('q')).toBe('London');
 });
