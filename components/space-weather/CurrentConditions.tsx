@@ -10,6 +10,7 @@
 'use client';
 
 import React from 'react';
+import { viewlineFor, isValidKp } from '@/lib/space-weather/kp-scale';
 import { Activity, Wind, Zap, Sun, Sparkles, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -69,8 +70,8 @@ export default function CurrentConditions({
 }: CurrentConditionsProps) {
   const themeClasses = themeTokens.weather;
 
-  const kp = kpIndex?.current?.value ?? 0;
-  const kpStatus = getKpLabel(kp);
+  const kp = isValidKp(kpIndex?.current?.value) ? kpIndex.current.value : null;
+  const kpStatus = kp == null ? { text: 'Unavailable', color: 'text-muted-foreground' } : getKpLabel(kp);
   const windSpeed = solarWind?.current?.speed ?? 0;
   const bz = solarWind?.current?.bz ?? null;
   const bzColor = bz == null ? 'text-gray-400' : getBzColor(bz);
@@ -84,9 +85,10 @@ export default function CurrentConditions({
       : 0);
   const sunspotCount = sunspots?.current?.sunspotNumber ?? 0;
   const cyclePhase = sunspots?.solarCycle?.phase ?? 'unknown';
-  const viewLatitude = auroraForecast?.viewline?.latitude;
+  const viewline = viewlineFor(auroraForecast?.currentKp ?? kp, auroraForecast?.hemisphere);
+  const viewLatitude = viewline?.latitude;
   const hemisphere = auroraForecast?.hemisphere === 'south' ? 'S' : 'N';
-  const viewDescription = auroraForecast?.viewline?.description ?? 'N/A';
+  const viewDescription = viewline?.description ?? 'Kp unavailable';
 
   return (
     <div className={cn(
@@ -101,7 +103,7 @@ export default function CurrentConditions({
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono', kpStatus.color)}>
-            {kp}
+            {kp ?? '--'}
           </span>
           <span className={cn('text-xs font-mono', kpStatus.color)}>
             {kpStatus.text}
@@ -179,7 +181,7 @@ export default function CurrentConditions({
       <div className="p-3 card-inner rounded">
         <div className={cn('flex items-center gap-1 mb-1', themeClasses.text)}>
           <Sparkles className="w-3 h-3" aria-hidden="true" />
-          <span className="text-xs font-mono uppercase">Aurora</span>
+          <span className="text-xs font-mono uppercase">Aurora (approx.)</span>
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono text-green-400')}>

@@ -1,9 +1,11 @@
 'use client';
 
+import { selectActiveAlerts, pointConfirmationKeys } from '@/lib/warnings/active-alerts';
+import type { AlertCoverage } from '@/lib/warnings/coverage-status';
 import { useCallback, useEffect, useState } from 'react';
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
-import type { StargazerScore } from '@/lib/stargazer/types';
+import type { StargazerData } from '@/lib/stargazer/types';
 import {
   formatUpdatedAgo,
   pickHappeningNowHeadline,
@@ -26,6 +28,7 @@ export interface LocalSpcOutlook {
 export interface HomeHubData {
   spc: LocalSpcOutlook;
   alerts: {
+    coverage: AlertCoverage;
     loading: boolean;
     count: number | null;
     headline: string;
@@ -71,6 +74,7 @@ function hydrateNewsItems(items: RSSItem[]): RSSItem[] {
 }
 
 export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubData {
+  const [coverage, setCoverage] = useState<AlertCoverage>('loading');
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertSummary, setAlertSummary] = useState<
     ReturnType<typeof summarizeAlerts> & { nearbyCount: number; nearbyTopId: string | null }
@@ -91,7 +95,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
   });
 
   const [stargazerLoading, setStargazerLoading] = useState(false);
-  const [stargazerScore, setStargazerScore] = useState<StargazerScore | null>(null);
+  const [stargazerScore, setStargazerScore] = useState<StargazerData['score'] | null>(null);
 
   const [headlineLoading, setHeadlineLoading] = useState(false);
   const [headlineItem, setHeadlineItem] = useState<RSSItem | null>(null);
@@ -100,6 +104,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
   const loadLocationData = useCallback(
     async (user: HubUserLocation, signal?: AbortSignal) => {
       setAlertsLoading(true);
+      setCoverage('loading');
       setStargazerLoading(true);
       setHeadlineLoading(true);
       if (isSpcOutlookRegion(user)) setSpcLoading(true);
@@ -120,21 +125,33 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
         runHubRequest({
           signal,
           task: async () => {
-            const alertsRes = await fetch(`/api/weather/alerts?harm=1&detail=1`, { signal });
+            const [alertsRes, pointRes] = await Promise.all([
+              fetch('/api/weather/alerts?harm=1&detail=1', { signal }),
+              fetch(`/api/weather/alerts?harm=1&detail=1&point=${encodeURIComponent(point)}`, { signal }),
+            ]);
             if (signal?.aborted) return;
-            if (!alertsRes.ok) throw new Error('alerts');
+            if (!alertsRes.ok || !pointRes.ok) throw new Error('alerts');
             const data = (await alertsRes.json()) as { alerts?: NWSAlertDetail[] };
-            const { onYou, nearby } = splitLocalWarnings(data.alerts ?? [], {
-              lat: user.lat,
-              lon: user.lon,
-            });
+            const local = (await pointRes.json()) as { alerts?: NWSAlertDetail[]; coverage?: string };
+            if (signal?.aborted) return;
+            if (local.coverage === 'outside-nws') {
+              setCoverage('outside-nws');
+              setAlertSummary(alertsUnavailable);
+              return;
+            }
+            setCoverage('supported');
+            const localIds = new Set((local.alerts ?? []).flatMap(pointConfirmationKeys));
+            const candidates = selectActiveAlerts([...(data.alerts ?? []), ...(local.alerts ?? [])]);
+            const { onYou, nearby } = splitLocalWarnings(candidates, {
+              lat: user.lat, lon: user.lon,
+            }, localIds);
             setAlertSummary({
               ...summarizeAlerts(onYou),
               nearbyCount: nearby.length,
               nearbyTopId: nearby[0]?.id ?? null,
             });
           },
-          onFailure: () => setAlertSummary(alertsUnavailable),
+          onFailure: () => { setCoverage('unavailable'); setAlertSummary(alertsUnavailable); },
           onSettled: () => setAlertsLoading(false),
         }),
       );
@@ -148,7 +165,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
             });
             if (signal?.aborted) return;
             if (!stargazerRes.ok) throw new Error('stargazer');
-            const data = (await stargazerRes.json()) as { score?: StargazerScore };
+            const data = (await stargazerRes.json()) as { score?: StargazerData['score'] };
             setStargazerScore(data.score ?? null);
           },
           onFailure: () => setStargazerScore(null),
@@ -261,8 +278,9 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
       inRegion,
     },
     alerts: {
+      coverage,
       loading: alertsLoading,
-      count: needsLocation ? null : alertSummary.count,
+      count: needsLocation || coverage !== 'supported' ? null : alertSummary.count,
       headline: alertSummary.headline,
       severity: alertSummary.severity,
       topAlertId: needsLocation ? null : alertSummary.topAlertId,

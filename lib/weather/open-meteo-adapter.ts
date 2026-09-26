@@ -64,6 +64,10 @@ function wmoCodeToConditionLabel(code: number): string {
   }
 }
 
+function roundAvailable(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : undefined;
+}
+
 function formatISOTimeToDisplay(isoString: string): string {
   const timePart = isoString.split('T')[1];
   if (!timePart) return 'N/A';
@@ -225,7 +229,7 @@ export async function buildWeatherDataFromOpenMeteo(
   const windGust = current?.wind_gusts_10m;
 
   const pressureHPa = current?.surface_pressure ?? 1013;
-  const pressure = formatPressureByRegion(pressureHPa, resolvedCountry);
+  const pressure = formatPressureByRegion(pressureHPa, resolvedCountry, unitSystem === 'metric' ? 'hPa' : 'inHg');
 
   const sunrise = daily?.sunrise?.[0]
     ? formatISOTimeToDisplay(daily.sunrise[0])
@@ -244,45 +248,38 @@ export async function buildWeatherDataFromOpenMeteo(
   if (daily?.time) {
     const count = Math.min(daily.time.length, 7);
     for (let i = 0; i < count; i++) {
+      const high = daily.temperature_2m_max?.[i];
+      const low = daily.temperature_2m_min?.[i];
+      const code = daily.weather_code?.[i];
+      if (typeof high !== 'number' || !Number.isFinite(high) ||
+          typeof low !== 'number' || !Number.isFinite(low) ||
+          typeof code !== 'number' || !Number.isFinite(code)) continue;
       const dayDate = new Date(daily.time[i] + 'T12:00:00');
       const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'long' });
       const dayWeatherCode = daily.weather_code?.[i] ?? 0;
       forecastDays.push({
         day: dayName,
-        highTemp: Math.round(daily.temperature_2m_max?.[i] ?? 0),
-        lowTemp: Math.round(daily.temperature_2m_min?.[i] ?? 0),
+        date: daily.time[i],
+        sunrise: daily.sunrise?.[i] ? formatISOTimeToDisplay(daily.sunrise[i]) : undefined,
+        sunset: daily.sunset?.[i] ? formatISOTimeToDisplay(daily.sunset[i]) : undefined,
+        highTemp: Math.round(high),
+        lowTemp: Math.round(low),
         condition: wmoCodeToConditionLabel(dayWeatherCode),
         description: getWMODescription(dayWeatherCode).toLowerCase(),
         details: {
-          humidity: 0,
-          windSpeed: Math.round(daily.wind_speed_10m_max?.[i] ?? 0),
+          humidity: undefined,
+          windSpeed: roundAvailable(daily.wind_speed_10m_max?.[i]),
           windDirection: undefined,
-          pressure: `${Math.round(pressureHPa)} hPa`,
-          cloudCover: 0,
-          precipitationChance: daily.precipitation_probability_max?.[i] ?? 0,
+          pressure: undefined,
+          cloudCover: undefined,
+          precipitationChance: roundAvailable(daily.precipitation_probability_max?.[i]),
           visibility: undefined,
-          uvIndex: Math.round(daily.uv_index_max?.[i] ?? 0),
+          uvIndex: roundAvailable(daily.uv_index_max?.[i]),
         },
         hourlyForecast: [],
       });
     }
   }
-  while (forecastDays.length < 7) {
-    const offset = forecastDays.length;
-    const futureDate = new Date(Date.now() + offset * 86400000);
-    forecastDays.push({
-      day: futureDate.toLocaleDateString('en-US', { weekday: 'long' }),
-      highTemp: 0, lowTemp: 0,
-      condition: 'Clear', description: 'No data',
-      details: {
-        humidity: 0, windSpeed: 0, windDirection: undefined,
-        pressure: '1013 hPa', cloudCover: 0, precipitationChance: 0,
-        visibility: undefined, uvIndex: 0,
-      },
-      hourlyForecast: [],
-    });
-  }
-
   // Build hourly forecast (48 hours forward from now) from Open-Meteo hourly arrays
   // Open-Meteo returns hourly data starting at midnight — find the current hour first
   const hourlyForecast: WeatherData['hourlyForecast'] = [];
@@ -344,13 +341,14 @@ export async function buildWeatherDataFromOpenMeteo(
     // even in dense fog — the data was fetched and discarded.
     const visibilityMeters = hourly.visibility?.[startIdx];
     const day0Details = forecastDays[0]?.details;
-    if (visibilityMeters != null && day0Details) {
+    if (visibilityMeters != null && day0Details && forecastDays[0].date === daily?.time?.[0]) {
       day0Details.visibility =
         Math.round((visibilityMeters / 1609.34) * 10) / 10;
     }
   }
 
   return {
+    currentDate: current?.time?.split('T')[0] ?? daily?.time?.[0],
     location: displayName,
     country: resolvedCountry,
     temperature,

@@ -6,10 +6,11 @@ import type { ISSPass } from '@/lib/stargazer/types';
 import { formatTime, formatDate } from '@/lib/stargazer/format';
 
 interface ISSPassesProps {
+  timeZone?: string;
   passes: ISSPass[];
 }
 
-export default function ISSPasses({ passes }: ISSPassesProps) {
+export default function ISSPasses({ timeZone = 'UTC', passes }: ISSPassesProps) {
   const styles = themeTokens.card;
 
   return (
@@ -65,10 +66,10 @@ export default function ISSPasses({ passes }: ISSPassesProps) {
                   className="border-b border-subtle"
                 >
                   <td className="px-2 py-1 font-mono">
-                    {formatDate(pass.date)}
+                    {formatDate(pass.date, timeZone)}
                   </td>
                   <td className="px-2 py-1 font-mono">
-                    {formatTime(pass.riseTime)}
+                    {formatTime(pass.riseTime, timeZone)}
                   </td>
                   <td className="px-2 py-1 text-muted-foreground">
                     {pass.riseDirection}
@@ -77,13 +78,13 @@ export default function ISSPasses({ passes }: ISSPassesProps) {
                     {Math.round(pass.maxElevation)}&deg;
                   </td>
                   <td className="px-2 py-1 font-mono">
-                    {formatTime(pass.maxTime)}
+                    {formatTime(pass.maxTime, timeZone)}
                   </td>
                   <td className="px-2 py-1 text-muted-foreground">
                     {pass.setDirection}
                   </td>
                   <td className="px-2 py-1 font-mono">
-                    {formatTime(pass.setTime)}
+                    {formatTime(pass.setTime, timeZone)}
                   </td>
                   <td className="px-2 py-1 font-mono">
                     {pass.brightness.toFixed(1)}

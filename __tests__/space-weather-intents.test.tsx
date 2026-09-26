@@ -199,15 +199,15 @@ describe('kpLevel', () => {
 
 describe('viewlineFor', () => {
   it('pushes the viewline south as the storm strengthens', () => {
-    const latitudes = [0, 2, 3, 4, 5, 6, 7, 8, 9].map((kp) => viewlineFor(kp).latitude)
+    const latitudes = [0, 2, 3, 4, 5, 6, 7, 8, 9].map((kp) => viewlineFor(kp)!.latitude)
     expect(latitudes).toEqual([...latitudes].sort((a, b) => b - a))
-    expect(viewlineFor(9).latitude).toBeLessThan(viewlineFor(0).latitude)
+    expect(viewlineFor(9)!.latitude).toBeLessThan(viewlineFor(0)!.latitude)
   })
 
-  it('clamps rather than throwing on a value outside the scale', () => {
-    expect(viewlineFor(Number.NaN).latitude).toBe(viewlineFor(0).latitude)
-    expect(viewlineFor(-1).latitude).toBe(viewlineFor(0).latitude)
-    expect(viewlineFor(99).latitude).toBe(viewlineFor(9).latitude)
+  it('leaves invalid Kp unavailable', () => {
+    expect(viewlineFor(Number.NaN)).toBeNull()
+    expect(viewlineFor(-1)).toBeNull()
+    expect(viewlineFor(99)).toBeNull()
   })
 
   /**
@@ -228,10 +228,10 @@ describe('viewlineFor', () => {
   it('names places that sit at the latitude it reports', () => {
     // Kp 5 reaches the Canadian border, not the Great Lakes; the old table
     // paired 60°N with "northern Michigan, Maine", which is nearer 46°N.
-    expect(viewlineFor(5).latitude).toBe(50)
-    expect(viewlineFor(5).places).toContain('Canadian border')
-    expect(viewlineFor(9).latitude).toBe(40)
-    expect(viewlineFor(9).places).toContain('Kansas')
+    expect(viewlineFor(5)!.latitude).toBe(50)
+    expect(viewlineFor(5)!.places).toContain('Canadian border')
+    expect(viewlineFor(9)!.latitude).toBe(40)
+    expect(viewlineFor(9)!.places).toContain('Kansas')
   })
 })
 

@@ -7,6 +7,7 @@ import type { DeepSkyHighlight } from '@/lib/stargazer/types';
 import { formatTime } from '@/lib/stargazer/format';
 
 interface DeepSkyHighlightsProps {
+  timeZone?: string;
   highlights: DeepSkyHighlight[];
 }
 
@@ -23,7 +24,7 @@ const difficultyColors: Record<string, string> = {
   advanced: 'bg-red-600 text-white',
 };
 
-export default function DeepSkyHighlights({
+export default function DeepSkyHighlights({ timeZone = 'UTC',
   highlights,
 }: DeepSkyHighlightsProps) {
   const styles = themeTokens.card;
@@ -101,7 +102,7 @@ export default function DeepSkyHighlights({
               <div>
                 <span className="text-muted-foreground">Transit</span>
                 <p className="font-mono">
-                  {formatTime(obj.transitTime)}
+                  {formatTime(obj.transitTime, timeZone)}
                 </p>
               </div>
             </div>

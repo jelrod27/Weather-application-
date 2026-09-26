@@ -9,6 +9,7 @@
 
 import React from "react"
 import Link from 'next/link'
+import { getTodayForecast } from '@/lib/weather/daily-forecast'
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -73,15 +74,20 @@ export function WeatherDisplay({
 }: WeatherDisplayProps) {
   const themeClasses = themeTokens.weather
 
+  const todayForecast = getTodayForecast(weather)
+
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
   const humiditySeverity = getHumiditySeverity(weather?.humidity ?? 0)
   const pressureCategory = getPressureCategory(weather?.pressure || '1013')
   const windSpeed = weather?.wind?.speed ?? 0
-  const windSeverity = getWindSeverity(windSpeed)
+  const windUnit = weather?.unit === '°C' ? 'km/h' : 'mph'
+  const windSeverity = getWindSeverity(windSpeed, windUnit)
   const windDeg = windDirectionToDegrees(weather?.wind?.direction || '')
-  const visibilityMi = weather?.forecast?.[0]?.details?.visibility ?? 10
-  const visibilitySeverity = getVisibilitySeverity(visibilityMi)
+  const visibilityMi = todayForecast?.details?.visibility
+  const visibilitySeverity = visibilityMi != null && Number.isFinite(visibilityMi)
+    ? getVisibilitySeverity(visibilityMi)
+    : null
 
   const feelsLike = weather?.hourlyForecast?.[0]?.feelsLike != null
     ? Math.round(weather.hourlyForecast[0].feelsLike)
@@ -102,14 +108,14 @@ export function WeatherDisplay({
         unit={weather.unit}
         condition={weather.condition}
         description={weather.description}
-        highTemp={weather.forecast?.[0]?.highTemp}
-        lowTemp={weather.forecast?.[0]?.lowTemp}
+        highTemp={todayForecast?.highTemp}
+        lowTemp={todayForecast?.lowTemp}
         feelsLike={feelsLike}
         feelsLikeDelta={feelsLikeDelta}
         humidity={weather.humidity}
         windSpeed={weather.wind?.speed}
         windUnit={weather.unit === '°C' ? 'km/h' : 'mph'}
-        precipChance={weather.forecast?.[0]?.details?.precipitationChance}
+        precipChance={todayForecast?.details?.precipitationChance}
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
@@ -120,12 +126,14 @@ export function WeatherDisplay({
           hourly={weather.hourlyForecast}
           theme={theme as ThemeType}
           tempUnit={weather.unit || '°F'}
+          timezone={weather.timezone}
         />
       )}
 
       {/* 3. Full-width 7-Day Forecast */}
       {weather?.forecast && weather.forecast.length > 0 ? (
         <LazyForecast
+          tempUnit={weather.unit}
           forecast={weather.forecast.map((day) => ({
             ...day,
             country: weather?.country || 'US'
@@ -144,20 +152,13 @@ export function WeatherDisplay({
 
       {/* Expandable Forecast Details Section — directly below the 5-day row */}
       <LazyForecastDetails
+        tempUnit={weather?.unit}
         forecast={(weather?.forecast || []).map((day) => ({
           ...day,
           country: weather?.country || 'US'
         }))}
         theme={(theme || 'nord') as ThemeType}
         selectedDay={selectedDay}
-        currentWeatherData={{
-          humidity: weather?.humidity || 0,
-          wind: weather?.wind || { speed: 0, direction: '', gust: null },
-          pressure: weather?.pressure || '1013',
-          uvIndex: weather?.uvIndex || 0,
-          sunrise: weather?.sunrise || 'N/A',
-          sunset: weather?.sunset || 'N/A'
-        }}
       />
 
       {/* 4. Two-column layout: Radar (left) / AQI + Moon Phase stacked (right) */}
@@ -379,7 +380,6 @@ export function WeatherDisplay({
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
               {weather?.pressure || 'N/A'}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">hPa</p>
             <Badge
               variant="outline"
               className="mt-2 border-0"
@@ -401,7 +401,7 @@ export function WeatherDisplay({
           </CardHeader>
           <CardContent className="text-center pt-2 px-4 pb-4">
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
-              {windSpeed || 'N/A'} <span className="text-lg">mph</span>
+              {weather?.wind?.speed ?? 'N/A'} <span className="text-lg">{windUnit}</span>
             </p>
             <div className="flex items-center justify-center gap-2 mt-2">
               {weather?.wind?.direction && (
@@ -417,7 +417,7 @@ export function WeatherDisplay({
             </div>
             {weather?.wind?.gust && (
               <p className={cn("text-xs mt-1", themeClasses.secondaryText)}>
-                Gusts {weather.wind.gust} mph
+                Gusts {weather.wind.gust} {windUnit}
               </p>
             )}
             <Badge
@@ -463,17 +463,17 @@ export function WeatherDisplay({
           </CardHeader>
           <CardContent className="text-center pt-2 px-4 pb-4">
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
-              {weather?.forecast?.[0]?.details?.visibility != null
-                ? `${weather.forecast[0].details.visibility}`
+              {visibilitySeverity
+                ? `${visibilityMi}`
                 : 'N/A'}
               <span className="text-lg ml-1">mi</span>
             </p>
             <Badge
               variant="outline"
               className="mt-2 border-0"
-              style={{ color: visibilitySeverity.textColor, backgroundColor: `${visibilitySeverity.bgColor}20` }}
+              style={visibilitySeverity ? { color: visibilitySeverity.textColor, backgroundColor: `${visibilitySeverity.bgColor}20` } : undefined}
             >
-              {visibilitySeverity.label}
+              {visibilitySeverity?.label ?? 'Unavailable'}
             </Badge>
           </CardContent>
         </Card>

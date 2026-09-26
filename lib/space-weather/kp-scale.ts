@@ -78,10 +78,9 @@ export function kpLevel(kp: number): KpLevel {
 
 export interface Viewline {
   /**
-   * Approximate northernmost latitude the aurora may become visible *from*, on
+   * Approximate equatorward latitude the aurora may become visible *from*, on
    * a clear dark night. This is the horizon viewline, not the auroral oval
-   * itself, which sits several degrees further north. NOAA publishes these as
-   * guidance, not a promise.
+   * itself. This site estimate is broad guidance, not a local forecast.
    */
   latitude: number
   /**
@@ -90,7 +89,7 @@ export interface Viewline {
    * south of the stated number is how the two tables drifted apart before.
    */
   places: string
-  /** The fuller both-hemispheres line the hub's aurora map renders. */
+  /** The hemisphere-specific line the hub's aurora map renders. */
   description: string
 }
 
@@ -174,11 +173,23 @@ const VIEWLINES: readonly { minKp: number; viewline: Viewline }[] = [
   },
 ] as const
 
-/** The viewline a reading puts you on. Clamps rather than throwing. */
-export function viewlineFor(kp: number): Viewline {
-  const value = Number.isFinite(kp) ? kp : 0
-  return (
-    VIEWLINES.find((entry) => value >= entry.minKp)?.viewline ??
-    VIEWLINES[VIEWLINES.length - 1]!.viewline
-  )
+/** Validate provider values without turning missing readings into quiet weather. */
+export function isValidKp(kp: unknown): kp is number {
+  return typeof kp === 'number' && Number.isFinite(kp) && kp >= 0 && kp <= 9
+}
+
+/** Shared rough horizon-viewing estimate, not an OVATION model output.
+ * Kp alone cannot establish a geographic visibility boundary; longitude,
+ * darkness, cloud and local activity also matter. See NOAA viewing guidance:
+ * https://www.swpc.noaa.gov/content/tips-viewing-aurora
+ */
+export function viewlineFor(kp: number | null | undefined, hemisphere: 'north' | 'south' = 'north'): Viewline | null {
+  if (!isValidKp(kp)) return null
+  const northern = VIEWLINES.find((entry) => kp >= entry.minKp)!.viewline
+  if (hemisphere === 'north') return northern
+  return {
+    latitude: northern.latitude,
+    places: `southern latitudes around ${northern.latitude}°S and poleward`,
+    description: `Southern Hemisphere: roughly ${northern.latitude}°S and poleward. Look toward the southern horizon; visibility varies with longitude and local conditions.`,
+  }
 }

@@ -3,6 +3,7 @@
  * Nominatim is reached only via reverseGeocodingForStargazer.
  */
 
+import { formatTime } from '@/lib/stargazer/format';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { reverseGeocodingForStargazer } from '@/lib/geocoding/lookup';
 import {
@@ -52,7 +53,7 @@ export class StargazerWeatherUnavailableError extends Error {
 }
 
 interface OpenMeteoHourly {
-  time: string[];
+  time: Array<string | number>;
   cloud_cover: number[];
   cloud_cover_low: number[];
   cloud_cover_mid: number[];
@@ -66,6 +67,7 @@ interface OpenMeteoHourly {
 }
 
 interface OpenMeteoResponse {
+  timezone?: string;
   hourly: OpenMeteoHourly;
   utc_offset_seconds: number;
 }
@@ -89,7 +91,7 @@ function getDewRisk(tempC: number, dewpointC: number): 'low' | 'moderate' | 'hig
 }
 
 export async function buildStargazerPayload(lat: number, lon: number): Promise<StargazerData> {
-  const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,visibility,surface_pressure&forecast_days=2&timezone=auto`;
+  const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,visibility,surface_pressure&forecast_days=2&timezone=auto&timeformat=unixtime`;
 
   const [openMeteoRes, sevenTimerData, issTle, launches, place] = await Promise.all([
     fetchWithTimeout(openMeteoUrl, { next: { revalidate: 900 } }),
@@ -128,7 +130,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
 
   const highlights: DeepSkyHighlight[] = [];
   const sampleMs = 30 * 60 * 1000;
-  for (const obj of catalog) {
+  for (const obj of darkWindow.status === 'none' ? [] : catalog) {
     let maxAlt = -90;
     let transitTime = darkMidpoint;
     for (
@@ -165,16 +167,19 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     ? calculateISSPasses(issTle, lat, lon, now, 7)
     : [];
 
-  const sunsetMs = darkWindow.sunset.getTime();
-  const sunriseMs = darkWindow.sunrise.getTime();
+  const sunsetMs = (darkWindow.sunset ?? darkWindow.astronomicalDusk).getTime();
+  const sunriseMs = (darkWindow.sunrise ?? darkWindow.astronomicalDawn).getTime();
 
   const hourlyConditions: HourlyCondition[] = [];
 
   for (let i = 0; i < hourly.time.length; i++) {
-    const t = new Date(hourly.time[i] + tzSuffix);
+    // UNIX instants avoid DST ambiguity. Accept legacy ISO responses too.
+    const rawTime = hourly.time[i];
+    const t = typeof rawTime === 'number' ? new Date(rawTime * 1000)
+      : new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawTime) ? rawTime : rawTime + tzSuffix);
     const tMs = t.getTime();
 
-    if (tMs < sunsetMs || tMs > sunriseMs) continue;
+    if (!Number.isFinite(tMs) || tMs < sunsetMs || tMs > sunriseMs) continue;
 
     const stPoint = sevenTimerData ? getSevenTimerAtTime(sevenTimerData, t) : null;
     const seeing = stPoint ? stPoint.seeing : 4;
@@ -208,9 +213,11 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
   for (let i = 0; i < hourlyConditions.length; i++) {
     const h = hourlyConditions[i];
     const tMs = h.time.getTime();
-    if (tMs >= darkDuskMs && tMs <= darkDawnMs) {
+    if (darkWindow.status !== 'none' && tMs >= darkDuskMs && tMs <= darkDawnMs) {
       darkHourIndices.push(i);
     }
+
+    if (darkWindow.status === 'none') continue;
 
     const result = scoreHour(
       h.cloudCover,
@@ -262,7 +269,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     };
     headlineScore = bestWindowResult.score;
   } else {
-    const fallback = hourlyConditions.length > 0
+    const fallback = darkWindow.status !== 'none' && hourlyConditions.length > 0
       ? hourlyConditions.map((h) => h.hourlySubScores!)
       : null;
     if (fallback && fallback.length > 0) {
@@ -281,7 +288,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       : 50;
   }
 
-  const nightAverage = darkHourScores.length > 0
+  const nightAverage = darkWindow.status === 'none' ? null : darkHourScores.length > 0
     ? Math.round(darkHourScores.reduce((s, v) => s + v, 0) / darkHourScores.length)
     : headlineScore;
 
@@ -291,19 +298,29 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       ? hourlyConditions.reduce((s, h) => s + h.cloudCover, 0) / hourlyConditions.length
       : 50;
 
-  const score = calculateStargazerScore(headlineSubScores, moonIllumPct, avgCloudCover);
-  score.overall = headlineScore;
-  score.label = getScoreLabel(headlineScore);
-  score.color = getScoreColor(score.label);
+  const score: StargazerData['score'] = darkWindow.status === 'none'
+    ? {
+        overall: null,
+        label: 'Unavailable',
+        color: '#9ca3af',
+        summary: 'No astronomical darkness at this location tonight.',
+        subScores: null,
+      }
+    : {
+        ...calculateStargazerScore(headlineSubScores, moonIllumPct, avgCloudCover),
+        overall: headlineScore,
+        label: getScoreLabel(headlineScore),
+        color: getScoreColor(getScoreLabel(headlineScore)),
+      };
 
   let limitingFactor: LimitingFactor | null = null;
-  if (headlineScore < 85) {
+  if (darkWindow.status !== 'none' && headlineScore < 85) {
     const { category, score: limitScore } = findLimitingFactor(headlineSubScores);
     const label = getSubScoreLabel(category, limitScore);
 
     let detail = '';
     if (category === 'moon' && moonInfo.rise) {
-      const moonRiseStr = new Date(moonInfo.rise).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const moonRiseStr = formatTime(moonInfo.rise, openMeteo.timezone, true);
       detail = `rises at ${moonRiseStr} with ${Math.round(moonIllumPct)}% illumination`;
     } else if (category === 'cloud') {
       detail = `${Math.round(avgCloudCover)}% average cloud cover`;
@@ -375,6 +392,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     launches,
     meteorShowers,
     location: {
+      timezone: openMeteo.timezone || 'UTC',
       lat,
       lon,
       name: locationName,
@@ -382,6 +400,6 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       bortle: bortleEstimate.bortle,
       bortleLabel: bortleEstimate.label,
     },
-    generatedAt: new Date().toISOString(),
+    generatedAt: now.toISOString(),
   };
 }

@@ -31,14 +31,14 @@ function getTimeRemaining(expires: string): string {
 
 export default function SevereAlerts() {
   const [alerts, setAlerts] = useState<NWSAlert[]>([]);
+  const [unavailable, setUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch('/api/weather/alerts');
       if (!res.ok) {
-        console.error('[Severe] fetch failed', res.status, res.statusText);
-        return;
+        throw new Error(`Severe alerts unavailable: ${res.status}`);
       }
       const data = await res.json();
       const filtered = (data.alerts ?? []).filter((a: NWSAlert) =>
@@ -48,8 +48,11 @@ export default function SevereAlerts() {
         (SEVERITY_ORDER[a.severity] ?? 4) - (SEVERITY_ORDER[b.severity] ?? 4)
       );
       setAlerts(filtered);
+      setUnavailable(false);
     } catch (e) {
       console.error('[Severe]', e);
+      setUnavailable(true);
+      setAlerts([]);
     } finally {
       setIsLoading(false);
     }
@@ -69,11 +72,15 @@ export default function SevereAlerts() {
     );
   }
 
+  if (unavailable) {
+    return <p className="text-center font-mono text-muted-foreground py-12">Alert status unavailable. Check the latest NWS information.</p>;
+  }
+
   if (alerts.length === 0) {
     return (
       <div className="text-center py-12 border border-border rounded-lg bg-card/30">
-        <p className="text-lg font-mono text-green-400 font-bold">ALL CLEAR</p>
-        <p className="text-sm font-mono text-muted-foreground mt-2">No active severe weather alerts</p>
+        <p className="text-lg font-mono text-green-400 font-bold">NO MATCHING NWS ALERTS</p>
+        <p className="text-sm font-mono text-muted-foreground mt-2">No current US severe weather alerts returned by this feed.</p>
       </div>
     );
   }

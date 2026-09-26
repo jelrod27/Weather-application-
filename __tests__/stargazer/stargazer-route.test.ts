@@ -61,13 +61,14 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
   const time: string[] = [];
   for (let d = 0; d < 2; d++) {
     for (let h = 0; h < 24; h++) {
-      const day = d === 0 ? startDay : '2026-06-16';
+      const day = new Date(Date.parse(`${startDay}T00:00:00Z`) + d * 86400000).toISOString().slice(0, 10);
       time.push(`${day}T${String(h).padStart(2, '0')}:00`);
     }
   }
   const n = time.length;
   const fill = (v: number) => Array.from({ length: n }, () => v);
   return {
+    timezone: 'America/New_York',
     utc_offset_seconds: utcOffsetSeconds,
     hourly: {
       time,
@@ -86,13 +87,13 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
 };
 
 /** Set up fetchWithTimeout to return a nominal Open-Meteo response + failed nominatim. */
-const setupNominalFetches = (utcOffsetSeconds = -18000) => {
+const setupNominalFetches = (utcOffsetSeconds = -18000, startDay = '2026-06-15') => {
   mockFetchWithTimeout.mockImplementation((url: string) => {
     const urlStr = String(url);
     if (urlStr.startsWith('https://api.open-meteo.com/')) {
       return Promise.resolve({
         ok: true,
-        json: async () => makeOpenMeteoBody(utcOffsetSeconds),
+        json: async () => makeOpenMeteoBody(utcOffsetSeconds, startDay),
       } as Response);
     }
     if (urlStr.startsWith('https://nominatim.openstreetmap.org/')) {
@@ -266,6 +267,7 @@ describe('GET /api/stargazer — contract with degraded externals', () => {
     }
 
     // Geocode degradation → locationName and displayName are undefined
+    expect(body.location.timezone).toBe('America/New_York');
     expect(body.location.name).toBeUndefined();
     expect(body.location.displayName).toBeUndefined();
     // Bortle still estimated from undefined population (returns a number)
@@ -338,4 +340,41 @@ describe('GET /api/stargazer — timezone-suffix handling', () => {
     // could fall outside the window.
     expect(body.hourlyConditions.length).toBeGreaterThan(0);
   });
+});
+
+describe('absolute provider timestamps', () => {
+  afterEach(() => jest.useRealTimers());
+  it('keeps UNIX hourly timestamps as instants rather than applying an offset twice', async () => {
+    jest.useFakeTimers({ now: new Date('2026-06-15T04:00:00Z'), doNotFake: ['queueMicrotask', 'setImmediate'] });
+    const fixture = makeOpenMeteoBody(-14400);
+    const epoch = Date.parse('2026-06-15T02:00:00Z') / 1000;
+    mockFetchWithTimeout.mockImplementation(async (url) => ({
+      ok: String(url).startsWith('https://api.open-meteo.com/'),
+      json: async () => ({ ...fixture, hourly: { ...fixture.hourly, time: [epoch] } }),
+    } as Response));
+    const res = await GET(makeRequest({ lat: '40.71', lon: '-74.01' }));
+    const body = await res.json();
+    expect(body.hourlyConditions[0].time.getTime()).toBe(epoch * 1000);
+  });
+});
+
+
+it('offers no dark-window observing targets when the sun never reaches astronomical night', async () => {
+  jest.useFakeTimers({ now: new Date('2026-06-21T12:00:00Z'), doNotFake: ['queueMicrotask', 'setImmediate'] });
+  setupNominalFetches(7200, '2026-06-21');
+  const res = await GET(makeRequest({ lat: '59.33', lon: '18.07' }));
+  const body = await res.json();
+  expect(body.darkWindow.status).toBe('none');
+  expect(body.planets).toEqual([]);
+  expect(body.deepSkyHighlights).toEqual([]);
+  expect(body.bestWindow).toBeNull();
+  expect(body.score.overall).toBeNull();
+  expect(body.score.label).toBe('Unavailable');
+  expect(body.score.subScores).toBeNull();
+  expect(body.nightAverage).toBeNull();
+  expect(body.limitingFactor).toBeNull();
+  expect(body.hourlyConditions.length).toBeGreaterThan(0);
+  expect(body.hourlyConditions.every((hour: { hourlyScore?: number }) => hour.hourlyScore == null)).toBe(true);
+  expect(body.hourlyConditions.every((hour: { hourlySubScores?: unknown }) => hour.hourlySubScores == null)).toBe(true);
+  jest.useRealTimers();
 });

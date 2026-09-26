@@ -7,6 +7,7 @@ import { moonScore, getSubScoreLabel } from '@/lib/stargazer/score';
 import { formatTime, formatDate } from '@/lib/stargazer/format';
 
 interface MoonIntelProps {
+  timeZone?: string;
   moon: MoonInfo;
 }
 
@@ -16,7 +17,7 @@ function daysUntil(target: Date): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-export default function MoonIntel({ moon }: MoonIntelProps) {
+export default function MoonIntel({ timeZone = 'UTC', moon }: MoonIntelProps) {
   const styles = themeTokens.card;
   const impactScore = moonScore(moon.illumination, moon.moonUpDuringDarkWindowPercent);
   const impactLabel = getSubScoreLabel('moon', impactScore);
@@ -54,11 +55,11 @@ export default function MoonIntel({ moon }: MoonIntelProps) {
 
         <div>
           <p className="text-xs font-mono uppercase text-muted-foreground">Moonrise</p>
-          <p className="font-mono">{formatTime(moon.rise)}</p>
+          <p className="font-mono">{formatTime(moon.rise, timeZone)}</p>
         </div>
         <div>
           <p className="text-xs font-mono uppercase text-muted-foreground">Moonset</p>
-          <p className="font-mono">{formatTime(moon.set)}</p>
+          <p className="font-mono">{formatTime(moon.set, timeZone)}</p>
         </div>
 
         <div className="col-span-2 border-t border-subtle pt-2">
@@ -67,8 +68,8 @@ export default function MoonIntel({ moon }: MoonIntelProps) {
           </p>
           {moon.darkWindowStart && moon.darkWindowEnd ? (
             <p className="text-cyan-400">
-              {formatTime(moon.darkWindowStart)} &ndash;{' '}
-              {formatTime(moon.darkWindowEnd)}
+              {formatTime(moon.darkWindowStart, timeZone)} &ndash;{' '}
+              {formatTime(moon.darkWindowEnd, timeZone)}
             </p>
           ) : (
             <p className="font-mono">No dark window tonight</p>
@@ -84,7 +85,7 @@ export default function MoonIntel({ moon }: MoonIntelProps) {
             Next New Moon
           </p>
           <p className="font-mono">
-            {formatDate(moon.nextNewMoon)}{' '}
+            {formatDate(moon.nextNewMoon, timeZone)}{' '}
             <span className="text-muted-foreground">
               ({daysUntil(moon.nextNewMoon)}d)
             </span>
@@ -95,7 +96,7 @@ export default function MoonIntel({ moon }: MoonIntelProps) {
             Next Full Moon
           </p>
           <p className="font-mono">
-            {formatDate(moon.nextFullMoon)}{' '}
+            {formatDate(moon.nextFullMoon, timeZone)}{' '}
             <span className="text-muted-foreground">
               ({daysUntil(moon.nextFullMoon)}d)
             </span>

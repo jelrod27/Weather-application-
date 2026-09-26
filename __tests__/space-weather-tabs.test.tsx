@@ -78,16 +78,16 @@ describe('AlertsForecastTab', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('should show ALL CLEAR when no alerts', async () => {
+  it('should label the feed as recent messages', async () => {
     const AlertsForecastTab = (await import('@/components/space-weather/tabs/AlertsForecastTab')).default;
     render(<AlertsForecastTab scales={null} alerts={[]} kpIndex={null} isLoading={false} />);
-    expect(screen.getByText('ALL CLEAR')).not.toBeNull();
+    expect(screen.getByText('Recent NOAA messages (0)')).not.toBeNull();
   });
 
   it('should show alert count in header', async () => {
     const AlertsForecastTab = (await import('@/components/space-weather/tabs/AlertsForecastTab')).default;
     const alerts = [{ id: '1', message: 'test', severity: 'warning', issued: '2025-01-01' }];
     render(<AlertsForecastTab scales={null} alerts={alerts as any} kpIndex={null} isLoading={false} />);
-    expect(screen.getByText('Active Alerts (1)')).not.toBeNull();
+    expect(screen.getByText('Recent NOAA messages (1)')).not.toBeNull();
   });
 });

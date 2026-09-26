@@ -10,6 +10,7 @@
 'use client';
 
 import React from 'react';
+import { viewlineFor, isValidKp } from '@/lib/space-weather/kp-scale';
 import { Activity, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -60,19 +61,6 @@ function getActivityLevel(kp: number): { text: string; color: string } {
   return { text: 'G5 EXTREME STORM', color: 'text-purple-500' };
 }
 
-// Get aurora visibility estimate
-function getAuroraVisibility(kp: number): string {
-  if (kp < 2) return 'Far north latitudes only (66°N+)';
-  if (kp < 3) return 'Northern Scandinavia, central Alaska (64°N+)';
-  if (kp < 4) return 'Southern Alaska, northern UK (58°N+)';
-  if (kp < 5) return 'Northern US states, central UK (55°N+)';
-  if (kp < 6) return 'Oregon, Wisconsin, southern UK (50°N+)';
-  if (kp < 7) return 'Washington state, northern France (48°N+)';
-  if (kp < 8) return 'Northern California, central France (45°N+)';
-  if (kp < 9) return 'Central California, northern Spain (42°N+)';
-  return 'Rare! Visible as far south as 40°N';
-}
-
 export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugeProps) {
   const themeClasses = themeTokens.weather;
 
@@ -94,10 +82,14 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
     );
   }
 
-  const currentKp = data?.current?.value ?? 0;
+  if (!isValidKp(data?.current?.value)) {
+    return <Card className="container-primary"><CardContent className="p-4 font-mono text-sm">Kp unavailable. Aurora guidance cannot be estimated.</CardContent></Card>;
+  }
+  const currentKp = data.current.value;
   const activity = getActivityLevel(currentKp);
   const kpColor = getKpColor(currentKp);
-  const auroraVisibility = getAuroraVisibility(currentKp);
+  const viewline = viewlineFor(currentKp)!;
+  const auroraVisibility = `Approx. ${viewline.latitude}°N — ${viewline.places}. Visibility depends on longitude, darkness and local conditions.`;
 
   return (
     <Card className={cn('container-primary', themeClasses.background)}>
@@ -160,7 +152,7 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-green-400" />
             <span className={cn('text-xs font-mono font-bold', themeClasses.headerText)}>
-              AURORA VIEWLINE
+              APPROXIMATE NORTHERN VIEWLINE
             </span>
           </div>
           <div className={cn('text-xs font-mono', themeClasses.text)}>

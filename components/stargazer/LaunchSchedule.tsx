@@ -8,6 +8,7 @@ import { safeExternalUrl } from '@/lib/safe-url';
 import { formatDate } from '@/lib/stargazer/format';
 
 interface LaunchScheduleProps {
+  timeZone?: string;
   launches: Launch[];
 }
 
@@ -32,7 +33,7 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   );
 }
 
-export default function LaunchSchedule({ launches }: LaunchScheduleProps) {
+export default function LaunchSchedule({ timeZone = 'UTC', launches }: LaunchScheduleProps) {
   const styles = themeTokens.card;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -92,7 +93,7 @@ export default function LaunchSchedule({ launches }: LaunchScheduleProps) {
                         </span>
                       </td>
                       <td className="px-2 py-1 font-mono">
-                        {formatDate(launch.net)}
+                        {formatDate(launch.net, timeZone)}
                       </td>
                       <td className="px-2 py-1 text-cyan-400">
                         <span className="flex items-center gap-1">

@@ -14,6 +14,7 @@ import { GuestAlertSignup } from '@/components/alerts/guest-alert-signup'
 import { PushOptIn } from '@/components/alerts/push-opt-in'
 import WarningPinSearch from '@/components/warnings/warning-pin-search'
 import { AlertLane } from '@/components/warnings/alert-lane'
+import { warningCoverageCopy } from '@/lib/warnings/coverage-status'
 import { useWarningsDesk } from '@/hooks/useWarningsDesk'
 import type { DeskEventFilter } from '@/lib/warnings/local-ranking'
 import { getWarningDetailHref } from '@/lib/warnings/alert-links'
@@ -57,6 +58,7 @@ export default function WarningsClient() {
     pin,
     pinLabel,
     pinResolving,
+    pointCoverage,
     alerts,
     wis,
     geoJson,
@@ -94,7 +96,7 @@ export default function WarningsClient() {
         ) : null}
         {pin ? (
           <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
-            Pin: {pin.label} ({pin.lat.toFixed(3)}, {pin.lon.toFixed(3)})
+            Viewing warnings for: {pin.label} ({pin.lat.toFixed(3)}, {pin.lon.toFixed(3)})
           </p>
         ) : pinResolving && pinLabel ? (
           <p data-testid="warning-pin-status" className="text-xs font-mono text-muted-foreground">
@@ -137,7 +139,7 @@ export default function WarningsClient() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left space-y-1">
               <p className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
-                Happening now · Weather Intensity Score
+                US nationwide · Weather Intensity Score
               </p>
               <div className="flex items-baseline gap-3">
                 <span className="text-6xl md:text-7xl font-extrabold font-mono">{wis.score}</span>
@@ -282,7 +284,7 @@ export default function WarningsClient() {
           {loading && (
             <p className="text-muted-foreground font-mono animate-pulse py-8 text-center">Loading…</p>
           )}
-          {!loading && (
+          {!loading && !error && (
             <>
               <AlertLane
                 title="On you"
@@ -291,7 +293,7 @@ export default function WarningsClient() {
                 onSelect={setSelectedId}
                 empty={
                   pin
-                    ? 'No polygons cover this pin. Nearby storm cells are listed below.'
+                    ? pointCoverage === 'supported' ? 'No current NWS alerts match this location and filter.' : warningCoverageCopy(pointCoverage)
                     : 'Set a pin to see warnings covering your location.'
                 }
               />
@@ -302,12 +304,12 @@ export default function WarningsClient() {
                 onSelect={setSelectedId}
                 empty={
                   pin
-                    ? 'No other warnings within about 50 miles of this pin.'
+                    ? pointCoverage === 'supported' ? 'No other NWS alerts match within about 50 miles.' : warningCoverageCopy(pointCoverage)
                     : 'Set a pin to see nearby warnings.'
                 }
               />
               <AlertLane
-                title="Elsewhere"
+                title="Elsewhere in the US"
                 alerts={elsewhere}
                 selectedId={selected?.id ?? null}
                 onSelect={setSelectedId}

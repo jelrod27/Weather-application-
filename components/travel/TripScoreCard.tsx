@@ -2,14 +2,14 @@
  * TripScoreCard - renders the unified misery score for a planned trip.
  *
  * Handles both `fly` and `drive` shapes from /api/travel/trip-score:
- * - Drive: corridor name + worst-stretch callout + optional peak-misery window.
+ * - Drive: corridor name + worst-stretch callout + corridor overview limits.
  * - Fly: origin / en-route / destination sub-cards.
  */
 
 'use client';
 
 import React from 'react';
-import { Plane, Car, AlertTriangle, Clock, MapPin } from 'lucide-react';
+import { Plane, Car, AlertTriangle, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MiseryBadge, MiseryDriverList } from '@/components/ui/misery-badge';
 import type {
@@ -55,7 +55,7 @@ export default function TripScoreCard({
 /* -------------------------------------------------------------------------- */
 
 function DriveBody({ result }: { result: DriveTripScore }) {
-  const { score, route, worstSegment, peakWindow } = result;
+  const { score, route, worstSegment } = result;
 
   return (
     <>
@@ -86,18 +86,10 @@ function DriveBody({ result }: { result: DriveTripScore }) {
 
       <WorstStretchCallout segment={worstSegment} />
 
-      {peakWindow && (
-        <div
-          className="flex items-center gap-2 text-xs font-mono text-muted-foreground border-t border-border pt-3"
-          data-testid="trip-peak-window"
-        >
-          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-          <span className="uppercase tracking-wider">Peak misery:</span>
-          <span className="text-foreground font-bold">
-            {formatPeakWindow(peakWindow.startISO, peakWindow.endISO)}
-          </span>
-        </div>
-      )}
+      <p className="text-xs font-mono text-muted-foreground border-t border-border pt-3">
+        Corridor weather overview from sampled locations. Peak travel time is unavailable;
+        this score does not account for your departure time or progress along the route.
+      </p>
     </>
   );
 }
@@ -233,36 +225,6 @@ function FlyLegCard({
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
 /* -------------------------------------------------------------------------- */
-
-function formatPeakWindow(startISO: string, endISO: string): string {
-  const start = new Date(startISO);
-  const end = new Date(endISO);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return `${startISO} – ${endISO}`;
-  }
-
-  const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
-
-  const timeFmt: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
-  const dayFmt: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-
-  if (sameDay) {
-    return `${start.toLocaleDateString(undefined, dayFmt)} ${start.toLocaleTimeString(
-      undefined,
-      timeFmt,
-    )} – ${end.toLocaleTimeString(undefined, timeFmt)}`;
-  }
-  return `${start.toLocaleDateString(undefined, dayFmt)} ${start.toLocaleTimeString(
-    undefined,
-    timeFmt,
-  )} – ${end.toLocaleDateString(undefined, dayFmt)} ${end.toLocaleTimeString(
-    undefined,
-    timeFmt,
-  )}`;
-}
 
 function TripScoreCardSkeleton({ className }: { className?: string }) {
   return (

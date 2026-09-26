@@ -143,7 +143,7 @@ describe('computeDriveTripScore', () => {
     expect(mockFetchWeather).not.toHaveBeenCalled();
   });
 
-  it('returns drive success shape keys when weather is mocked', async () => {
+  it.each([0, 1, 2])('preserves corridor scores without inventing peak timing for day %s', async (day) => {
     mockMatchCorridor.mockReturnValueOnce({
       name: 'I-70',
       matchedSegment: {
@@ -163,7 +163,7 @@ describe('computeDriveTripScore', () => {
 
     const origin = airportEndpoint('DEN');
     const destination = airportEndpoint('ORD');
-    const res = await computeDriveTripScore(origin, destination, 0, new AbortController().signal);
+    const res = await computeDriveTripScore(origin, destination, day, new AbortController().signal);
 
     expect(res.status).toBe(200);
     expect(res.headers['Cache-Control']).toBe(
@@ -188,6 +188,7 @@ describe('computeDriveTripScore', () => {
       }),
     );
     expect(typeof body.fetchedAt).toBe('string');
+    expect(body.peakWindow).toBeNull();
   });
 });
 

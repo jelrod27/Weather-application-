@@ -22,6 +22,14 @@ export interface StargazerScore {
   subScores: StargazerSubScores;
 }
 
+export interface UnavailableStargazerScore {
+  overall: null;
+  label: 'Unavailable';
+  color: string;
+  summary: string;
+  subScores: null;
+}
+
 export type ScoreLabel = 'Exceptional' | 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Bad';
 
 // ============================================================================
@@ -29,10 +37,11 @@ export type ScoreLabel = 'Exceptional' | 'Excellent' | 'Good' | 'Fair' | 'Poor' 
 // ============================================================================
 
 export interface DarkWindow {
+  status?: 'normal' | 'none' | 'continuous';
   astronomicalDusk: Date;
   astronomicalDawn: Date;
-  sunset: Date;
-  sunrise: Date;
+  sunset: Date | null;
+  sunrise: Date | null;
 }
 
 // ============================================================================
@@ -210,6 +219,8 @@ export interface Launch {
 
 export interface SkyEvent {
   date: Date;
+  /** Approximate calendar date, not a timezone-convertible instant. */
+  calendarDate?: string;
   type: 'meteor_shower' | 'conjunction' | 'opposition' | 'lunar_eclipse' | 'solar_eclipse' | 'equinox' | 'solstice';
   title: string;
   description: string;
@@ -264,9 +275,9 @@ export interface LimitingFactor {
 // ============================================================================
 
 export interface StargazerData {
-  score: StargazerScore;
+  score: StargazerScore | UnavailableStargazerScore;
   bestWindow: BestWindow | null;
-  nightAverage: number;
+  nightAverage: number | null;
   limitingFactor: LimitingFactor | null;
   darkWindow: DarkWindow;
   hourlyConditions: HourlyCondition[];
@@ -278,6 +289,7 @@ export interface StargazerData {
   launches: Launch[];
   meteorShowers: MeteorShowerEvent[];
   location: {
+    timezone?: string;
     lat: number;
     lon: number;
     name?: string;

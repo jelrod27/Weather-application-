@@ -83,16 +83,9 @@ export default function AlertsForecastTab({
       <Card className={cn('container-primary', themeClasses.background)}>
         <CardContent className="p-4">
           <div className={cn('text-sm font-mono font-bold uppercase mb-3', themeClasses.headerText)}>
-            Active Alerts ({alerts.length})
+            Recent NOAA messages ({alerts.length})
           </div>
-          {alerts.length > 0 ? (
-            <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} />
-          ) : (
-            <div className={cn('text-center py-6 font-mono text-sm', themeClasses.text)}>
-              <div className="text-green-500 text-lg font-bold mb-1">ALL CLEAR</div>
-              <div>No active space weather alerts at this time.</div>
-            </div>
-          )}
+          <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} />
         </CardContent>
       </Card>
 

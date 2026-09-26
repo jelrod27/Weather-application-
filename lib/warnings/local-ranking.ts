@@ -1,3 +1,4 @@
+import { pointConfirmationKeys } from '@/lib/warnings/active-alerts'
 import { extractAreaStates } from '@/lib/bitwatch/coverage'
 import { matchProtectedPlace } from '@/lib/bitwatch/match'
 import { distanceKmToNwsGeometry, pointInNwsGeometry } from '@/lib/services/nws-alert-geometry'
@@ -66,7 +67,11 @@ export function splitLocalWarnings(
   const nearbyDistance = new Map<string, number>()
 
   for (const alert of alerts) {
-    if (pin && matchProtectedPlace(pin.lat, pin.lon, alert, pointActiveKeys).covered) {
+    // Do not pass event-wide aliases to the shared delivery matcher: the desk
+    // can contain multiple independent geographic segments of the same event.
+    const confirmed = pointActiveKeys && pointConfirmationKeys(alert).some((key) => pointActiveKeys.has(key))
+    const matchKeys = confirmed ? new Set([alert.id]) : undefined
+    if (pin && matchProtectedPlace(pin.lat, pin.lon, alert, matchKeys).covered) {
       onYou.push(alert)
       continue
     }

@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw, MapPin, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -22,7 +22,7 @@ export interface AuroraForecastData {
   viewline: {
     latitude: number;
     description: string;
-  };
+  } | null;
   hemisphere: 'north' | 'south';
   updatedAt: string;
 }
@@ -48,7 +48,8 @@ function getKpColor(kp: number): string {
 
 export default function AuroraForecastMap({ data, isLoading = false }: AuroraForecastMapProps) {
   const themeClasses = themeTokens.weather;
-  const [hemisphere, setHemisphere] = useState<'north' | 'south'>('north');
+  const [hemisphere, setHemisphere] = useState<'north' | 'south'>(data?.hemisphere ?? 'north');
+  const lastDataHemisphere = useRef(data?.hemisphere);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -61,15 +62,18 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
     requestAnimationFrame(() => setMounted(true));
   }, []);
 
-  const currentKp = data?.currentKp;
-  const currentKpDisplay = currentKp ?? null;
-  // One viewline table for the whole site: this map and the aurora intent page
-  // used to carry separate ladders that disagreed by up to five degrees.
-  const viewlineLatitude =
-    data?.viewline?.latitude ?? (currentKp != null ? viewlineFor(currentKp).latitude : null);
-  const viewlineDescription =
-    data?.viewline?.description
-    ?? (currentKp != null ? viewlineFor(currentKp).description : 'Kp unavailable');
+  const viewline = viewlineFor(data?.currentKp, hemisphere);
+  const currentKpDisplay = viewline ? data?.currentKp : null;
+  const viewlineLatitude = viewline?.latitude ?? null;
+  const viewlineDescription = viewline?.description ?? 'Kp unavailable';
+
+  // Follow newly loaded locations without undoing manual selection on refresh.
+  useEffect(() => {
+    if (data?.hemisphere && data.hemisphere !== lastDataHemisphere.current) {
+      lastDataHemisphere.current = data.hemisphere;
+      setHemisphere(data.hemisphere);
+    }
+  }, [data?.hemisphere]);
 
   // Reset image state when hemisphere changes
   useEffect(() => {
@@ -209,12 +213,12 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="w-4 h-4 text-green-400" />
             <span className={cn('text-xs font-mono font-bold uppercase', themeClasses.headerText)}>
-              AURORA VIEWLINE
+              APPROXIMATE AURORA VIEWLINE
             </span>
           </div>
           <div className="flex items-center justify-between mb-2">
             <span className={cn('text-xs font-mono', themeClasses.text)}>
-              Visible down to:
+              Rough viewing latitude:
             </span>
             <span className={cn(
               'text-lg font-bold font-mono',
@@ -251,7 +255,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
 
         {/* Info */}
         <div className={cn('text-xs font-mono text-center pt-2 border-t border-gray-700', themeClasses.text, 'opacity-70')}>
-          NOAA SWPC 30-min aurora forecast. Best viewing: dark, clear skies.
+          NOAA SWPC 30-min aurora image. Latitude guidance is a rough Kp estimate; longitude, darkness, clouds and local activity affect visibility.
         </div>
       </CardContent>
     </Card>

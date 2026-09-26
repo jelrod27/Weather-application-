@@ -11,6 +11,7 @@
 'use client';
 
 import React from 'react';
+import { viewlineFor } from '@/lib/space-weather/kp-scale';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,6 +77,7 @@ export default function CommandCenterTab({
   isLoading = false
 }: CommandCenterTabProps) {
   const themeClasses = themeTokens.weather;
+  const viewline = viewlineFor(auroraForecast?.currentKp ?? kpIndex?.current?.value, auroraForecast?.hemisphere);
 
   return (
     <div className={cn('space-y-4', themeClasses.background)}>
@@ -124,12 +126,12 @@ export default function CommandCenterTab({
               <div className={cn('text-center p-3 container-nested')}>
                 <div className={cn(
                   'text-2xl font-bold font-mono',
-                  alerts.length > 0 ? 'text-orange-500' : 'text-green-500'
+                  'text-muted-foreground'
                 )}>
-                  {alerts.length > 0 ? alerts.length : 'OK'}
+                  {alerts.length}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
-                  Alerts
+                  Recent messages
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
@@ -145,10 +147,10 @@ export default function CommandCenterTab({
               </div>
               <div className={cn('text-center p-3 container-nested')}>
                 <div className="text-2xl font-bold font-mono text-green-400">
-                  {auroraForecast?.viewline?.description?.split(' ')[0] ?? '--'}
+                  {viewline ? `~${viewline.latitude}°${auroraForecast?.hemisphere === 'south' ? 'S' : 'N'}` : '--'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
-                  Aurora
+                  Aurora (approx.)
                 </div>
               </div>
             </div>

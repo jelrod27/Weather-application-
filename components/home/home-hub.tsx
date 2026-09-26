@@ -51,12 +51,12 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
     return (
       <section
         data-testid="home-hub"
-        aria-label="Alerts for your area"
+        aria-label="Local weather and global updates"
         className={cn('mt-4 mb-4', className)}
       >
         <div className="mb-2">
           <h2 className={cn('text-sm font-bold font-mono', themeClasses.headerText)}>
-            FOR YOUR AREA
+            LOCAL WEATHER & GLOBAL UPDATES
           </h2>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-0.5">
@@ -97,7 +97,7 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
   return (
     <section
       data-testid="home-hub"
-      aria-label="Alerts for your area"
+      aria-label="Local weather and global updates"
       className={cn('mt-4 mb-4', className)}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -111,7 +111,7 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
             className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse news-live-dot"
             aria-hidden
           />
-          FOR YOUR AREA
+          LOCAL WEATHER & GLOBAL UPDATES
         </h2>
         {data.headline.lastUpdatedLabel ? (
           <p className={cn('text-[10px] font-mono opacity-60', themeClasses.text)}>
@@ -123,6 +123,7 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
       <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {showAlerts ? (
           <HappeningNowCard
+            coverage={data.alerts.coverage}
             count={data.alerts.count}
             headline={data.alerts.headline}
             severity={data.alerts.severity}
@@ -148,6 +149,7 @@ export default function HomeHub({ userLocation, className }: HomeHubProps) {
           <HomeHubCard
             title={headlineCategory ? headlineCategory.label : 'Breaking'}
             value={getHeadlineCardValue(data.headline)}
+            detail="Global news"
             href={getHubHeadlineHref(data.headline)}
             accentColor="var(--primary)"
           />

@@ -68,8 +68,12 @@ export function GuestAlertSignup({ pin }: { pin: ActivePin | null }) {
       {!pin ? (
         <p className="text-xs text-muted-foreground">Set a pin so we know which location to watch.</p>
       ) : (
-        <p className="text-xs text-muted-foreground">Pin: {pin.label}</p>
+        <p className="text-xs text-muted-foreground">New subscription location: {pin.label}</p>
       )}
+      <p className="text-xs text-muted-foreground">
+        Existing email subscriptions stay at their confirmed locations when you browse another city.
+        Submitting this form requests a subscription for the location shown above.
+      </p>
       <label className="text-xs uppercase text-muted-foreground block">
         Email
         <Input

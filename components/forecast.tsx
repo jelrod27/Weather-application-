@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type KeyboardEvent } from "react"
+import { type KeyboardEvent } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 // removed ThemeType import as manual mapping is gone, but we might accept the prop for compat
@@ -11,17 +11,18 @@ import { getPrecipSeverity } from "@/lib/weather/precip-utils"
 
 interface ForecastProps {
   forecast: ForecastDay[];
+  tempUnit?: string;
   theme?: ThemeType; // Kept for prop output compatibility
   onDayClick?: (index: number) => void;
   selectedDay?: number | null;
 }
 
-export default function Forecast({ forecast, onDayClick, selectedDay }: ForecastProps) {
+export default function Forecast({ forecast, onDayClick, selectedDay, tempUnit = '°F' }: ForecastProps) {
   // Determine number of days to show (max 7, or length if less)
-  const daysToShow = forecast.length >= 7 ? 7 : Math.min(forecast.length, 5);
+  const daysToShow = Math.min(forecast.length, 7);
   const displayForecast = forecast.slice(0, daysToShow);
 
-  const title = displayForecast.length > 5 ? "7-DAY FORECAST" : "5-DAY FORECAST";
+  const title = `${displayForecast.length}-DAY FORECAST`;
 
   // Dynamic grid columns based on number of days
   const gridColsClass = displayForecast.length > 5
@@ -41,6 +42,7 @@ export default function Forecast({ forecast, onDayClick, selectedDay }: Forecast
             <ForecastCard
               key={index}
               day={day}
+              tempUnit={tempUnit}
               index={index}
               onDayClick={onDayClick}
               isSelected={selectedDay === index}
@@ -52,26 +54,19 @@ export default function Forecast({ forecast, onDayClick, selectedDay }: Forecast
   );
 }
 
-function ForecastCard({ day, index, onDayClick, isSelected }: {
+function ForecastCard({ day, index, onDayClick, isSelected, tempUnit }: {
   day: ForecastDay;
+  tempUnit: string;
   index: number;
   onDayClick?: (index: number) => void;
   isSelected?: boolean;
 }) {
-  const isUSALocation = day.country === 'US' || day.country === 'USA';
-  const tempUnit = isUSALocation ? '°F' : '°C';
 
-  // M.DD.YY from local calendar; computed on client only to avoid SSR/client date skew
-  const [formattedDate, setFormattedDate] = useState('');
-  useEffect(() => {
-    const today = new Date();
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + index);
-    const month = targetDate.getMonth() + 1;
-    const date = targetDate.getDate();
-    const year = targetDate.getFullYear().toString().slice(-2);
-    setFormattedDate(`${month}.${date.toString().padStart(2, '0')}.${year}`);
-  }, [index]);
+  // Provider calendar date, never the viewer's current date plus array index.
+  const parts = day.date?.split('-');
+  const formattedDate = parts?.length === 3
+    ? `${Number(parts[1])}.${parts[2]}.${parts[0].slice(-2)}`
+    : '';
 
   const precip = getPrecipSeverity(day.details?.precipitationChance);
 

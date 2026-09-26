@@ -138,7 +138,7 @@ test('warning center exposes a pin setter and local lanes', async ({ page }) => 
   await expect(main.getByTestId('warning-state-filter')).toBeVisible()
   await expect(main.getByTestId('warning-lane-on-you')).toBeVisible({ timeout: 20000 })
   await expect(main.getByTestId('warning-lane-nearby')).toBeVisible()
-  await expect(main.getByTestId('warning-lane-elsewhere')).toBeVisible()
+  await expect(main.getByTestId('warning-lane-elsewhere-in-the-us')).toBeVisible()
 })
 
 test('setting a pin ranks covering warnings on you and close cells nearby', async ({ page }) => {
@@ -153,10 +153,10 @@ test('setting a pin ranks covering warnings on you and close cells nearby', asyn
 
   await dismissWarningTakeoverIfPresent(page)
 
-  await expect(main.getByTestId('warning-pin-status')).toContainText(/^Pin: New York, NY/i, {
+  await expect(main.getByTestId('warning-pin-status')).toContainText(/^Viewing warnings for: New York, NY/i, {
     timeout: 15000,
   })
   await expect(main.getByTestId('warning-lane-on-you').getByText('Tornado Warning')).toBeVisible()
   await expect(main.getByTestId('warning-lane-nearby').getByText('Severe Thunderstorm Warning')).toBeVisible()
-  await expect(main.getByTestId('warning-lane-elsewhere').getByText('Flash Flood Warning')).toBeVisible()
+  await expect(main.getByTestId('warning-lane-elsewhere-in-the-us').getByText('Flash Flood Warning')).toBeVisible()
 })
