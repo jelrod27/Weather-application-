@@ -126,22 +126,6 @@ function toRoadInput(conditions: WeatherConditions): RoadMiseryInput {
   };
 }
 
-/** Pull a window around the worst-hour from the hourly Open-Meteo response. */
-function pickPeakWindow(forecastDay: number, hourlyHours: number): {
-  startISO: string;
-  endISO: string;
-} | undefined {
-  if (forecastDay === 0) return undefined;
-  if (!Number.isFinite(hourlyHours) || hourlyHours <= 0) return undefined;
-  const targetHour = forecastDay * 24 + 12;
-  const start = new Date();
-  start.setUTCMinutes(0, 0, 0);
-  start.setUTCHours(start.getUTCHours() + targetHour - 1);
-  const end = new Date(start);
-  end.setUTCHours(end.getUTCHours() + 2);
-  return { startISO: start.toISOString(), endISO: end.toISOString() };
-}
-
 function computeCeilingFt(clouds: MetarObservation['clouds'] | undefined): number | undefined {
   if (!clouds || clouds.length === 0) return undefined;
   let ceiling: number | undefined;
@@ -310,9 +294,6 @@ export async function computeDriveTripScore(
   );
   const worst = segments[worstIdx];
 
-  // Approximate hourly length for peak-window calc; matches the corridors API.
-  const peakWindow = pickPeakWindow(forecastDay, (forecastDay + 1) * 24);
-
   return NextResponse.json(
     {
       mode: 'drive',
@@ -331,7 +312,7 @@ export async function computeDriveTripScore(
             hazard: worst.hazard,
           }
         : null,
-      peakWindow,
+      peakWindow: null,
       fetchedAt: new Date().toISOString(),
     },
     {

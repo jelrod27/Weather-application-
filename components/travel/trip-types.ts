@@ -22,11 +22,6 @@ export interface DriveWorstSegment extends DriveSegment {
   nearestPlace?: string;
 }
 
-export interface DrivePeakWindow {
-  startISO: string;
-  endISO: string;
-}
-
 export interface TripEndpointPoint {
   lat: number;
   lon: number;
@@ -43,7 +38,8 @@ export interface DriveTripScore {
     destination?: TripEndpointPoint;
   };
   worstSegment: DriveWorstSegment;
-  peakWindow?: DrivePeakWindow;
+  /** Unavailable until hourly route/departure scoring exists. */
+  peakWindow?: null;
 }
 
 export interface FlyAirportInfo {
