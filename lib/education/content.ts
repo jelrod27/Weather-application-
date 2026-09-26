@@ -40,6 +40,7 @@ const ALLOWED_SOURCE_HOSTS: ReadonlySet<string> = new Set([
   'www.nhc.noaa.gov',
   'www.nssl.noaa.gov',
   'www.cpc.ncep.noaa.gov',
+  'cloudatlas.wmo.int',
 ])
 
 /** Whether a Guide may cite this URL. Exported so tests assert the real rule. */

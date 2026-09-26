@@ -480,6 +480,15 @@ export default function CloudTypesPage() {
                   <li>- FEATURE: Supplementary formations</li>
                   <li>- SPECIAL: Rare atmospheric phenomena</li>
                 </ul>
+                <p className={`${themeClasses.text} mt-3`}>
+                  Lenticularis is a species; mamma and asperitas are supplementary features.
+                </p>
+                <ul className="mt-3 space-y-2 underline underline-offset-2">
+                  <li><a href="https://cloudatlas.wmo.int/en/clouds-genera.html" target="_blank" rel="noopener noreferrer">WMO: ten cloud genera</a></li>
+                  <li><a href="https://cloudatlas.wmo.int/en/clouds-species-lenticularis.html" target="_blank" rel="noopener noreferrer">WMO: lenticularis</a></li>
+                  <li><a href="https://cloudatlas.wmo.int/en/clouds-supplementary-features-mamma.html" target="_blank" rel="noopener noreferrer">WMO: mamma</a></li>
+                  <li><a href="https://cloudatlas.wmo.int/en/clouds-supplementary-features-asperitas.html" target="_blank" rel="noopener noreferrer">WMO: asperitas</a></li>
+                </ul>
               </div>
               <div>
                 <h4 className={`${themeClasses.accentText} mb-3 font-bold`}>FORMATION PHYSICS:</h4>

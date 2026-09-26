@@ -17,6 +17,7 @@
     "__tests__/useWeatherSession.city.test.tsx",
     "__tests__/education-guides.test.ts",
     "__tests__/education/**/*.test.ts",
+    "__tests__/education/**/*.test.tsx",
     "__tests__/theme-contrast.test.ts"
   ],
   "exclude": [

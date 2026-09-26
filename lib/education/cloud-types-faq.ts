@@ -14,27 +14,32 @@ export const CLOUD_TYPES_FAQ: CloudTypesFaqEntry[] = [
   {
     question: 'How many cloud types does the atlas cover?',
     answer:
-      `The atlas documents ${cloudDatabase.length} cloud types. They include the ten main genera grouped by altitude — high clouds (cirrus, cirrostratus, cirrocumulus), mid-level clouds (altocumulus, altostratus, nimbostratus), low clouds (cumulus, stratocumulus, stratus) and cumulonimbus, which spans every level — plus the species, supplementary features and special clouds such as mammatus, lenticular and noctilucent formations.`,
+      `The atlas has ${cloudDatabase.length} entries, including the ten WMO genera: cirrus, cirrocumulus, cirrostratus, altocumulus, altostratus, nimbostratus, stratocumulus, stratus, cumulus and cumulonimbus. Other entries describe species, varieties, supplementary features and special phenomena. Lenticularis is a species; mamma (often called mammatus) and asperitas are supplementary features, not additional genera.`,
   },
   {
     question: 'How do you identify cirrus clouds?',
     answer:
-      'Cirrus clouds are thin, wispy, hair-like streaks found at high altitudes (20,000-40,000 ft). They are made of ice crystals and often indicate fair weather with a possible change in 8-10 hours.',
+      'Cirrus clouds are high clouds made of ice crystals, often appearing as thin filaments or wispy streaks. Their appearance alone does not provide a reliable countdown to a weather change.',
   },
   {
     question: 'What cloud type produces thunderstorms?',
     answer:
-      'Cumulonimbus clouds produce thunderstorms, lightning, heavy rain, hail and tornadoes. They extend from near the ground to 60,000+ feet and are the only cloud type that can produce every form of severe weather.',
+      'Cumulonimbus is the thunderstorm cloud genus. These deep clouds can produce lightning, heavy rain, hail and damaging winds; some thunderstorms produce tornadoes. A cloud identification is not a substitute for an official warning.',
   },
   {
     question: 'What are mammatus clouds?',
     answer:
-      'Mammatus clouds are rare pouch-like formations that hang from the underside of storm clouds. They form when cold air sinks in downdrafts and often appear after severe thunderstorms have passed.',
+      'Mammatus is the familiar name for mamma, pouch-like projections beneath a cloud. WMO lists this supplementary feature mainly with cirrus, cirrocumulus, altocumulus, altostratus, stratocumulus and cumulonimbus. It does not by itself indicate a tornado or that a storm has ended.',
   },
   {
     question: 'What causes lenticular clouds?',
     answer:
-      'Lenticular clouds form when air flows over mountains and creates standing waves. They appear lens or saucer-shaped and stay stationary despite high winds, which is why they are often mistaken for UFOs.',
+      'Lenticularis describes lens-shaped clouds, mainly in altocumulus, cirrocumulus and stratocumulus. They often form in mountain waves and can remain nearly stationary while air flows through them. They can also form without pronounced terrain.',
+  },
+  {
+    question: 'Is asperitas a separate cloud genus?',
+    answer:
+      'No. Asperitas is a supplementary feature, mostly associated with stratocumulus and altocumulus. It describes an irregular, wave-like cloud underside rather than a new genus.',
   },
 ]
 

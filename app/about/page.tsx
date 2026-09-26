@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Code, MessageCircle, Terminal, Cpu, Zap, CloudLightning, Map, Route, Sun,
-  Gamepad2, Newspaper, Sparkles, AlertTriangle, ChevronDown,
+  Gamepad2, Newspaper, BookOpen, AlertTriangle, ChevronDown,
   Globe, Database, Shield, Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,10 +45,11 @@ function Accordion({ title, icon: Icon, children, defaultOpen = false }: {
 }
 
 const modules = [
-  { href: "/radar", label: "Radar", desc: "Global precipitation radar with NWS alerts and SPC outlooks", icon: Map },
+  { href: "/radar", label: "Radar", desc: "RainViewer precipitation composites where coverage is available, with US NWS/SPC overlays", icon: Map },
   { href: "/warnings", label: "Warnings Command Center", desc: "Live NWS alerts with WIS score, SPC outlook, alert polygons, and storm reports", icon: AlertTriangle },
   { href: "/severe", label: "Severe Weather", desc: "Active tornado, thunderstorm, and flood warnings", icon: CloudLightning },
-  { href: "/travel", label: "Travel Hub", desc: "Will your trip suck? Airport delay risk, road conditions, and a personal trip score for fly or drive", icon: Route },
+  { href: "/travel", label: "Travel Hub", desc: "US interstate weather overview and airport conditions for planning ahead", icon: Route },
+  { href: "/education", label: "Education", desc: "Cloud atlas, weather systems, glossary and shareable learning guides", icon: BookOpen },
   { href: "/space-weather", label: "Space Weather", desc: "Solar flares, Kp index, aurora forecast, and coronagraph", icon: Sun },
   { href: "/news", label: "News Feed", desc: "Aggregated weather news from NOAA, NASA, and USGS", icon: Newspaper },
 ];
@@ -89,12 +90,11 @@ export default function AboutPage() {
                 16-Bit Weather is where{' '}
                 <span className="text-primary">nostalgia</span> meets{' '}
                 <span className="text-primary">modern intelligence</span>.
-                It&apos;s powered by AI agents, real-time government data feeds, and cutting-edge web tech
-                — but feels like it belongs in an arcade cabinet from 1985.
+                It combines weather feeds and modern web tools with the feel of an arcade cabinet from 1985.
               </p>
               <p>
                 Every feature you see here was built with curiosity, late nights, and a belief that
-                weather data doesn&apos;t have to be boring. Use the terminal. Check the radar. Play the game.
+                weather data doesn&apos;t have to be boring. Check the forecast. Explore the radar. Learn a cloud type.
               </p>
             </div>
           </Accordion>
@@ -103,25 +103,25 @@ export default function AboutPage() {
           <Accordion title="System Architecture" icon={Globe}>
             <div className="space-y-6">
               <p className="font-mono text-sm text-muted-foreground">
-                16-Bit Weather is a retro-styled weather education platform that combines real-time
-                weather data with pixel-influenced visuals, educational content, and tool-backed AI.
-                It monitors weather across the United States through multiple government data sources,
-                updated in real-time.
+                16-Bit Weather combines Open-Meteo forecasts with pixel-influenced visuals,
+                educational guides and live hazard tools. Forecasts cover locations worldwide;
+                NWS alerts and SPC outlooks focus on the United States. Each source has its own
+                update schedule and coverage, so check the observation time on the tool you use.
               </p>
 
               <div className="border border-primary/30 rounded-lg p-5 bg-primary/5">
                 <h3 className="font-mono font-bold text-sm mb-2 flex items-center gap-2">
                   <Zap className="w-4 h-4 text-primary" />
-                  REAL-TIME INTELLIGENCE
+                  NATIONAL ALERT OVERVIEW
                 </h3>
                 <p className="font-mono text-sm text-muted-foreground">
                   The platform features a{' '}
                   <Link href="/warnings" className="text-primary underline underline-offset-4 hover:text-primary/80">
                     Weather Intensity Score (WIS)
                   </Link>
-                  {' '}— a scoring algorithm that monitors weather severity across the United States in
-                  real-time. Updated every 5 minutes from NWS active alerts, the WIS provides immediate
-                  insight into current weather conditions nationwide.
+                  {' '}— the site&apos;s summary of active NWS alerts across the United States.
+                  It is an app-generated overview, not an official severity scale or a measure of
+                  conditions at your exact location. Read the underlying alert for local impacts.
                 </p>
               </div>
 
@@ -149,10 +149,10 @@ export default function AboutPage() {
                   { icon: Zap, label: "THE ENGINE", value: "Next.js 16 (App Router) + React 19" },
                   { icon: Database, label: "DATA LAYER", value: "Supabase PostgreSQL + Row-Level Security" },
                   { icon: CloudLightning, label: "WEATHER DATA", value: "Open-Meteo + NOAA + NWS + USGS + NASA" },
-                  { icon: Sparkles, label: "AI ENGINE", value: "Vercel AI SDK + Claude (Anthropic)" },
-                  { icon: Globe, label: "RADAR", value: "RainViewer global composite + NWS/SPC overlays" },
-                  { icon: Gauge, label: "MONITORING", value: "Sentry + Lighthouse CI (score >= 85)" },
-                  { icon: Gamepad2, label: "AESTHETIC", value: "Tailwind CSS v4 + 5 retro themes" },
+                  { icon: BookOpen, label: "LEARNING", value: "Cloud atlas, weather systems and sourced guides" },
+                  { icon: Globe, label: "RADAR", value: "RainViewer precipitation composites + US NWS/SPC overlays" },
+                  { icon: Gauge, label: "MONITORING", value: "Sentry + Lighthouse performance checks" },
+                  { icon: Gamepad2, label: "AESTHETIC", value: "Tailwind CSS v4 + selectable retro themes" },
                   { icon: Shield, label: "DEPLOYMENT", value: "Vercel Edge + GitHub Actions CI/CD" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3 p-3 border border-border rounded bg-card/30">
