@@ -33,9 +33,12 @@ export function useWarningsDesk() {
   const [community, setCommunity] = useState<CommunityReport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [eventFilter, setEventFilter] = useState<DeskEventFilter>('all')
-  const [stateFilter, setStateFilter] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [eventFilter, setEventFilter] = useState<DeskEventFilter>(() => {
+    const value = searchParams.get('event')
+    return value === 'Tornado Warning' || value === 'Severe Thunderstorm Warning' || value === 'Flash Flood Warning' || value === 'other' ? value : 'all'
+  })
+  const [stateFilter, setStateFilter] = useState(() => searchParams.get('state') ?? '')
   const [freshness, setFreshness] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pointCoverage, setPointCoverage] = useState<AlertCoverage>('loading')

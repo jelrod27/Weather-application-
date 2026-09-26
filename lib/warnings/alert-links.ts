@@ -1,4 +1,4 @@
-import type { NwsGeometry } from '@/lib/services/nws-alerts-service'
+import type { NWSAlertDetail, NwsGeometry } from '@/lib/services/nws-alerts-service'
 
 /** Path slug for a warning detail page. Uses the NWS id tail so slashes do not break routing. */
 export function warningIdSlug(alertId: string): string {
@@ -8,9 +8,37 @@ export function warningIdSlug(alertId: string): string {
   return trimmed
 }
 
-export function getWarningDetailHref(alertId: string | null | undefined): string {
+export function warningReturnHref(value: string | null | undefined): string {
+  if (!value || value.length > 2000) return '/warnings'
+  return /^\/warnings(?:\?|$)/.test(value) || value === '/severe' ? value : '/warnings'
+}
+
+export function getWarningDetailHref(alertId: string | null | undefined, returnTo?: string): string {
   if (!alertId) return '/warnings'
-  return `/warnings/${encodeURIComponent(warningIdSlug(alertId))}`
+  const path = `/warnings/${encodeURIComponent(warningIdSlug(alertId))}`
+  return returnTo ? `${path}?${new URLSearchParams({ returnTo: warningReturnHref(returnTo) })}` : path
+}
+
+export function getOfficialWarningHref(alertId: string): string {
+  return `https://api.weather.gov/alerts/${encodeURIComponent(warningIdSlug(alertId))}`
+}
+
+/** Radar may return only to the selected warning, carrying a safe desk return. */
+export function radarWarningReturnHref(alertId: string, value: string | null): string {
+  const fallback = getWarningDetailHref(alertId)
+  if (!value) return fallback
+  try {
+    const url = new URL(value, 'https://www.16bitweather.co')
+    if (url.origin !== 'https://www.16bitweather.co' || url.pathname !== fallback) return fallback
+    return getWarningDetailHref(alertId, warningReturnHref(url.searchParams.get('returnTo')))
+  } catch { return fallback }
+}
+
+export function getWarningRadarHref(alert: Pick<NWSAlertDetail, 'id' | 'geometry'>, returnTo?: string): string {
+  const href = new URL(getRadarHrefForGeometry(alert.geometry), 'https://www.16bitweather.co')
+  href.searchParams.set('warning', warningIdSlug(alert.id))
+  href.searchParams.set('returnTo', getWarningDetailHref(alert.id, returnTo))
+  return `${href.pathname}${href.search}`
 }
 
 export function nwsGeometryBBox(

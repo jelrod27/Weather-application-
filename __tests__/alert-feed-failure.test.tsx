@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import SevereAlerts from '@/app/severe/severe-alerts'
 import WISBadge from '@/components/wis-badge'
 
@@ -10,6 +10,9 @@ it('shows unavailable instead of all clear after a failed severe feed', async ()
   await act(async () => { render(<SevereAlerts />) })
   expect(screen.queryByText('ALL CLEAR')).not.toBeInTheDocument()
   expect(screen.getByText(/Alert status unavailable/)).toBeInTheDocument()
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ alerts: [] }) })
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Retry severe alerts' })) })
+  expect(screen.getByText('NO MATCHING NWS ALERTS')).toBeInTheDocument()
 })
 it('removes a previously displayed intensity score when its refresh fails', async () => {
   global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ score: 25, level: 'yellow', label: 'MODERATE', totalAlerts: 30 }) }).mockResolvedValue({ ok: false })

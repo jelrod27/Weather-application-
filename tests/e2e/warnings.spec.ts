@@ -15,6 +15,7 @@ const covering = {
   severity: 'Extreme',
   headline: 'Tornado Warning for New York',
   areaDesc: 'New York County',
+  ugc: ['NYC061'],
   urgency: 'Immediate',
   expires,
   sent,
@@ -126,6 +127,7 @@ test.beforeEach(async ({ page }) => {
   )
 
   await page.goto('/warnings', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('[data-testid^="warning-lane-"]').getByText('Tornado Warning', { exact: true }).first()).toBeVisible()
 })
 
 test('warning center exposes a pin setter and local lanes', async ({ page }) => {
@@ -160,3 +162,22 @@ test('setting a pin ranks covering warnings on you and close cells nearby', asyn
   await expect(main.getByTestId('warning-lane-nearby').getByText('Severe Thunderstorm Warning')).toBeVisible()
   await expect(main.getByTestId('warning-lane-elsewhere-in-the-us').getByText('Flash Flood Warning')).toBeVisible()
 })
+
+test('selected warning opens radar with its geometry and preserves the desk return', async ({ page }) => {
+  await page.goto('/warnings?state=NY&event=Tornado+Warning&alert=cover-nyc', { waitUntil: 'domcontentloaded' });
+  const main = page.getByRole('main');
+  await expect(main.getByTestId('warning-state-filter')).toHaveValue('NY');
+  await expect(main.getByTestId('warning-event-filter')).toHaveValue('Tornado Warning');
+  const radarLink = main.getByRole('link', { name: 'Open radar for this polygon' });
+  await expect(radarLink).toBeVisible();
+  await expect(main.getByRole('link', { name: 'Official NWS alert' })).toHaveAttribute('href', 'https://api.weather.gov/alerts/cover-nyc');
+  await radarLink.click();
+  await expect(page).toHaveURL(/\/radar\?.*warning=cover-nyc/);
+  await expect(page.getByText('Tornado Warning — New York County', { exact: true })).toBeVisible();
+  const back = page.getByRole('link', { name: 'Back to warning' });
+  const href = await back.getAttribute('href');
+  const returnTo = new URL(href!, 'http://localhost').searchParams.get('returnTo');
+  expect(returnTo).toContain('state=NY');
+  expect(returnTo).toContain('event=Tornado+Warning');
+  expect(returnTo).toContain('alert=cover-nyc');
+});

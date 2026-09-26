@@ -8,6 +8,8 @@
  * server page.
  */
 import React, { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { getWarningDetailHref } from '@/lib/warnings/alert-links';
 import { cn } from '@/lib/utils';
 import type { NWSAlert } from '@/lib/services/nws-alerts-service';
 
@@ -35,6 +37,7 @@ export default function SevereAlerts() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const res = await fetch('/api/weather/alerts');
       if (!res.ok) {
@@ -73,7 +76,11 @@ export default function SevereAlerts() {
   }
 
   if (unavailable) {
-    return <p className="text-center font-mono text-muted-foreground py-12">Alert status unavailable. Check the latest NWS information.</p>;
+    return <div role="status" className="text-center font-mono text-muted-foreground py-12 space-y-3">
+      <p>Alert status unavailable.</p>
+      <button type="button" className="underline mr-4" onClick={() => void fetchData()}>Retry severe alerts</button>
+      <a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer" className="underline">Check official NWS information</a>
+    </div>;
   }
 
   if (alerts.length === 0) {
@@ -93,7 +100,7 @@ export default function SevereAlerts() {
       </div>
       <div className="grid gap-3">
         {alerts.map((alert, i) => (
-          <div key={alert.id || i} className="border border-border rounded-lg p-4 bg-card/50 hover:bg-card/80 transition-colors">
+          <Link href={getWarningDetailHref(alert.id, '/severe')} key={alert.id || i} className="block border border-border rounded-lg p-4 bg-card/50 hover:bg-card/80 transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-xs font-mono text-muted-foreground w-8">#{String(i + 1).padStart(2, '0')}</span>
@@ -112,7 +119,7 @@ export default function SevereAlerts() {
             {alert.headline && (
               <p className="mt-2 text-xs font-mono text-muted-foreground line-clamp-2">{alert.headline}</p>
             )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

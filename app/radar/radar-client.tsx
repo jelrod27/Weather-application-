@@ -15,6 +15,8 @@ import { parseRadarCoordinateTarget } from '@/lib/radar/radar-location-target'
 import { useTheme } from '@/components/theme-provider'
 import { fetchWeatherData } from '@/lib/weather'
 import WeatherSearch from '@/components/weather-search'
+import { useRadarWarning } from '@/hooks/useRadarWarning'
+import { getOfficialWarningHref, nwsGeometryBBox, radarWarningReturnHref } from '@/lib/warnings/alert-links'
 
 const RadarShell = dynamicImport(() => import('@/components/radar-v2/radar-shell'), {
   ssr: false,
@@ -74,6 +76,10 @@ export default function RadarClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlLocation = searchParams.get('location')
+  const warningId = searchParams.get('warning')
+  const warningState = useRadarWarning(warningId)
+  const warning = warningState.warning
+  const returnHref = warningId ? radarWarningReturnHref(warningId, searchParams.get('returnTo')) : undefined
   const { currentLocation } = useLocationContext()
   const { theme } = useTheme()
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
@@ -84,7 +90,7 @@ export default function RadarClient() {
     () => (urlLocation ? null : parseRadarCoordinateTarget(searchParams)),
     [searchParams, urlLocation],
   )
-  const targetLocation = coordinateTarget ? null : urlLocation || currentLocation
+  const targetLocation = coordinateTarget || warningId ? null : urlLocation || currentLocation
 
   useEffect(() => {
     let cancelled = false
@@ -131,6 +137,12 @@ export default function RadarClient() {
   }, [coordinateTarget, targetLocation])
 
   const activeTarget = useMemo(() => {
+    const bounds = nwsGeometryBBox(warning?.geometry)
+    if (warning && bounds) return {
+      latitude: (bounds.minLat + bounds.maxLat) / 2,
+      longitude: (bounds.minLon + bounds.maxLon) / 2,
+      label: `${warning.event} — ${warning.areaDesc}`,
+    }
     if (weatherData?.coordinates) {
       return {
         latitude: weatherData.coordinates.lat,
@@ -140,7 +152,7 @@ export default function RadarClient() {
     }
 
     return coordinateTarget
-  }, [coordinateTarget, weatherData])
+  }, [coordinateTarget, weatherData, warning])
 
   const shareUrl = useMemo(() => {
     if (!activeTarget) return 'https://www.16bitweather.co/radar'
@@ -164,6 +176,18 @@ export default function RadarClient() {
     }
     setSearchError(undefined)
     router.push(`/radar?location=${encodeURIComponent(trimmed)}`)
+  }
+
+  if (warningId && warningState.loading) {
+    return <RadarOverlayShell message="Loading selected warning" />
+  }
+
+  if (warningId && warningState.error) {
+    return <RadarOverlayShell title="Warning map unavailable" body={warningState.error}>
+      <Link href={returnHref!} className="underline">Back to warning</Link>
+      <a href={getOfficialWarningHref(warningId)} className="underline" target="_blank" rel="noreferrer">Official NWS alert</a>
+      <button className="underline" onClick={warningState.retry}>Retry warning map</button>
+    </RadarOverlayShell>
   }
 
   if (isLoading) {
@@ -191,6 +215,8 @@ export default function RadarClient() {
   return (
     <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-black">
       <RadarShell
+        selectedWarning={warning}
+        returnHref={returnHref}
         latitude={activeTarget.latitude}
         longitude={activeTarget.longitude}
         locationName={activeTarget.label}
