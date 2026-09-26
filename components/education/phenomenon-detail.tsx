@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { ShareButtons } from '@/components/share-buttons'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import EducationBackLink from '@/components/education/education-back-link'
+import PhenomenonSources from '@/components/education/phenomenon-sources'
 import PageWrapper from '@/components/page-wrapper'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { WeatherPhenomena } from '@/data/fun-facts'
+import { PHENOMENON_RATINGS_NOTE } from '@/data/fun-facts'
 import { getEducationDetailHref } from '@/lib/education/entries'
 import { cn } from '@/lib/utils'
 import { themeTokens } from '@/lib/theme-tokens'
+import type { WeatherPhenomena } from '@/data/fun-facts'
 
 interface PhenomenonDetailProps {
   phenomenon: WeatherPhenomena
@@ -39,7 +41,7 @@ export default function PhenomenonDetail({ phenomenon, related }: PhenomenonDeta
             {phenomenon.name}
           </h1>
           <p className={cn('text-sm font-mono mt-2', themeClasses.secondaryText)}>
-            {phenomenon.category} · {phenomenon.rarity}
+            {phenomenon.category} · Rarity (editorial): {phenomenon.rarity}
           </p>
           <ShareButtons
             config={{ title: `${phenomenon.name} — 16-Bit Takes`, text: phenomenon.description, url }}
@@ -50,7 +52,7 @@ export default function PhenomenonDetail({ phenomenon, related }: PhenomenonDeta
         <Card className={cn('container-primary mb-6', themeClasses.background)}>
           <CardContent className="p-6">
             <p className={cn('font-mono text-sm', themeClasses.text)}>{phenomenon.description}</p>
-            <p className={cn('font-mono text-xs italic mt-4', themeClasses.secondaryText)}>{phenomenon.bitFact}</p>
+            <p className={cn('font-mono text-xs italic mt-4', themeClasses.secondaryText)}>16-Bit Take (analogy): {phenomenon.bitFact}</p>
           </CardContent>
         </Card>
 
@@ -92,6 +94,9 @@ export default function PhenomenonDetail({ phenomenon, related }: PhenomenonDeta
             </li>
           ))}
         </ul>
+
+        <p className="text-xs font-mono text-weather-muted">{PHENOMENON_RATINGS_NOTE}</p>
+        <PhenomenonSources sources={phenomenon.sources} />
 
         {related}
 

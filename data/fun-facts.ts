@@ -1,550 +1,710 @@
-/**
- * 16-Bit Weather Platform
- * Weather phenomena fun-facts content for app/fun-facts
- */
+/** Sourced phenomenon summaries. Ratings are editorial, not official hazard scales. */
+import type { GuideSource } from '@/lib/education/content'
 
-export type WeatherPhenomena = {
-  id: string;
-  name: string;
-  category: string;
-  rarity: string;
-  description: string;
-  facts: string[];
-  emoji: string;
-  bitFact: string;
-  scientificMechanism?: string;
-  historicalOccurrence?: string;
-  howToSpot: string;
-  dangerLevel: number;
-  whereToSee: string;
-  bestSeason: string;
-};
+export interface WeatherPhenomena {
+  id: string
+  name: string
+  category: string
+  rarity: string
+  description: string
+  facts: string[]
+  emoji: string
+  bitFact: string
+  scientificMechanism?: string
+  historicalOccurrence?: string
+  howToSpot: string
+  dangerLevel: number
+  whereToSee: string
+  bestSeason: string
+  sources: GuideSource[]
+}
 
-// Weather phenomena database
+export const PHENOMENON_RATINGS_NOTE = 'Rarity and hazard ratings are informal editorial guides, not measured occurrence rates or official warnings. Local conditions determine actual risk.'
+
 export const weatherPhenomena: WeatherPhenomena[] = [
   {
-    id: 'ball-lightning',
-    name: 'Ball Lightning',
-    category: 'Electrical',
-    rarity: 'Ultra Rare',
-    description: 'Mysterious spherical lightning that floats through the air',
+    id: "ball-lightning",
+    name: "Ball Lightning",
+    category: "Electrical",
+    rarity: "Not established",
+    description: "Reports of luminous, ball-like objects near thunderstorms remain difficult to explain and study.",
     facts: [
-      'Appears as glowing orbs 1-100cm in diameter',
-      'Can pass through solid objects like windows',
-      'Lasts 1-5 seconds with crackling sounds',
-      'Only 5% of people ever witness this phenomenon'
+      "Eyewitness accounts are not all independently verified.",
+      "A 2014 paper reported a recorded event after a cloud-to-ground strike, with light from elements found in soil.",
+      "That observation does not establish one mechanism for every report."
     ],
-    emoji: '⚡',
-    bitFact: 'Like a floating power-up that defies physics!',
-    scientificMechanism: "Likely caused by vaporized soil silicates undergoing oxidation, or microwave cavity resonance of trapped plasma.",
-    historicalOccurrence: "Tsar Nicholas II reported witnessing a fiery ball during a church service in the 19th century.",
-    howToSpot: "Look for glowing, hovering spheres during or just after intense thunderstorms. They typically appear near windows or doorways and move slowly with an eerie hum.",
+    emoji: "⚡",
+    bitFact: "A mysterious glowing sprite whose rulebook is still being investigated.",
+    scientificMechanism: "Several explanations have been proposed. The recorded spectrum supports a role for vaporised soil in that event; a general explanation remains unsettled.",
+    howToSpot: "There is no reliable way to seek it out. During thunderstorms, stay inside a substantial building or enclosed vehicle, away from windows.",
     dangerLevel: 4,
-    whereToSee: "Reported worldwide during intense thunderstorms, with higher frequency in continental interiors like Central Europe and the American Midwest.",
-    bestSeason: "Summer thunderstorm season (June-August in Northern Hemisphere)."
+    whereToSee: "Reports exist from different locations; there is no established viewing hotspot.",
+    bestSeason: "No reliable viewing season is established.",
+    sources: [
+      {
+        label: "NWS — Ball lightning",
+        url: "https://www.weather.gov/wrn/spring-science-sm"
+      },
+      {
+        label: "Cen, Yuan & Xue (2014) — Recorded optical spectrum",
+        url: "https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.112.035001"
+      },
+      {
+        label: "NWS — Lightning safety",
+        url: "https://www.weather.gov/safety/lightning"
+      }
+    ]
   },
   {
-    id: 'st-elmos-fire',
+    id: "st-elmos-fire",
     name: "St. Elmo's Fire",
-    category: 'Electrical',
-    rarity: 'Rare',
-    description: 'Blue or violet glow appearing on pointed objects during storms',
+    category: "Electrical",
+    rarity: "Rare",
+    description: "A blue or violet electrical glow around pointed objects in a strong atmospheric electric field.",
     facts: [
-      'Creates corona discharge on ship masts and aircraft',
-      'Temperature can reach 1000°C but produces no heat',
-      'Named after patron saint of sailors',
-      'Appears as dancing flames but is pure electricity'
+      "It is a corona discharge, not burning fuel.",
+      "Ship masts and aircraft surfaces can glow.",
+      "The surrounding thunderstorm or volcanic ash can be hazardous even when the glow itself is not hot."
     ],
-    emoji: '🔥',
-    bitFact: 'Nature\'s neon signs lighting up the storm!',
-    scientificMechanism: "Point discharge of atmospheric electricity that creates a luminous plasma around sharp objects when the electric field exceeds 30 kV/cm.",
-    historicalOccurrence: "Recorded by Julius Caesar and Christopher Columbus during their voyages.",
-    howToSpot: "Watch for blue or violet glowing tips on masts, lightning rods, steeples, or aircraft wings during active thunderstorms. Often accompanied by a buzzing or hissing sound.",
+    emoji: "🔥",
+    bitFact: "A neon outline effect around the edges of a storm scene.",
+    scientificMechanism: "Electric fields concentrate near sharp points. When air there becomes ionised, it can emit a visible glow.",
+    howToSpot: "Look at documented photographs of glowing tips and edges; do not approach exposed objects during a storm.",
     dangerLevel: 2,
-    whereToSee: "Common on ships at sea, mountain summits, and aircraft flying near thunderstorms. Frequently reported in the Alps and Andes.",
-    bestSeason: "Peak thunderstorm months; summer in temperate regions, year-round in tropical maritime areas."
+    whereToSee: "Reported on ships and aircraft in strongly electrified air.",
+    bestSeason: "Depends on electrical conditions rather than a fixed season.",
+    sources: [
+      {
+        label: "Hong Kong Observatory — St. Elmo’s fire",
+        url: "https://www.weather.gov.hk/en/education/aviation-and-marine/aviation/00534-st-elmos-fire-as-seen-from-aircraft.html"
+      }
+    ]
   },
   {
-    id: 'rogue-waves',
-    name: 'Rogue Waves',
-    category: 'Ocean',
-    rarity: 'Rare',
-    description: 'Massive waves that appear from nowhere in calm seas',
+    id: "rogue-waves",
+    name: "Rogue Waves",
+    category: "Ocean",
+    rarity: "Rare",
+    description: "An unusually large ocean wave, more than twice the height of surrounding waves.",
     facts: [
-      'Can reach heights of 100+ feet (30+ meters)',
-      'Strike without warning in otherwise normal conditions',
-      'Responsible for sinking large ships instantly',
-      'Occur due to wave interference patterns'
+      "Rogue waves can arrive unexpectedly and have steep faces.",
+      "Several wave and current processes can contribute.",
+      "A single formation explanation does not fit every event."
     ],
-    emoji: '🌊',
-    bitFact: 'Ocean boss battles that spawn randomly!',
-    scientificMechanism: "Constructive interference (waves adding up) or non-linear effects (waves stealing energy from neighbors) focused by currents.",
-    historicalOccurrence: "The Draupner wave (1995) was the first scientifically measured rogue wave, hitting an oil platform with 25.6m height.",
-    howToSpot: "Nearly impossible to predict visually. Sailors should watch for unusually deep troughs followed by towering crests. Satellite and buoy data are the most reliable detection methods.",
+    emoji: "🌊",
+    bitFact: "An ocean level with an unexpectedly oversized wave obstacle.",
+    scientificMechanism: "Waves can reinforce each other when their crests coincide. Opposing currents can also concentrate wave energy and increase steepness.",
+    howToSpot: "There is no dependable visual countdown. Follow marine forecasts and warnings rather than trying to find one.",
     dangerLevel: 5,
-    whereToSee: "Most common where strong currents oppose prevailing swells: the Agulhas Current off South Africa, the Gulf Stream, and the North Sea.",
-    bestSeason: "Winter months when storm systems generate larger swells (November-March in the Northern Hemisphere)."
+    whereToSee: "Open ocean and other waters where waves and currents interact.",
+    bestSeason: "Conditions matter more than the calendar.",
+    sources: [
+      {
+        label: "NOAA Ocean Service — What is a rogue wave?",
+        url: "https://oceanservice.noaa.gov/facts/roguewaves.html"
+      }
+    ]
   },
   {
-    id: 'fire-whirls',
-    name: 'Fire Whirls',
-    category: 'Fire Weather',
-    rarity: 'Uncommon',
-    description: 'Tornadoes made of fire that can reach 2000°F',
+    id: "fire-whirls",
+    name: "Fire Whirls",
+    category: "Fire Weather",
+    rarity: "Uncommon",
+    description: "Rotating columns of rising, fire-heated air that can carry flames, smoke and burning debris.",
     facts: [
-      'Can reach heights of 100+ feet with 100+ mph winds',
-      'Temperature cores exceed 2000°F (1093°C)',
-      'Can last for hours and move across landscapes',
-      'Create their own weather patterns'
+      "They form when strong heating interacts with rotating air.",
+      "Their size and intensity vary.",
+      "Lofted burning material can spread a fire."
     ],
-    emoji: '🌪',
-    bitFact: 'Fire-type tornado attacks with critical damage!',
-    scientificMechanism: "Intense heat generates strong updrafts, while surface winds provide rotation, stretching the vortex vertically and intensifying spin.",
-    historicalOccurrence: "Great Kanto Earthquake (1923) spawned a 300ft fire whirl that killed 38,000 people in minutes.",
-    howToSpot: "Look for rotating columns of flame during large wildfires or industrial fires. They often form along fire lines where wind shear is strongest and may produce a roaring sound.",
+    emoji: "🌪",
+    bitFact: "A swirling flame animation with a trail of ember particles.",
+    scientificMechanism: "A strong updraft over a fire can draw in and intensify a local circulation. The resulting vortex may entrain flames and embers.",
+    howToSpot: "Recognise rotating flame or smoke in official footage. Keep clear of active fires and follow evacuation instructions.",
     dangerLevel: 5,
-    whereToSee: "Wildfire-prone regions: California, Australia, Mediterranean Europe, and Siberia. Also near large prescribed burns.",
-    bestSeason: "Late summer and autumn during peak wildfire season (August-November in the Northern Hemisphere)."
+    whereToSee: "Active fires with suitable heating and wind conditions.",
+    bestSeason: "Whenever fires occur; local fire seasons vary.",
+    sources: [
+      {
+        label: "NWS — Fire weather glossary",
+        url: "https://www.weather.gov/ohx/fireweather_glossary"
+      },
+      {
+        label: "NWS — Fire whirls",
+        url: "https://www.weather.gov/wrn/tornado-sm"
+      }
+    ]
   },
   {
-    id: 'ice-storms',
-    name: 'Ice Storms',
-    category: 'Winter Weather',
-    rarity: 'Uncommon',
-    description: 'Freezing rain that encases everything in crystal ice',
+    id: "ice-storms",
+    name: "Ice Storms",
+    category: "Winter Weather",
+    rarity: "Uncommon",
+    description: "Damaging ice accumulation from freezing rain, coating roads, trees and exposed structures.",
     facts: [
-      'Can add 500+ pounds of ice per power line span',
-      'Trees become crystal sculptures weighing tons',
-      'Creates the sound of breaking glass everywhere',
-      'Can shut down entire cities for weeks'
+      "Freezing rain reaches the surface as liquid and freezes on cold objects.",
+      "It differs from sleet, which freezes before reaching the ground.",
+      "Ice weight can break branches and power lines."
     ],
-    emoji: '❄️',
-    bitFact: 'Nature\'s freeze spell that transforms the world!',
-    scientificMechanism: "Supercooled water droplets (liquid below 0°C) fall through a shallow freezing layer near the ground, freezing instantly upon contact.",
-    historicalOccurrence: "Great Ice Storm of 1998 in Canada/US caused over $5 billion in damage and left millions without power.",
-    howToSpot: "Watch for rain falling when surface temperatures hover near or just below freezing. A glaze forms on all exposed surfaces; listen for cracking branches and the tinkle of falling ice.",
+    emoji: "❄️",
+    bitFact: "A freeze spell repainting the landscape with an icy texture.",
+    scientificMechanism: "A common setup has a warm layer that melts falling snow above a shallow subfreezing layer. Drops remain liquid until they strike freezing surfaces.",
+    howToSpot: "A growing glaze on outdoor surfaces is a warning sign. Avoid unnecessary travel and keep away from fallen power lines.",
     dangerLevel: 4,
-    whereToSee: "The US ice belt from Texas to New England, southeastern Canada, and parts of northern China and Korea.",
-    bestSeason: "Late autumn through early spring (November-March), especially during warm-front overrunning events."
+    whereToSee: "Regions where rain falls onto freezing surfaces.",
+    bestSeason: "Usually the local cold season.",
+    sources: [
+      {
+        label: "NWS — Snow, sleet and freezing rain",
+        url: "https://www.weather.gov/iwx/sleetvsfreezingrain"
+      },
+      {
+        label: "NWS — Downed power lines",
+        url: "https://www.weather.gov/arx/powerprep"
+      }
+    ]
   },
   {
-    id: 'microbursts',
-    name: 'Microbursts',
-    category: 'Wind',
-    rarity: 'Uncommon',
-    description: 'Invisible downdrafts that can destroy aircraft',
+    id: "microbursts",
+    name: "Microbursts",
+    category: "Wind",
+    rarity: "Uncommon",
+    description: "Small, intense downdrafts that spread damaging winds outward when they reach the ground.",
     facts: [
-      'Wind speeds can exceed 150 mph in seconds',
-      'Create divergent wind patterns spreading outward',
-      'Responsible for multiple aviation disasters',
-      'Can flip semi-trucks and level buildings'
+      "The affected outflow area is less than about 2.5 miles across.",
+      "Wet microbursts bring substantial rain; dry ones may bring little to the surface.",
+      "Rapid changes in wind are especially dangerous to aircraft near the ground."
     ],
-    emoji: '💨',
-    bitFact: 'Invisible wind attacks with instant KO potential!',
-    scientificMechanism: "Evaporative cooling in a thunderstorm causes air to become denser and crash to the ground, spreading out radially upon impact.",
-    historicalOccurrence: "Delta Flight 191 (1985) crashed due to a microburst, leading to modern wind shear detection systems.",
-    howToSpot: "Look for a localized area of rain or virga beneath a thunderstorm with a sudden starburst of dust or debris at the surface. Pilots watch for rapid airspeed changes on approach.",
+    emoji: "💨",
+    bitFact: "A downward wind burst that spreads out like a shockwave animation.",
+    scientificMechanism: "Falling precipitation and evaporative cooling can accelerate a downdraft. On reaching the surface, it fans outward as straight-line wind.",
+    howToSpot: "A rain shaft or spreading dust may be visible, but appearances are unreliable. Use official thunderstorm warnings.",
     dangerLevel: 5,
-    whereToSee: "Common in the US Great Plains, Desert Southwest, and anywhere strong thunderstorms develop. Also frequent in tropical regions.",
-    bestSeason: "Peak thunderstorm season: late spring through summer (May-September in temperate latitudes)."
+    whereToSee: "Beneath showers and thunderstorms in suitable environments.",
+    bestSeason: "During the local convective-weather season, though not limited to summer.",
+    sources: [
+      {
+        label: "NWS — How downbursts form",
+        url: "https://www.weather.gov/lmk/downburst"
+      }
+    ]
   },
   {
-    id: 'sprites',
-    name: 'Sprites',
-    category: 'Upper Atmosphere',
-    rarity: 'Rare',
-    description: 'Red lightning that shoots upward into space',
+    id: "sprites",
+    name: "Sprites",
+    category: "Upper Atmosphere",
+    rarity: "Rare",
+    description: "Brief, often reddish flashes high above thunderstorms, sometimes shaped like columns or jellyfish.",
     facts: [
-      'Occur 50-90km above thunderstorms',
-      'Last only 1-5 milliseconds',
-      'Can extend 50km vertically',
-      'Only discovered in 1989 due to their brief nature'
+      "Sprites are transient luminous events in the upper atmosphere.",
+      "They are triggered by lightning below, not bolts travelling into outer space.",
+      "The first camera recording in 1989 helped open this field of study."
     ],
-    emoji: '🌌',
-    bitFact: 'Space lightning that shoots into the cosmos!',
-    scientificMechanism: "Quasi-electrostatic fields generated by massive positive cloud-to-ground lightning strikes that ionize the upper atmosphere.",
-    historicalOccurrence: "Accidentally discovered by researchers at the University of Minnesota in 1989 while testing low-light cameras.",
-    howToSpot: "Use a low-light or high-ISO camera aimed at the top of a distant thunderstorm (100-300 miles away) from a dark-sky location. They appear as brief red-orange tendrils above the cloud tops.",
+    emoji: "🌌",
+    bitFact: "A fleeting red sprite above the storm layer of the screen.",
+    scientificMechanism: "A lightning discharge changes the electric field above a storm and can excite gases in the thin upper atmosphere, producing light.",
+    howToSpot: "They are fleeting and difficult to see. Research photographs and low-light video reveal their structure.",
     dangerLevel: 1,
-    whereToSee: "Observable from the US Great Plains, southern France, northern India, and anywhere with a clear view of distant mesoscale convective systems.",
-    bestSeason: "Summer months when large nocturnal thunderstorm complexes are most common (June-August)."
+    whereToSee: "High above thunderstorms in many parts of the world.",
+    bestSeason: "Associated with thunderstorms; dark skies help observation.",
+    sources: [
+      {
+        label: "NASA — The great sprites chase",
+        url: "https://science.nasa.gov/blogs/the-sun-spot/2022/10/27/the-great-sprites-chase/"
+      },
+      {
+        label: "NASA — Spritacular",
+        url: "https://science.nasa.gov/science-research/earth-science/spritacular/"
+      }
+    ]
   },
   {
-    id: 'elves',
-    name: 'ELVES',
-    category: 'Upper Atmosphere',
-    rarity: 'Very Rare',
-    description: 'Expanding rings of light in the ionosphere',
+    id: "elves",
+    name: "ELVES",
+    category: "Upper Atmosphere",
+    rarity: "Very Rare",
+    description: "Extremely brief, expanding rings of light in the upper atmosphere associated with lightning.",
     facts: [
-      'ELVES = Emissions of Light and VLF perturbations',
-      'Expand to 300km diameter in milliseconds',
-      'Occur 85-95km above Earth',
-      'Appear as doughnut-shaped flashes'
+      "ELVES are a type of transient luminous event.",
+      "They appear as broad rings or flattened disks.",
+      "Their short duration makes them difficult to capture."
     ],
-    emoji: '💫',
-    bitFact: 'Cosmic doughnuts of pure energy!',
-    scientificMechanism: "Electromagnetic pulse (EMP) from lightning hitting the ionosphere, causing nitrogen molecules to glow.",
-    historicalOccurrence: "First predicted theoretically, then confirmed by space shuttle cameras in the 1990s.",
-    howToSpot: "Extremely difficult to see with the naked eye due to their sub-millisecond duration. Best captured with high-speed cameras pointed at the limb of a thunderstorm from space or high altitude.",
+    emoji: "💫",
+    bitFact: "A glowing ring animation that disappears before the next frame.",
+    scientificMechanism: "An electromagnetic pulse from lightning can excite gases near the bottom of the ionosphere. On Earth, nitrogen contributes to their reddish light.",
+    howToSpot: "Specialised recordings are much more useful than trying to spot a ring by eye.",
     dangerLevel: 1,
-    whereToSee: "Best detected from orbit (ISS) or high-altitude aircraft. Ground-based observations possible over large oceanic thunderstorm systems from coastal dark-sky sites.",
-    bestSeason: "Active thunderstorm seasons in tropical and subtropical regions; year-round over warm ocean basins."
+    whereToSee: "Above thunderstorms, high in the atmosphere.",
+    bestSeason: "Thunderstorm activity and observing conditions determine opportunities.",
+    sources: [
+      {
+        label: "NASA — Sprites and elves",
+        url: "https://www.nasa.gov/centers-and-facilities/jpl/juno-data-indicates-sprites-or-elves-frolic-in-jupiters-atmosphere/"
+      },
+      {
+        label: "NASA — Upper-atmosphere phenomena",
+        url: "https://www.nasa.gov/image-article/upper-atmosphere-phenomena-caused-by-thunderstorms/"
+      }
+    ]
   },
   {
-    id: 'morning-glory',
-    name: 'Morning Glory Clouds',
-    category: 'Cloud Formation',
-    rarity: 'Ultra Rare',
-    description: 'Giant rolling cloud tubes up to 1000km long',
+    id: "morning-glory",
+    name: "Morning Glory Clouds",
+    category: "Cloud Formation",
+    rarity: "Ultra Rare",
+    description: "Long roll clouds marking atmospheric waves, famously observed around Australia’s Gulf of Carpentaria.",
     facts: [
-      'Can reach lengths of 1000+ kilometers',
-      'Roll forward like massive atmospheric waves',
-      'Predictable only in Northern Australia',
-      'Glider pilots surf them like ocean waves'
+      "They can extend for hundreds of kilometres.",
+      "The Gulf of Carpentaria has a recognised spring observing season.",
+      "Cloud forms in rising air at a wave’s front and evaporates behind it."
     ],
-    emoji: '☁️',
-    bitFact: 'Cloud highways stretching across continents!',
-    scientificMechanism: "Solitary waves (solitons) traveling along a stable inversion layer, often formed by sea breeze collisions.",
-    historicalOccurrence: "Regularly appear in the Gulf of Carpentaria, Australia in September/October.",
-    howToSpot: "Look for a long, low, horizontal rolling tube cloud at dawn, often traveling at 35-40 mph. The leading edge rolls forward while trailing wisps evaporate behind it.",
+    emoji: "☁️",
+    bitFact: "A long cloud ribbon scrolling across the sky background.",
+    scientificMechanism: "In the Gulf, interacting sea breezes and cooling land can generate waves along a stable layer. Moist air rising in the waves produces the rolling cloud bands.",
+    howToSpot: "Look for a long horizontal roll in documented Gulf observations. A smooth-looking cloud does not establish safe flying conditions.",
     dangerLevel: 1,
-    whereToSee: "Most reliably seen in Burketown, Gulf of Carpentaria, Australia. Occasionally observed in the English Channel, central US, and the Sulu Sea.",
-    bestSeason: "September through November in Northern Australia, coinciding with the transition from dry to wet season."
+    whereToSee: "Especially the Gulf of Carpentaria near Burketown; roll clouds also occur elsewhere.",
+    bestSeason: "September to November in the Gulf of Carpentaria.",
+    sources: [
+      {
+        label: "Bureau of Meteorology — Morning glory clouds",
+        url: "https://media.bom.gov.au/social/blog/2272/whats-the-science-behind-these-spectacular-weather-photos/"
+      }
+    ]
   },
   {
-    id: 'polar-stratospheric',
-    name: 'Polar Stratospheric Clouds',
-    category: 'High Altitude',
-    rarity: 'Rare',
-    description: 'Rainbow clouds that destroy ozone',
+    id: "polar-stratospheric",
+    name: "Polar Stratospheric Clouds",
+    category: "High Altitude",
+    rarity: "Rare",
+    description: "Clouds formed in the extremely cold polar stratosphere; some show vivid pearly colours.",
     facts: [
-      'Form only at -78°C (-108°F) or colder',
-      'Create brilliant iridescent colors',
-      'Destroy ozone molecules on their surfaces',
-      'Only visible during polar winter twilight'
+      "Different types contain ice or nitric-acid-bearing particles.",
+      "Cloud-particle surfaces support reactions that activate ozone-destroying chlorine.",
+      "Sunlight returning in spring helps drive the resulting ozone loss."
     ],
-    emoji: '🌈',
-    bitFact: 'Beautiful but deadly rainbow effect clouds!',
-    scientificMechanism: "Ice crystals form in the stratosphere at extreme cold, providing surfaces for chemical reactions that release ozone-destroying chlorine.",
-    historicalOccurrence: "Critical factor in the formation of the Antarctic Ozone Hole discovered in the 1980s.",
-    howToSpot: "Look toward the twilight horizon during polar winter when the sun is 1-6 degrees below the horizon. They display vivid pastel iridescence unlike any tropospheric cloud.",
+    emoji: "🌈",
+    bitFact: "A pearly sky palette with a chemistry puzzle behind the colours.",
+    scientificMechanism: "Very low temperatures allow particles to form in the normally dry stratosphere. Their surfaces alter the chemistry of chlorine compounds; the clouds do not simply consume ozone themselves.",
+    howToSpot: "Some appear as luminous, coloured patches around twilight. Colour alone is not enough for identification.",
     dangerLevel: 1,
-    whereToSee: "Polar regions: Scandinavia (especially northern Norway and Sweden), Iceland, Antarctica, and occasionally Scotland and southern Alaska.",
-    bestSeason: "Polar winter months: December-February in the Arctic, June-August in the Antarctic."
+    whereToSee: "Cold stratospheric air over polar regions.",
+    bestSeason: "Polar winter and, when sufficiently cold, early spring.",
+    sources: [
+      {
+        label: "NASA — Polar stratospheric clouds",
+        url: "https://science.nasa.gov/earth/earth-observatory/polar-stratospheric-clouds-622/"
+      },
+      {
+        label: "NOAA — Ozone hole science",
+        url: "https://csl.noaa.gov/assessments/ozone/2022/twentyquestions/"
+      }
+    ]
   },
   {
-    id: 'waterspouts',
-    name: 'Waterspouts',
-    category: 'Marine Weather',
-    rarity: 'Uncommon',
-    description: 'Tornadoes over water that can travel onto land',
+    id: "waterspouts",
+    name: "Waterspouts",
+    category: "Marine Weather",
+    rarity: "Uncommon",
+    description: "Rotating columns over water, including both tornadic and fair-weather varieties.",
     facts: [
-      'Can form in fair weather without thunderstorms',
-      'Winds can exceed 100 mph at the surface',
-      'Can pick up marine life and drop it miles inland',
-      'Florida Keys see 400+ waterspouts annually'
+      "Tornadic waterspouts are tornadoes over water.",
+      "Fair-weather waterspouts often develop beneath growing cumulus clouds.",
+      "Either type can threaten boats and people."
     ],
-    emoji: '🌊',
-    bitFact: 'Water-type whirlwind attacks that can travel!',
-    scientificMechanism: "Fair-weather spouts form from the surface up due to wind shear and high humidity; tornadic spouts descend from thunderstorms.",
-    historicalOccurrence: "The Great Malta Tornado of 1551 (started as a waterspout) destroyed the Grand Harbour shipping fleet.",
-    howToSpot: "Watch for a dark spot on the water surface with a spray ring, then a visible funnel descending from cumulus clouds above. Fair-weather types are narrow and translucent.",
+    emoji: "🌊",
+    bitFact: "A rotating water-level hazard with a cloud connection overhead.",
+    scientificMechanism: "Fair-weather waterspouts build from a surface circulation beneath growing clouds. Tornadic waterspouts are associated with thunderstorm rotation or tornadoes moving over water.",
+    howToSpot: "A funnel and rotating spray may be visible. Never approach; monitor special marine warnings and follow official avoidance advice.",
     dangerLevel: 3,
-    whereToSee: "Florida Keys, Adriatic Sea, Great Lakes, coastal waters of southeast Asia, and the English Channel.",
-    bestSeason: "Late summer and early autumn (August-October) when sea surface temperatures are warmest."
+    whereToSee: "Coastal waters and lakes, including South Florida’s coastal waters.",
+    bestSeason: "Fair-weather waterspouts are common in South Florida from late spring to early fall; tornadic ones can occur at other times.",
+    sources: [
+      {
+        label: "NWS — Waterspout types and safety",
+        url: "https://www.weather.gov/mfl/waterspouts"
+      }
+    ]
   },
   {
-    id: 'dust-devils',
-    name: 'Dust Devils',
-    category: 'Desert Weather',
-    rarity: 'Common',
-    description: 'Mini-tornadoes formed by surface heating',
+    id: "dust-devils",
+    name: "Dust Devils",
+    category: "Desert Weather",
+    rarity: "Common",
+    description: "Rotating columns of air made visible by dust over strongly heated ground.",
     facts: [
-      'Can reach heights of 1000+ feet',
-      'Wind speeds typically 45-60 mph',
-      'Form on clear, hot days without storms',
-      'Can move at 20+ mph across terrain'
+      "They usually develop in fair weather rather than beneath thunderstorms.",
+      "They are distinct from tornadoes.",
+      "Even a small-looking vortex can lift debris and cause damage."
     ],
-    emoji: '🌪',
-    bitFact: 'Desert tornadoes spawning from heat mirages!',
-    scientificMechanism: "Hot air near the surface rises rapidly through cooler air above, creating a vertical vortex that stretches and spins faster.",
-    historicalOccurrence: "Mars rovers frequently capture image of massive dust devils towering kilometers high on the Red Planet.",
-    howToSpot: "Look for spinning columns of dust on hot days over flat, dry terrain. They form around midday when surface heating peaks and often wander erratically before dissipating.",
+    emoji: "🌪",
+    bitFact: "A spinning dust particle effect across a sun-baked map.",
+    scientificMechanism: "Hot ground heats the air above it. Rising air can acquire rotation and concentrate it into a small vortex.",
+    howToSpot: "A narrow, moving dust column over sunlit ground is a clue. Keep clear of the vortex and flying debris.",
     dangerLevel: 2,
-    whereToSee: "Desert regions worldwide: Sahara, Sonoran Desert, Australian Outback, Middle East, and the US Southwest.",
-    bestSeason: "Peak summer heat: June-September in the Northern Hemisphere when surface temperatures are highest."
+    whereToSee: "Dry, exposed surfaces with strong daytime heating.",
+    bestSeason: "Warm sunny days, particularly during strong afternoon heating.",
+    sources: [
+      {
+        label: "NWS — Dust devils",
+        url: "https://www.weather.gov/fgz/DustDevil"
+      }
+    ]
   },
   {
-    id: 'thundersnow',
-    name: 'Thundersnow',
-    category: 'Winter Weather',
-    rarity: 'Rare',
-    description: 'Thunder and lightning during a snowstorm, combining the drama of a thunderstorm with heavy snowfall',
+    id: "thundersnow",
+    name: "Thundersnow",
+    category: "Winter Weather",
+    rarity: "Rare",
+    description: "Lightning and thunder occurring while snow is falling.",
     facts: [
-      'Lightning during thundersnow is typically closer to the ground than in summer storms',
-      'Snowfall rates during thundersnow often exceed 2-4 inches per hour',
-      'Thunder is muffled by snow and usually only audible within 2-3 miles',
-      'Associated with some of the most intense nor-easters and lake-effect snowstorms'
+      "Lightning is possible in winter storms, not just warm-season thunderstorms.",
+      "Strong updrafts and mixed ice particles help clouds become electrified.",
+      "Thunder does not establish a particular snowfall rate."
     ],
-    emoji: '🌩',
-    bitFact: 'A blizzard boss fight with a lightning special attack -- like an ice level that suddenly unlocks the thunder spell!',
-    scientificMechanism: "Strong lift in the lower atmosphere (often from frontal boundaries or lake-effect convergence) creates enough instability for charge separation within snow clouds, producing lightning despite sub-freezing temperatures.",
-    historicalOccurrence: "The February 2011 Groundhog Day Blizzard produced widespread thundersnow across the Midwest, with meteorologist Jim Cantore's on-air excitement going viral.",
-    howToSpot: "Listen for muffled thunder during heavy snowfall. Lightning flashes illuminate the snow with an eerie, diffused glow. Often occurs during the heaviest snow bands of a storm.",
+    emoji: "🌩",
+    bitFact: "An ice-level scene with an unexpected lightning animation.",
+    scientificMechanism: "Collisions among ice particles can separate electrical charge in a cloud. If the electric field becomes strong enough, a lightning discharge can occur while snow reaches the surface.",
+    howToSpot: "A flash and thunder during snowfall identify the event. Lightning safety still applies in winter; observe from shelter.",
     dangerLevel: 3,
-    whereToSee: "Great Lakes region of the US, the northeastern US during nor-easters, Japan's Sea of Japan coast, and parts of the UK.",
-    bestSeason: "Winter months (November-March), especially during intense cyclones and lake-effect events."
+    whereToSee: "Snow-producing storms with suitable convective conditions.",
+    bestSeason: "The local snow season.",
+    sources: [
+      {
+        label: "NOAA NSSL — Lightning questions",
+        url: "https://www.nssl.noaa.gov/education/svrwx101/lightning/faq/"
+      },
+      {
+        label: "NWS — Lightning safety",
+        url: "https://www.weather.gov/safety/lightning"
+      }
+    ]
   },
   {
-    id: 'volcanic-lightning',
-    name: 'Volcanic Lightning',
-    category: 'Geological',
-    rarity: 'Very Rare',
-    description: 'Lightning generated inside volcanic ash plumes, also known as dirty thunderstorms',
+    id: "volcanic-lightning",
+    name: "Volcanic Lightning",
+    category: "Geological",
+    rarity: "Very Rare",
+    description: "Electrical discharges in an eruption plume containing ash and, in some cases, ice.",
     facts: [
-      'Caused by friction between ash particles, ice, and rock fragments in the eruption column',
-      'Can produce hundreds of lightning bolts per minute during major eruptions',
-      'Lightning occurs both at the vent and high in the ash plume',
-      'Some bolts travel over 10 miles through the ash cloud'
+      "Colliding ash particles can contribute to electrical charging.",
+      "Ice charging can matter in tall, cold plumes.",
+      "Not every eruption produces detectable lightning."
     ],
-    emoji: '🌋',
-    bitFact: 'The ultimate combo attack -- fire and lightning merged into one volcanic super-move, like a final boss casting two elements at once!',
-    scientificMechanism: "Charge separation occurs as ejected rock fragments, ash particles, and ice crystals collide within the turbulent eruption plume, creating electric fields strong enough to discharge as lightning.",
-    historicalOccurrence: "The 2010 Eyjafjallajokull eruption in Iceland produced spectacular volcanic lightning displays photographed worldwide, while the 1883 Krakatoa eruption generated lightning visible 80 miles away.",
-    howToSpot: "Observe an active eruption from a safe distance (miles away, upwind). Lightning appears as bright arcs within or above the ash plume, often most dramatic at night.",
+    emoji: "🌋",
+    bitFact: "An eruption scene layered with branching lightning effects.",
+    scientificMechanism: "Ash collisions near the vent and interactions among ice particles higher in the plume can separate charge. Which process dominates depends on the eruption and plume conditions.",
+    howToSpot: "Use observatory imagery; follow exclusion zones and official eruption advice instead of approaching a plume.",
     dangerLevel: 5,
-    whereToSee: "Volcanic arcs worldwide: Iceland, Japan, Indonesia, the Andes, Kamchatka Peninsula, and the Cascades Range.",
-    bestSeason: "No seasonal pattern -- depends entirely on volcanic activity. Most commonly documented during explosive Plinian and sub-Plinian eruptions."
+    whereToSee: "Explosive volcanic eruptions with suitable plume conditions.",
+    bestSeason: "Eruption-dependent, not seasonal.",
+    sources: [
+      {
+        label: "USGS — Volcanic lightning charging",
+        url: "https://www.usgs.gov/news/science-snippet/hazard-guess-riskiest-science-quiz-you-will-ever-take-14"
+      },
+      {
+        label: "USGS — Bogoslof observations",
+        url: "https://www.usgs.gov/publications/did-ice-charging-generate-volcanic-lightning-during-2016-2017-eruption-bogoslof"
+      }
+    ]
   },
   {
-    id: 'green-flash',
-    name: 'Green Flash',
-    category: 'Optical',
-    rarity: 'Uncommon',
-    description: 'A brief green light visible at the exact moment of sunrise or sunset as the sun crosses the horizon',
+    id: "green-flash",
+    name: "Green Flash",
+    category: "Optical",
+    rarity: "Uncommon",
+    description: "A brief green colour near the Sun’s upper edge around sunrise or sunset.",
     facts: [
-      'Lasts only 1-2 seconds under ideal conditions',
-      'Caused by atmospheric refraction separating sunlight into colors',
-      'The green wavelength is the last visible color before the sun disappears',
-      'Pirates once believed it was the flash of souls departing the afterlife'
+      "Atmospheric refraction separates colours near the horizon.",
+      "Different mirage conditions produce different kinds of flash.",
+      "A clear horizon helps, but a flash is not guaranteed."
     ],
-    emoji: '🟢',
-    bitFact: 'The rarest sunrise Easter egg -- blink and you miss this hidden color palette swap, like a secret debug mode only 1% of players discover!',
-    scientificMechanism: "Atmospheric refraction bends different wavelengths of sunlight by different amounts. As the sun sets, red and orange disappear first; blue and violet are scattered away, leaving green as the last visible color for a brief moment.",
-    historicalOccurrence: "Jules Verne popularized the phenomenon in his 1882 novel 'The Green Ray,' claiming anyone who sees it will never be deceived in matters of the heart.",
-    howToSpot: "Watch the very top edge of the sun as it crosses a clear, sharp horizon (ocean horizons work best). Use binoculars focused on the horizon, not directly at the sun. Air must be stable with little haze.",
+    emoji: "🟢",
+    bitFact: "A momentary green palette change at the edge of the sky scene.",
+    scientificMechanism: "The atmosphere bends different wavelengths by different amounts. Mirage effects can enlarge the small colour separation at the Sun’s edge.",
+    howToSpot: "Study recorded images. Never aim unfiltered binoculars or a telescope at the Sun, and do not stare at it.",
     dangerLevel: 1,
-    whereToSee: "Best observed over ocean horizons: Hawaii, the Canary Islands, the Mediterranean coast, and Key West, Florida.",
-    bestSeason: "Year-round wherever clear ocean horizons exist, but most reliable during stable atmospheric conditions in spring and autumn."
+    whereToSee: "An unobstructed horizon, often over the sea.",
+    bestSeason: "Any season with suitable horizon and atmospheric conditions.",
+    sources: [
+      {
+        label: "WMO — Green flash",
+        url: "https://cloudatlas.wmo.int/en/green-flash.html"
+      },
+      {
+        label: "NOAA — Atmospheric refraction",
+        url: "https://nauticalcharts.noaa.gov/publications/coast-pilot/files/cp2/CPB2_C03_WEB.pdf"
+      },
+      {
+        label: "NASA — Solar viewing safety",
+        url: "https://science.nasa.gov/eclipses/safety/"
+      }
+    ]
   },
   {
-    id: 'fogbow',
-    name: 'Fogbow',
-    category: 'Optical',
-    rarity: 'Uncommon',
-    description: 'A white or nearly colorless rainbow that forms in fog instead of rain',
+    id: "fogbow",
+    name: "Fogbow",
+    category: "Optical",
+    rarity: "Uncommon",
+    description: "A broad, pale bow formed when light meets very small droplets in fog or mist.",
     facts: [
-      'Also called a white rainbow, ghost rainbow, or cloud bow',
-      'Fog droplets are too small (< 0.05mm) to separate light into vivid colors',
-      'The inner edge may show faint blue and the outer edge faint red',
-      'Can display supernumerary bands -- faint interference fringes inside the arc'
+      "It is sometimes called a white rainbow.",
+      "Faint red and blue edges can be present.",
+      "Small droplets produce a much less colourful bow than typical rain."
     ],
-    emoji: '🌫',
-    bitFact: 'A desaturated rainbow sprite -- like when the color palette glitches and the rainbow renders in grayscale mode!',
-    scientificMechanism: "Same optics as a standard rainbow (refraction and internal reflection in water droplets), but fog droplets are so tiny that diffraction dominates, overlapping colors into a broad white band.",
-    historicalOccurrence: "Fogbows were documented by mariners for centuries and were sometimes called 'sea dogs' when seen from ships in thick fog banks.",
-    howToSpot: "Stand with the sun at your back while facing a fog bank. Look for a broad, ghostly white arc. Mountain summits and coastal headlands at dawn are ideal spots.",
+    emoji: "🌫",
+    bitFact: "A rainbow sprite rendered with a nearly white palette.",
+    scientificMechanism: "Refraction, internal reflection and diffraction of light in tiny droplets create the bow.",
+    howToSpot: "With the Sun behind you, look toward illuminated fog. Stay in a safe place if visibility is poor.",
     dangerLevel: 1,
-    whereToSee: "Coastal areas with frequent fog: San Francisco Bay, the British Isles, Newfoundland, the Faroe Islands, and mountain passes worldwide.",
-    bestSeason: "Autumn and spring when radiation fog and advection fog are most common; year-round on foggy coastlines."
+    whereToSee: "Fog or mist lit by sunlight; moonlight can also produce one.",
+    bestSeason: "Whenever local fog and suitable illumination coincide.",
+    sources: [
+      {
+        label: "WMO — Fog bow",
+        url: "https://cloudatlas.wmo.int/fog-bow.html"
+      }
+    ]
   },
   {
-    id: 'catatumbo-lightning',
-    name: 'Catatumbo Lightning',
-    category: 'Electrical',
-    rarity: 'Ultra Rare',
-    description: 'Near-permanent lightning over Lake Maracaibo, Venezuela, occurring up to 300 nights per year',
+    id: "catatumbo-lightning",
+    name: "Catatumbo Lightning",
+    category: "Electrical",
+    rarity: "Location-dependent",
+    description: "Frequent thunderstorms around Venezuela’s Lake Maracaibo, known for intense nighttime lightning.",
     facts: [
-      'Produces an average of 28 lightning strikes per minute at peak',
-      'Occurs at the mouth of the Catatumbo River where it meets Lake Maracaibo',
-      'Lightning storms can last 10 hours per night',
-      'Has been used as a natural lighthouse by sailors for centuries'
+      "Satellite observations identify Lake Maracaibo as a major lightning hotspot.",
+      "Activity varies through the year and is not continuous.",
+      "The name refers to the Catatumbo region, not a separate kind of lightning."
     ],
-    emoji: '⛈',
-    bitFact: 'A permanent lightning storm zone -- like a never-ending boss arena where the thunder attack is always on cooldown and the sky never stops casting!',
-    scientificMechanism: "Warm, moist air from the lake collides with cold air descending from the Andes and Sierra de Perija mountains, while methane from the swampy basin may enhance electrical conductivity in the atmosphere.",
-    historicalOccurrence: "Used by Caribbean sailors as the 'Lighthouse of Maracaibo' for navigation since the 1500s. Sir Francis Drake's 1595 night attack on Maracaibo was foiled when the lightning revealed his ships.",
-    howToSpot: "Travel to the southern shore of Lake Maracaibo at night and look toward the Catatumbo River delta. The silent, near-continuous flickering is visible from over 250 miles away.",
+    emoji: "⛈",
+    bitFact: "A storm-rich map region with repeated lightning animations.",
+    scientificMechanism: "Warm, moist air and local wind circulations around the lake and surrounding mountains favour repeated thunderstorm development.",
+    howToSpot: "Use documented observations or remote imagery. Frequent lightning still requires ordinary storm shelter precautions.",
     dangerLevel: 3,
-    whereToSee: "Exclusively at Lake Maracaibo, Venezuela, concentrated at the Catatumbo River mouth. Best viewed from the villages of Congo Mirador or Ologa.",
-    bestSeason: "Most active from October to November, with a secondary peak in April-May. Briefly ceased in January-March 2010 due to drought."
+    whereToSee: "Lake Maracaibo and the nearby Catatumbo region of Venezuela.",
+    bestSeason: "Activity varies seasonally; no individual night is guaranteed.",
+    sources: [
+      {
+        label: "NASA Earthdata — The Maracaibo beacon",
+        url: "https://www.earthdata.nasa.gov/s3fs-public/imported/NASA_SOP_2016_the_maracaibo_beacon.pdf"
+      }
+    ]
   },
   {
-    id: 'ice-circles',
-    name: 'Ice Circles',
-    category: 'Winter Weather',
-    rarity: 'Rare',
-    description: 'Perfectly circular rotating discs of ice that form in slow-moving rivers and streams',
+    id: "ice-circles",
+    name: "Ice Circles",
+    category: "Winter Weather",
+    rarity: "Rare",
+    description: "Round pieces of floating ice that can rotate slowly on the water.",
     facts: [
-      'Can range from a few feet to over 50 feet in diameter',
-      'Rotate slowly due to the melting process and water currents',
-      'The edges are smoothed into perfect circles by the surrounding water',
-      'Sometimes called ice pans or ice discs'
+      "Currents and melting can affect their motion and shape.",
+      "Experiments suggest both meltwater and residual water motion can influence rotation.",
+      "A laboratory mechanism does not explain every natural ice circle."
     ],
-    emoji: '🧊',
-    bitFact: 'A spinning ice platform straight out of an arctic platformer level -- jump on it before it rotates you off the edge!',
-    scientificMechanism: "A chunk of ice in a river eddy begins to rotate. As it turns, friction with the surrounding water melts and smooths its edges into a circle. The melting process itself can drive further rotation via temperature-differential currents.",
-    historicalOccurrence: "A 91-meter (300-foot) ice disc in the Presumpscot River in Westbrook, Maine in January 2019 went viral, attracting international media and a dedicated webcam.",
-    howToSpot: "Check slow-moving rivers and stream bends during the early freeze-up period. Look for a flat, circular ice sheet rotating gently in an eddy or at a river bend.",
+    emoji: "🧊",
+    bitFact: "A slowly rotating ice sprite viewed from the riverbank.",
+    scientificMechanism: "A 2016 study linked rotation to sinking meltwater. A 2023 follow-up found that residual water motion can trigger rotation, with meltwater possibly amplifying it. Natural rivers add further currents and ice interactions.",
+    howToSpot: "Observe from stable ground; a floating ice disk is not a safe platform.",
     dangerLevel: 1,
-    whereToSee: "Rivers in Scandinavia, the northern US (especially Maine and Michigan), Canada, Russia, and the UK during cold snaps.",
-    bestSeason: "Early to mid-winter (November-January) during the initial freeze-up when river temperatures hover near 0°C."
+    whereToSee: "Cold waterways with floating ice and open water.",
+    bestSeason: "During freezing or thawing conditions.",
+    sources: [
+      {
+        label: "Dorbolo and colleagues (2016) — Melting ice disk experiments",
+        url: "https://pubmed.ncbi.nlm.nih.gov/27078452/"
+      },
+      {
+        label: "Schellenberg, Newton & Hunt (2023) — Rotation of melting ice disks",
+        url: "https://link.springer.com/article/10.1007/s10652-023-09912-6"
+      }
+    ]
   },
   {
-    id: 'penitentes',
-    name: 'Penitentes',
-    category: 'Winter Weather',
-    rarity: 'Rare',
-    description: 'Tall, thin blades of ice or hardened snow formed by sublimation at high altitude, resembling rows of kneeling monks',
+    id: "penitentes",
+    name: "Penitentes",
+    category: "Winter Weather",
+    rarity: "Rare",
+    description: "Blade-like snow and ice formations found in dry, high mountain environments.",
     facts: [
-      'Can grow from a few centimeters to over 5 meters tall',
-      'Named after the pointed hoods of penitent monks in religious processions',
-      'Form only above 4,000 meters in dry conditions with intense sunlight',
-      'Darwin described them in 1839 during his Andes crossing'
+      "Sublimation removes ice directly as water vapour.",
+      "Melting can also deepen troughs between the blades.",
+      "Wind alone does not sculpt the characteristic pattern."
     ],
-    emoji: '🏔',
-    bitFact: 'A field of ice spikes that looks like a frozen spike trap level -- navigate carefully or take damage from these natural pixel hazards!',
-    scientificMechanism: "Differential sublimation (ice converting directly to vapor) sculpts snow surfaces. Small depressions focus sunlight, accelerating sublimation at the base while tips remain frozen, creating tall spikes over weeks.",
-    historicalOccurrence: "Charles Darwin encountered fields of penitentes while crossing the Andes in 1835, describing them as a forest of ice spikes that made travel nearly impossible.",
-    howToSpot: "Trek to high-altitude snowfields above 4,000 meters in arid regions. Look for rows of blade-like ice formations pointing toward the midday sun, often covering large areas.",
+    emoji: "🏔",
+    bitFact: "A field of icy spikes forming a natural pixel landscape.",
+    scientificMechanism: "Sunlight and very dry air drive uneven loss of snow and ice. Depressions concentrate radiation, deepening troughs and leaving pointed ridges between them.",
+    howToSpot: "Look for closely spaced blades in mountain photographs; walking through such terrain can be difficult.",
     dangerLevel: 2,
-    whereToSee: "High Andes (Argentina, Chile, Bolivia), Himalayas, Kilimanjaro, and high-altitude glaciers. Also detected on Jupiter's moon Europa.",
-    bestSeason: "Dry season at high altitude: May-September in the Southern Hemisphere Andes, year-round above 5,000 meters in the tropics."
+    whereToSee: "High, dry terrain such as the Chilean Andes.",
+    bestSeason: "When strong sunshine acts on an existing snow or ice cover.",
+    sources: [
+      {
+        label: "ESO — Icy penitents on Chajnantor",
+        url: "https://www.eso.org/public/images/potw1221a/"
+      }
+    ]
   },
   {
-    id: 'sun-dogs',
-    name: 'Sun Dogs (Parhelia)',
-    category: 'Optical',
-    rarity: 'Uncommon',
-    description: 'Bright spots flanking the sun caused by refraction of light through hexagonal ice crystals in the atmosphere',
+    id: "sun-dogs",
+    name: "Sun Dogs (Parhelia)",
+    category: "Optical",
+    rarity: "Uncommon",
+    description: "Bright, sometimes coloured spots to either side of the Sun, also called parhelia.",
     facts: [
-      'Appear as two bright patches exactly 22 degrees on either side of the sun',
-      'Often display a reddish tint on the side closest to the sun',
-      'Most vivid when the sun is near the horizon',
-      'Can sometimes complete a full 22-degree halo ring around the sun'
+      "Sunlight refracting through ice crystals produces the spots.",
+      "With a low Sun, they appear roughly 22 degrees to either side.",
+      "One or both spots may be visible, with red toward the Sun."
     ],
-    emoji: '☀️',
-    bitFact: 'The sun spawning two mirror-image clones -- a triple boss encounter where you have to figure out which sun is the real one!',
-    scientificMechanism: "Horizontally oriented hexagonal plate-shaped ice crystals in cirrostratus clouds refract sunlight at a minimum deviation angle of 22 degrees, creating bright spots on each side of the sun.",
-    historicalOccurrence: "The Battle of Mortimer's Cross (1461) during the Wars of the Roses began with a parhelion display. Edward IV took it as a divine sign and adopted the 'Sun in Splendour' as his emblem.",
-    howToSpot: "Look for bright, rainbow-tinged patches on either side of a low sun when thin cirrus or cirrostratus clouds are present. Hold your arm outstretched and spread your hand -- the distance from thumb to pinky is roughly 22 degrees.",
+    emoji: "☀️",
+    bitFact: "Two bright companion sprites flanking the Sun.",
+    scientificMechanism: "Plate-shaped ice crystals falling with roughly horizontal faces refract sunlight into preferred viewing directions.",
+    howToSpot: "Keep the Sun blocked by a building or another opaque object; do not look directly at it or use unfiltered optics.",
     dangerLevel: 1,
-    whereToSee: "Common in cold climates: Canada, Scandinavia, Russia, the northern US, and Antarctica. Also visible from anywhere with high cirrus clouds.",
-    bestSeason: "Winter months when ice crystal clouds are most prevalent and the sun stays low on the horizon (November-February in the Northern Hemisphere)."
+    whereToSee: "Where suitably oriented ice crystals are present in the atmosphere.",
+    bestSeason: "Possible year-round; the crystals aloft need not mean freezing weather at the ground.",
+    sources: [
+      {
+        label: "NWS — Halos, sundogs and pillars",
+        url: "https://www.weather.gov/arx/why_halos_sundogs_pillars"
+      },
+      {
+        label: "NWS — Ice-crystal optics",
+        url: "https://www.weather.gov/media/mfr/fall2016.pdf"
+      }
+    ]
   },
   {
-    id: 'fire-rainbow',
-    name: 'Fire Rainbow (Circumhorizontal Arc)',
-    category: 'Optical',
-    rarity: 'Rare',
-    description: 'A brilliant horizontal band of rainbow colors appearing in high cirrus clouds, resembling fire in the sky',
+    id: "fire-rainbow",
+    name: "Fire Rainbow (Circumhorizontal Arc)",
+    category: "Optical",
+    rarity: "Rare",
+    description: "A colourful ice-crystal halo called a circumhorizontal arc, unrelated to fire.",
     facts: [
-      'Not actually related to fire or rainbows -- it is an ice halo phenomenon',
-      'The sun must be higher than 58 degrees above the horizon for it to form',
-      'Can stretch across the entire sky if the cirrus cloud layer is extensive',
-      'Only visible from latitudes lower than about 55 degrees'
+      "It extends roughly parallel to the horizon below the Sun.",
+      "The Sun must be higher than about 58 degrees.",
+      "It is a halo phenomenon, distinct from a raindrop rainbow."
     ],
-    emoji: '🔥',
-    bitFact: 'The sky unlocking its ultimate rainbow beam attack -- a full-screen color blast like the rarest spell in the game only high-level players ever see!',
-    scientificMechanism: "Sunlight enters through the flat top face of horizontally oriented hexagonal ice crystals in cirrus clouds and exits through a vertical side face, dispersing into a vivid horizontal spectrum at 46 degrees below the sun.",
-    historicalOccurrence: "A massive circumhorizontal arc over Spokane, Washington in June 2006 was widely photographed and shared online, introducing the phenomenon to millions.",
-    howToSpot: "On warm sunny days when wispy cirrus clouds are overhead and the sun is very high (above 58 degrees), scan the sky below the sun for a vivid horizontal rainbow band within the clouds.",
+    emoji: "🔥",
+    bitFact: "A horizontal rainbow-colour band across the sky layer.",
+    scientificMechanism: "Sunlight is refracted through suitably oriented ice crystals, producing a coloured arc when the Sun is high enough.",
+    howToSpot: "Look for a horizontal band of colour in ice cloud well below a high Sun. Keep the Sun out of your direct view.",
     dangerLevel: 1,
-    whereToSee: "Mid-latitudes during summer: the continental US, southern Europe, Japan, and northern Australia. Cannot form at high latitudes where the sun is too low.",
-    bestSeason: "Summer months when the sun reaches sufficient elevation: June-August in mid-northern latitudes, December-February in mid-southern latitudes."
+    whereToSee: "Places and times where the Sun rises high enough and suitable ice crystals are present.",
+    bestSeason: "Often near summer midday at mid-latitudes; solar elevation is the key condition.",
+    sources: [
+      {
+        label: "WMO — Circumhorizontal arc",
+        url: "https://cloudatlas.wmo.int/en/circumhorizontal-arc.html"
+      },
+      {
+        label: "WMO — Halo phenomena",
+        url: "https://cloudatlas.wmo.int/en/halo-phenomena.html"
+      }
+    ]
   },
   {
-    id: 'brinicles',
-    name: 'Brinicles',
-    category: 'Ocean',
-    rarity: 'Very Rare',
-    description: 'Underwater ice stalactites that form beneath sea ice and freeze everything they touch on the ocean floor',
+    id: "brinicles",
+    name: "Brinicles",
+    category: "Ocean",
+    rarity: "Very Rare",
+    description: "Hollow ice tubes that grow downward beneath sea ice around a flow of cold, salty brine.",
     facts: [
-      'Also called the "icicle of death" because they kill sea life on contact',
-      'Form when super-cold, super-salty brine drains out of forming sea ice',
-      'The brine stream is denser and colder than surrounding seawater, sinking rapidly',
-      'First filmed in 2011 by the BBC for the Frozen Planet documentary'
+      "Sea ice formation leaves concentrated brine behind.",
+      "Dense brine can drain downward into the sea.",
+      "Surrounding seawater freezes around that cold flow."
     ],
-    emoji: '🦑',
-    bitFact: 'An underwater freeze ray that creates a trail of instant death -- like an ice beam trap in an underwater dungeon level!',
-    scientificMechanism: "As sea ice forms, salt is expelled as concentrated brine. This brine is denser and much colder than seawater (-20°C), so it sinks, freezing the water around it into a descending hollow tube of ice.",
-    historicalOccurrence: "First observed by divers under Antarctic sea ice in the 1960s, but not filmed until the BBC's Frozen Planet crew captured time-lapse footage in 2011 showing a brinicle reaching the seafloor and freezing starfish.",
-    howToSpot: "Only observable by diving or using ROVs beneath newly forming sea ice in polar regions. Look for translucent ice tubes descending from the underside of sea ice in calm, shallow water.",
+    emoji: "🦑",
+    bitFact: "An underwater icicle extending through a polar scene.",
+    scientificMechanism: "Salt-rich brine stays liquid below the freezing point of less-salty seawater. As it drains from sea ice, heat transfer can freeze a tube around the descending stream.",
+    howToSpot: "Research footage shows their underwater growth; observing beneath sea ice requires specialist diving operations.",
     dangerLevel: 2,
-    whereToSee: "Beneath sea ice in both Arctic and Antarctic waters, particularly in shallow bays and fjords where conditions are calm enough for brinicles to form without breaking.",
-    bestSeason: "Early winter during active sea ice formation: March-June in Antarctica, October-December in the Arctic."
+    whereToSee: "Beneath growing sea ice in polar oceans.",
+    bestSeason: "During sea-ice growth when cold brine drains out.",
+    sources: [
+      {
+        label: "Cartwright and colleagues (2013) — Brinicle formation",
+        url: "https://arxiv.org/abs/1304.1774"
+      }
+    ]
   },
   {
-    id: 'diamond-dust',
-    name: 'Diamond Dust',
-    category: 'Winter Weather',
-    rarity: 'Uncommon',
-    description: 'Tiny ice crystals sparkling in the air on clear, extremely cold days, creating a glittering effect without any clouds',
+    id: "diamond-dust",
+    name: "Diamond Dust",
+    category: "Winter Weather",
+    rarity: "Uncommon",
+    description: "Tiny ice crystals falling from a clear sky, often visible as sparkles in sunlight.",
     facts: [
-      'Occurs at temperatures below -30°C (-22°F) in clear skies',
-      'Creates stunning halos, sundogs, and light pillars simultaneously',
-      'Crystals are so small they float suspended in the air for hours',
-      'Also known as ice crystal fog or clear-sky precipitation'
+      "WMO describes it especially in clear, calm, cold weather.",
+      "It can form at temperatures much warmer than −30°C.",
+      "Well-formed crystals can produce halos; diamond dust is distinct from ice fog."
     ],
-    emoji: '💎',
-    bitFact: 'The air itself becomes a treasure chest of sparkling gems -- like walking through a bonus stage where every pixel is made of glitter!',
-    scientificMechanism: "At extremely cold temperatures, the tiny amount of moisture in the air crystallizes directly into minute hexagonal ice plates and columns that remain suspended, glittering in sunlight as they slowly drift downward.",
-    historicalOccurrence: "Common at the South Pole station during winter, where it was instrumental in discovering the optical phenomena of Bottlinger's rings and sub-sun displays.",
-    howToSpot: "On extremely cold, calm, clear mornings, look toward the sun for thousands of tiny sparkles floating in the air. The effect is strongest in direct sunlight and may produce multiple halo displays simultaneously.",
+    emoji: "💎",
+    bitFact: "A glittering ice-particle layer across a winter scene.",
+    scientificMechanism: "Water vapour deposits as small ice crystals in a cold air mass. Slow-falling crystals can appear suspended and catch the light.",
+    howToSpot: "Look for glittering crystals in cold clear air while protecting yourself from the cold.",
     dangerLevel: 1,
-    whereToSee: "Interior Antarctica, interior Alaska and Yukon, Siberia, northern Scandinavia, and high-altitude mountain stations during extreme cold.",
-    bestSeason: "Deep winter when temperatures drop below -30°C: December-February in the Arctic, June-August in Antarctica."
+    whereToSee: "Polar and alpine areas and cold continental interiors.",
+    bestSeason: "Cold periods; local temperature and moisture matter more than a fixed month.",
+    sources: [
+      {
+        label: "WMO — Diamond dust",
+        url: "https://cloudatlas.wmo.int/en/diamond-dust.html"
+      },
+      {
+        label: "WMO — Ice fog",
+        url: "https://cloudatlas.wmo.int/en/ice-fog.html"
+      }
+    ]
   },
   {
-    id: 'haboob',
-    name: 'Haboob',
-    category: 'Desert Weather',
-    rarity: 'Uncommon',
-    description: 'A massive wall of dust and sand driven by thunderstorm downdrafts that can reach over a mile high and span 60+ miles wide',
+    id: "haboob",
+    name: "Haboob",
+    category: "Desert Weather",
+    rarity: "Uncommon",
+    description: "An advancing wall of dust raised by thunderstorm outflow winds.",
     facts: [
-      'The name comes from the Arabic word "habb" meaning to blow',
-      'Can reduce visibility to near zero in seconds',
-      'Dust walls can reach altitudes of 5,000+ feet',
-      'Wind speeds at the leading edge often exceed 60 mph'
+      "Visibility can fall sharply as the dust arrives.",
+      "Blowing dust makes roads hazardous.",
+      "Haboobs occur especially in dry regions with loose surface material."
     ],
-    emoji: '🏜',
-    bitFact: 'A massive dust wall scrolling across the screen like an unstoppable stage hazard -- no power-up can save you, just run!',
-    scientificMechanism: "Cold air from a thunderstorm downdraft hits the ground and spreads outward as a density current, scooping up loose sand and dust into a towering wall that advances ahead of the storm.",
-    historicalOccurrence: "A massive haboob struck Phoenix, Arizona on July 5, 2011, creating a dust wall over a mile high and 100 miles wide that was visible on weather radar and satellite imagery.",
-    howToSpot: "Watch for an advancing brown or tan wall on the horizon ahead of a thunderstorm, often during late afternoon. The wall has a distinct, sharp leading edge and may be preceded by gusty winds.",
+    emoji: "🏜",
+    bitFact: "A moving dust-wall background that signals a hazardous scene.",
+    scientificMechanism: "Air descending from a thunderstorm spreads across the ground and lifts dust into the advancing outflow.",
+    howToSpot: "An approaching dust wall is a reason to avoid travel into it. Follow NWS dust-storm driving guidance; never stop in a traffic lane.",
     dangerLevel: 3,
-    whereToSee: "The Sahara and Sahel regions, the Arabian Peninsula, the US Desert Southwest (especially Phoenix and Tucson), Sudan, and parts of Australia.",
-    bestSeason: "Summer monsoon season when thunderstorms are frequent over desert terrain: June-September in the Northern Hemisphere."
+    whereToSee: "Dry regions, including the US Southwest.",
+    bestSeason: "Periods when thunderstorms occur over dry, dusty ground.",
+    sources: [
+      {
+        label: "NWS — Dust storms, haboobs and driving safety",
+        url: "https://www.weather.gov/safety/wind-dust-storm"
+      }
+    ]
   },
   {
-    id: 'heat-burst',
-    name: 'Heat Burst',
-    category: 'Wind',
-    rarity: 'Rare',
-    description: 'A sudden blast of extremely hot, dry wind at the surface from a dying thunderstorm, capable of raising temperatures 10-20°F in minutes',
+    id: "heat-burst",
+    name: "Heat Burst",
+    category: "Wind",
+    rarity: "Rare",
+    description: "A sudden rise in temperature with drying and gusty winds near a weakening shower or thunderstorm.",
     facts: [
-      'Temperatures can spike to over 100°F even at night',
-      'Dew points can plummet to negative values in minutes',
-      'Wind gusts frequently exceed 70+ mph',
-      'Dying thunderstorms produce them when rain evaporates before reaching the ground'
+      "Heat bursts often occur at night.",
+      "A falling dew point can accompany the temperature jump.",
+      "Not every weakening storm produces one."
     ],
-    emoji: '🥵',
-    bitFact: 'A dying storm boss launching one last surprise fire attack when you think the fight is over -- the ultimate cheap shot from beyond the grave!',
-    scientificMechanism: "Rain from a collapsing thunderstorm evaporates in dry air aloft, but the descending air retains its momentum. Without evaporative cooling, the air compresses and heats adiabatically as it plunges to the surface, arriving hot and bone-dry.",
-    historicalOccurrence: "On May 22, 1996, a heat burst in Chickasha, Oklahoma raised temperatures from 88°F to 101°F at 3 AM, with dew points crashing to single digits and winds gusting to 87 mph.",
-    howToSpot: "Watch for a sudden, dramatic rise in temperature and drop in humidity during the late evening or night, often accompanied by strong gusty winds. Usually follows the passage of a weakening radar echo.",
+    emoji: "🥵",
+    bitFact: "A late wind-and-heat effect as the storm scene fades.",
+    scientificMechanism: "Evaporation initially cools descending air and helps it accelerate. Once precipitation evaporates, compression can warm the still-descending air enough to reach the surface hotter and drier.",
+    howToSpot: "Weather-station records may show temperature rising while dew point falls and winds increase. Remain sheltered during strong gusts.",
     dangerLevel: 3,
-    whereToSee: "The US Great Plains (Oklahoma, Kansas, Texas), the Iberian Peninsula, the Middle East, and semi-arid regions of India and Australia.",
-    bestSeason: "Late spring through early autumn when high-based thunderstorms form over dry environments: May-September in the US Great Plains."
+    whereToSee: "Environments with dry air aloft and a shallow cooler surface layer.",
+    bestSeason: "When suitable showers and temperature layers coincide, often during the warm season.",
+    sources: [
+      {
+        label: "NWS — Heat bursts",
+        url: "https://www.weather.gov/abq/localfeatureheatburst"
+      }
+    ]
   }
-];
+]

@@ -10,13 +10,15 @@ import Link from 'next/link'
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
+import PhenomenonSources from '@/components/education/phenomenon-sources'
 import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
-import type { WeatherPhenomena } from '@/data/fun-facts'
-import type { GuideContent } from '@/lib/education/content'
+import { PHENOMENON_RATINGS_NOTE } from '@/data/fun-facts'
 import { diagramContextFor } from '@/lib/education/diagram-context'
 import { getEducationDetailHref } from '@/lib/education/entries'
+import type { WeatherPhenomena } from '@/data/fun-facts'
+import type { GuideContent } from '@/lib/education/content'
 
 interface PhenomenonGuideProps {
   phenomenon: WeatherPhenomena
@@ -37,8 +39,8 @@ interface Spec {
  */
 function measurements(phenomenon: WeatherPhenomena): Spec[] {
   return [
-    { label: 'Rarity', value: phenomenon.rarity },
-    { label: 'Hazard', value: `${phenomenon.dangerLevel} of 5` },
+    { label: 'Rarity (editorial)', value: phenomenon.rarity },
+    { label: 'Hazard (editorial)', value: `${phenomenon.dangerLevel} of 5` },
   ]
 }
 
@@ -96,6 +98,7 @@ export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuidePr
 
         <section className="mt-12 pt-6 border-t border-subtle">
           <h2 className="guide-eyebrow">At a glance</h2>
+          <p className="text-xs text-weather-muted mt-3">{PHENOMENON_RATINGS_NOTE}</p>
           <dl className="guide-data mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
             {measurements(phenomenon).map(({ label, value }) => (
               <div key={label} className="flex justify-between gap-4 py-1 border-b border-subtle">
@@ -144,6 +147,8 @@ export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuidePr
             )}
           </section>
         )}
+
+        <PhenomenonSources sources={phenomenon.sources} />
 
         <RelatedGuides kind="phenomenon" slug={guide.slug} />
 

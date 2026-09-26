@@ -20,10 +20,11 @@ import PageWrapper from "@/components/page-wrapper"
 import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
+import PhenomenonSources from "@/components/education/phenomenon-sources"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { themeTokens } from '@/lib/theme-tokens'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { weatherPhenomena } from "@/data/fun-facts"
+import { PHENOMENON_RATINGS_NOTE, weatherPhenomena } from "@/data/fun-facts"
 
 export default function FunFactsPage() {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
@@ -70,6 +71,9 @@ export default function FunFactsPage() {
           </h1>
           <p className={`text-lg ${themeClasses.secondaryText} font-mono mb-6`}>
             Weather phenomena explained with 16-bit gaming references
+          </p>
+          <p className="text-xs font-mono text-weather-muted max-w-3xl mx-auto">
+            {PHENOMENON_RATINGS_NOTE}
           </p>
         </div>
 
@@ -122,7 +126,7 @@ export default function FunFactsPage() {
                       {/* Danger Level */}
                       <div>
                         <h4 className={`font-mono font-bold text-sm uppercase mb-2 ${themeClasses.headerText}`}>
-                          Danger Level:
+                          Informal Hazard Rating:
                         </h4>
                         <div className="flex items-center gap-1">
                           {getDangerBars(phenomenon.dangerLevel).map((filled, i) => (
@@ -157,7 +161,7 @@ export default function FunFactsPage() {
                       {/* Scientific Facts */}
                       <div>
                         <h4 className={`font-mono font-bold text-sm uppercase mb-2 ${themeClasses.headerText}`}>
-                          Scientific Facts:
+                          Evidence and Observations:
                         </h4>
                         <ul className="space-y-1">
                           {phenomenon.facts.map((fact, index) => (
@@ -227,7 +231,7 @@ export default function FunFactsPage() {
                       <div className="card-inner p-3 mt-4 rounded"
                         style={{ backgroundColor: getRarityColor(phenomenon.rarity) + '10' }}>
                         <h4 className={`font-mono font-bold text-sm uppercase mb-2 ${themeClasses.headerText}`}>
-                          16-Bit Take:
+                          16-Bit Take (Analogy):
                         </h4>
                         <p className={`${themeClasses.text} font-mono text-xs italic`}>
                           {phenomenon.bitFact}
@@ -235,6 +239,9 @@ export default function FunFactsPage() {
                       </div>
                     </div>
                   )}
+                  <div onClick={(event) => event.stopPropagation()}>
+                    <PhenomenonSources sources={phenomenon.sources} />
+                  </div>
                 </CardContent>
               </Card>
             )

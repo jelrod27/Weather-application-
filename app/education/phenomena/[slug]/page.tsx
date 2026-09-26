@@ -34,6 +34,7 @@ function seoInput(
     name: phenomenon.name,
     fallbackDescription: phenomenon.description,
     guide: getGuideContent('phenomenon', slug),
+    sources: phenomenon.sources,
   }
 }
 

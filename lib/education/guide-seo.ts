@@ -9,7 +9,7 @@
 
 import type { Metadata } from 'next'
 
-import type { GuideContent } from '@/lib/education/content'
+import type { GuideContent, GuideSource } from '@/lib/education/content'
 import { getEducationDetailHref, type EducationEntryKind } from '@/lib/education/entries'
 import { clampDescription } from '@/lib/seo/clamp-description'
 
@@ -52,6 +52,8 @@ export interface GuideSeoInput {
   /** Fallback description when the Entry has no Guide summary. */
   fallbackDescription: string
   guide: GuideContent | null
+  /** Sources for structured Entry content rendered alongside or without a Guide. */
+  sources?: GuideSource[]
   keywords?: string
 }
 
@@ -99,6 +101,7 @@ export function buildGuideJsonLd(input: GuideSeoInput): Record<string, unknown> 
   const { guide, keywords } = input
   const published = guide?.generated || guide?.reviewed
   const modified = guide?.reviewed || guide?.generated
+  const citations = [...new Set([...(guide?.sources ?? []), ...(input.sources ?? [])].map((source) => source.url))]
 
   const article = {
     '@type': 'Article',
@@ -111,7 +114,7 @@ export function buildGuideJsonLd(input: GuideSeoInput): Record<string, unknown> 
     publisher: PUBLISHER,
     about: { '@type': 'Thing', name },
     ...(keywords ? { keywords } : {}),
-    ...(guide ? { citation: guide.sources.map((source) => source.url) } : {}),
+    ...(citations.length ? { citation: citations } : {}),
     ...(published ? { datePublished: published } : {}),
     ...(modified ? { dateModified: modified } : {}),
   }

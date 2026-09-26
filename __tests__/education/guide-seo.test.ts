@@ -1,4 +1,5 @@
 import { getGuideContent } from '@/lib/education/content'
+import { weatherPhenomena } from '@/data/fun-facts'
 import { getCloudBySlug } from '@/lib/education/entries'
 import { buildGuideJsonLd, buildGuideMetadata, type GuideSeoInput } from '@/lib/education/guide-seo'
 
@@ -20,6 +21,33 @@ function cirrusInput(): GuideSeoInput {
 }
 
 describe('buildGuideJsonLd', () => {
+  it('cites every phenomenon Entry even when it has no long-form Guide', () => {
+    for (const phenomenon of weatherPhenomena) {
+      expect(phenomenon.sources.length).toBeGreaterThan(0)
+      const urls = phenomenon.sources.map((source) => {
+        expect(source.label.trim()).not.toBe('')
+        expect(new URL(source.url).protocol).toBe('https:')
+        return source.url
+      })
+      expect(new Set(urls).size).toBe(urls.length)
+      const [article] = graphOf(buildGuideJsonLd({
+        kind: 'phenomenon', slug: phenomenon.id, name: phenomenon.name,
+        fallbackDescription: phenomenon.description, guide: null, sources: phenomenon.sources,
+      }))
+      expect(article.citation).toEqual(urls)
+      expect(article).not.toHaveProperty('dateModified')
+    }
+  })
+
+  it('combines visible Entry and Guide citations without duplicates', () => {
+    const input = cirrusInput()
+    const extra = { label: 'WMO genera', url: 'https://cloudatlas.wmo.int/en/clouds-genera.html' }
+    const [article] = graphOf(buildGuideJsonLd({
+      ...input, sources: [input.guide!.sources[0], extra],
+    }))
+    expect(article.citation).toEqual([...input.guide!.sources.map((source) => source.url), extra.url])
+  })
+
   it('emits an Article with both dates, an absolute image and its citations', () => {
     const input = cirrusInput()
     expect(input.guide).not.toBeNull()
