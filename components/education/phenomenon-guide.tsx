@@ -10,7 +10,6 @@ import Link from 'next/link'
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
-import PhenomenonSources from '@/components/education/phenomenon-sources'
 import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
@@ -62,6 +61,9 @@ function notes(phenomenon: WeatherPhenomena): Spec[] {
 
 export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuideProps) {
   const url = `https://www.16bitweather.co${getEducationDetailHref('phenomenon', guide.slug)}`
+  const sources = [...guide.sources, ...phenomenon.sources].filter(
+    (source, index, all) => all.findIndex((candidate) => candidate.url === source.url) === index,
+  )
 
   return (
     <PageWrapper>
@@ -122,11 +124,11 @@ export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuidePr
           </dl>
         </section>
 
-        {guide.sources.length > 0 && (
+        {sources.length > 0 && (
           <section className="mt-10">
             <h2 className="guide-eyebrow">Sources</h2>
             <ul className="guide-data mt-3 space-y-1.5">
-              {guide.sources.map((source) => (
+              {sources.map((source) => (
                 <li key={source.url}>
                   <a
                     href={source.url}
@@ -147,8 +149,6 @@ export default function PhenomenonGuide({ phenomenon, guide }: PhenomenonGuidePr
             )}
           </section>
         )}
-
-        <PhenomenonSources sources={phenomenon.sources} />
 
         <RelatedGuides kind="phenomenon" slug={guide.slug} />
 

@@ -27,3 +27,9 @@ This is a correction and attribution pass over the named education surfaces, not
 - Standards review: two test issues fixed and re-reviewed; no remaining findings. Spec review: no remaining findings.
 - Source reachability check: 45 of 51 unique destinations returned HTTP 200. Automated requests received 403s for APS, two USGS pages and two NOAA JetStream pages; NSSL failed to connect. Keep these authoritative references, but do not interpret automated access restrictions as verified reader access. Source content was evaluated separately from HTTP status using available primary pages, papers and indexed official excerpts.
 - The full browser matrix and Lighthouse were left to PR CI; local checks focused on the changed flows. Broader cloud-table claims and other long-form articles remain outside this correction pass.
+
+## Local review follow-up — 2026-09-26
+
+- Repeated the separate Standards and Spec reviews against the PR 2 baseline. Both reviews are clear after fixing duplicate Sources sections in the long-form phenomenon template.
+- Combined Guide and Entry citations into one list, deduplicated by URL to match structured data. Added rendering regressions for overlapping sources and a Guide with no sources of its own; included the new TSX test in the test type check.
+- Both regressions failed before the fix and passed afterward. Nine focused citation/metadata tests, the production build, test type check, and targeted lint passed. The broader browser matrix and Lighthouse remain in PR CI.
