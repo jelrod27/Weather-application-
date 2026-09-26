@@ -5,7 +5,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
 import { Droplets, Wind, Eye, Gauge, Sunrise, Sunset, Info } from "lucide-react"
 import type { ThemeType } from "@/lib/theme-config"
 import type { ForecastDay } from "@/lib/types"
@@ -15,24 +14,15 @@ interface ForecastDetailsProps {
   tempUnit?: string;
   theme?: ThemeType; // Kept for api compatibility
   selectedDay: number | null;
-  currentWeatherData?: {
-    humidity: number;
-    wind: { speed: number; direction?: string };
-    pressure: string;
-    uvIndex: number;
-    sunrise: string;
-    sunset: string;
-  };
 }
 
 export default function ForecastDetails({
   forecast,
   selectedDay,
-  currentWeatherData,
   tempUnit = '°F'
 }: ForecastDetailsProps) {
   // Don't render anything if no day is selected
-  if (selectedDay === null) {
+  if (selectedDay === null || !forecast[selectedDay]) {
     return null;
   }
 
@@ -63,10 +53,8 @@ export default function ForecastDetails({
           </div>
 
           <DetailedWeatherInfo
-            selectedDay={selectedDay}
             windUnit={tempUnit === '°C' ? 'km/h' : 'mph'}
             forecastDay={forecast[selectedDay]}
-            currentWeatherData={currentWeatherData}
           />
         </div>
       </CardContent>
@@ -74,88 +62,56 @@ export default function ForecastDetails({
   );
 }
 
-function DetailedWeatherInfo({
-  selectedDay,
-  forecastDay,
-  windUnit,
-  currentWeatherData
-}: {
-  selectedDay: number;
+function DetailedWeatherInfo({ forecastDay, windUnit }: {
+  forecastDay: ForecastDay;
   windUnit: string;
-  forecastDay: ForecastDay & {
-    details?: {
-      humidity?: number;
-      windSpeed?: number;
-      windDirection?: string;
-      pressure?: string;
-      uvIndex?: number;
-      precipitationChance?: number;
-      cloudCover?: number;
-      visibility?: number;
-    };
-  };
-  currentWeatherData?: {
-    humidity: number;
-    wind: { speed: number; direction?: string };
-    pressure: string;
-    uvIndex: number;
-    sunrise: string;
-    sunset: string;
-  };
 }) {
-  // Use forecast day details first, fallback to current weather for today
-  const isToday = selectedDay === 0;
-  const dayDetails = forecastDay?.details;
+  const dayDetails = forecastDay.details;
 
   const weatherMetrics = [
     {
       icon: <Droplets className="w-4 h-4" />,
       label: "Chance of Rain",
-      value: dayDetails?.precipitationChance !== undefined ? `${dayDetails.precipitationChance}%` : "0%"
+      value: dayDetails?.precipitationChance != null ? `${dayDetails.precipitationChance}%` : "Unavailable"
     },
     {
       icon: <Droplets className="w-4 h-4" />,
       label: "Humidity",
-      value: dayDetails?.humidity !== undefined ? `${dayDetails.humidity}%` :
-        (isToday && currentWeatherData?.humidity ? `${currentWeatherData.humidity}%` : "N/A"),
+      value: dayDetails?.humidity != null ? `${dayDetails.humidity}%` : "Unavailable",
       tooltip: "Relative humidity measures the amount of moisture in the air as a percentage of the maximum moisture the air can hold at the current temperature."
     },
     {
       icon: <Wind className="w-4 h-4" />,
       label: "Wind",
-      value: dayDetails?.windSpeed !== undefined ?
+      value: dayDetails?.windSpeed != null ?
         `${dayDetails.windSpeed} ${windUnit} ${dayDetails.windDirection || ''}` :
-        (isToday && currentWeatherData?.wind ?
-          `${Math.round(currentWeatherData.wind.speed)} ${windUnit} ${currentWeatherData.wind.direction || ''}` :
-          "N/A")
+        "Unavailable"
     },
     {
       icon: <Gauge className="w-4 h-4" />,
       label: "Pressure",
-      value: dayDetails?.pressure ||
-        (isToday && currentWeatherData?.pressure ? currentWeatherData.pressure : "N/A"),
+      value: dayDetails?.pressure || "Unavailable",
       tooltip: "Barometric pressure measures the weight of the atmosphere pressing down on Earth's surface. It's measured in inches of mercury (inHg) or hectopascals (hPa)."
     },
     {
       icon: <Eye className="w-4 h-4" />,
       label: "UV Index",
-      value: dayDetails?.uvIndex !== undefined ? dayDetails.uvIndex.toString() :
-        (isToday && currentWeatherData?.uvIndex !== undefined ? currentWeatherData.uvIndex.toString() : "N/A")
+      value: dayDetails?.uvIndex != null ? dayDetails.uvIndex.toString() : "Unavailable"
     }
   ];
 
-  // Show sunrise/sunset for all days (values are similar daily)
-  if (currentWeatherData?.sunrise || currentWeatherData?.sunset) {
+  // Solar events belong to the selected forecast day.
+  if (forecastDay.sunrise || forecastDay.sunset) {
     weatherMetrics.push(
       {
         icon: <Sunrise className="w-4 h-4" />,
         label: "Sunrise",
-        value: currentWeatherData.sunrise || "N/A"
+        value: forecastDay.sunrise || "Unavailable"
       },
       {
         icon: <Sunset className="w-4 h-4" />,
         label: "Sunset",
-        value: currentWeatherData.sunset || "N/A"
+        value: forecastDay.sunset || "Unavailable"
       }
     );
   }

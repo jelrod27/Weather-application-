@@ -9,6 +9,7 @@
 
 import React from "react"
 import Link from 'next/link'
+import { getTodayForecast } from '@/lib/weather/daily-forecast'
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -73,6 +74,8 @@ export function WeatherDisplay({
 }: WeatherDisplayProps) {
   const themeClasses = themeTokens.weather
 
+  const todayForecast = getTodayForecast(weather)
+
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
   const humiditySeverity = getHumiditySeverity(weather?.humidity ?? 0)
@@ -81,7 +84,7 @@ export function WeatherDisplay({
   const windUnit = weather?.unit === '°C' ? 'km/h' : 'mph'
   const windSeverity = getWindSeverity(windSpeed, windUnit)
   const windDeg = windDirectionToDegrees(weather?.wind?.direction || '')
-  const visibilityMi = weather?.forecast?.[0]?.details?.visibility ?? 10
+  const visibilityMi = todayForecast?.details?.visibility ?? 10
   const visibilitySeverity = getVisibilitySeverity(visibilityMi)
 
   const feelsLike = weather?.hourlyForecast?.[0]?.feelsLike != null
@@ -103,14 +106,14 @@ export function WeatherDisplay({
         unit={weather.unit}
         condition={weather.condition}
         description={weather.description}
-        highTemp={weather.forecast?.[0]?.highTemp}
-        lowTemp={weather.forecast?.[0]?.lowTemp}
+        highTemp={todayForecast?.highTemp}
+        lowTemp={todayForecast?.lowTemp}
         feelsLike={feelsLike}
         feelsLikeDelta={feelsLikeDelta}
         humidity={weather.humidity}
         windSpeed={weather.wind?.speed}
         windUnit={weather.unit === '°C' ? 'km/h' : 'mph'}
-        precipChance={weather.forecast?.[0]?.details?.precipitationChance}
+        precipChance={todayForecast?.details?.precipitationChance}
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
@@ -153,14 +156,6 @@ export function WeatherDisplay({
         }))}
         theme={(theme || 'nord') as ThemeType}
         selectedDay={selectedDay}
-        currentWeatherData={{
-          humidity: weather?.humidity || 0,
-          wind: weather?.wind || { speed: 0, direction: '', gust: null },
-          pressure: weather?.pressure || '1013',
-          uvIndex: weather?.uvIndex || 0,
-          sunrise: weather?.sunrise || 'N/A',
-          sunset: weather?.sunset || 'N/A'
-        }}
       />
 
       {/* 4. Two-column layout: Radar (left) / AQI + Moon Phase stacked (right) */}
@@ -465,8 +460,8 @@ export function WeatherDisplay({
           </CardHeader>
           <CardContent className="text-center pt-2 px-4 pb-4">
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
-              {weather?.forecast?.[0]?.details?.visibility != null
-                ? `${weather.forecast[0].details.visibility}`
+              {todayForecast?.details?.visibility != null
+                ? `${todayForecast.details.visibility}`
                 : 'N/A'}
               <span className="text-lg ml-1">mi</span>
             </p>

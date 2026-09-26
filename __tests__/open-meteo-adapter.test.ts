@@ -508,5 +508,37 @@ it.each([
 ] as const)('uses selected pressure units for %s in %s', async (country, units, expected) => {
   const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'Test', units, country);
   expect(result.pressure).toBe(expected);
-  expect(result.forecast[0].details?.pressure).toBe(expected);
+  expect(result.forecast[0].details?.pressure).toBeUndefined();
+});
+
+it('does not substitute observations or zeroes for unavailable daily metrics', async () => {
+  const response = makeForecastResponse();
+  response.daily.precipitation_probability_max = [];
+  response.daily.wind_speed_10m_max = [];
+  response.daily.uv_index_max = [];
+  stubClientApiFetches(response);
+  const result = await buildWeatherDataFromOpenMeteo(40, -74, 'Test', 'imperial', 'US');
+  expect(result.forecast[1].details).toMatchObject({
+    humidity: undefined, cloudCover: undefined, pressure: undefined,
+    precipitationChance: undefined, windSpeed: undefined, uvIndex: undefined,
+  });
+});
+
+it('returns only supplied complete daily forecasts and preserves real zeroes', async () => {
+  const response = makeForecastResponse();
+  response.daily.time = ['2025-03-25', '2025-03-26'];
+  response.daily.temperature_2m_max = [0];
+  response.daily.temperature_2m_min = [-5];
+  response.daily.precipitation_probability_max = [0];
+  stubClientApiFetches(response);
+  const result = await buildWeatherDataFromOpenMeteo(40, -74, 'Test', 'metric', 'US');
+  expect(result.forecast).toHaveLength(1);
+  expect(result.forecast[0].highTemp).toBe(0);
+  expect(result.forecast[0].details?.precipitationChance).toBe(0);
+});
+
+it('preserves each daily sunrise and sunset rather than repeating today', async () => {
+  const result = await buildWeatherDataFromOpenMeteo(40, -74, 'Test', 'imperial', 'US');
+  expect(result.forecast[1].sunrise).toBe('6:50 am');
+  expect(result.forecast[1].sunset).toBe('7:16 pm');
 });

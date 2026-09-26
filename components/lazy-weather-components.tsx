@@ -59,14 +59,6 @@ export function LazyForecastDetails(props: {
   tempUnit?: string;
   selectedDay: number | null;
   theme?: ThemeType;
-  currentWeatherData?: {
-    humidity: number;
-    wind: { speed: number; direction?: string };
-    pressure: string;
-    uvIndex: number;
-    sunrise: string;
-    sunset: string;
-  };
 }) {
   return (
     <ErrorBoundary componentName="Forecast Details">

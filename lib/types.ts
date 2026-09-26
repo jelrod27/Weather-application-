@@ -14,6 +14,9 @@
 
 export interface ForecastDay {
   day: string;
+  date?: string;
+  sunrise?: string;
+  sunset?: string;
   highTemp: number;
   lowTemp: number;
   condition: string;
@@ -58,6 +61,7 @@ export interface EnhancedHourlyForecast {
 }
 
 export interface WeatherData {
+  currentDate?: string;
   location: string;
   country: string;
   temperature: number;
@@ -85,6 +89,9 @@ export interface WeatherData {
   };
   forecast: Array<{
     day: string;
+    date?: string;
+    sunrise?: string;
+    sunset?: string;
     highTemp: number;
     lowTemp: number;
     condition: string;
