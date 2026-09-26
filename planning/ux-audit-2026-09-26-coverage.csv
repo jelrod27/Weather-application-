@@ -1,0 +1,49 @@
+checked_date,page_template,representative_example,browser_coverage,observed_outcome
+2026-09-26,/,Home; London example,"Search, metric explanations, daily expansion, summary, share, connected navigation",Improved; legacy Moon-card approximation remains
+2026-09-26,/about,All three disclosures,Disclosure expansion and module destinations,Removed-product copy improved
+2026-09-26,/alerts,Guest entry,"Pin/subscription copy, blank form disabled state, recovery links",No subscription sent; explicit confirmed-pin separation
+2026-09-26,/alerts/manage,No token,Rendered guard and recovery,Expected guarded state; valid-token changes not exercised
+2026-09-26,/alerts/verify,No token,Rendered guard and recovery,Expected guarded state; email confirmation not exercised
+2026-09-26,/auth,Guest sign-in entry,Rendered entry methods and save-prompt path,No authentication submission
+2026-09-26,/auth/login,Alias,Redirect and rendered entry,Works as entry; no login completed
+2026-09-26,/auth/reset-password,No email submission,Rendered recovery form,Delivery not exercised
+2026-09-26,/auth/result,Direct anonymous visit,Success wording and redirect,Still claims success without demonstrated login
+2026-09-26,/auth/signup,Sign-up state,Rendered fields and heading,Still says SIGN IN
+2026-09-26,/auth/update-password,No valid reset session,Rendered guard/recovery,No credential change
+2026-09-26,/aviation,SFO/DEN brief; KSFO/KDEN turbulence route,"Brief, detail console, ICAO search, degraded provider state, weather-only recovery",Route resolution fixed; no aircraft available to select
+2026-09-26,/blog,Featured entry; categories and pages,"Category, pagination, featured/article/tag discovery",Works; unfinished featured title and hydration warning
+2026-09-26,/blog/[slug],urban-climate-2026-09-23,Rendered representative article and tag discovery,Available; no complete scientific fact-check
+2026-09-26,/cloud-types,Classification/altitude filters; Mammatus,"Filter results, Enter expansion, guide links, mobile",Taxonomy/keyboard repair pass; no visual identification sequence
+2026-09-26,/dashboard,Guest and existing signed-in session,"Saved card load, one retry each for two failures, Add/Cancel, preferences read-only",Two of four forecasts unavailable; empty-loading flash remains
+2026-09-26,/earth-sciences,Current global earthquakes,"Time/magnitude sort, M2.5/M4.5/M6 filters, list/source destinations",Controls work; remains a global reference
+2026-09-26,/education,Hub and altitude quiz,"Wrong answer, retry, all four correct, completion, reset, mobile links",Quiz works; new lesson route absent from hub navigation
+2026-09-26,/education/cloud-types/[slug],Cumulus,Rendered guide and sources,Available; not every guide fact re-audited
+2026-09-26,/education/glossary,Metric definitions and anchors,"Anchor navigation, reading explanations",Works; primarily generic definitions
+2026-09-26,/education/phenomena/[slug],Ball Lightning,Rendered uncertainty and sources,Improved sourcing and claim qualification
+2026-09-26,/education/weather-skills,"Cloud, storm and radar lessons",All three steps per lesson; live radar return,Pass; hub discovery gap
+2026-09-26,/education/weather-systems/[slug],Cold Fronts,Rendered guide and sources,Available; visual lesson is separate
+2026-09-26,/fun-facts,Ball Lightning,Expanded uncertainty and source/guide discovery,Unsupported certainty reduced
+2026-09-26,/gfs-model/[region]/[run],us/18z,Rendered failure and official fallback,Model remains unavailable; image endpoint 403
+2026-09-26,/hourly,Fresh and retained entry; London,"Location recovery, Today/Tomorrow, 1/2 hours, comparisons, explanation, reading selection, radar/return",Pass; start-boundary explanation and narrow navigation polish noted
+2026-09-26,/map,Default route,Rendered map/redirect entry,Available; main radar interactions tested separately
+2026-09-26,/news,All categories; nonsense query,"Category/search, settled empty state, Clear recovery, destinations inspected",Functional; editorial normalization still useful
+2026-09-26,/profile,Guest and existing signed-in session,"Guest redirect, profile view, Edit/Cancel",No saved changes; broader accessibility deferred
+2026-09-26,/radar,London/Westminster; Pecos warning,"Playback, speed, presets, layers, opacity, mobile drawer, lessons, returning, polygon and missing geometry",Improved; newest frame still lacks elapsed age
+2026-09-26,/radar-diagnostic,Diagnostic,Rendered metadata and verification text,Stale NEXRAD instructions; hydration warning
+2026-09-26,/severe,Current national outlook and a Flood Watch,"Day 1/2/3, categorical/tornado/hail/wind, alert-card detail navigation",Controls and detail journey pass
+2026-09-26,/space-weather,All five tabs,"Hemisphere, aurora latitude, image selections, chart ranges, recent bulletins",Consistency improved; deeper timestamp/sample comparison remains
+2026-09-26,/space-weather/aurora-forecast,Guide,"Rendered data, limits and explanation",Available; hemisphere consistency checked on dashboard
+2026-09-26,/space-weather/kp-index,Guide,Rendered data and explanation,Available; no independent forecast validation
+2026-09-26,/space-weather/solar-flares,Guide and live flux,"Rendered science, sources and related navigation",C1 to X1 correction visible; sample vs peak explained
+2026-09-26,/space-weather/solar-wind,Guide,Rendered data and explanation,Available; no independent forecast validation
+2026-09-26,/stargazer,New York selected 10-11 PM; London request,"Location, hour, all equipment choices, five tabs, target guidance, launch expansion, share URLs, mobile",Major improvement; recent launches under Upcoming; one transient London 500
+2026-09-26,/stargazer/objects,Andromeda search; binoculars; nonsense search,"Search/filter, empty state, clear to 151, detail navigation",Improved; reference filters do not claim tonight visibility
+2026-09-26,/stargazer/objects/[id],M31,"Rendered guide, appearance guidance, observing-location entry",Improved beginner guidance; no real-world finding test
+2026-09-26,/travel,SF to LA Tomorrow drive; SFO to DEN live flight,"Unified mode/day, submissions, result limits, national boards, mobile",Improved; CLEAR plus hazard remains
+2026-09-26,/tropical,Atlantic outlook/satellite/SST,"Four image slots, source links and fallback states; settled reload checks",All four load on final checks; early intermittent fallback
+2026-09-26,/warnings,CA state; Flash Flood Warning; empty query,"Filters, no-results recovery, selection, official links, detail/radar/return","Pass; national/local distinction clearer, internal jargon remains"
+2026-09-26,/warnings/[id],CA beach hazards; Pecos flash flood; AZ flood watch,"Full text, official source, polygon radar, no-polygon fallback, return context",Both geometry cases work
+2026-09-26,/weather,City climate directory,Rendered city discovery and route destinations,Available; detailed location samples below
+2026-09-26,/weather-systems,Frontal filter; Cold Fronts,"Filter, disclosure, guide link",Works; no direct new visual-lesson link
+2026-09-26,/weather/[city],"London, New York, City of Westminster","Search/recovery, units, daily unavailable metrics, pressure, midnight weekday, hourly/radar links, guest Save",Core repairs pass; label drift and legacy Moon time recorded
+2026-09-26,/winter,Live Frost Advisory,Rendered alert list and explanation,National alert reference; not a snowfall/commute forecast

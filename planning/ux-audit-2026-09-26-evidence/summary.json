@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-26",
+  "production": "https://www.16bitweather.co",
+  "merge_commit": "9268e34c9ccf2c492a588b5b0b20d2538c73c976",
+  "baseline_urls": 371,
+  "checked_urls": 372,
+  "http_200": 372,
+  "next_404_markers": 0,
+  "page_definitions": 48,
+  "browser_scan_routes": 43,
+  "phone_viewport": [
+    390,
+    844
+  ],
+  "desktop_viewport": [
+    1440,
+    1000
+  ],
+  "browser_timezone": "America/Los_Angeles",
+  "grade_method": "Retrospective expert ratings; not a user study or measured percentage improvement",
+  "weights": [
+    25,
+    20,
+    15,
+    15,
+    10,
+    10,
+    5
+  ],
+  "before_ratings": [
+    5,
+    4,
+    6,
+    6,
+    5,
+    5,
+    6
+  ],
+  "after_ratings": [
+    8,
+    8.5,
+    8,
+    7.5,
+    8.5,
+    6.5,
+    5
+  ],
+  "account_observation": "Two of four saved-location forecasts unavailable, including after one retry each; no private names or coordinates retained; cause unknown",
+  "limits": "See report; no application or persistent account edits; no account/notification deliveries, physical devices, new performance benchmark or full accessibility audit"
+}
