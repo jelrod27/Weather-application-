@@ -22,20 +22,12 @@ import Feature from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 
 import { CARTO_DARK_XYZ_URL } from '@/lib/maps/carto-basemap';
-import { SEVERITY_COLORS, type SeverityLevel } from '@/lib/services/travel-corridor-service';
+import { SEVERITY_COLORS, CORRIDOR_LEVEL_LABEL, formatCorridorSample, type CorridorResult } from '@/lib/services/travel-corridor-service';
 
 const CONUS_CENTER: [number, number] = [-98.5795, 39.8283];
 const CONUS_ZOOM = 4;
 
-interface CorridorData {
-  name: string;
-  score: number;
-  level: SeverityLevel;
-  color: string;
-  hazard: string;
-  path: number[][];
-  segments: Array<{ lat: number; lon: number; score: number; level: SeverityLevel; color: string }>;
-}
+type CorridorData = CorridorResult & { path: number[][] };
 
 interface TravelCorridorMapProps {
   corridors: CorridorData[];
@@ -47,7 +39,7 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
   const mapInstanceRef = useRef<OLMap | null>(null);
   const vectorLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
 
-  const [clickedCorridor, setClickedCorridor] = useState<{ name: string; score: number; level: string; hazard: string; color: string; x: number; y: number } | null>(null);
+  const [clickedCorridor, setClickedCorridor] = useState<{ name: string; score: number; level: string; hazard: string; color: string; detail: string; x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -84,6 +76,7 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
             level: props.corridorLevel,
             hazard: props.corridorHazard,
             color: props.corridorColor,
+            detail: props.corridorDetail,
             x: evt.pixel[0],
             y: evt.pixel[1],
           });
@@ -131,12 +124,13 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
         geometry: new LineString(coords),
         corridorName: corridor.name,
         corridorScore: corridor.score,
-        corridorLevel: corridor.level,
+        corridorLevel: CORRIDOR_LEVEL_LABEL[corridor.level],
         corridorHazard: corridor.hazard,
         corridorColor: corridor.color,
+        corridorDetail: `${corridor.worstPoint ? `Worst sample: ${corridor.worstPoint.score}/100 · ${formatCorridorSample(corridor.worstPoint)} · ` : ''}Coverage: ${corridor.coverage.available} of ${corridor.coverage.total} points${corridor.coverage.available < corridor.coverage.total ? ' · Conditions elsewhere unknown' : ''}`,
       });
 
-      const width = corridor.score >= 75 ? 5 : corridor.score >= 50 ? 4 : corridor.score >= 25 ? 3 : 2;
+      const width = corridor.level === 'red' ? 5 : corridor.level === 'orange' ? 4 : corridor.level === 'yellow' ? 3 : 2;
 
       feature.setStyle(
         new Style({
@@ -185,20 +179,22 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
             </div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: clickedCorridor.color }} />
-              <span className="text-xs font-mono text-muted-foreground uppercase">{clickedCorridor.level} - Score {clickedCorridor.score}</span>
+              <span className="text-xs font-mono text-muted-foreground uppercase">{clickedCorridor.level} · Route average: {clickedCorridor.score < 0 ? 'Unavailable' : `${clickedCorridor.score}/100`}</span>
             </div>
             <p className="text-xs font-mono text-muted-foreground">{clickedCorridor.hazard}</p>
+            <p className="text-xs font-mono text-muted-foreground max-w-xs">{clickedCorridor.detail}</p>
           </div>
         </div>
       )}
 
       {/* Legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-muted-foreground">
-        <span className="text-foreground font-bold">DRIVING CONDITIONS</span>
-        <LegendItem color={SEVERITY_COLORS.green} label="Clear" />
+        <span className="text-foreground font-bold">WORST SAMPLED CONDITIONS</span>
+        <LegendItem color={SEVERITY_COLORS.green} label="Low impact" />
         <LegendItem color={SEVERITY_COLORS.yellow} label="Caution" />
         <LegendItem color={SEVERITY_COLORS.orange} label="Hazardous" />
         <LegendItem color={SEVERITY_COLORS.red} label="Dangerous" />
+        <LegendItem color={SEVERITY_COLORS.unknown} label="Incomplete coverage" />
       </div>
     </div>
   );

@@ -21,22 +21,14 @@ import TripScoreCard from '@/components/travel/TripScoreCard';
 import { AirportMiseryBoard } from '@/components/aviation';
 import { ShareButtons } from '@/components/share-buttons';
 import type { TripDay, TripInputs, TripMode, TripScoreResponse } from '@/components/travel/trip-types';
-import type { SeverityLevel } from '@/lib/services/travel-corridor-service';
+import type { CorridorResult } from '@/lib/services/travel-corridor-service';
 
 const TravelCorridorMap = dynamic(() => import('@/components/travel/TravelCorridorMap'), {
   ssr: false,
   loading: () => <MapSkeleton height="h-[500px]" />,
 });
 
-interface CorridorData {
-  name: string;
-  score: number;
-  level: SeverityLevel;
-  color: string;
-  hazard: string;
-  path: number[][];
-  segments: Array<{ lat: number; lon: number; score: number; level: SeverityLevel; color: string }>;
-}
+type CorridorData = CorridorResult & { path: number[][] };
 
 interface CorridorsResponse {
   corridors: CorridorData[];
@@ -265,9 +257,10 @@ function DriveContent({ day }: { day: TripDay }): React.JSX.Element {
         )}
       </div>
 
-      {!error && (
+      {!error && (<>
+        {currentData && <p className="text-xs font-mono text-muted-foreground">{day === 0 ? 'Current conditions at sampled points.' : 'Midday forecast samples for the selected day; not a departure-time prediction.'} {currentData.corridors.filter(c => c.coverage.available < c.coverage.total).length} corridors have incomplete coverage. Route averages use available points only. Fetched <time dateTime={currentData.fetchedAt}>{new Date(currentData.fetchedAt).toLocaleString()}</time>.</p>}
         <WorstCorridors corridors={currentData?.worstCorridors ?? []} isLoading={loadingCurrentDay} />
-      )}
+      </>)}
 
       <DailyOutlookImages day={day} />
 

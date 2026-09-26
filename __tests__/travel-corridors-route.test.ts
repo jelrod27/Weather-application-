@@ -22,6 +22,8 @@ jest.mock('next/server', () => ({
   },
 }));
 
+jest.mock('@/lib/services/travel-corridor-service', () => ({ ...jest.requireActual('@/lib/services/travel-corridor-service'), fetchWeatherForWaypoints: jest.fn() }));
+import { fetchWeatherForWaypoints } from '@/lib/services/travel-corridor-service';
 import { GET } from '@/app/api/travel/corridors/route';
 import { NextRequest } from 'next/server';
 
@@ -36,4 +38,14 @@ describe('Travel Corridors API Route', () => {
     const res = await GET(req);
     expect(res.status).toBe(400);
   });
+});
+
+
+it('returns unknown coverage instead of clear conditions for missing corridor samples', async () => {
+  jest.mocked(fetchWeatherForWaypoints).mockResolvedValue([]);
+  const response = await GET(new NextRequest('http://localhost/api/travel/corridors?day=0'));
+  const body = await response.json();
+  expect(body.corridors.length).toBeGreaterThan(0);
+  expect(body.corridors[0]).toMatchObject({ score: -1, level: 'unknown', hazard: 'Data unavailable', worstPoint: null, coverage: { available: 0 } });
+  expect(body.worstCorridors).toHaveLength(5);
 });

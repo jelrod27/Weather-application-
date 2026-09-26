@@ -61,7 +61,7 @@ beforeEach(() => {
     if (url.pathname === '/api/travel/trip-score') return tripFetch(url, init);
     const day = Number(url.searchParams.get('day'));
     return response({
-      corridors: [{ name: `Corridors day ${day}` }], worstCorridors: [],
+      corridors: [{ name: `Corridors day ${day}`, coverage: { available: 1, total: 1 } }], worstCorridors: [],
       forecastDay: day, fetchedAt: '2026-09-26T12:00:00Z',
     });
   });
