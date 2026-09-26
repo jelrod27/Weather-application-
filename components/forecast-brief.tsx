@@ -45,6 +45,7 @@ export function ForecastBrief({ weather, hourlyHref }: ForecastBriefProps): Reac
         <p className="max-w-md text-sm leading-relaxed text-muted-foreground">Compare the hours before you head out. Precipitation probabilities describe a chance of rain or snow, not a guarantee.</p>
       </> : <p className="my-5 max-w-md text-sm text-muted-foreground">{now === null ? 'Preparing your local outlook…' : 'A recent hourly outlook is unavailable. Check the detailed forecast for available periods.'}</p>}
       <Link href={hourlyHref} className="mt-5 inline-flex min-h-11 w-fit items-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">Plan the next few hours <ArrowRight size={16} aria-hidden="true" /></Link>
+      <Link href={`${hourlyHref}#outdoor-planner`} className="mt-2 inline-flex min-h-11 w-fit items-center rounded text-sm font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">Compare outdoor windows</Link>
     </section>
   )
 }

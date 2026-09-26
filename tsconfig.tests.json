@@ -24,7 +24,10 @@
     "__tests__/radar-controls.test.tsx",
     "__tests__/radar-shell-status.test.tsx",
     "__tests__/travel-controls.test.tsx",
-    "__tests__/travel-corridor-map.test.tsx"
+    "__tests__/travel-corridor-map.test.tsx",
+    "__tests__/outdoor-windows.test.ts",
+    "__tests__/outdoor-planner.test.tsx",
+    "tests/e2e/outdoor-planning.spec.ts"
   ],
   "exclude": [
     "node_modules",

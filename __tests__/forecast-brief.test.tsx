@@ -38,6 +38,7 @@ describe('local briefing display', () => {
     expect(screen.getByText('km/h')).toBeInTheDocument()
     expect(screen.getByText(/8:00 AM.*9:00 AM/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Plan the next few hours/ })).toHaveAttribute('href', '/hourly?city=Tokyo')
+    expect(screen.getByRole('link', { name: 'Compare outdoor windows' })).toHaveAttribute('href', '/hourly?city=Tokyo#outdoor-planner')
   })
   it('does not present yesterday’s cached hourly data as current', () => {
     render(<ForecastBrief weather={{ location: 'London', unit: '°C', hourlyForecast: [hour(-24)] }} hourlyHref="/hourly?city=London" />)

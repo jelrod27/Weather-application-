@@ -5,7 +5,8 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { WeatherJourney } from "@/components/weather-journey"
-import { formatLocationTimeWithZone } from "@/lib/format-location-time"
+import { OutdoorPlanner } from "@/components/outdoor-planner"
+import { formatLocationTime } from "@/lib/format-location-time"
 import { useTheme } from "@/components/theme-provider"
 import { useLocationContext } from "@/components/location-context"
 import WeatherSearch from "@/components/weather-search"
@@ -113,15 +114,16 @@ export default function HourlyClient(): React.JSX.Element {
         <>
           <p className="text-lg font-semibold tracking-tight">{weather.location}</p>
           <WeatherJourney weather={weather} active="hourly" />
+          <OutdoorPlanner weather={weather} onSelectHour={setSelectedHour} />
           <HourlyForecast hourly={weather.hourlyForecast} theme={theme} tempUnit={weather.unit} timezone={weather.timezone} maxHours={48} selectedHour={hourDetail?.dt} onSelectHour={setSelectedHour} />
-          {hourDetail && <section aria-label="Selected hour details" className="rounded-xl border border-border bg-card p-5">
-            <h2 className="text-xl font-semibold tracking-tight">{formatLocationTimeWithZone(hourDetail.dt * 1000, weather.timezone || 'UTC')} · {hourDetail.condition}</h2>
+          {hourDetail && <section id="selected-hour-details" tabIndex={-1} aria-label="Selected hour details" className="scroll-mt-24 rounded-xl border border-border bg-card p-5 focus-visible:outline-2 focus-visible:outline-ring">
+            <h2 className="text-xl font-semibold tracking-tight">{formatLocationTime(hourDetail.dt * 1000, weather.timezone || 'UTC', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })} · {hourDetail.condition}</h2>
             <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-4">
               {hourDetail.temp !== null && Number.isFinite(hourDetail.temp) && <div><dt className="text-xs text-muted-foreground">Temperature</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.temp)}{weather.unit}</dd></div>}
               {Number.isFinite(hourDetail.precipChance) && <div><dt className="text-xs text-muted-foreground">Precipitation chance</dt><dd className="text-xl tabular-nums">{hourDetail.precipChance}%</dd></div>}
               {hourDetail.windSpeed != null && Number.isFinite(hourDetail.windSpeed) && <div><dt className="text-xs text-muted-foreground">Wind</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.windSpeed)} {weather.unit === '°C' ? 'km/h' : 'mph'}</dd></div>}
             </dl>
-            <p className="mt-4 text-sm text-muted-foreground">Precipitation probability is a chance of rain or snow, not a guarantee.</p>
+            <p className="mt-4 text-sm text-muted-foreground">Precipitation probability covers the hour ending at this time. It is a chance of rain or snow, not a guarantee.</p>
           </section>}
           <p className="font-mono text-sm text-muted-foreground">Scroll horizontally to explore available hours. Times use the forecast location’s time zone.</p>
         </>
