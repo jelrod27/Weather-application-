@@ -22,6 +22,14 @@ export interface StargazerScore {
   subScores: StargazerSubScores;
 }
 
+export interface UnavailableStargazerScore {
+  overall: null;
+  label: 'Unavailable';
+  color: string;
+  summary: string;
+  subScores: null;
+}
+
 export type ScoreLabel = 'Exceptional' | 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Bad';
 
 // ============================================================================
@@ -267,9 +275,9 @@ export interface LimitingFactor {
 // ============================================================================
 
 export interface StargazerData {
-  score: StargazerScore;
+  score: StargazerScore | UnavailableStargazerScore;
   bestWindow: BestWindow | null;
-  nightAverage: number;
+  nightAverage: number | null;
   limitingFactor: LimitingFactor | null;
   darkWindow: DarkWindow;
   hourlyConditions: HourlyCondition[];

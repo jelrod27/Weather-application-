@@ -217,6 +217,8 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       darkHourIndices.push(i);
     }
 
+    if (darkWindow.status === 'none') continue;
+
     const result = scoreHour(
       h.cloudCover,
       moonIllumPct,
@@ -267,7 +269,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     };
     headlineScore = bestWindowResult.score;
   } else {
-    const fallback = hourlyConditions.length > 0
+    const fallback = darkWindow.status !== 'none' && hourlyConditions.length > 0
       ? hourlyConditions.map((h) => h.hourlySubScores!)
       : null;
     if (fallback && fallback.length > 0) {
@@ -286,7 +288,7 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       : 50;
   }
 
-  const nightAverage = darkHourScores.length > 0
+  const nightAverage = darkWindow.status === 'none' ? null : darkHourScores.length > 0
     ? Math.round(darkHourScores.reduce((s, v) => s + v, 0) / darkHourScores.length)
     : headlineScore;
 
@@ -296,14 +298,23 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       ? hourlyConditions.reduce((s, h) => s + h.cloudCover, 0) / hourlyConditions.length
       : 50;
 
-  const score = calculateStargazerScore(headlineSubScores, moonIllumPct, avgCloudCover);
-  if (darkWindow.status === 'none') score.summary = 'No astronomical darkness at this location tonight.';
-  score.overall = headlineScore;
-  score.label = getScoreLabel(headlineScore);
-  score.color = getScoreColor(score.label);
+  const score: StargazerData['score'] = darkWindow.status === 'none'
+    ? {
+        overall: null,
+        label: 'Unavailable',
+        color: '#9ca3af',
+        summary: 'No astronomical darkness at this location tonight.',
+        subScores: null,
+      }
+    : {
+        ...calculateStargazerScore(headlineSubScores, moonIllumPct, avgCloudCover),
+        overall: headlineScore,
+        label: getScoreLabel(headlineScore),
+        color: getScoreColor(getScoreLabel(headlineScore)),
+      };
 
   let limitingFactor: LimitingFactor | null = null;
-  if (headlineScore < 85) {
+  if (darkWindow.status !== 'none' && headlineScore < 85) {
     const { category, score: limitScore } = findLimitingFactor(headlineSubScores);
     const label = getSubScoreLabel(category, limitScore);
 
@@ -389,6 +400,6 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
       bortle: bortleEstimate.bortle,
       bortleLabel: bortleEstimate.label,
     },
-    generatedAt: new Date().toISOString(),
+    generatedAt: now.toISOString(),
   };
 }

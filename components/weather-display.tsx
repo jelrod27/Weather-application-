@@ -84,8 +84,10 @@ export function WeatherDisplay({
   const windUnit = weather?.unit === '°C' ? 'km/h' : 'mph'
   const windSeverity = getWindSeverity(windSpeed, windUnit)
   const windDeg = windDirectionToDegrees(weather?.wind?.direction || '')
-  const visibilityMi = todayForecast?.details?.visibility ?? 10
-  const visibilitySeverity = getVisibilitySeverity(visibilityMi)
+  const visibilityMi = todayForecast?.details?.visibility
+  const visibilitySeverity = visibilityMi != null && Number.isFinite(visibilityMi)
+    ? getVisibilitySeverity(visibilityMi)
+    : null
 
   const feelsLike = weather?.hourlyForecast?.[0]?.feelsLike != null
     ? Math.round(weather.hourlyForecast[0].feelsLike)
@@ -461,17 +463,17 @@ export function WeatherDisplay({
           </CardHeader>
           <CardContent className="text-center pt-2 px-4 pb-4">
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
-              {todayForecast?.details?.visibility != null
-                ? `${todayForecast.details.visibility}`
+              {visibilitySeverity
+                ? `${visibilityMi}`
                 : 'N/A'}
               <span className="text-lg ml-1">mi</span>
             </p>
             <Badge
               variant="outline"
               className="mt-2 border-0"
-              style={{ color: visibilitySeverity.textColor, backgroundColor: `${visibilitySeverity.bgColor}20` }}
+              style={visibilitySeverity ? { color: visibilitySeverity.textColor, backgroundColor: `${visibilitySeverity.bgColor}20` } : undefined}
             >
-              {visibilitySeverity.label}
+              {visibilitySeverity?.label ?? 'Unavailable'}
             </Badge>
           </CardContent>
         </Card>

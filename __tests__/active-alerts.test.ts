@@ -26,6 +26,16 @@ it('handles cancellation and future effective time', () => {
 it('reports unverifiable validity instead of implying an all-clear', () => {
   expect(() => selectActiveAlerts([alert({ expires: 'invalid' })], now)).toThrow('validity')
 })
+it.each(['sent', 'effective'] as const)('rejects a malformed %s before choosing revisions', (field) => {
+  const cancel = alert({ id: 'cancel', messageType: 'Cancel', [field]: 'invalid' })
+  expect(() => selectActiveAlerts([alert(), cancel], now)).toThrow('validity')
+  expect(() => selectActiveAlerts([cancel, alert()], now)).toThrow('validity')
+  expect(() => selectActiveAlerts([alert({ [field]: 'invalid' })], now)).toThrow('validity')
+})
+it('continues accepting genuinely missing legacy timestamps', () => {
+  const legacy = alert({ sent: '', effective: '' })
+  expect(selectActiveAlerts([legacy], now)).toEqual([legacy])
+})
 
 it('retains disjoint active segments within one warning event', () => {
   const a = alert({ id: 'north', ugc: ['COC001'] })

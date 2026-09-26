@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw, MapPin, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -49,6 +49,7 @@ function getKpColor(kp: number): string {
 export default function AuroraForecastMap({ data, isLoading = false }: AuroraForecastMapProps) {
   const themeClasses = themeTokens.weather;
   const [hemisphere, setHemisphere] = useState<'north' | 'south'>(data?.hemisphere ?? 'north');
+  const lastDataHemisphere = useRef(data?.hemisphere);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -65,6 +66,14 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
   const currentKpDisplay = viewline ? data?.currentKp : null;
   const viewlineLatitude = viewline?.latitude ?? null;
   const viewlineDescription = viewline?.description ?? 'Kp unavailable';
+
+  // Follow newly loaded locations without undoing manual selection on refresh.
+  useEffect(() => {
+    if (data?.hemisphere && data.hemisphere !== lastDataHemisphere.current) {
+      lastDataHemisphere.current = data.hemisphere;
+      setHemisphere(data.hemisphere);
+    }
+  }, [data?.hemisphere]);
 
   // Reset image state when hemisphere changes
   useEffect(() => {

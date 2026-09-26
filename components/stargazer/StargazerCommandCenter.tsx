@@ -19,7 +19,8 @@ import { useStargazerController } from '@/hooks/useStargazerController';
 // Score color helpers
 // ============================================================================
 
-function scoreColor(score: number): string {
+function scoreColor(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
   if (score >= 80) return 'text-emerald-400';
   if (score >= 60) return 'text-green-400';
   if (score >= 40) return 'text-yellow-400';
@@ -82,7 +83,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-3 mb-1">
             <span className={cn('text-4xl sm:text-5xl font-extrabold font-mono tabular-nums', scoreColor(score.overall))}>
-              {Math.round(score.overall)}
+              {score.overall === null ? '--' : Math.round(score.overall)}
             </span>
             <span className={cn('text-xl font-bold font-mono uppercase', scoreColor(score.overall))}>
               {score.label}
@@ -155,7 +156,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
           <p className="text-xs font-mono text-muted-foreground mb-3">Times in {location.timezone || 'UTC'}</p>
 
           {/* Sub-score mini-bars with visible labels */}
-          <div className="grid grid-cols-5 gap-2 max-w-lg text-xs font-mono">
+          {score.subScores && <div className="grid grid-cols-5 gap-2 max-w-lg text-xs font-mono">
             {Object.entries(score.subScores).map(([key, val]) => {
               const label = getSubScoreLabel(key, val);
               return (
@@ -174,7 +175,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
                 </div>
               );
             })}
-          </div>
+          </div>}
         </div>
       </div>
     </div>
@@ -293,7 +294,7 @@ function TargetsPanel({ data }: { data: StargazerData }) {
 function EventsPanel({ data }: { data: StargazerData }) {
   // Merge meteor shower events with sky events so they appear in the timeline
   const meteorShowerEvents = (data.meteorShowers ?? []).map(s => {
-    const calendarDate = nextCalendarDate(s.peakMonth, s.peakDay, data.location.timezone);
+    const calendarDate = nextCalendarDate(s.peakMonth, s.peakDay, data.location.timezone, new Date(data.generatedAt));
     return {
     date: new Date(`${calendarDate}T00:00:00Z`),
     calendarDate,

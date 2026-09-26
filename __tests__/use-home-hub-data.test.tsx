@@ -52,6 +52,19 @@ describe('useHomeHubData', () => {
     expect(result.current.loading).toBe(false)
   })
 
+  it('preserves an unavailable stargazing score and its explanation', async () => {
+    global.fetch = jest.fn(async (input: RequestInfo | URL) => okJson(
+      String(input).startsWith('/api/stargazer')
+        ? { score: { overall: null, label: 'Unavailable', subScores: null, color: '#9ca3af', summary: 'No astronomical darkness at this location tonight.' } }
+        : { alerts: [], happeningNow: [], pointRisk: null },
+    ))
+    const { result } = renderHook(() => useHomeHubData(PLEASANTON))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.stargazer.score).toBeNull()
+    expect(result.current.stargazer.label).toBe('Unavailable')
+    expect(result.current.stargazer.summary).toMatch(/No astronomical darkness/)
+  })
+
   it('does not leak an unhandled rejection when unmounted while requests are in flight', async () => {
     const unhandled = jest.fn()
     process.on('unhandledRejection', unhandled)

@@ -27,6 +27,13 @@ export function pointConfirmationKeys(alert: NWSAlertDetail): string[] {
 export function selectActiveAlerts(alerts: NWSAlertDetail[], nowMs = Date.now()): NWSAlertDetail[] {
   const latest = new Map<string, NWSAlertDetail>()
   for (const alert of alerts) {
+    // Missing legacy timestamps are allowed; malformed source times are not.
+    // Validate even terminal revisions before they can lose to an older alert.
+    for (const timestamp of [alert.sent, alert.effective]) {
+      if (timestamp?.trim() && !Number.isFinite(Date.parse(timestamp))) {
+        throw new Error('Alert validity is unavailable')
+      }
+    }
     for (const key of segmentKeys(alert)) {
       const prior = latest.get(key)
       const sent = Date.parse(alert.sent) || 0

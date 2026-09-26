@@ -61,7 +61,7 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
   const time: string[] = [];
   for (let d = 0; d < 2; d++) {
     for (let h = 0; h < 24; h++) {
-      const day = d === 0 ? startDay : '2026-06-16';
+      const day = new Date(Date.parse(`${startDay}T00:00:00Z`) + d * 86400000).toISOString().slice(0, 10);
       time.push(`${day}T${String(h).padStart(2, '0')}:00`);
     }
   }
@@ -87,13 +87,13 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
 };
 
 /** Set up fetchWithTimeout to return a nominal Open-Meteo response + failed nominatim. */
-const setupNominalFetches = (utcOffsetSeconds = -18000) => {
+const setupNominalFetches = (utcOffsetSeconds = -18000, startDay = '2026-06-15') => {
   mockFetchWithTimeout.mockImplementation((url: string) => {
     const urlStr = String(url);
     if (urlStr.startsWith('https://api.open-meteo.com/')) {
       return Promise.resolve({
         ok: true,
-        json: async () => makeOpenMeteoBody(utcOffsetSeconds),
+        json: async () => makeOpenMeteoBody(utcOffsetSeconds, startDay),
       } as Response);
     }
     if (urlStr.startsWith('https://nominatim.openstreetmap.org/')) {
@@ -361,12 +361,20 @@ describe('absolute provider timestamps', () => {
 
 it('offers no dark-window observing targets when the sun never reaches astronomical night', async () => {
   jest.useFakeTimers({ now: new Date('2026-06-21T12:00:00Z'), doNotFake: ['queueMicrotask', 'setImmediate'] });
-  setupNominalFetches(7200);
+  setupNominalFetches(7200, '2026-06-21');
   const res = await GET(makeRequest({ lat: '59.33', lon: '18.07' }));
   const body = await res.json();
   expect(body.darkWindow.status).toBe('none');
   expect(body.planets).toEqual([]);
   expect(body.deepSkyHighlights).toEqual([]);
   expect(body.bestWindow).toBeNull();
+  expect(body.score.overall).toBeNull();
+  expect(body.score.label).toBe('Unavailable');
+  expect(body.score.subScores).toBeNull();
+  expect(body.nightAverage).toBeNull();
+  expect(body.limitingFactor).toBeNull();
+  expect(body.hourlyConditions.length).toBeGreaterThan(0);
+  expect(body.hourlyConditions.every((hour: { hourlyScore?: number }) => hour.hourlyScore == null)).toBe(true);
+  expect(body.hourlyConditions.every((hour: { hourlySubScores?: unknown }) => hour.hourlySubScores == null)).toBe(true);
   jest.useRealTimers();
 });
