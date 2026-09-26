@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 import { useStargazerController } from '@/hooks/useStargazerController';
 import type { StargazerData } from '@/lib/stargazer/types';
@@ -130,4 +130,32 @@ it('labels a polar night with real twilight crossings as an observing night', ()
   render(<StargazerCommandCenter />);
   expect(screen.getByText(/Observing night: Dec 21, 2026 – Dec 22, 2026/)).toBeInTheDocument();
   expect(screen.queryByText(/Next 24 hours:/)).not.toBeInTheDocument();
+});
+
+
+it('shares only an approximate area through every platform and the clipboard', async () => {
+  window.history.replaceState(null, '', '/stargazer?at=2026-09-27T02%3A00%3A00Z&equipment=binoculars');
+  const location = { lat: 37.7749295, lon: -122.4194155, displayName: 'Private observing spot', timezone: 'America/Los_Angeles' };
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+  setData({ ...data, location });
+  render(<StargazerCommandCenter />);
+  expect(screen.getByText('Observing place: Private observing spot')).toBeInTheDocument();
+  for (const name of ['X', 'Facebook', 'LinkedIn']) {
+    const platform = new URL(screen.getByRole('link', { name: `Share on ${name}` }).getAttribute('href')!);
+    const shared = new URL(platform.searchParams.get(name === 'Facebook' ? 'u' : 'url')!);
+    expect(shared.searchParams.get('lat')).toBe('37.8');
+    expect(shared.searchParams.get('lon')).toBe('-122.4');
+    expect(shared.searchParams.has('q')).toBe(false);
+    expect(shared.searchParams.get('at')).toBe('2026-09-27T02:00:00.000Z');
+    expect(shared.searchParams.get('equipment')).toBe('binoculars');
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+  const copied = new URL(writeText.mock.calls[0][0].split('\n')[1]);
+  expect(copied.searchParams.get('lat')).toBe('37.8');
+  expect(copied.searchParams.get('lon')).toBe('-122.4');
+  expect(copied.searchParams.has('q')).toBe(false);
+  expect(screen.getByText(/Shared links use an approximate area/)).toBeInTheDocument();
+  expect(location.lat).toBe(37.7749295);
 });

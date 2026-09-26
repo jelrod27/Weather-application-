@@ -120,3 +120,34 @@ test('asks direct object-guide visitors to choose a city', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Choose an observing location' })).toBeVisible();
   await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: /How to find/ }) }).getByText(/New York/)).toHaveCount(0);
 });
+
+
+test('shares an approximate observing area without changing the local plan', async ({ page }) => {
+  await page.getByRole('radio', { name: 'Binoculars', exact: true }).check();
+  await page.getByLabel('Observing hour', { exact: true }).selectOption(String(now + 7200000));
+  const shareLink = page.getByRole('link', { name: 'Share on X', exact: true });
+  // Wait for the selected hour's URL transition to reach the rendered share link.
+  await expect.poll(async () => {
+    const platform = new URL((await shareLink.getAttribute('href'))!);
+    return new URL(platform.searchParams.get('url')!).searchParams.get('at');
+  }).toBe('2026-09-27T02:00:00.000Z');
+  const platform = new URL((await shareLink.getAttribute('href'))!);
+  const shared = new URL(platform.searchParams.get('url')!);
+  expect(shared.searchParams.get('lat')).toBe('40.7');
+  expect(shared.searchParams.get('lon')).toBe('-74');
+  expect(shared.searchParams.has('q')).toBe(false);
+  expect(shared.searchParams.get('equipment')).toBe('binoculars');
+  expect(shared.searchParams.get('at')).toBe('2026-09-27T02:00:00.000Z');
+  await expect(page.getByText(/Shared links use an approximate area/)).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('lat')).toBe('40.7128');
+  await page.route('**/api/stargazer?**', route => {
+    const request = new URL(route.request().url());
+    const data = beginnerStargazerFixture();
+    data.location = { ...data.location, lat: Number(request.searchParams.get('lat')), lon: Number(request.searchParams.get('lon')) };
+    return route.fulfill({ json: data });
+  });
+  await page.goto(shared.pathname + shared.search);
+  await expect(page.getByRole('radio', { name: 'Binoculars', exact: true })).toBeChecked();
+  await expect(page.getByLabel('Observing hour', { exact: true })).toHaveValue(String(now + 7200000));
+  expect(new URL(page.url()).searchParams.get('lat')).toBe('40.7');
+});

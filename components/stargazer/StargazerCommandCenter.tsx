@@ -7,7 +7,7 @@ import SkyLessons from '@/components/stargazer/SkyLessons';
 import BeginnerPanel from '@/components/stargazer/BeginnerPanel';
 import { formatDate, nextCalendarDate } from '@/lib/stargazer/format';
 import { ShareButtons } from '@/components/share-buttons';
-import { formatObservingTime, getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
+import { formatObservingTime, getStargazerHref, getStargazerShareHref, readStargazerContext } from '@/lib/stargazer/context';
 import type { StargazerContext } from '@/lib/stargazer/context';
 import { cn } from '@/lib/utils';
 import type { StargazerData } from '@/lib/stargazer/types';
@@ -422,7 +422,9 @@ export default function StargazerCommandCenter() {
               ? `Next 24 hours: ${formatDate(new Date(data.generatedAt), data.location.timezone, true)} – ${formatDate(new Date(Date.parse(data.generatedAt) + 86400000), data.location.timezone, true)}`
               : `Observing night: ${formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – ${formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)}`} · {data.location.timezone || 'Time zone unavailable (UTC labels)'}</p>
             <ForecastFreshness retrievedAt={data.weatherRetrievedAt} receivedAt={receivedAt} now={now} timeZone={data.location.timezone} />
-            <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerHref(context)}` }} />
+            <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerShareHref(context)}` }} />
+
+            <p className="text-sm text-muted-foreground">Shared links use an approximate area. Your place name is omitted; conditions may differ.</p>
 
             {/* Tab Navigation */}
             <StargazerNav activeTab={activeTab} onTabChange={handleTabChange} />

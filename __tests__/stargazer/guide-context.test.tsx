@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import TonightVisibility from '@/components/stargazer/TonightVisibility';
-import { formatObservingTime, getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
+import { formatObservingTime, getStargazerHref, getStargazerShareHref, readStargazerContext } from '@/lib/stargazer/context';
 
 jest.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(window.location.search) }));
 
@@ -32,4 +32,21 @@ it('distinguishes repeated clock hours with their UTC offsets', () => {
 it('rejects impossible dates and preserves a real leap day', () => {
   expect(readStargazerContext(new URLSearchParams('at=2026-02-30T10:00:00Z')).at).toBeNull();
   expect(readStargazerContext(new URLSearchParams('at=2028-02-29T10:00:00Z')).at).toBe(Date.parse('2028-02-29T10:00:00Z'));
+});
+
+
+it.each([
+  [-33.8688197, 151.2092955, '-33.9', '151.2'],
+  [-0.00001, 0.00001, '0', '0'],
+  [89.99999, -179.99999, '90', '-180'],
+])('rounds public shares while preserving local context at %s, %s', (lat, lon, sharedLat, sharedLon) => {
+  const context = readStargazerContext(new URLSearchParams(`lat=${lat}&lon=${lon}&q=Private+spot`));
+  const shared = new URL(getStargazerShareHref(context), 'https://example.test');
+  expect(shared.searchParams.get('lat')).toBe(sharedLat);
+  expect(shared.searchParams.get('lon')).toBe(sharedLon);
+  expect(shared.searchParams.has('q')).toBe(false);
+  const local = new URL(getStargazerHref(context, { objectId: 'M31' }), 'https://example.test');
+  expect(local.searchParams.get('lat')).toBe(String(lat));
+  expect(local.searchParams.get('lon')).toBe(String(lon));
+  expect(local.searchParams.get('q')).toBe('Private spot');
 });
