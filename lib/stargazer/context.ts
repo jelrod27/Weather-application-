@@ -7,6 +7,7 @@ export interface StargazerContext {
   invalidCoordinates: boolean;
   label: string;
   at: number | null;
+  invalidTime?: boolean;
   equipment: StargazerEquipment;
   timeZone?: string;
   from: 'start' | 'targets';
@@ -39,6 +40,7 @@ export function readStargazerContext(params: Pick<URLSearchParams, 'get'>): Star
     coordinates, invalidCoordinates: (lat !== null || lon !== null) && !coordinates,
     label: (params.get('q') ?? '').trim().slice(0, 200),
     at: Number.isFinite(instant) && new Date(instant).toISOString() === canonicalTime ? instant : null,
+    invalidTime: rawTime !== null && !(Number.isFinite(instant) && new Date(instant).toISOString() === canonicalTime),
     equipment: equipment === 'binoculars' || equipment === 'telescope' ? equipment : 'eyes',
     timeZone: isStargazerTimeZone(zone) ? zone : undefined,
     from: params.get('from') === 'targets' ? 'targets' : 'start',

@@ -9,10 +9,10 @@ import type { StargazerContext, StargazerCoordinates } from '@/lib/stargazer/con
 import type { StargazerData } from '@/lib/stargazer/types';
 import type { StargazerTabId } from '@/components/stargazer/StargazerNav';
 
-const VALID_TABS: StargazerTabId[] = ['conditions', 'targets', 'events', 'launches'];
+const VALID_TABS: StargazerTabId[] = ['start', 'conditions', 'targets', 'events', 'launches'];
 function getTabFromHash(): StargazerTabId {
   const hash = window.location.hash.slice(1) as StargazerTabId;
-  return VALID_TABS.includes(hash) ? hash : 'conditions';
+  return VALID_TABS.includes(hash) ? hash : 'start';
 }
 
 async function geocodeLabel(label: string, signal: AbortSignal): Promise<StargazerCoordinates | null> {
@@ -26,6 +26,8 @@ async function geocodeLabel(label: string, signal: AbortSignal): Promise<Stargaz
 export interface UseStargazerControllerResult {
   data: StargazerData | null;
   receivedAt: number | null;
+  invalidSharedTime: boolean;
+  acknowledgeSharedTime: () => void;
   isLoading: boolean;
   error: string | null;
   activeTab: StargazerTabId;
@@ -47,11 +49,13 @@ export function useStargazerController(): UseStargazerControllerResult {
   const storedLabel = locationInput || currentLocation;
   const [data, setData] = useState<StargazerData | null>(null);
   const [receivedAt, setReceivedAt] = useState<number | null>(null);
+  const [invalidSharedTime, setInvalidSharedTime] = useState(false);
+  const acknowledgeSharedTime = useCallback(() => setInvalidSharedTime(false), []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(query);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<StargazerTabId>('conditions');
+  const [activeTab, setActiveTab] = useState<StargazerTabId>('start');
   const intent = useRef(0);
   const pending = useRef<AbortController | null>(null);
   const loadedKey = useRef('');
@@ -61,7 +65,8 @@ export function useStargazerController(): UseStargazerControllerResult {
     const update = () => setActiveTab(getTabFromHash());
     update();
     window.addEventListener('hashchange', update);
-    return () => { window.removeEventListener('hashchange', update); loadedKey.current = ''; intent.current += 1; pending.current?.abort(); };
+    window.addEventListener('popstate', update);
+    return () => { window.removeEventListener('hashchange', update); window.removeEventListener('popstate', update); loadedKey.current = ''; intent.current += 1; pending.current?.abort(); };
   }, []);
 
   const load = useCallback(async (context: StargazerContext, history: 'push' | 'replace' = 'replace', device = false) => {
@@ -73,6 +78,7 @@ export function useStargazerController(): UseStargazerControllerResult {
     attempted.current = { context, device, history };
     setData(null);
     setReceivedAt(null);
+    setInvalidSharedTime(context.invalidTime === true);
     setError(null);
     setIsLoading(true);
     try {
@@ -128,12 +134,12 @@ export function useStargazerController(): UseStargazerControllerResult {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     await load({ ...readStargazerContext(new URLSearchParams(window.location.search)),
-      coordinates: null, invalidCoordinates: false, label: searchQuery.trim(), at: null }, 'push');
+      coordinates: null, invalidCoordinates: false, label: searchQuery.trim(), at: null, invalidTime: false }, 'push');
   }, [load, searchQuery]);
 
   const handleDeviceLocation = useCallback(async () => {
     await load({ ...readStargazerContext(new URLSearchParams(window.location.search)),
-      coordinates: null, invalidCoordinates: false, label: '', at: null }, 'push', true);
+      coordinates: null, invalidCoordinates: false, label: '', at: null, invalidTime: false }, 'push', true);
   }, [load]);
   const refresh = useCallback(async () => {
     if (data) await load(readStargazerContext(new URLSearchParams(window.location.search)));
@@ -141,9 +147,9 @@ export function useStargazerController(): UseStargazerControllerResult {
   }, [data, load]);
   const handleTabChange = useCallback((tab: StargazerTabId) => {
     setActiveTab(tab);
-    window.location.hash = tab;
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}#${tab}`);
   }, []);
 
-  return { data, receivedAt, isLoading, error, activeTab, searchQuery, setSearchQuery, isSearching,
+  return { data, receivedAt, invalidSharedTime, acknowledgeSharedTime, isLoading, error, activeTab, searchQuery, setSearchQuery, isSearching,
     handleTabChange, handleLocationSearch, handleDeviceLocation, refresh };
 }

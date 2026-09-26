@@ -5,6 +5,7 @@ import type { StargazerData } from '@/lib/stargazer/types';
 import catalog from '@/data/deep-sky-catalog.json';
 
 jest.mock('@/hooks/useStargazerController');
+jest.mock('@/lib/auth', () => ({ useAuth: () => ({ preferences: null }) }));
 
 const mockController = jest.mocked(useStargazerController);
 const date = new Date('2026-08-13T06:59:00Z');
@@ -21,6 +22,7 @@ const data: StargazerData = {
 
 function setData(value: StargazerData): void {
   mockController.mockReturnValue({
+    invalidSharedTime: false, acknowledgeSharedTime: jest.fn(),
     data: value, receivedAt: date.getTime(), isLoading: false, error: null, activeTab: 'events', searchQuery: '',
     setSearchQuery: jest.fn(), isSearching: false, handleTabChange: jest.fn(), handleLocationSearch: jest.fn(), handleDeviceLocation: jest.fn(), refresh: jest.fn(),
   });
@@ -41,6 +43,7 @@ it('keeps meteor dates stable when the browser crosses local midnight', () => {
 
 it('replaces the rating and its bars with an unavailable state when no darkness exists', () => {
   setData(data);
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'conditions' });
   const { rerender } = render(<StargazerCommandCenter />);
   expect(screen.getAllByText('Good').length).toBeGreaterThan(0);
   expect(screen.getByText('transparency')).toBeInTheDocument();
@@ -48,6 +51,7 @@ it('replaces the rating and its bars with an unavailable state when no darkness 
     ...data, darkWindow: { ...data.darkWindow, status: 'none' }, nightAverage: null,
     score: { overall: null, label: 'Unavailable', color: '#9ca3af', summary: 'No astronomical darkness at this location tonight.', subScores: null },
   });
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'conditions' });
   rerender(<StargazerCommandCenter />);
   expect(screen.getByText('Unavailable')).toBeInTheDocument();
   expect(screen.getByText('--')).toHaveClass('text-muted-foreground');
@@ -76,4 +80,26 @@ it('does not label loaded coordinates with an unsubmitted search draft', () => {
   render(<StargazerCommandCenter />);
   const href = screen.getByRole('link', { name: /M31 - Andromeda/ }).getAttribute('href')!;
   expect(new URL(href, 'https://example.test').searchParams.get('q')).toBe('London');
+});
+it('treats a just-received forecast as fresh after a slow initial request', () => {
+  jest.useFakeTimers({ now: date });
+  setData(data);
+  mockController.mockReturnValue({ ...mockController(), data: null, isLoading: true, activeTab: 'start' });
+  const { rerender } = render(<StargazerCommandCenter />);
+  jest.setSystemTime(new Date(date.getTime() + 10000));
+  setData({ ...data, beginnerNight: { hours: [{ start: date.getTime() + 3600000, end: date.getTime() + 7200000, midpoint: date.getTime() + 5400000,
+    weather: { cloudLow: 0, cloudHigh: 10, temperatureLow: 10, temperatureHigh: 11, wind: 5, precipitation: 0, issues: [] },
+    targets: [{ id: 'Moon', altitude: 40, azimuth: 180, minAltitude: 30, magnitude: -10 }],
+  }] } });
+  mockController.mockReturnValue({ ...mockController(), receivedAt: Date.now(), activeTab: 'start' });
+  rerender(<StargazerCommandCenter />);
+  expect(screen.getByRole('heading', { name: 'Try this hour' })).toBeInTheDocument();
+});
+
+it('keeps the resolved place above every tab when a search is only a draft', () => {
+  setData({ ...data, location: { ...data.location, displayName: 'London' } });
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'events', searchQuery: 'Sydney' });
+  render(<StargazerCommandCenter />);
+  expect(screen.getByText('Observing place: London')).toBeInTheDocument();
+  expect(screen.getByRole('textbox')).toHaveValue('Sydney');
 });

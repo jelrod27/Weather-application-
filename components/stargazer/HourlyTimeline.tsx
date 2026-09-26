@@ -39,48 +39,48 @@ const metricLabels: Record<MetricKey, string> = {
 };
 
 function getCellColor(metric: MetricKey, value: number | string | null): string {
-  if (value == null) return 'bg-gray-600';
+  if (value == null) return 'bg-gray-700';
   if (metric === 'dewRisk') {
-    if (value === 'low') return 'bg-green-600';
-    if (value === 'moderate') return 'bg-yellow-600';
-    return 'bg-red-600';
+    if (value === 'low') return 'bg-green-700';
+    if (value === 'moderate') return 'bg-yellow-800';
+    return 'bg-red-700';
   }
 
   if (metric === 'seeing' || metric === 'transparency') {
     // 7Timer: 1 = best, 8 = worst -- lower is better
     const v = value as number;
-    if (v <= 2) return 'bg-green-600';
-    if (v <= 3) return 'bg-yellow-600';
-    if (v <= 4) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 2) return 'bg-green-700';
+    if (v <= 3) return 'bg-yellow-800';
+    if (v <= 4) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'windSpeed') {
     const v = value as number;
-    if (v <= 10) return 'bg-green-600';
-    if (v <= 20) return 'bg-yellow-600';
-    if (v <= 30) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 10) return 'bg-green-700';
+    if (v <= 20) return 'bg-yellow-800';
+    if (v <= 30) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'humidity') {
     const v = value as number;
-    if (v <= 60) return 'bg-green-600';
-    if (v <= 75) return 'bg-yellow-600';
-    if (v <= 85) return 'bg-orange-600';
-    return 'bg-red-600';
+    if (v <= 60) return 'bg-green-700';
+    if (v <= 75) return 'bg-yellow-800';
+    if (v <= 85) return 'bg-orange-700';
+    return 'bg-red-700';
   }
 
   if (metric === 'temperature') {
-    return 'bg-blue-600';
+    return 'bg-blue-700';
   }
 
   // Cloud cover metrics (lower is better)
   const v = value as number;
-  if (v <= 20) return 'bg-green-600';
-  if (v <= 50) return 'bg-yellow-600';
-  if (v <= 75) return 'bg-orange-600';
-  return 'bg-red-600';
+  if (v <= 20) return 'bg-green-700';
+  if (v <= 50) return 'bg-yellow-800';
+  if (v <= 75) return 'bg-orange-700';
+  return 'bg-red-700';
 }
 
 function formatCellValue(metric: MetricKey, value: number | string | null): string {
@@ -107,11 +107,11 @@ const metrics: MetricKey[] = [
 ];
 
 function getScoreRowColor(score: number): string {
-  if (score >= 75) return 'bg-emerald-600';
-  if (score >= 60) return 'bg-green-600';
-  if (score >= 45) return 'bg-yellow-600';
-  if (score >= 30) return 'bg-orange-600';
-  return 'bg-red-600';
+  if (score >= 75) return 'bg-emerald-700';
+  if (score >= 60) return 'bg-green-700';
+  if (score >= 45) return 'bg-yellow-800';
+  if (score >= 30) return 'bg-orange-700';
+  return 'bg-red-700';
 }
 
 export default function HourlyTimeline({ timeZone = 'UTC',
@@ -182,7 +182,7 @@ export default function HourlyTimeline({ timeZone = 'UTC',
                   key={i}
                   className={cn(
                     'border border-subtle px-1 py-1.5 text-center text-white text-sm font-mono font-bold',
-                    c.hourlyScore != null ? getScoreRowColor(c.hourlyScore) : 'bg-gray-600',
+                    c.hourlyScore != null ? getScoreRowColor(c.hourlyScore) : 'bg-gray-700',
                   )}
                 >
                   {c.hourlyScore != null ? c.hourlyScore : 'Unavailable'}

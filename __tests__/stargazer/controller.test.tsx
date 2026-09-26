@@ -1,9 +1,11 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, render, screen, renderHook, waitFor } from '@testing-library/react';
+import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 import { StrictMode } from 'react';
 import { useStargazerController } from '@/hooks/useStargazerController';
 import { stargazerE2eFixture } from '@/tests/fixtures/stargazer-e2e-fixture';
 
 jest.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(window.location.search) }));
+jest.mock('@/lib/auth', () => ({ useAuth: () => ({ preferences: null }) }));
 let storedPlace = '';
 jest.mock('@/components/location-context', () => ({
   useLocationContext: () => ({ currentLocation: storedPlace, locationInput: '' }),
@@ -124,4 +126,42 @@ it('keeps device denial recoverable without a default-city forecast', async () =
   await act(async () => result.current.handleDeviceLocation());
   expect(result.current.data).toBeNull();
   expect(result.current.error).toMatch(/search for a city/i);
+});
+it.each(['start', 'conditions', 'targets', 'events', 'launches'])('preserves the #%s entry panel', async tab => {
+  window.history.replaceState(null, '', `/stargazer#${tab}`);
+  const { result } = renderHook(() => useStargazerController());
+  await waitFor(() => expect(result.current.activeTab).toBe(tab));
+});
+it('defaults unqualified visits to Start here', async () => {
+  const { result } = renderHook(() => useStargazerController());
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  expect(result.current.activeTab).toBe('start');
+});
+it('changes tabs through history without losing the observing context and handles Back', async () => {
+  window.history.replaceState(null, '', '/stargazer?q=London&equipment=binoculars');
+  const { result } = renderHook(() => useStargazerController());
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  const query = window.location.search;
+  act(() => result.current.handleTabChange('conditions'));
+  expect(result.current.activeTab).toBe('conditions');
+  expect(window.location.search).toBe(query);
+  expect(window.location.hash).toBe('#conditions');
+  act(() => { window.history.replaceState(null, '', `${window.location.pathname}${query}#start`); window.dispatchEvent(new PopStateEvent('popstate')); });
+  expect(result.current.activeTab).toBe('start');
+});
+
+it('keeps a malformed shared-hour explanation after location canonicalization', async () => {
+  window.history.replaceState(null, '', '/stargazer?lat=51.5&lon=-0.12&at=bad');
+  const realFetch = global.fetch;
+  global.fetch = jest.fn(async (input, init) => {
+    const res = await realFetch(input, init);
+    const body = await res.json();
+    const start = Date.now() + 3600000;
+    return response({ ...body, beginnerNight: { hours: [{ start, end: start + 3600000, midpoint: start + 1800000,
+      weather: { cloudLow: 0, cloudHigh: 10, temperatureLow: 10, temperatureHigh: 12, wind: 5, precipitation: 0, issues: [] }, targets: [],
+    }] } });
+  });
+  render(<StargazerCommandCenter />);
+  expect(await screen.findByText(/shared hour.*replaced/i)).toBeInTheDocument();
+  expect(new URLSearchParams(window.location.search).get('at')).not.toBe('bad');
 });

@@ -25,16 +25,16 @@ function StargazerShell({ children }: { children: React.ReactNode }) {
           <h1
             data-testid="stargazer-page-title"
             className={cn(
-              'text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 font-mono',
+              'text-3xl sm:text-4xl font-extrabold mb-3 font-mono',
               themeClasses.accentText,
               themeClasses.glow,
             )}
           >
-            STARGAZER COMMAND CENTER
+            STARGAZER
           </h1>
           <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
-            Tonight&apos;s astrophotography forecast. Seeing, transparency, moon phase, planet
-            visibility, deep sky targets, ISS passes, and upcoming launches -- all in one place.
+            Find an hour to look up, choose what to try, and learn where to look.
+            Start with your eyes, then explore the detailed sky forecast.
           </p>
         </div>
 

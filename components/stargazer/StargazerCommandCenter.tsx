@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Moon } from 'lucide-react';
+import BeginnerPanel from '@/components/stargazer/BeginnerPanel';
 import { formatDate, formatTime, nextCalendarDate } from '@/lib/stargazer/format';
 import { ShareButtons } from '@/components/share-buttons';
 import { getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
@@ -25,12 +29,7 @@ import { useStargazerController } from '@/hooks/useStargazerController';
 // ============================================================================
 
 function scoreColor(score: number | null): string {
-  if (score === null) return 'text-muted-foreground';
-  if (score >= 80) return 'text-emerald-400';
-  if (score >= 60) return 'text-green-400';
-  if (score >= 40) return 'text-yellow-400';
-  if (score >= 20) return 'text-orange-400';
-  return 'text-red-400';
+  return score === null ? 'text-muted-foreground' : 'text-primary';
 }
 
 function scoreBarColor(score: number): string {
@@ -60,7 +59,7 @@ function SkeletonCard({ rows = 3 }: { rows?: number }) {
 // Persistent Header Card
 // ============================================================================
 
-function PersistentHeader({ data }: { data: StargazerData }) {
+function PhotographySummary({ data }: { data: StargazerData }) {
   const { score, bestWindow, nightAverage, limitingFactor, darkWindow, moon, location } = data;
 
   return (
@@ -68,16 +67,9 @@ function PersistentHeader({ data }: { data: StargazerData }) {
       <div className="flex flex-col sm:flex-row gap-6">
         {/* Left: Moon phase icon area */}
         <div className="flex flex-col items-center justify-center shrink-0">
-          <div className="w-24 h-24 rounded-full border-2 border-subtle bg-black/30 flex items-center justify-center relative overflow-hidden">
-            <div
-              className="absolute inset-0 bg-white/80 rounded-full"
-              style={{
-                clipPath: `inset(0 ${100 - Math.round(moon.illumination)}% 0 0)`,
-              }}
-            />
-            <span className="relative z-10 text-2xl font-bold font-mono text-white drop-shadow-lg">
-              {Math.round(moon.illumination)}%
-            </span>
+          <div className="w-24 h-24 rounded-full border border-border bg-muted/50 flex flex-col items-center justify-center gap-1">
+            <Moon aria-hidden="true" className="w-7 h-7 text-primary" />
+            <span className="text-xl font-bold">{Math.round(moon.illumination)}%</span>
           </div>
           <span className="mt-2 text-xs font-mono uppercase text-muted-foreground">
             {moon.phaseName}
@@ -116,7 +108,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
 
           {/* Limiting factor */}
           {limitingFactor && (
-            <p className="text-xs font-mono text-amber-400/90 mb-2">
+            <p className="text-xs font-mono text-foreground mb-2">
               Limiting factor: <span className="capitalize">{limitingFactor.category}</span> &mdash; {limitingFactor.label.toLowerCase()}{limitingFactor.detail ? ` (${limitingFactor.detail})` : ''}
             </p>
           )}
@@ -332,6 +324,8 @@ export default function StargazerCommandCenter() {
   const {
     data,
     receivedAt,
+    invalidSharedTime,
+    acknowledgeSharedTime,
     isLoading,
     error,
     activeTab,
@@ -343,18 +337,32 @@ export default function StargazerCommandCenter() {
     handleDeviceLocation,
     refresh,
   } = useStargazerController();
+  const [, setClockTick] = useState(0);
+  const now = Date.now();
+  useEffect(() => {
+    const update = () => setClockTick(tick => tick + 1);
+    const timer = window.setInterval(update, 60000);
+    document.addEventListener('visibilitychange', update);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', update); };
+  }, []);
   const urlContext = readStargazerContext(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search));
   const context: StargazerContext = {
     ...urlContext,
+    invalidTime: urlContext.invalidTime || invalidSharedTime,
     coordinates: data?.location ?? null,
     label: data?.location.displayName || data?.location.name || urlContext.label,
     timeZone: data?.location.timezone,
   };
 
+  const changeObservingContext = (change: Pick<StargazerContext, 'at' | 'equipment'>): void => {
+    window.history.replaceState(null, '', getStargazerHref({ ...context, ...change, from: 'start' }) + window.location.hash);
+    acknowledgeSharedTime();
+  };
+
   return (
     <>
         {/* Location Search */}
-        <form onSubmit={handleLocationSearch} className="mb-6 flex gap-2 max-w-md">
+        <form onSubmit={handleLocationSearch} className="mb-4 flex gap-2 max-w-lg">
           <input
             type="text"
             value={searchQuery}
@@ -362,7 +370,7 @@ export default function StargazerCommandCenter() {
             aria-label="Stargazer location search"
             data-testid="stargazer-location-search"
             placeholder="Search location (city, state)"
-            className="flex-1 px-3 py-2 text-sm font-mono bg-black/20 border border-subtle rounded focus:outline-none focus:border-primary"
+            className="flex-1 px-3 py-2 text-sm font-mono min-w-0 bg-background border border-border rounded focus:outline-none focus:border-primary"
           />
           <button
             type="submit"
@@ -381,10 +389,15 @@ export default function StargazerCommandCenter() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 container-primary border-red-500/40 font-mono text-sm text-red-400">
+          <div className="mb-6 p-4 container-primary border-red-500/40 font-mono text-sm text-foreground">
             {error}
           </div>
         )}
+
+        {!data && !isLoading && <div className="flex flex-wrap gap-4 mb-5 text-sm">
+          <Link href="/stargazer/objects" className="text-primary underline">Explore the object catalog</Link>
+          <a href="https://science.nasa.gov/skywatching/faq/" className="text-primary underline">Learn to look at the night sky</a>
+        </div>}
 
         {/* Loading skeleton */}
         {isLoading && (
@@ -401,26 +414,29 @@ export default function StargazerCommandCenter() {
         {/* Content */}
         {data && !isLoading && (
           <div className="space-y-6">
+            <p className="font-semibold">Observing place: {context.label || `${data.location.lat.toFixed(2)}, ${data.location.lon.toFixed(2)}`}</p>
             <p className="text-sm">Observing night: {formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – {formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)} · {data.location.timezone || 'UTC'}</p>
-            <ForecastFreshness retrievedAt={data.weatherRetrievedAt} receivedAt={receivedAt} timeZone={data.location.timezone} />
+            <ForecastFreshness retrievedAt={data.weatherRetrievedAt} receivedAt={receivedAt} now={now} timeZone={data.location.timezone} />
             <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerHref(context)}` }} />
-            {/* Persistent Header Card */}
-            <PersistentHeader data={data} />
 
             {/* Tab Navigation */}
             <StargazerNav activeTab={activeTab} onTabChange={handleTabChange} />
 
             {/* Tab Content */}
             <div
+              tabIndex={0}
               role="tabpanel"
               id={`panel-${activeTab}`}
               aria-labelledby={`tab-${activeTab}`}
             >
-              {activeTab === 'conditions' && <ConditionsPanel data={data} />}
+              {activeTab === 'start' && <BeginnerPanel key={`${data.location.lat},${data.location.lon}`} data={data} context={context} now={now} receivedAt={receivedAt} onContextChange={changeObservingContext} onTabChange={handleTabChange} />}
+              {activeTab === 'conditions' && <div className="space-y-5"><PhotographySummary data={data} /><ConditionsPanel data={data} /></div>}
               {activeTab === 'targets' && <TargetsPanel data={data} context={context} />}
               {activeTab === 'events' && <EventsPanel data={data} />}
               {activeTab === 'launches' && <LaunchesPanel data={data} />}
             </div>
+
+            {(['start', 'conditions', 'targets', 'events', 'launches'] as const).filter(tab => tab !== activeTab).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} hidden />)}
 
             {/* Attribution */}
             <StargazerAttribution />
