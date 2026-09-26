@@ -64,7 +64,7 @@ test('displays main weather search component', async ({ page }) => {
 test('displays home hub discovery cards', async ({ page }) => {
   const hub = page.getByTestId('home-hub');
   await expect(hub).toBeVisible({ timeout: 30000 });
-  await expect(hub.getByRole('heading', { name: /FOR YOUR AREA/i })).toBeVisible();
+  await expect(hub.getByRole('heading', { name: /LOCAL WEATHER & GLOBAL UPDATES/i })).toBeVisible();
   await expect(hub.getByTestId('home-hub-card').first()).toBeVisible();
 });
 

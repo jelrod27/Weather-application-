@@ -111,3 +111,16 @@ it('counts one event when the national snapshot and local feed carry different u
     expect(result.current.alerts.topAlertId).toBe('new')
   } finally { global.fetch = realFetch }
 })
+
+it('does not promote another segment when the point feed confirms only one segment', async () => {
+  const realFetch = global.fetch
+  const a = { id: 'a', warningEventId: 'shared', ugc: ['COC001'], geometry: null, event: 'Tornado Warning', severity: 'Severe', urgency: 'Immediate', expires: '2099-01-01' }
+  const b = { ...a, id: 'b', ugc: ['COC003'] }
+  global.fetch = jest.fn(async (url) => okJson({ alerts: String(url).includes('point=') ? [a] : [a, b], happeningNow: [] }))
+  try {
+    const { result } = renderHook(() => useHomeHubData(PLEASANTON))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.alerts.count).toBe(1)
+    expect(result.current.alerts.topAlertId).toBe('a')
+  } finally { global.fetch = realFetch }
+})

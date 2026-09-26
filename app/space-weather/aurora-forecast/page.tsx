@@ -66,7 +66,7 @@ export default async function AuroraForecastPage() {
         intent={INTENT}
         updatedLabel={updated?.label ?? null}
         reading={
-          current && level ? (
+          current && level && viewline ? (
             <>
               <p className="text-weather-text">
                 Live planetary Kp:{' '}
@@ -77,9 +77,9 @@ export default async function AuroraForecastPage() {
               </p>
               <p className="mt-2 text-weather-text">
                 On a clear, dark night the aurora may come into view low on the northern horizon
-                from about{' '}
-                <strong className="text-weather-primary">{viewline!.latitude}°N</strong> —{' '}
-                <strong className="text-weather-primary">{viewline!.places}</strong>.
+                from roughly{' '}
+                <strong className="text-weather-primary">{viewline.latitude}°N</strong> —{' '}
+                <strong className="text-weather-primary">{viewline.places}</strong>.
               </p>
               {outlook ? (
                 <p className="mt-2 text-weather-text">

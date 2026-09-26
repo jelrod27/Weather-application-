@@ -1,6 +1,6 @@
 'use client';
 
-import { selectActiveAlerts } from '@/lib/warnings/active-alerts';
+import { selectActiveAlerts, pointConfirmationKeys } from '@/lib/warnings/active-alerts';
 import type { AlertCoverage } from '@/lib/warnings/coverage-status';
 import { useCallback, useEffect, useState } from 'react';
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service';
@@ -140,7 +140,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
               return;
             }
             setCoverage('supported');
-            const localIds = new Set((local.alerts ?? []).flatMap((a) => [a.id, a.warningEventId]));
+            const localIds = new Set((local.alerts ?? []).flatMap(pointConfirmationKeys));
             const candidates = selectActiveAlerts([...(data.alerts ?? []), ...(local.alerts ?? [])]);
             const { onYou, nearby } = splitLocalWarnings(candidates, {
               lat: user.lat, lon: user.lon,

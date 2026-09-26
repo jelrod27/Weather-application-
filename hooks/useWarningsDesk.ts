@@ -1,5 +1,6 @@
 'use client'
 
+import { pointConfirmationKeys } from '@/lib/warnings/active-alerts'
 import type { AlertCoverage } from '@/lib/warnings/coverage-status'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -128,8 +129,7 @@ export function useWarningsDesk() {
         setPointCoverage(data.coverage === 'outside-nws' ? 'outside-nws' : 'supported')
         const keys = new Set<string>()
         for (const alert of data.alerts ?? []) {
-          keys.add(alert.id)
-          if (alert.warningEventId) keys.add(alert.warningEventId)
+          for (const key of pointConfirmationKeys(alert)) keys.add(key)
         }
         setPointActiveKeys(keys)
       } catch (error) {
