@@ -215,3 +215,16 @@ describe('TtlCache.load', () => {
     expect(cache.getStale('k')).toBe('old');
   });
 });
+
+it('coalesces forced refreshes and preserves the original snapshot when they fail', async () => {
+  let now = 0
+  const cache = createTtlCache<string>({ ttlMs: 100, staleMs: 100, now: () => now })
+  cache.set('key', 'original')
+  now = 50
+  const loader = jest.fn().mockRejectedValue(new Error('offline'))
+  await Promise.allSettled([cache.load('key', loader, undefined, true), cache.load('key', loader, undefined, true)])
+  expect(loader).toHaveBeenCalledTimes(1)
+  expect(cache.get('key')).toBe('original')
+  now = 201
+  expect(cache.getStale('key')).toBeUndefined()
+})

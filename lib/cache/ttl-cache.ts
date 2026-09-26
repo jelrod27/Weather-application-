@@ -54,10 +54,12 @@ export interface TtlCache<T> {
    * Concurrent misses for the same key share one loader call, so N callers
    * arriving together produce one upstream request.
    *
+   * `forceRefresh` bypasses a fresh value but retains it if the loader fails.
+   * It still shares any in-flight load for this key.
    * A rejected load is not cached, and the rejection propagates to every
    * caller waiting on it.
    */
-  load(key: string, loader: () => Promise<T>, ttlMs?: number): Promise<T>;
+  load(key: string, loader: () => Promise<T>, ttlMs?: number, forceRefresh?: boolean): Promise<T>;
 }
 
 export function createTtlCache<T>(options: TtlCacheOptions): TtlCache<T> {
@@ -150,9 +152,9 @@ export function createTtlCache<T>(options: TtlCacheOptions): TtlCache<T> {
       return entries.size;
     },
 
-    async load(key, loader, overrideTtlMs) {
+    async load(key, loader, overrideTtlMs, forceRefresh = false) {
       const entry = entries.get(key);
-      if (entry && isFresh(entry, now())) return entry.value;
+      if (!forceRefresh && entry && isFresh(entry, now())) return entry.value;
 
       const pending = inFlight.get(key);
       if (pending) return pending;
