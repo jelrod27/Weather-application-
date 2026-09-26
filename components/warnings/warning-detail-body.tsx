@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { formatCoverageLabel } from '@/lib/bitwatch/coverage'
 import { warningDeskScore } from '@/lib/bitwatch/priority'
 import { warningRadarCropSrc } from '@/lib/bitwatch/radar-crop'
-import { getOfficialWarningHref, getWarningRadarHref, getWarningDetailHref } from '@/lib/warnings/alert-links'
+import { getOfficialWarningHref, getWarningRadarHref, getWarningDetailHref, nwsGeometryBBox } from '@/lib/warnings/alert-links'
 import { formatWarningTimeLeft } from '@/lib/warnings/nws-parameters'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { cn } from '@/lib/utils'
@@ -172,7 +172,7 @@ export function WarningDetailBody({
 
       <div className="flex flex-wrap gap-3 text-xs">
         <Link href={radarHref} className="underline text-primary">
-          {alert.geometry ? 'Open radar for this polygon' : 'Open radar (polygon unavailable)'}
+          {nwsGeometryBBox(alert.geometry) ? 'Open radar for this polygon' : 'Open radar (polygon unavailable)'}
         </Link>
         {showDetailLink ? (
           <Link href={getWarningDetailHref(alert.id, returnTo)} className="underline text-primary">

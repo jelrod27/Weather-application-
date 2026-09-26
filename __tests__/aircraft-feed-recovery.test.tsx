@@ -23,6 +23,15 @@ beforeEach(() => { fetchMock.mockReset(); consoleError = jest.spyOn(console, 'er
 afterEach(() => consoleError.mockRestore());
 
 describe('Aircraft feed recovery', () => {
+  it('does not claim cleared positions are visible while updating after a map move', async () => {
+    fetchMock.mockResolvedValueOnce(response([aircraft]));
+    const { args, events, setData } = setup();
+    const { result } = renderHook(() => useLiveAircraftPoll(args));
+    await waitFor(() => expect(result.current.status.state).toBe('ready'));
+    act(() => events.movestart());
+    expect(setData).toHaveBeenLastCalledWith({ type: 'FeatureCollection', features: [] });
+    expect(aircraftFeedLabel(result.current.status)).toBe('Updating aircraft traffic…');
+  });
   it('distinguishes backup-feed emptiness from failure, keeps the last update, and retries', async () => {
     fetchMock.mockResolvedValueOnce(response([aircraft]));
     const { args, setData } = setup();

@@ -12,7 +12,7 @@ export const INITIAL_AIRCRAFT_STATUS: AircraftFeedStatus = {
 
 export function aircraftFeedLabel(status: AircraftFeedStatus): string {
   if (status.state === 'unavailable') return 'Aircraft traffic unavailable';
-  if (status.state === 'loading') return status.updatedAt ? 'Updating traffic — previous positions shown' : 'Loading aircraft traffic…';
+  if (status.state === 'loading') return status.updatedAt ? 'Updating aircraft traffic…' : 'Loading aircraft traffic…';
   const source = `${status.degraded ? 'Backup feed · ' : ''}${status.source ?? 'Aircraft feed'}`;
   return status.count === 0 ? `${source} · No aircraft returned in this area` : `${source} · ${status.count} aircraft in this area`;
 }

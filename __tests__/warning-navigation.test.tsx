@@ -1,4 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { WarningDetailBody } from '@/components/warnings/warning-detail-body';
 import { getOfficialWarningHref, getWarningRadarHref, radarWarningReturnHref, warningReturnHref } from '@/lib/warnings/alert-links';
 import { useRadarWarning } from '@/hooks/useRadarWarning';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
@@ -14,6 +15,10 @@ const warning = {
 const response = (alerts: NWSAlertDetail[]) => ({ ok: true, json: async () => ({ alerts }) }) as Response;
 
 describe('Warning navigation and lifecycle', () => {
+  it.each([null, { type: 'Polygon' as const, coordinates: [] }])('labels radar honestly when geometry has no usable bounds: %j', (geometry) => {
+    render(<WarningDetailBody alert={{ ...warning, event: 'Tornado Warning', severity: 'Severe', geometry }} />);
+    expect(screen.getByRole('link', { name: 'Open radar (polygon unavailable)' })).toHaveAttribute('href', expect.stringContaining('/radar?warning='));
+  });
   it('carries the warning, bounds, and desk filters through the radar round trip', () => {
     const desk = '/warnings?state=TX&event=Tornado+Warning&search=Austin&alert=urn%3Aoid%3Atest-warning';
     const radar = new URL(getWarningRadarHref(warning, desk), 'https://www.16bitweather.co');

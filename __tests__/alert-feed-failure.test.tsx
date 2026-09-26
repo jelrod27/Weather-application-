@@ -5,6 +5,19 @@ import WISBadge from '@/components/wis-badge'
 const realFetch = global.fetch
 beforeEach(() => jest.useFakeTimers())
 afterEach(() => { jest.useRealTimers(); global.fetch = realFetch })
+describe('Severe alert refresh', () => {
+  it('keeps an existing list visible during a background refresh', async () => {
+    let finish!: (response: unknown) => void
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ alerts: [{ id: 'test', event: 'Tornado Warning', severity: 'Severe', areaDesc: 'Test County' }] }) })
+      .mockImplementationOnce(() => new Promise((resolve) => { finish = resolve }))
+    await act(async () => { render(<SevereAlerts />) })
+    await act(async () => { jest.advanceTimersByTime(300000) })
+    expect(screen.getByText('Tornado Warning')).toBeInTheDocument()
+    expect(screen.queryByText('SCANNING FOR SEVERE WEATHER...')).not.toBeInTheDocument()
+    await act(async () => finish({ ok: true, json: async () => ({ alerts: [] }) }))
+    expect(screen.getByText('NO MATCHING NWS ALERTS')).toBeInTheDocument()
+  })
+})
 it('shows unavailable instead of all clear after a failed severe feed', async () => {
   global.fetch = jest.fn().mockResolvedValue({ ok: false })
   await act(async () => { render(<SevereAlerts />) })

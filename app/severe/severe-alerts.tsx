@@ -36,8 +36,8 @@ export default function SevereAlerts() {
   const [unavailable, setUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (showLoading = false) => {
+    if (showLoading) setIsLoading(true);
     try {
       const res = await fetch('/api/weather/alerts');
       if (!res.ok) {
@@ -78,7 +78,7 @@ export default function SevereAlerts() {
   if (unavailable) {
     return <div role="status" className="text-center font-mono text-muted-foreground py-12 space-y-3">
       <p>Alert status unavailable.</p>
-      <button type="button" className="underline mr-4" onClick={() => void fetchData()}>Retry severe alerts</button>
+      <button type="button" className="underline mr-4" onClick={() => void fetchData(true)}>Retry severe alerts</button>
       <a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer" className="underline">Check official NWS information</a>
     </div>;
   }
