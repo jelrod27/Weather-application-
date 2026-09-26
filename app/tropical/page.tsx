@@ -2,43 +2,18 @@
  * 16-Bit Weather Platform - Tropical Tracker Page
  *
  * NHC tropical outlooks, satellite imagery, and hurricane season info.
- * Pure server component — all data is static image references to NHC.
+ * Official imagery with source-file update times and recoverable image loading.
  */
 import React from 'react';
 import PageWrapper from '@/components/page-wrapper';
-import { ExternalLink } from 'lucide-react';
+import TropicalGraphic from '@/components/tropical/tropical-graphic';
+import { TROPICAL_GRAPHICS, getGraphicUpdatedAt } from '@/lib/tropical/graphics';
 import { ShareButtons } from '@/components/share-buttons';
 
 const NHC_BASE = 'https://www.nhc.noaa.gov';
 
-const graphics = [
-  {
-    title: '2-DAY TROPICAL OUTLOOK',
-    desc: '48-hour tropical weather formation potential for the Atlantic Basin',
-    src: `${NHC_BASE}/xgtwo/two_atl_2d0.png`,
-    link: `${NHC_BASE}/gtwo.php`,
-  },
-  {
-    title: '7-DAY TROPICAL OUTLOOK',
-    desc: 'Extended tropical weather formation potential for the Atlantic Basin',
-    src: `${NHC_BASE}/xgtwo/two_atl_5d0.png`,
-    link: `${NHC_BASE}/gtwo.php`,
-  },
-  {
-    title: 'ATLANTIC SATELLITE',
-    desc: 'Real-time visible satellite loop of the Atlantic hurricane basin',
-    src: `${NHC_BASE}/satellite/satellite_atl_loop-vis.gif`,
-    link: `${NHC_BASE}/satellite.php`,
-  },
-  {
-    title: 'SEA SURFACE TEMPERATURE',
-    desc: 'Pacific sea surface temperature analysis — fuel for tropical development',
-    src: `${NHC_BASE}/tafb/pac_sst.gif`,
-    link: `${NHC_BASE}/tafb_latest.php`,
-  },
-];
-
-export default function TropicalPage() {
+export default async function TropicalPage(): Promise<React.JSX.Element> {
+  const updates = await Promise.all(TROPICAL_GRAPHICS.map((graphic) => getGraphicUpdatedAt(graphic.src)));
   return (
     <PageWrapper>
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -57,31 +32,8 @@ export default function TropicalPage() {
 
         {/* NHC Graphics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {graphics.map((g) => (
-            <div key={g.title} className="border border-border rounded-lg overflow-hidden bg-card/30">
-              <div className="p-4 border-b border-border">
-                <h3 className="font-mono font-bold text-sm">{g.title}</h3>
-                <p className="font-mono text-xs text-muted-foreground mt-1">{g.desc}</p>
-              </div>
-              <div className="relative aspect-[4/3] bg-black">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={g.src}
-                  alt={g.title}
-                  className="w-full h-full object-contain"
-                  loading="lazy"
-                />
-              </div>
-              <a
-                href={g.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 p-3 text-xs font-mono text-primary hover:bg-card/60 transition-colors border-t border-border"
-              >
-                <ExternalLink className="w-3 h-3" />
-                VIEW ON NHC
-              </a>
-            </div>
+          {TROPICAL_GRAPHICS.map((graphic, index) => (
+            <TropicalGraphic key={graphic.title} graphic={graphic} updatedAt={updates[index]} />
           ))}
         </div>
 
