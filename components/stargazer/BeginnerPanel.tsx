@@ -6,7 +6,8 @@ import { useStargazerUnits } from '@/hooks/useStargazerUnits';
 import { formatObservingTime, getStargazerHref } from '@/lib/stargazer/context';
 import { selectBeginnerHour } from '@/lib/stargazer/beginner-selection';
 import { getBeginnerTarget } from '@/lib/stargazer/beginner-targets';
-import { describeSkyPosition } from '@/lib/stargazer/direction';
+import SkyFindingDiagram from '@/components/stargazer/SkyFindingDiagram';
+import SkyLessons from '@/components/stargazer/SkyLessons';
 import { getStargazerFreshness } from '@/lib/stargazer/freshness';
 import { getWeatherJourneyLinks } from '@/lib/weather/journey';
 import type { StargazerContext, StargazerEquipment } from '@/lib/stargazer/context';
@@ -109,7 +110,7 @@ export default function BeginnerPanel({ data, context, now, receivedAt, onContex
           return <article key={position.id} className="container-primary p-4 flex flex-col gap-3">
             <div><p className="text-xs uppercase text-muted-foreground">{target.kind === 'deep-sky' ? position.id : target.kind}</p><h3 className="text-lg font-bold text-primary">{target.name}</h3></div>
             <p className="text-sm">{target.appearance}</p>
-            <p className="text-sm font-semibold">{describeSkyPosition(position)}</p>
+            <SkyFindingDiagram position={position} />
             <p className="text-sm text-muted-foreground">{target.guidance}</p>
             <p className="text-xs">{affirmative ? 'Above the horizon throughout the sampled hour.' : stale ? 'Position reference; refresh weather before planning.' : 'A target to try if skies clear.'}</p>
             {target.kind === 'deep-sky' ? <Link href={getStargazerHref(viewingContext, { objectId: target.id })} className="mt-auto text-primary text-sm underline">Finding guide for {target.name}</Link>
@@ -119,6 +120,7 @@ export default function BeginnerPanel({ data, context, now, receivedAt, onContex
       </div>
       <p className="text-xs text-muted-foreground">True north, not a phone compass. Positions are checked every 15 minutes; objects move during the hour. Trees, buildings, terrain and local light pollution are not modeled. A bright Moon above the horizon limits our faint-target suggestions.</p>
     </section>}
+    <SkyLessons />
     <nav aria-label="Explore more stargazing and weather" className="container-primary p-4 flex flex-wrap gap-x-5 gap-y-3 text-sm">
       <Link className="text-primary underline" href={getStargazerHref(viewingContext, { catalog: true })}>Browse the full catalog</Link>
       <a className="text-primary underline" href={getStargazerHref(viewingContext, { tab: 'conditions' })} onClick={event => {

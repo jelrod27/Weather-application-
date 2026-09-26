@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Moon } from 'lucide-react';
+import SkyLessons from '@/components/stargazer/SkyLessons';
 import BeginnerPanel from '@/components/stargazer/BeginnerPanel';
 import { formatDate, formatTime, nextCalendarDate } from '@/lib/stargazer/format';
 import { ShareButtons } from '@/components/share-buttons';
@@ -398,6 +399,8 @@ export default function StargazerCommandCenter() {
           <Link href="/stargazer/objects" className="text-primary underline">Explore the object catalog</Link>
           <a href="https://science.nasa.gov/skywatching/faq/" className="text-primary underline">Learn to look at the night sky</a>
         </div>}
+
+        {!data && !isLoading && <SkyLessons />}
 
         {/* Loading skeleton */}
         {isLoading && (

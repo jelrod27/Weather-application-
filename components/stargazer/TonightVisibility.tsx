@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import SkyFindingDiagram from '@/components/stargazer/SkyFindingDiagram';
 import { catalogObjectAltAz } from '@/lib/stargazer/astronomy';
 import { formatObservingTime, getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
 import type { ReactNode } from 'react';
@@ -25,13 +26,12 @@ export default function TonightVisibility({ ra, dec, objectName }: TonightVisibi
   const selected = context.at !== null && context.at >= now && context.at <= now + 86400000;
   const instant = selected ? context.at! + 1800000 : now;
   const position = catalogObjectAltAz(ra, dec, coordinates.lat, coordinates.lon, new Date(instant));
-  const compass = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'][Math.round(position.azimuth / 45) % 8];
   return <section className="container-primary p-4 space-y-2">
     <h2 className="font-semibold">How to find {objectName}</h2>
     <p>{context.label || `${coordinates.lat}, ${coordinates.lon}`} · {formatObservingTime(instant, context.timeZone)}</p>
-    {context.at !== null && !selected && <p>The shared observing hour has expired or is outside tonight. Showing the position now.</p>}
-    <p>{position.altitude <= 0 ? 'Below the horizon at this time.' : position.altitude >= 85 ? 'Nearly overhead.'
-      : `Face ${compass}; look about ${Math.round(position.altitude)}° above the horizon.`}</p>
+    {((context.at !== null && !selected) || context.invalidTime) && <p>The shared observing hour is invalid, expired or outside the next 24 hours. Showing the position now; return to Stargazer to choose a new hour.</p>}
+    {selected && <p className="text-sm">Position at the midpoint of the selected observing hour.</p>}
+    <SkyFindingDiagram position={position} />
     <p className="text-sm text-muted-foreground">Calculated position, not confirmed visibility. Clouds, light pollution, buildings and trees affect the view. Directions use true north.</p>
   </section>;
 }

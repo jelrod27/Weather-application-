@@ -21,7 +21,7 @@ it('shows a suggested hour, real weather tradeoffs and realistic target expectat
   expect(screen.getByRole('heading', { name: 'Try this hour' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Moon' })).toBeInTheDocument();
   expect(screen.getByText('12°C – 14°C')).toBeInTheDocument();
-  expect(screen.getByText(/True north/i)).toBeInTheDocument();
+  expect(screen.getByText(/^True north, not a phone compass/i)).toBeInTheDocument();
 });
 it('changes target eligibility and guide context when equipment and hour change', () => {
   render(<Harness />);
