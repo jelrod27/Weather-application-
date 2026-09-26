@@ -32,3 +32,22 @@ it.each([
   expect(within(card).getByText(value)).toBeInTheDocument();
   if (label === 'Unavailable') expect(within(card).queryByText('Clear')).not.toBeInTheDocument();
 });
+
+it.each([
+  [undefined, undefined, null],
+  ['Observing night of Sep 26', undefined, 'Observing night of Sep 26'],
+  [undefined, 'America/New_York', 'America/New_York'],
+  ['Observing night of Sep 26', 'America/New_York', 'Observing night of Sep 26 · America/New_York'],
+])('renders only available Moon context: %s, %s', (observingNight, timeZone, expected) => {
+  const moonPhase = { ...weather.moonPhase!, observingNight, timeZone };
+  render(<WeatherDisplay weather={{ ...weather, moonPhase }} theme="dark" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
+  const card = screen.getByText('Moon Phase').closest('.bg-card') as HTMLElement;
+  expect(within(card).getByText('New Moon')).toBeInTheDocument();
+  expect(within(card).queryByText(/^·$|^· | ·$/)).not.toBeInTheDocument();
+  if (expected) expect(within(card).getByText(expected)).toBeInTheDocument();
+});
+
+it('retains the unavailable message when there is no Moon information', () => {
+  render(<WeatherDisplay weather={{ ...weather, moonPhase: null }} theme="dark" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
+  expect(screen.getByText('Moon information unavailable')).toBeInTheDocument();
+});

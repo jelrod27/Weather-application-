@@ -171,7 +171,7 @@ export const getSavedLocations = async (userId: string): Promise<SavedLocation[]
 
   if (error) {
     captureDbError('getSavedLocations', error, { userId })
-    return []
+    throw error
   }
 
   return data || []

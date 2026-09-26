@@ -222,7 +222,11 @@ export function WeatherDisplay({
             </CardHeader>
             <CardContent className="pt-1 px-4 pb-4">
               {!weather.moonPhase ? <p className="text-sm text-muted-foreground">Moon information unavailable</p> : <>
-              <p className="text-xs text-muted-foreground mb-2">{weather.moonPhase.observingNight} · {weather.moonPhase.timeZone}</p>
+              {(weather.moonPhase.observingNight || weather.moonPhase.timeZone) && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  {[weather.moonPhase.observingNight, weather.moonPhase.timeZone].filter(Boolean).join(' · ')}
+                </p>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-1 flex-1 min-w-0">
                   <p className={cn("text-base font-semibold", themeClasses.text)}>{weather?.moonPhase?.phase || 'Unknown'}</p>

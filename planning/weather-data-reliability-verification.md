@@ -33,3 +33,18 @@ Independent Standards and Spec reviews completed on the full working diff before
 ## Remaining limits
 
 The cache is per-instance memory; cold starts have no previous snapshot. Provider availability cannot be guaranteed. Travel samples are point-in-time weather, not a route safety guarantee or a departure forecast. Full accessibility remediation and unrelated site issues remain deferred. CI and bot review begin after PR creation and are separate from local validation.
+
+## PR 634 review follow-up
+
+CodeRabbit completed its original review through `e1b08aa`; seven CSV/PNG audit artifacts were excluded by repository configuration. All applicable CI/CD checks passed on that head, including Build, Chromium, preview E2E, Lighthouse and Vercel. Later heads require their own checks and incremental review.
+
+- CodeQL's adapter-test semicolon finding was corrected in `bcc2b83`; all 26 adapter tests, scoped lint, both TypeScript projects and independent Standards/Spec reviews passed.
+- The real saved-location query helper swallowed Supabase errors as empty results. It now retains error capture and throws to the hook's generic failure/retry state. The regression uses the actual helper with a mocked Supabase query response, covering failure, successful retry and obsolete account success/error responses. No database schema, access policy or production data changed.
+- Legacy cached Moon data can omit observing-night metadata. Rendering now joins only present context fields and hides an empty context line; neither/either/both fields and unavailable Moon data are covered.
+- Before-fix regressions reproduced the swallowed query failure and orphan Moon separators. After correction: 59 focused tests, all 274 suites/2,104 tests, production build and test TypeScript passed. Scoped lint has zero errors and six existing database warnings. Independent incremental Standards and Spec reviews each found zero issues. Local browser/Lighthouse checks were not repeated for these two small corrections; repository CI reruns those checks after push.
+
+The bot's blanket 80% docstring threshold is not a repository requirement; no documentation-padding change was made. Its inferred forced-refresh provider-load concern is retained as a rollout observation, not dismissed as disproven: coordinate validation, existing request limits and same-key in-flight coalescing remain; original receipt times require avoiding a second response cache. Measure provider request volume across server instances before adding a separate refresh budget. No new load evidence or mandatory policy change was identified in this review.
+
+At follow-up validation, CodeRabbit's next included review was rate-limited until approximately September 27, 00:43 UTC. Completed original coverage does not establish review of the corrective commits; the monitor waits for a fresh incremental review before declaring readiness.
+
+Logs: `/tmp/weather-pr634-bot-regressions-before.log`, `/tmp/weather-pr634-bot-focused.log`, `/tmp/weather-pr634-bot-full-unit.log`, `/tmp/weather-pr634-bot-build.log`.

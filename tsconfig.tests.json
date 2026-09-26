@@ -40,6 +40,7 @@
     "__tests__/dashboard-weather-route.test.ts",
     "__tests__/useDashboardWeather.test.tsx",
     "__tests__/saved-locations-hook.test.tsx",
+    "__tests__/weather-display-visibility.test.tsx",
     "__tests__/location-card.test.tsx",
     "__tests__/saved-locations-panel.test.tsx",
     "__tests__/radar-timestamps.test.ts",
