@@ -143,7 +143,7 @@ export default function TravelPage(): React.JSX.Element {
             <TripScoreCard result={tripResult ?? createPlaceholder()} day={inputs.day} isLoading={tripLoading} />
           ) : null}
           flyContent={<FlyContent />}
-          driveContent={<DriveContent key={inputs.day} day={inputs.day} />}
+          driveContent={<DriveContent day={inputs.day} />}
         />
         <ShareButtons
           config={{
@@ -246,6 +246,9 @@ function DriveContent({ day }: { day: TripDay }): React.JSX.Element {
     return () => abortRef.current?.abort();
   }, []);
 
+  const currentData = data?.forecastDay === day ? data : null;
+  const loadingCurrentDay = isLoading || (data !== null && data.forecastDay !== day);
+
   return (
     <div className="space-y-6">
       {error && (
@@ -256,21 +259,21 @@ function DriveContent({ day }: { day: TripDay }): React.JSX.Element {
 
       <div ref={ref} style={{ minHeight: '500px', contain: 'layout style paint' }}>
         {inView ? (
-          <TravelCorridorMap corridors={data?.corridors ?? []} isLoading={isLoading} />
+          <TravelCorridorMap corridors={currentData?.corridors ?? []} isLoading={loadingCurrentDay} />
         ) : (
           <MapSkeleton height="h-[500px]" />
         )}
       </div>
 
       {!error && (
-        <WorstCorridors corridors={data?.worstCorridors ?? []} isLoading={isLoading} />
+        <WorstCorridors corridors={currentData?.worstCorridors ?? []} isLoading={loadingCurrentDay} />
       )}
 
       <DailyOutlookImages day={day} />
 
-      {data?.fetchedAt && (
+      {currentData?.fetchedAt && (
         <p className="text-center text-xs font-mono text-muted-foreground">
-          Last updated: {new Date(data.fetchedAt).toLocaleTimeString()}
+          Last updated: {new Date(currentData.fetchedAt).toLocaleTimeString()}
         </p>
       )}
     </div>

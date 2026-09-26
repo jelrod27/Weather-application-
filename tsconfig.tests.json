@@ -23,7 +23,8 @@
     "__tests__/weather-journey.test.tsx",
     "__tests__/radar-controls.test.tsx",
     "__tests__/radar-shell-status.test.tsx",
-    "__tests__/travel-controls.test.tsx"
+    "__tests__/travel-controls.test.tsx",
+    "__tests__/travel-corridor-map.test.tsx"
   ],
   "exclude": [
     "node_modules",

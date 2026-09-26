@@ -77,6 +77,8 @@ function fillTrip(): void {
 describe('shared travel controls', () => {
   it('uses one mode and day choice for the trip request, result and national outlook', async () => {
     render(<TravelPage />);
+    const map = await screen.findByTestId('corridor-map');
+    await waitFor(() => expect(map).toHaveTextContent('Corridors day 0'));
     expect(screen.getAllByRole('button', { name: 'Drive' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Fly' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Today' })).toHaveLength(1);
@@ -90,6 +92,7 @@ describe('shared travel controls', () => {
     expect(within(screen.getByTestId('trip-score-card')).getByText('Drive · Tomorrow')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'WPC Day 2 Forecast Chart' })).toHaveAttribute('src', expect.stringContaining('noaad2.gif'));
     await waitFor(() => expect(screen.getByTestId('corridor-map')).toHaveTextContent('Corridors day 1'));
+    expect(screen.getByTestId('corridor-map')).toBe(map);
     expect(screen.getByText(/does not account for your departure time/)).toBeInTheDocument();
   });
 
