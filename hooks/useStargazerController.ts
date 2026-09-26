@@ -89,6 +89,7 @@ export function useStargazerController(): UseStargazerControllerResult {
         const position = await new Promise<GeolocationPosition>((resolve, reject) =>
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }));
         coordinates = parseStargazerCoordinates(String(position.coords.latitude), String(position.coords.longitude));
+        if (current() && !coordinates) throw new Error('Location unavailable. Search for a city.');
       } else if (!coordinates && context.label) {
         coordinates = await geocodeLabel(context.label, controller.signal);
         if (!coordinates) throw new Error('Location not found. Try a different city.');

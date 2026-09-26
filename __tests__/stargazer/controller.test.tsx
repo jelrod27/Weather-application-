@@ -165,3 +165,16 @@ it('keeps a malformed shared-hour explanation after location canonicalization', 
   expect(await screen.findByText(/shared hour.*replaced/i)).toBeInTheDocument();
   expect(new URLSearchParams(window.location.search).get('at')).not.toBe('bad');
 });
+
+it.each([NaN, 1e-7])('explains an unusable device-location result (%s)', async longitude => {
+  Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
+    getCurrentPosition: (success: PositionCallback) => success({ coords: { latitude: 51.5, longitude } } as GeolocationPosition),
+  } });
+  const { result } = renderHook(() => useStargazerController());
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  expect(result.current.error).toBeNull(); // An initial visit still offers the city picker.
+  await act(async () => result.current.handleDeviceLocation());
+  expect(result.current.isLoading).toBe(false);
+  expect(result.current.data).toBeNull();
+  expect(result.current.error).toMatch(/search for a city/i);
+});
