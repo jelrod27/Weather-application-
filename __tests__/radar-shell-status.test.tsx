@@ -54,6 +54,34 @@ const retainedRadar = {
 } as ReturnType<typeof useRadarController>
 
 describe('RadarShell retained-data status UI', () => {
+  it('keeps severe feature details available when radar frames are unavailable', () => {
+    mockUseRadarController.mockReturnValue({
+      ...retainedRadar,
+      frames: [],
+      inspector: { title: 'Severe Thunderstorm Warning', body: 'Follow local safety guidance.', link: 'https://www.weather.gov/' },
+    })
+    render(<RadarShell displayMode="full-page" />)
+    expect(screen.getByText('Severe Thunderstorm Warning')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'View on weather.gov' })).toBeInTheDocument()
+    expect(screen.queryByTestId('radar-player-dock')).not.toBeInTheDocument()
+  })
+
+  it('shows the selected frame clock in the viewed location timezone', () => {
+    mockUseRadarController.mockReturnValue({
+      ...retainedRadar,
+      frames: [{
+        timestamp: Date.parse('2026-09-26T14:10:00Z'),
+        isoTime: '2026-09-26T14:10:00Z',
+        epochSeconds: Date.parse('2026-09-26T14:10:00Z') / 1000,
+        offsetMinutes: 0,
+        isLive: true,
+      }],
+    })
+    render(<RadarShell displayMode="full-page" timeZone="America/Los_Angeles" />)
+    expect(screen.getByText('7:10 AM PDT')).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: 'Radar timeline' })).toHaveAttribute('aria-valuetext', '7:10 AM PDT · LATEST')
+  })
+
   it('announces a failed refresh only after a successful radar load', () => {
     mockUseRadarController.mockReturnValue(retainedRadar)
     const { rerender } = render(<RadarShell displayMode="full-page" />)

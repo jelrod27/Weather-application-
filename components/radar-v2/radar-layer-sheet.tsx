@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useId, useRef } from 'react'
-import type { RadarShareLayerState, RadarTilePreferences } from '@/lib/radar/radar-url-state'
+import { useRef } from 'react'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { Dialog, DialogPortal, DialogOverlay, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { RAINVIEWER_LEGEND } from '@/components/radar-v2/radar-constants'
+import type { ReactNode } from 'react'
+import type { RadarShareLayerState, RadarTilePreferences } from '@/lib/radar/radar-url-state'
 
 interface RadarLayerSheetProps {
   open: boolean
+  mobileControls?: ReactNode
   layers: RadarShareLayerState
   tilePreferences: RadarTilePreferences
   opacity: number
@@ -20,6 +24,7 @@ interface RadarLayerSheetProps {
 
 export function RadarLayerSheet({
   open,
+  mobileControls,
   layers,
   tilePreferences,
   opacity,
@@ -30,155 +35,152 @@ export function RadarLayerSheet({
   onLayersChange,
   onTilePreferencesChange,
   onOpacityChange,
-}: RadarLayerSheetProps) {
-  const titleId = useId()
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
-
-  useEffect(() => {
-    if (open) {
-      closeButtonRef.current?.focus()
-    }
-  }, [open])
-
-  if (!open) return null
+}: RadarLayerSheetProps): React.JSX.Element {
+  const openerRef = useRef<HTMLElement | null>(null)
 
   return (
-    <div
-      role="dialog"
-      aria-labelledby={titleId}
-      className="pointer-events-auto absolute inset-x-0 bottom-0 z-[3000] max-h-[80vh] overflow-y-auto rounded-t-2xl border border-white/10 bg-zinc-950/98 p-4 shadow-2xl backdrop-blur-md"
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 id={titleId} className="text-base font-semibold text-white">Layers</h2>
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={onClose}
-          className="rounded-md px-3 py-1 text-sm text-zinc-300 hover:bg-white/10"
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
+      <DialogPortal>
+        <DialogOverlay className="z-[2999] bg-black/50" />
+        <DialogPrimitive.Content
+          onOpenAutoFocus={() => {
+            openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+          }}
+          onCloseAutoFocus={(event) => {
+            if (openerRef.current?.isConnected) {
+              event.preventDefault()
+              openerRef.current.focus()
+            }
+          }}
+          className="fixed inset-x-0 bottom-0 z-[3000] mx-auto max-h-[85dvh] max-w-2xl overflow-y-auto overscroll-contain rounded-t-2xl border border-[var(--border-subtle)] bg-[var(--bg-elev)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-[var(--text)] shadow-2xl focus:outline-none"
         >
-          Close
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Radar</h3>
-          <p className="mb-3 text-sm text-zinc-300">
-            Global composite precipitation from RainViewer. Updates every few minutes with roughly two hours of history.
-          </p>
-          <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-            <span>Precipitation</span>
-            <input
-              type="checkbox"
-              checked={layers.precipitation}
-              onChange={(event) => onLayersChange({ ...layers, precipitation: event.target.checked })}
-            />
-          </label>
-          <div className="mt-3">
-            <div className="mb-1 text-xs text-zinc-400">Opacity {Math.round(opacity * 100)}%</div>
-            <input
-              type="range"
-              min={0.1}
-              max={1}
-              step={0.05}
-              value={opacity}
-              onChange={(event) => onOpacityChange(Number.parseFloat(event.target.value))}
-              className="w-full accent-cyan-400"
-              aria-label="Radar opacity"
-            />
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <DialogTitle className="text-base font-semibold">
+              <span className="sm:hidden">Radar controls</span>
+              <span className="hidden sm:inline">Layers</span>
+            </DialogTitle>
+            <DialogPrimitive.Close className="min-h-11 rounded-lg border border-[var(--border-subtle)] px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+              Close
+            </DialogPrimitive.Close>
           </div>
-        </section>
-
-        <section className="grid gap-2 sm:grid-cols-2">
-          <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-            <span>Smooth radar</span>
-            <input
-              type="checkbox"
-              checked={tilePreferences.smooth}
-              onChange={(event) => onTilePreferencesChange({ ...tilePreferences, smooth: event.target.checked })}
-            />
-          </label>
-          <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-            <span>Snow colors</span>
-            <input
-              type="checkbox"
-              checked={tilePreferences.snow}
-              onChange={(event) => onTilePreferencesChange({ ...tilePreferences, snow: event.target.checked })}
-            />
-          </label>
-          <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white sm:col-span-2">
-            <span>Coverage mask</span>
-            <input
-              type="checkbox"
-              checked={tilePreferences.coverage}
-              onChange={(event) => onTilePreferencesChange({ ...tilePreferences, coverage: event.target.checked })}
-            />
-          </label>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Severe overlays</h3>
-          <div className="space-y-2">
-            <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-              <span>NWS Alerts at location ({alertCount})</span>
-              <input
-                type="checkbox"
-                checked={layers.alerts}
-                onChange={(event) => onLayersChange({ ...layers, alerts: event.target.checked })}
-              />
-            </label>
-            <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-              <span>SPC Outlook ({spcCount})</span>
-              <input
-                type="checkbox"
-                checked={layers.spc}
-                onChange={(event) => onLayersChange({ ...layers, spc: event.target.checked })}
-              />
-            </label>
-            <label className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm text-white">
-              <span>Storm Reports ({stormReportCount})</span>
-              <input
-                type="checkbox"
-                checked={layers.stormReports}
-                onChange={(event) => onLayersChange({ ...layers, stormReports: event.target.checked })}
-              />
-            </label>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Universal Blue rain legend
-          </h3>
-          {tilePreferences.snow ? (
-            <p className="mb-2 text-xs text-zinc-400">
-              Snow uses a separate RainViewer color scale.
-            </p>
-          ) : null}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {RAINVIEWER_LEGEND.map((item) => (
-              <div key={item.value} className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-xs text-zinc-200">
-                <span className="h-3 w-6 rounded-sm border border-white/10" style={{ backgroundColor: item.color }} />
-                <span>{item.label}</span>
+          <DialogDescription className="sr-only">
+            Adjust radar layers and display preferences. Radar shows past observations, not predicted arrival times.
+          </DialogDescription>
+          {mobileControls ? <div className="mb-4 space-y-3 border-b border-[var(--border-subtle)] pb-4 sm:hidden">{mobileControls}</div> : null}
+          <div className="space-y-4">
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Radar</h3>
+              <p className="mb-3 text-sm text-[var(--text-muted)]">
+                Global composite precipitation from RainViewer. Updates every few minutes with roughly two hours of history. These are past observations, not a forecast or a rain arrival estimate.
+              </p>
+              <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                <span>Precipitation</span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  checked={layers.precipitation}
+                  onChange={(event) => onLayersChange({ ...layers, precipitation: event.target.checked })}
+                />
+              </label>
+              <div className="mt-3">
+                <div className="mb-1 text-xs text-[var(--text-muted)]">Opacity {Math.round(opacity * 100)}%</div>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1}
+                  step={0.05}
+                  value={opacity}
+                  onChange={(event) => onOpacityChange(Number.parseFloat(event.target.value))}
+                  className="h-8 w-full accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  aria-label="Radar opacity"
+                />
               </div>
-            ))}
+            </section>
+
+            <section className="grid gap-2 sm:grid-cols-2">
+              <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                <span>Smooth radar</span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  checked={tilePreferences.smooth}
+                  onChange={(event) => onTilePreferencesChange({ ...tilePreferences, smooth: event.target.checked })}
+                />
+              </label>
+              <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                <span>Snow colors</span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  checked={tilePreferences.snow}
+                  onChange={(event) => onTilePreferencesChange({ ...tilePreferences, snow: event.target.checked })}
+                />
+              </label>
+              <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] sm:col-span-2">
+                <span>Coverage mask</span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  checked={tilePreferences.coverage}
+                  onChange={(event) => onTilePreferencesChange({ ...tilePreferences, coverage: event.target.checked })}
+                />
+              </label>
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Severe overlays</h3>
+              <div className="space-y-2">
+                <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                  <span>NWS Alerts at location ({alertCount})</span>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    checked={layers.alerts}
+                    onChange={(event) => onLayersChange({ ...layers, alerts: event.target.checked })}
+                  />
+                </label>
+                <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                  <span>SPC Outlook ({spcCount})</span>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    checked={layers.spc}
+                    onChange={(event) => onLayersChange({ ...layers, spc: event.target.checked })}
+                  />
+                </label>
+                <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)]">
+                  <span>Storm Reports ({stormReportCount})</span>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    checked={layers.stormReports}
+                    onChange={(event) => onLayersChange({ ...layers, stormReports: event.target.checked })}
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                Universal Blue rain legend
+              </h3>
+              {tilePreferences.snow ? (
+                <p className="mb-2 text-xs text-[var(--text-muted)]">
+                  Snow uses a separate RainViewer color scale.
+                </p>
+              ) : null}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {RAINVIEWER_LEGEND.map((item) => (
+                  <div key={item.value} className="flex items-center gap-2 rounded-lg bg-[var(--bg)] px-2 py-1.5 text-xs text-[var(--text)]">
+                    <span className="h-3 w-6 rounded-sm border border-[var(--border-subtle)]" style={{ backgroundColor: item.color }} />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
-        </section>
-      </div>
-    </div>
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    </Dialog>
   )
 }

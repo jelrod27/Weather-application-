@@ -1,22 +1,28 @@
 'use client'
 
+import Link from 'next/link'
+import { formatLocationTimeWithZone } from '@/lib/format-location-time'
 import type { ThemeType } from '@/lib/theme-config'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
 import { RadarInspector } from '@/components/radar-v2/radar-inspector'
 import { RadarLayerSheet } from '@/components/radar-v2/radar-layer-sheet'
 import { RadarPlayerDock } from '@/components/radar-v2/radar-player-dock'
+import { RadarPlaybackSpeed } from '@/components/radar-v2/radar-playback-speed'
 import { RadarPrecipLegend } from '@/components/radar-v2/radar-precip-legend'
 import { RadarPresetBar } from '@/components/radar-v2/radar-preset-bar'
 import { RadarStatusChip } from '@/components/radar-v2/radar-status-chip'
 import { RadarTopBar } from '@/components/radar-v2/radar-top-bar'
 import { RadarWidgetBadge } from '@/components/radar-v2/radar-widget-badge'
 import { useRadarController } from '@/hooks/useRadarController'
+import { ShareButtons } from '@/components/share-buttons'
 
 import 'ol/ol.css'
 
 interface RadarShellProps {
   selectedWarning?: NWSAlertDetail | null
   returnHref?: string
+  returnLabel?: string
+  learnHref?: string
   latitude?: number
   longitude?: number
   locationName?: string
@@ -33,7 +39,7 @@ interface RadarShellProps {
   }
 }
 
-function RadarShell(props: RadarShellProps) {
+function RadarShell(props: RadarShellProps): React.JSX.Element {
   const {
     mapRef,
     isFullPage,
@@ -73,6 +79,10 @@ function RadarShell(props: RadarShellProps) {
     handleFrameChange,
     handleLiveTap,
   } = useRadarController(props)
+  const selectedFrame = frames[frameIndex]
+  const frameTimeLabel = selectedFrame?.isoTime
+    ? formatLocationTimeWithZone(selectedFrame.isoTime, props.timeZone ?? 'UTC')
+    : undefined
 
   return (
     <div
@@ -87,6 +97,8 @@ function RadarShell(props: RadarShellProps) {
         {isFullPage && locationName && onLocationSearch && shareConfig ? (
           <RadarTopBar
             returnHref={props.returnHref}
+            returnLabel={props.returnLabel}
+            learnHref={props.learnHref}
             locationName={locationName}
             onSearch={onLocationSearch}
             searchError={searchError}
@@ -120,6 +132,22 @@ function RadarShell(props: RadarShellProps) {
         {isFullPage ? (
           <RadarLayerSheet
             open={layerSheetOpen}
+            mobileControls={(
+              <>
+                <RadarPresetBar activePreset={activePreset} onPresetChange={handlePresetChange} />
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>Playback speed</span>
+                  <RadarPlaybackSpeed speed={speed} onSpeedChange={setSpeed} />
+                </div>
+                {shareConfig ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span>Share this radar</span>
+                    <ShareButtons config={shareConfig} className="[&>a]:min-h-11 [&>a]:min-w-11 [&>button]:min-h-11 [&>button]:min-w-11" />
+                  </div>
+                ) : null}
+                {props.learnHref ? <Link href={props.learnHref} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Read this radar</Link> : null}
+              </>
+            )}
             layers={activeLayers}
             tilePreferences={tilePreferences}
             opacity={opacity}
@@ -133,37 +161,45 @@ function RadarShell(props: RadarShellProps) {
           />
         ) : null}
 
-        {isFullPage && inspector ? (
-          <RadarInspector
-            title={inspector.title}
-            body={inspector.body}
-            link={inspector.link}
-            onClose={() => setInspector(null)}
-          />
-        ) : null}
-
-        {isFullPage && frames.length > 0 ? (
+        {isFullPage && (frames.length > 0 || inspector) ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2500] flex flex-col">
-            <div className="pointer-events-none h-16 bg-gradient-to-t from-black/80 to-transparent" aria-hidden="true" />
-            <RadarPresetBar
-              activePreset={activePreset}
-              onPresetChange={handlePresetChange}
-              onOpenLayers={() => setLayerSheetOpen(true)}
-            />
-            <RadarPlayerDock
-              frameIndex={frameIndex}
-              frameCount={frames.length}
-              isPlaying={isPlaying}
-              isLiveFrame={isLiveFrame}
-              relativeTime={relativeTime}
-              speed={speed}
-              onPlayPause={handlePlayPause}
-              onSkipToStart={handleSkipToStart}
-              onSkipToEnd={handleSkipToEnd}
-              onSpeedChange={setSpeed}
-              onFrameChange={handleFrameChange}
-              onLiveTap={handleLiveTap}
-            />
+            {inspector ? (
+              <RadarInspector
+                title={inspector.title}
+                body={inspector.body}
+                link={inspector.link}
+                onClose={() => setInspector(null)}
+              />
+            ) : null}
+            {frames.length > 0 ? (
+              <>
+                <div className="hidden sm:block">
+                  <RadarPresetBar
+                    activePreset={activePreset}
+                    onPresetChange={handlePresetChange}
+                    onOpenLayers={() => setLayerSheetOpen(true)}
+                  />
+                </div>
+                <RadarPlayerDock
+                  frameIndex={frameIndex}
+                  frameCount={frames.length}
+                  isPlaying={isPlaying}
+                  isLiveFrame={isLiveFrame}
+                  relativeTime={relativeTime}
+                  frameTimeLabel={frameTimeLabel}
+                  frameIsoTime={selectedFrame?.isoTime}
+                  speed={speed}
+                  controlsOpen={layerSheetOpen}
+                  onOpenControls={() => setLayerSheetOpen(true)}
+                  onPlayPause={handlePlayPause}
+                  onSkipToStart={handleSkipToStart}
+                  onSkipToEnd={handleSkipToEnd}
+                  onSpeedChange={setSpeed}
+                  onFrameChange={handleFrameChange}
+                  onLiveTap={handleLiveTap}
+                />
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>

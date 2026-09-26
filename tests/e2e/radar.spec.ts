@@ -117,6 +117,42 @@ test.describe('Radar Map', () => {
     await expect(page.getByRole('button', { name: /^Severe$/i })).toBeVisible();
   });
 
+  test('phone radar keeps playback visible and folds secondary controls into a keyboard-accessible drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await navigateToRadarPage(page);
+    await waitForRadarToLoad(page);
+
+    const player = page.getByTestId('radar-player-dock');
+    const controls = page.getByRole('button', { name: 'Controls', exact: true });
+    await expect(page.getByTestId('radar-top-bar')).toBeVisible();
+    await expect(player.locator('time')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^(Play|Pause)$/i })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Radar timeline' })).toBeVisible();
+    await expect(player.getByText(/Past observations, not a forecast/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Severe', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Copy link', exact: true })).toHaveCount(0);
+    await expect(controls).toHaveAttribute('aria-expanded', 'false');
+    const dockHeight = await player.evaluate((element) => element.getBoundingClientRect().height);
+    expect(dockHeight).toBeLessThan(190);
+
+    await controls.focus();
+    await controls.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Radar controls' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+    await dialog.getByRole('button', { name: 'Severe', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Severe', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await dialog.getByRole('button', { name: '2x speed' }).click();
+    await expect(dialog.getByRole('button', { name: '2x speed' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(dialog.getByRole('button', { name: 'Copy link', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('checkbox', { name: /NWS Alerts at location/ })).toBeChecked();
+    await expect(dialog.getByText(/not a forecast or a rain arrival estimate/)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(controls).toBeFocused();
+    await expect(controls).toHaveAttribute('aria-expanded', 'false');
+  });
+
   test('reduced motion starts radar animation paused', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await navigateToRadarPage(page);
@@ -131,6 +167,7 @@ test.describe('Radar Map', () => {
 
     await page.getByRole('button', { name: /LAYERS/i }).click();
     await expect(page.getByRole('checkbox', { name: /SPC Outlook/i })).toBeChecked();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(page.getByRole('slider', { name: /Radar timeline/i })).toHaveValue('5');
     await expect(page).toHaveURL(/layers=precip(?:%2C|,)?spc/);
     await expect(page).toHaveURL(/(?:^|[?&])frame=5(?:&|$)/);
@@ -158,7 +195,7 @@ test.describe('Radar Map', () => {
     await expect(page.getByText(/^Live$/i)).toHaveCount(0);
     await expect(page.getByRole('slider', { name: /Radar timeline/i })).toHaveAttribute(
       'aria-valuetext',
-      'LATEST',
+      /LATEST/,
     );
     await page.getByRole('slider', { name: /Radar timeline/i }).fill('5');
     await expect(page.getByTestId('radar-player-dock').getByText(/^Now$/i)).toHaveCount(0);
