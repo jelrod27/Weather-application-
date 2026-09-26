@@ -5,7 +5,8 @@
 
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { toStateAbbr } from '@/lib/us-states'
-import { normalizeCountryHint } from '@/lib/geocoding/country-hints'
+import { normalizeCountryHint, normalizePlaceHint } from '@/lib/geocoding/country-hints'
+import { normalizeRegionHint } from '@/lib/geocoding/region-hints'
 import type { GeocodingResponse } from '@/lib/weather'
 
 const OPEN_METEO_GEO = 'https://geocoding-api.open-meteo.com/v1/search'
@@ -114,6 +115,7 @@ export async function searchGeocodingDirect(
   const parts = q.split(',').map((s) => s.trim()).filter(Boolean)
   const cityName = parts[0] || q
   const filterHints = parts.slice(1)
+  const explicitCountry = filterHints.length > 1 ? normalizeCountryHint(filterHints.at(-1)!) : null
 
   const url = `${OPEN_METEO_GEO}?name=${encodeURIComponent(cityName)}&count=10&language=en&format=json`
   const res = await fetchWithTimeout(url, { next: { revalidate: 3600 } })
@@ -131,6 +133,12 @@ export async function searchGeocodingDirect(
       const filterHint = hint.toUpperCase()
       // A two-part US search keeps CA/Georgia as state hints. An explicit
       // third country part disambiguates the full city/state/country form.
+      if (index < filterHints.length - 1 && explicitCountry) {
+        if (r.country_code?.toUpperCase() !== explicitCountry || !r.admin1) return false
+        const region = normalizeRegionHint(hint, explicitCountry) ?? normalizePlaceHint(hint)
+        const candidate = normalizeRegionHint(r.admin1, explicitCountry) ?? normalizePlaceHint(r.admin1)
+        return region === candidate
+      }
       const stateHint = index === 0 ? toStateAbbr(hint) : null
       if (stateHint) return r.country_code === 'US' && toStateAbbr(r.admin1) === stateHint
       const countryHint = normalizeCountryHint(hint)

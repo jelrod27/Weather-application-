@@ -37,4 +37,13 @@ test('Hourly return preserves coordinates across a canonical city redirect', asy
   await expect(back).toHaveAttribute('href', '/weather/denver?location=39.8%2C-104.6');
   await back.click();
   await expect(page).toHaveURL(/\/weather\/denver-co\?location=39.8%2C-104.6/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Denver');
+});
+
+test('A city location override labels the resolved weather and omits unrelated climate data', async ({ page }) => {
+  await stubWeatherApis(page, { cityName: 'London', country: 'GB', lat: 51.5, lon: -0.12 });
+  await stubHomeHubApis(page);
+  await page.goto('/weather/denver-co?location=51.5%2C-0.12', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('London');
+  await expect(page.getByRole('heading', { name: /Denver/ })).toHaveCount(0);
 });

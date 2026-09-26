@@ -21,8 +21,17 @@ describe('city-slug', () => {
     ['Paris, France', 'Paris, FR'],
     ['Tokyo, Japan', 'Tokyo, JP'],
     ['New York, NY', 'New York, NY'],
+    ['Washington, D.C.', 'Washington, DC'],
     ['90210', '90210'],
   ])('preserves the geographic hint through routing: %s', (input, expected) => {
     expect(slugToSearchTerm(locationInputToSlug(input))).toBe(expected);
+  });
+  it.each([
+    ['toronto-ontario-canada', 'Toronto, Ontario, Canada'],
+    ['vancouver-bc-canada', 'Vancouver, BC, Canada'],
+    ['sydney-new-south-wales-australia', 'Sydney, New South Wales, AU'],
+    ['cape-town-south-africa', 'Cape Town, ZA'],
+  ])('supports geographic hints in older shared route %s', (slug, expected) => {
+    expect(slugToSearchTerm(slug)).toBe(expected);
   });
 });

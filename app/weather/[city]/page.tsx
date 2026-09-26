@@ -7,7 +7,6 @@
 
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { permanentRedirect } from 'next/navigation'
 
 import { safeJsonLd } from '@/lib/utils'
 import CityWeatherClient from './client'
@@ -22,7 +21,6 @@ import { slugToDisplayName, slugToSearchTerm } from '@/lib/city-slug'
 import {
   buildCityPageMetadata,
   PRIORITY_SEO_CITY_SLUGS,
-  resolveCitySlugAlias,
 } from '@/lib/seo/city-page-seo'
 
 const BASE_URL = 'https://www.16bitweather.co'
@@ -50,22 +48,10 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
 
 interface PageParams {
   params: Promise<{ city: string }>
-  searchParams?: Promise<{ location?: string | string[] }>
 }
 
-export default async function CityWeatherPage({ params, searchParams }: PageParams) {
+export default async function CityWeatherPage({ params }: PageParams) {
   const { city: citySlug } = await params
-
-  // Preserve Hourly's resolved location when normalizing an existing city route.
-  const lowerSlug = citySlug.toLowerCase()
-  const canonicalSlug = citySlug !== lowerSlug && cityMetadata[lowerSlug]
-    ? lowerSlug : resolveCitySlugAlias(lowerSlug, Object.keys(cityMetadata))
-  if (canonicalSlug) {
-    const location = (await searchParams)?.location
-    const query = typeof location === 'string' && location.trim()
-      ? `?${new URLSearchParams({ location })}` : ''
-    permanentRedirect(`/weather/${canonicalSlug}${query}`)
-  }
 
   const city = cityMetadata[citySlug]
 

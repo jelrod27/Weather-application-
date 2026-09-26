@@ -90,7 +90,11 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="2xl" padding="md">
 
-          {heading}
+          {routedLocation ? (
+            <h1 className="mb-3 font-mono text-lg font-bold uppercase tracking-wider text-primary sm:text-xl">
+              {weather && !loading && !error ? `${weather.location} Weather` : 'Weather Forecast'}
+            </h1>
+          ) : heading}
 
           <WeatherSearch
             key={citySlug}
@@ -133,8 +137,8 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
                 <div className="flex justify-end mb-2">
                   <SaveLocationButton
                     weather={weather}
-                    cityName={city.name}
-                    state={city.state}
+                    cityName={routedLocation ? weather.location.split(',')[0].trim() : city.name}
+                    state={routedLocation ? undefined : city.state}
                   />
                 </div>
                 <WeatherDisplay
@@ -149,7 +153,7 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
             )}
           </div>
 
-          {climateGuide ? <div className="mt-8">{climateGuide}</div> : null}
+          {!routedLocation && climateGuide ? <div className="mt-8">{climateGuide}</div> : null}
         </ResponsiveContainer>
       </div>
     </PageWrapper>
