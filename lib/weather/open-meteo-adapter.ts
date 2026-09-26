@@ -322,6 +322,7 @@ export async function buildWeatherDataFromOpenMeteo(
       hourlyForecast.push({
         dt,
         time: timeString,
+        weatherCode: typeof hourly.weather_code?.[i] === 'number' && Number.isFinite(hourly.weather_code[i]) ? hourly.weather_code[i] : null,
         temp: typeof temperature === 'number' && Number.isFinite(temperature) ? Math.round(temperature) : null,
         feelsLike: hourly.apparent_temperature?.[i],
         condition: wmoCodeToConditionLabel(hourWeatherCode),

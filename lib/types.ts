@@ -48,6 +48,8 @@ export interface HourlyForecast {
 export interface EnhancedHourlyForecast {
   dt: number;          // Unix timestamp
   time: string;        // Formatted time (e.g., "2 PM")
+  /** WMO condition code; missing readings must not be interpreted as clear skies. */
+  weatherCode?: number | null;
   temp: number | null;
   feelsLike?: number;
   condition: string;

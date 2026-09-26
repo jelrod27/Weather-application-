@@ -236,6 +236,18 @@ describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
     expect(result.hourlyForecast![0].condition).toBe('Clouds');
     expect(result.hourlyForecast![0].precipChance).toBe(10);
     expect(result.hourlyForecast![0].windDirection).toBe('SW');
+    expect(result.hourlyForecast![0].weatherCode).toBe(2);
+  });
+
+  it('preserves hazardous and missing condition codes for outdoor comparisons', async () => {
+    const forecast = makeForecastResponse();
+    forecast.hourly!.weather_code.fill(95);
+    stubClientApiFetches(forecast);
+    const storm = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+    expect(storm.hourlyForecast![0].weatherCode).toBe(95);
+    forecast.hourly!.weather_code = [];
+    const missing = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+    expect(missing.hourlyForecast!.every(hour => hour.weatherCode === null)).toBe(true);
   });
 
   it.each(['null', 'truncated'])('preserves %s hourly readings through the adapter and briefing, alongside real zeroes', async (missing) => {
