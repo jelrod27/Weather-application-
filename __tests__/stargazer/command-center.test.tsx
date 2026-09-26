@@ -21,7 +21,7 @@ const data: StargazerData = {
 
 function setData(value: StargazerData): void {
   mockController.mockReturnValue({
-    data: value, isLoading: false, error: null, activeTab: 'events', searchQuery: '',
+    data: value, receivedAt: date.getTime(), isLoading: false, error: null, activeTab: 'events', searchQuery: '',
     setSearchQuery: jest.fn(), isSearching: false, handleTabChange: jest.fn(), handleLocationSearch: jest.fn(), handleDeviceLocation: jest.fn(), refresh: jest.fn(),
   });
 }

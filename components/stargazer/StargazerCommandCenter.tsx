@@ -7,6 +7,7 @@ import type { StargazerContext } from '@/lib/stargazer/context';
 import { cn } from '@/lib/utils';
 import type { StargazerData } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
+import ForecastFreshness from '@/components/stargazer/ForecastFreshness';
 import StargazerNav from '@/components/stargazer/StargazerNav';
 import FullHourlyTimeline from '@/components/stargazer/HourlyTimeline';
 import MoonIntel from '@/components/stargazer/MoonIntel';
@@ -16,6 +17,7 @@ import SkyEvents from '@/components/stargazer/SkyEvents';
 import ISSPasses from '@/components/stargazer/ISSPasses';
 import LaunchSchedule from '@/components/stargazer/LaunchSchedule';
 import StargazerAttribution from '@/components/stargazer/StargazerAttribution';
+import { useStargazerUnits } from '@/hooks/useStargazerUnits';
 import { useStargazerController } from '@/hooks/useStargazerController';
 
 // ============================================================================
@@ -84,6 +86,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
 
         {/* Right: Score, label, summary, times */}
         <div className="flex-1 min-w-0">
+          <p className="text-xs font-mono uppercase text-muted-foreground">Photography conditions /100</p>
           <div className="flex items-baseline gap-3 mb-1">
             <span className={cn('text-4xl sm:text-5xl font-extrabold font-mono tabular-nums', scoreColor(score.overall))}>
               {score.overall === null ? '--' : Math.round(score.overall)}
@@ -93,7 +96,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
             </span>
             {nightAverage != null && nightAverage !== score.overall && (
               <span className="text-sm font-mono text-muted-foreground ml-1">
-                (night avg: {nightAverage})
+                (available night avg: {nightAverage}/100)
               </span>
             )}
           </div>
@@ -101,12 +104,12 @@ function PersistentHeader({ data }: { data: StargazerData }) {
           {/* Best window callout */}
           {bestWindow && (
             <div className="mb-2 px-3 py-1.5 bg-white/5 border border-subtle rounded inline-flex items-center gap-2 text-sm font-mono">
-              <span className="text-muted-foreground">Best window:</span>
+              <span className="text-muted-foreground">Highest-rated photography period:</span>
               <span className="font-bold">
                 {formatTime(bestWindow.startTime, data.location.timezone, true)} &ndash; {formatTime(bestWindow.endTime, data.location.timezone, true)}
               </span>
               <span className={cn('font-bold', scoreColor(bestWindow.score))}>
-                ({bestWindow.score})
+                ({bestWindow.score}/100)
               </span>
             </div>
           )}
@@ -128,7 +131,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
                 {Math.abs(location.lon).toFixed(2)}{'\u00B0'}{location.lon >= 0 ? 'E' : 'W'}
                 {location.bortle != null && (
                   <span className="ml-3" title={location.bortleLabel || ''}>
-                    Bortle {location.bortle} (est.)
+                    Bortle {location.bortle} (population estimate, not measured)
                   </span>
                 )}
               </p>
@@ -171,7 +174,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
                       style={{ width: `${val}%` }}
                     />
                   </div>
-                  <span className="font-bold font-mono">{Math.round(val)}</span>
+                  <span className="font-bold font-mono">{Math.round(val)}/100</span>
                   <span className="text-[10px] font-mono text-muted-foreground text-center leading-tight truncate w-full">
                     {label}
                   </span>
@@ -190,6 +193,7 @@ function PersistentHeader({ data }: { data: StargazerData }) {
 // ============================================================================
 
 function ConditionsPanel({ data }: { data: StargazerData }) {
+  const units = useStargazerUnits();
   const { hourlyConditions, bestWindow, darkWindow, moon } = data;
 
   // Rehydrate dates from JSON serialization
@@ -236,7 +240,7 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
 
   return (
     <div className="space-y-6">
-      {conditions.length > 0 && rehydratedDarkWindow && (
+      {rehydratedDarkWindow && (
         <FullHourlyTimeline timeZone={data.location.timezone} conditions={conditions} darkWindow={rehydratedDarkWindow} />
       )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -254,27 +258,27 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
               <>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Temperature</span>
-                  <span className="text-xl font-bold font-mono">{Math.round(groundConditions.temperature)}&deg;C</span>
+                  <span className="text-xl font-bold font-mono">{units.temperature(groundConditions.temperature)}</span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Humidity</span>
-                  <span className="text-xl font-bold font-mono">{Math.round(groundConditions.humidity)}%</span>
+                  <span className="text-xl font-bold font-mono">{groundConditions.humidity == null ? 'Unavailable' : `${Math.round(groundConditions.humidity)}%`}</span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Wind Speed</span>
-                  <span className="text-xl font-bold font-mono">{Math.round(groundConditions.windSpeed)} km/h</span>
+                  <span className="text-xl font-bold font-mono">{units.wind(groundConditions.windSpeed)}</span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Cloud Cover</span>
-                  <span className="text-xl font-bold font-mono">{Math.round(groundConditions.cloudCover)}%</span>
+                  <span className="text-xl font-bold font-mono">{groundConditions.cloudCover == null ? 'Unavailable' : `${Math.round(groundConditions.cloudCover)}%`}</span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Dew Risk</span>
-                  <span className="text-xl font-bold font-mono capitalize">{String(groundConditions.dewRisk)}</span>
+                  <span className="text-xl font-bold font-mono capitalize">{groundConditions.dewRisk ?? 'Unavailable'}</span>
                 </div>
                 <div>
                   <span className="text-xs font-mono uppercase text-muted-foreground block">Seeing</span>
-                  <span className="text-xl font-bold font-mono">{groundConditions.seeing}/8</span>
+                  <span className="text-xl font-bold font-mono">{groundConditions.seeing == null ? 'Unavailable' : `${groundConditions.seeing}/8`}</span>
                 </div>
               </>
             )}
@@ -327,6 +331,7 @@ function LaunchesPanel({ data }: { data: StargazerData }) {
 export default function StargazerCommandCenter() {
   const {
     data,
+    receivedAt,
     isLoading,
     error,
     activeTab,
@@ -397,6 +402,7 @@ export default function StargazerCommandCenter() {
         {data && !isLoading && (
           <div className="space-y-6">
             <p className="text-sm">Observing night: {formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – {formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)} · {data.location.timezone || 'UTC'}</p>
+            <ForecastFreshness retrievedAt={data.weatherRetrievedAt} receivedAt={receivedAt} timeZone={data.location.timezone} />
             <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerHref(context)}` }} />
             {/* Persistent Header Card */}
             <PersistentHeader data={data} />

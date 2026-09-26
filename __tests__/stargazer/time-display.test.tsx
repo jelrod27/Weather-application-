@@ -1,3 +1,4 @@
+jest.mock('@/lib/auth', () => ({ useAuth: () => ({ preferences: null }) }));
 import { render, screen } from '@testing-library/react';
 import { formatTime, formatDate, nextCalendarDate } from '@/lib/stargazer/format';
 import SkyEvents from '@/components/stargazer/SkyEvents';

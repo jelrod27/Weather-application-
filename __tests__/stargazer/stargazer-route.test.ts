@@ -28,7 +28,7 @@ jest.mock('@/lib/fetch-with-timeout', () => ({
 
 jest.mock('@/lib/stargazer/seven-timer', () => ({
   fetchSevenTimerData: jest.fn().mockResolvedValue(null),
-  getSevenTimerAtTime: jest.fn(), // unused when data is null
+  getSevenTimerAtTime: jest.requireActual('@/lib/stargazer/seven-timer').getSevenTimerAtTime,
 }));
 
 jest.mock('@/lib/stargazer/satellites', () => ({
@@ -40,6 +40,7 @@ jest.mock('@/lib/stargazer/launches', () => ({
   fetchUpcomingLaunches: jest.fn().mockResolvedValue([]),
 }));
 
+import { fetchSevenTimerData } from '@/lib/stargazer/seven-timer';
 import { GET } from '@/app/api/stargazer/route';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
@@ -70,6 +71,7 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
   return {
     timezone: 'America/New_York',
     utc_offset_seconds: utcOffsetSeconds,
+    hourly_units: { cloud_cover: '%', cloud_cover_low: '%', cloud_cover_mid: '%', cloud_cover_high: '%', relative_humidity_2m: '%', dewpoint_2m: '°C', temperature_2m: '°C', wind_speed_10m: 'km/h', precipitation_probability: '%', weather_code: 'wmo code' },
     hourly: {
       time,
       cloud_cover: fill(20),
@@ -80,6 +82,8 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
       dewpoint_2m: fill(8),
       temperature_2m: fill(18),
       wind_speed_10m: fill(10),
+      precipitation_probability: fill(0),
+      weather_code: fill(0),
       visibility: fill(20000),
       surface_pressure: fill(1015),
     },
@@ -225,6 +229,17 @@ describe('GET /api/stargazer — contract with degraded externals', () => {
     jest.useRealTimers();
   });
 
+  it('keeps weather available when optional 7Timer initialization has the wrong JSON type', async () => {
+    jest.mocked(fetchSevenTimerData).mockResolvedValueOnce(JSON.parse(JSON.stringify({
+      product: 'astro', init: 2026061500, dataseries: [{ timepoint: 3, seeing: 2, transparency: 2 }],
+    })));
+    const response = await GET(makeRequest({ lat: '40.71', lon: '-74.01' }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.hourlyConditions.length).toBeGreaterThan(0);
+    expect(body.hourlyConditions.every((hour: { seeing: unknown }) => hour.seeing === null)).toBe(true);
+  });
+
   it('returns 200 with the full response contract when externals are degraded', async () => {
     const res = await GET(makeRequest({ lat: '40.71', lon: '-74.01' }));
     expect(res.status).toBe(200);
@@ -253,30 +268,29 @@ describe('GET /api/stargazer — contract with degraded externals', () => {
       expect(body).toHaveProperty(key);
     }
 
-    // score shape
-    expect(typeof body.score.overall).toBe('number');
-    expect(body.score.overall).toBeGreaterThanOrEqual(0);
-    expect(body.score.overall).toBeLessThanOrEqual(100);
-    expect(typeof body.score.label).toBe('string');
-    expect(body.score.label.length).toBeGreaterThan(0);
+    expect(body.score.overall).toBeNull();
+    expect(body.score.label).toBe('Unavailable');
+    expect(body.bestWindow).toBeNull();
+    expect(body.nightAverage).toBeNull();
+    expect(body.limitingFactor).toBeNull();
 
     // Degraded externals: ISS/launches are empty
     expect(body.issPasses).toEqual([]);
     expect(body.launches).toEqual([]);
 
-    // 7Timer null → per-hour defaults seeing=4, transparency=4
+    // Optional-provider failure must not invent readings or a complete score
     expect(body.hourlyConditions.length).toBeGreaterThan(0);
     for (const hour of body.hourlyConditions) {
-      expect(hour.seeing).toBe(4);
-      expect(hour.transparency).toBe(4);
+      expect(hour.seeing).toBeNull();
+      expect(hour.transparency).toBeNull();
     }
 
     // Geocode degradation → locationName and displayName are undefined
     expect(body.location.timezone).toBe('America/New_York');
     expect(body.location.name).toBeUndefined();
     expect(body.location.displayName).toBeUndefined();
-    // Bortle still estimated from undefined population (returns a number)
-    expect(typeof body.location.bortle).toBe('number');
+    // Unknown population is not a sky-darkness observation
+    expect(body.location.bortle).toBeUndefined();
 
     // Sunset→sunrise filter: more than 0 but fewer than 48 hourly entries
     expect(body.hourlyConditions.length).toBeGreaterThan(0);
@@ -382,4 +396,44 @@ it('offers no dark-window observing targets when the sun never reaches astronomi
   expect(body.hourlyConditions.every((hour: { hourlyScore?: number }) => hour.hourlyScore == null)).toBe(true);
   expect(body.hourlyConditions.every((hour: { hourlySubScores?: unknown }) => hour.hourlySubScores == null)).toBe(true);
   jest.useRealTimers();
+});
+
+
+describe('unavailable forecast values', () => {
+  beforeEach(() => jest.useFakeTimers({ now: new Date('2026-06-15T04:00:00Z'), doNotFake: ['queueMicrotask', 'setImmediate'] }));
+  afterEach(() => jest.useRealTimers());
+  it.each([null, -1, 101, '0'])('does not turn invalid cloud %s into clear sky', async cloud => {
+    const fixture = makeOpenMeteoBody(-14400);
+    mockFetchWithTimeout.mockImplementation(async url => ({
+      ok: String(url).startsWith('https://api.open-meteo.com/'),
+      json: async () => ({ ...fixture, hourly: { ...fixture.hourly, cloud_cover: fixture.hourly.time.map(() => cloud) } }),
+    } as Response));
+    const body = await (await GET(makeRequest({ lat: '40.71', lon: '-74.01' }))).json();
+    expect(body.hourlyConditions.length).toBeGreaterThan(0);
+    expect(body.hourlyConditions.every((hour: { cloudCover: unknown }) => hour.cloudCover === null)).toBe(true);
+    expect(body.score.overall).toBeNull();
+  });
+  it('keeps true zeroes and exposes precipitation, weather code and separate retrieval metadata', async () => {
+    const fixture = makeOpenMeteoBody(-14400);
+    mockFetchWithTimeout.mockImplementation(async url => ({
+      ok: String(url).startsWith('https://api.open-meteo.com/'),
+      headers: new Headers({ date: 'Mon, 15 Jun 2026 03:55:00 GMT' }),
+      json: async () => fixture,
+    } as Response));
+    const body = await (await GET(makeRequest({ lat: '40.71', lon: '-74.01' }))).json();
+    expect(body.hourlyConditions[0]).toMatchObject({ precipitationProbability: 0, weatherCode: 0 });
+    expect(body.weatherRetrievedAt).toBe('2026-06-15T03:55:00.000Z');
+    expect(body.generatedAt).toBe('2026-06-15T04:00:00.000Z');
+  });
+  it('shows empty data as unavailable, without a 50/100 fallback', async () => {
+    const fixture = makeOpenMeteoBody(-14400);
+    mockFetchWithTimeout.mockImplementation(async url => ({
+      ok: String(url).startsWith('https://api.open-meteo.com/'),
+      json: async () => ({ ...fixture, hourly: { time: [] } }),
+    } as Response));
+    const body = await (await GET(makeRequest({ lat: '40.71', lon: '-74.01' }))).json();
+    expect(body.hourlyConditions).toEqual([]);
+    expect(body.score.overall).toBeNull();
+    expect(body.bestWindow).toBeNull();
+  });
 });

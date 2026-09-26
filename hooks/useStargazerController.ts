@@ -25,6 +25,7 @@ async function geocodeLabel(label: string, signal: AbortSignal): Promise<Stargaz
 
 export interface UseStargazerControllerResult {
   data: StargazerData | null;
+  receivedAt: number | null;
   isLoading: boolean;
   error: string | null;
   activeTab: StargazerTabId;
@@ -45,6 +46,7 @@ export function useStargazerController(): UseStargazerControllerResult {
   const { currentLocation, locationInput } = useLocationContext();
   const storedLabel = locationInput || currentLocation;
   const [data, setData] = useState<StargazerData | null>(null);
+  const [receivedAt, setReceivedAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(query);
@@ -70,6 +72,7 @@ export function useStargazerController(): UseStargazerControllerResult {
     const current = () => version === intent.current && !controller.signal.aborted;
     attempted.current = { context, device, history };
     setData(null);
+    setReceivedAt(null);
     setError(null);
     setIsLoading(true);
     try {
@@ -91,6 +94,7 @@ export function useStargazerController(): UseStargazerControllerResult {
       const payload: StargazerData = await res.json();
       if (!current()) return;
       setData(payload);
+      setReceivedAt(Date.now());
       const resolved: StargazerContext = { ...context, coordinates, invalidCoordinates: false,
         label: payload.location.displayName || payload.location.name || context.label,
         timeZone: payload.location.timezone };
@@ -140,6 +144,6 @@ export function useStargazerController(): UseStargazerControllerResult {
     window.location.hash = tab;
   }, []);
 
-  return { data, isLoading, error, activeTab, searchQuery, setSearchQuery, isSearching,
+  return { data, receivedAt, isLoading, error, activeTab, searchQuery, setSearchQuery, isSearching,
     handleTabChange, handleLocationSearch, handleDeviceLocation, refresh };
 }

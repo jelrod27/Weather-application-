@@ -50,19 +50,21 @@ export interface DarkWindow {
 
 export interface HourlyCondition {
   time: Date;
-  cloudCover: number;
-  cloudCoverLow: number;
-  cloudCoverMid: number;
-  cloudCoverHigh: number;
-  seeing: number;
-  transparency: number;
-  windSpeed: number;
-  humidity: number;
-  temperature: number;
-  dewpoint: number;
-  dewRisk: 'low' | 'moderate' | 'high';
+  cloudCover: number | null;
+  cloudCoverLow: number | null;
+  cloudCoverMid: number | null;
+  cloudCoverHigh: number | null;
+  seeing: number | null;
+  transparency: number | null;
+  windSpeed: number | null;
+  humidity: number | null;
+  temperature: number | null;
+  dewpoint: number | null;
+  dewRisk: 'low' | 'moderate' | 'high' | null;
+  precipitationProbability: number | null;
+  weatherCode: number | null;
   /** Per-hour composite score (0-100), computed during dark window */
-  hourlyScore?: number;
+  hourlyScore?: number | null;
   /** Per-hour sub-scores breakdown */
   hourlySubScores?: StargazerSubScores;
   /** True if high cloud cover is penalizing transparency */
@@ -297,5 +299,7 @@ export interface StargazerData {
     bortle?: number;
     bortleLabel?: string;
   };
+  /** Provider HTTP response time, when known; not a model initialization time. */
+  weatherRetrievedAt?: string | null;
   generatedAt: string;
 }
