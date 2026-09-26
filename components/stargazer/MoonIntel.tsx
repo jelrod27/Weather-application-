@@ -21,7 +21,7 @@ export default function MoonIntel({ timeZone = 'UTC', moon }: MoonIntelProps) {
   const styles = themeTokens.card;
   const impactScore = moonScore(moon.illumination, moon.moonUpDuringDarkWindowPercent);
   const impactLabel = getSubScoreLabel('moon', impactScore);
-  const impactColor = impactScore >= 75 ? 'text-green-500' : impactScore >= 50 ? 'text-yellow-500' : impactScore >= 25 ? 'text-orange-500' : 'text-red-500';
+  const impactColor = 'text-foreground';
 
   return (
     <div
@@ -49,7 +49,7 @@ export default function MoonIntel({ timeZone = 'UTC', moon }: MoonIntelProps) {
             {Math.round(moon.illumination)}%
           </p>
           <p className={cn('mt-1 text-xs font-mono', impactColor)}>
-            Impact: {impactLabel}
+            Faint-target photography: {impactLabel}
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function MoonIntel({ timeZone = 'UTC', moon }: MoonIntelProps) {
             Dark Window
           </p>
           {moon.darkWindowStart && moon.darkWindowEnd ? (
-            <p className="text-cyan-400">
+            <p className="text-primary">
               {formatTime(moon.darkWindowStart, timeZone)} &ndash;{' '}
               {formatTime(moon.darkWindowEnd, timeZone)}
             </p>

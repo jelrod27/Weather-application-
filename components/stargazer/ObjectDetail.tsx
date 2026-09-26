@@ -1,6 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import { Suspense } from 'react';
+import StargazerContextLink from '@/components/stargazer/StargazerContextLink';
+import { formatType, formatBestMonths } from '@/lib/stargazer/catalog';
+import { getBeginnerTarget } from '@/lib/stargazer/beginner-targets';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import type { DeepSkyObject } from '@/lib/stargazer/types';
@@ -10,46 +13,27 @@ interface ObjectDetailProps {
   object: DeepSkyObject;
 }
 
-function formatType(type: string): string {
-  return type
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
-function formatMonths(months: number[]): string {
-  const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  if (months.length === 0 || months.length === 12) return 'Year-round';
-  if (months.length === 1) return names[months[0] - 1];
-  const sorted = [...months].sort((a, b) => a - b);
-  const isContiguous = sorted.every((m, i) =>
-    i === 0 || sorted[i] - sorted[i - 1] === 1
-  );
-  if (!isContiguous) return sorted.map((m) => names[m - 1]).join(', ');
-  return `${names[months[0] - 1]}-${names[months[months.length - 1] - 1]}`;
-}
-
 const difficultyColors: Record<string, string> = {
-  beginner: 'text-green-500',
-  intermediate: 'text-yellow-500',
-  advanced: 'text-red-500',
+  beginner: 'text-foreground',
+  intermediate: 'text-foreground',
+  advanced: 'text-foreground',
 };
 
 export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
   const styles = themeTokens.card;
+  const reviewed = getBeginnerTarget(obj.id);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4 font-mono">
       {/* Header */}
       <div className={cn('container-primary p-4', styles)}>
-        <Link
-          href="/stargazer#targets"
-          className="text-xs uppercase tracking-wider text-cyan-400 hover:underline"
+        <Suspense fallback={<a href="/stargazer#targets">Back to Stargazer</a>}><StargazerContextLink
+          className="text-xs uppercase tracking-wider text-primary hover:underline"
         >
           {'\u25C0'} Back to Stargazer
-        </Link>
+        </StargazerContextLink></Suspense>
 
-        <h1 className="mt-3 text-xl font-bold text-cyan-400">
+        <h1 className="mt-3 text-xl font-bold text-primary">
           {obj.id} - {obj.name.toUpperCase()}
         </h1>
         {obj.altNames.length > 0 && (
@@ -95,8 +79,8 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
             <div className="border-t border-subtle pt-2">
               <dt className="text-muted-foreground">Viewing</dt>
               <dd className="mt-1 space-y-1">
-                <p>Naked Eye: {obj.nakedEyeVisible === true ? 'Yes' : obj.nakedEyeVisible === false ? 'No' : '—'}</p>
-                <p>Binoculars: {obj.binocularTarget === true ? 'Yes' : obj.binocularTarget === false ? 'No' : '—'}</p>
+                <p>Naked Eye: {reviewed ? (reviewed.minimumEquipment === 'eyes' ? 'Suggested' : 'Use equipment below') : obj.nakedEyeVisible === true ? 'Catalog: possible' : obj.nakedEyeVisible === false ? 'No' : 'Unknown'}</p>
+                <p>Binoculars: {reviewed ? (reviewed.minimumEquipment !== 'telescope' ? 'Suggested' : 'Use a telescope') : obj.binocularTarget === true ? 'Catalog: possible' : obj.binocularTarget === false ? 'No' : 'Unknown'}</p>
                 {obj.telescopeMinAperture && (
                   <p>Min Scope: {obj.telescopeMinAperture}</p>
                 )}
@@ -110,7 +94,7 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
             </div>
             <div>
               <dt className="text-muted-foreground">Best Months</dt>
-              <dd>{formatMonths(obj.bestMonths)}</dd>
+              <dd>{formatBestMonths(obj.bestMonths)}</dd>
             </div>
           </dl>
         </div>
@@ -132,6 +116,17 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
         </div>
       </div>
 
+      <section className="container-primary p-4 space-y-3 text-sm">
+        <h2 className="font-semibold">What to expect through your eyes</h2>
+        {reviewed ? <><p>{reviewed.appearance}</p><p>{reviewed.guidance}</p><a className="text-primary underline" href={reviewed.source.url}>{reviewed.source.title}</a></>
+          : <><p>This object has not been reviewed for our beginner recommendation set. Catalog equipment notes are reference information; sky darkness, aperture and experience affect what you can see.</p><p>Do not expect the color and detail of a long-exposure photograph. Check an observing guide before setting out.</p></>}
+      </section>
+
+      {/* Tonight's Visibility */}
+      <Suspense fallback={<p>Loading observing location…</p>}>
+        <TonightVisibility ra={obj.ra} dec={obj.dec} objectName={obj.name} />
+      </Suspense>
+
       {/* Imaging Tips */}
       <div className={cn('container-primary p-4', styles)}>
         <h2 className="border-b border-subtle pb-2 mb-3 text-xs uppercase tracking-wider text-muted-foreground">
@@ -150,9 +145,6 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
         </div>
       )}
 
-      {/* Tonight's Visibility */}
-      <TonightVisibility ra={obj.ra} dec={obj.dec} objectName={obj.name} />
-
       {/* Wikipedia link */}
       {obj.wikipediaSlug && (
         <div className="text-xs">
@@ -160,7 +152,7 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
             href={`https://en.wikipedia.org/wiki/${obj.wikipediaSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-400 hover:underline"
+            className="text-primary hover:underline"
           >
             Learn more: Wikipedia {'\u2197'}
           </a>

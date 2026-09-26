@@ -3,7 +3,7 @@
  * Nominatim is reached only via reverseGeocodingForStargazer.
  */
 
-import { formatTime } from '@/lib/stargazer/format';
+import { buildBeginnerNight } from '@/lib/stargazer/beginner-plan';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { reverseGeocodingForStargazer } from '@/lib/geocoding/lookup';
 import {
@@ -13,15 +13,8 @@ import {
   catalogObjectAltAz,
   calculateUpcomingSkyEvents,
 } from '@/lib/stargazer/astronomy';
-import {
-  scoreHour,
-  findBestWindow,
-  findLimitingFactor,
-  calculateStargazerScore,
-  getScoreLabel,
-  getScoreColor,
-  getSubScoreLabel,
-} from '@/lib/stargazer/score';
+import { getPhotographyForecast } from '@/lib/stargazer/photography';
+import { readStargazerWeather, readWeatherRetrievedAt } from '@/lib/stargazer/forecast-inputs';
 import {
   fetchSevenTimerData,
   getSevenTimerAtTime,
@@ -35,14 +28,10 @@ import meteorShowerData from '@/data/meteor-showers.json';
 
 import type {
   StargazerData,
-  StargazerSubScores,
-  HourlyCondition,
   DeepSkyHighlight,
   DeepSkyObject,
   MeteorShowerEvent,
   MeteorShower,
-  BestWindow,
-  LimitingFactor,
 } from '@/lib/stargazer/types';
 
 export class StargazerWeatherUnavailableError extends Error {
@@ -52,46 +41,8 @@ export class StargazerWeatherUnavailableError extends Error {
   }
 }
 
-interface OpenMeteoHourly {
-  time: Array<string | number>;
-  cloud_cover: number[];
-  cloud_cover_low: number[];
-  cloud_cover_mid: number[];
-  cloud_cover_high: number[];
-  relative_humidity_2m: number[];
-  dewpoint_2m: number[];
-  temperature_2m: number[];
-  wind_speed_10m: number[];
-  visibility: number[];
-  surface_pressure: number[];
-}
-
-interface OpenMeteoResponse {
-  timezone?: string;
-  hourly: OpenMeteoHourly;
-  utc_offset_seconds: number;
-}
-
-/** Convert Celsius to Fahrenheit */
-function cToF(c: number): number {
-  return c * 1.8 + 32;
-}
-
-/** Convert km/h to mph */
-function kmhToMph(kmh: number): number {
-  return kmh * 0.621371;
-}
-
-/** Compute dew risk from temperature and dewpoint (both in Celsius) */
-function getDewRisk(tempC: number, dewpointC: number): 'low' | 'moderate' | 'high' {
-  const delta = tempC - dewpointC;
-  if (delta < 2) return 'high';
-  if (delta < 5) return 'moderate';
-  return 'low';
-}
-
 export async function buildStargazerPayload(lat: number, lon: number): Promise<StargazerData> {
-  const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,visibility,surface_pressure&forecast_days=2&timezone=auto&timeformat=unixtime`;
+  const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,precipitation_probability,weather_code&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=2&timezone=auto&timeformat=unixtime`;
 
   const [openMeteoRes, sevenTimerData, issTle, launches, place] = await Promise.all([
     fetchWithTimeout(openMeteoUrl, { next: { revalidate: 900 } }),
@@ -105,19 +56,9 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     throw new StargazerWeatherUnavailableError();
   }
 
-  const openMeteo = (await openMeteoRes.json()) as OpenMeteoResponse;
-  const hourly = openMeteo.hourly;
-
-  // Open-Meteo returns times like "2026-04-05T20:00" without timezone.
-  // Append the UTC offset so `new Date()` interprets them correctly.
-  const utcOffsetSec = openMeteo.utc_offset_seconds ?? 0;
-  const offsetSign = utcOffsetSec >= 0 ? '+' : '-';
-  const absOffset = Math.abs(utcOffsetSec);
-  const offsetHH = String(Math.floor(absOffset / 3600)).padStart(2, '0');
-  const offsetMM = String(Math.floor((absOffset % 3600) / 60)).padStart(2, '0');
-  const tzSuffix = `${offsetSign}${offsetHH}:${offsetMM}`;
-
   const now = new Date();
+  const { hours, timeZone } = readStargazerWeather(await openMeteoRes.json());
+  const weatherRetrievedAt = readWeatherRetrievedAt(openMeteoRes, now);
   const darkWindow = calculateDarkWindow(lat, lon, now);
   const moonInfo = calculateMoonInfo(lat, lon, darkWindow);
   const planets = calculatePlanetVisibility(lat, lon, darkWindow);
@@ -168,173 +109,13 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     : [];
 
   const sunsetMs = (darkWindow.sunset ?? darkWindow.astronomicalDusk).getTime();
-  const sunriseMs = (darkWindow.sunrise ?? darkWindow.astronomicalDawn).getTime();
+  const sunriseMs = darkWindow.sunrise?.getTime() ?? (darkWindow.status === 'none' ? now.getTime() + 86400000 : darkWindow.astronomicalDawn.getTime());
 
-  const hourlyConditions: HourlyCondition[] = [];
-
-  for (let i = 0; i < hourly.time.length; i++) {
-    // UNIX instants avoid DST ambiguity. Accept legacy ISO responses too.
-    const rawTime = hourly.time[i];
-    const t = typeof rawTime === 'number' ? new Date(rawTime * 1000)
-      : new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawTime) ? rawTime : rawTime + tzSuffix);
-    const tMs = t.getTime();
-
-    if (!Number.isFinite(tMs) || tMs < sunsetMs || tMs > sunriseMs) continue;
-
-    const stPoint = sevenTimerData ? getSevenTimerAtTime(sevenTimerData, t) : null;
-    const seeing = stPoint ? stPoint.seeing : 4;
-    const transparency = stPoint ? stPoint.transparency : 4;
-
-    const tempC = hourly.temperature_2m[i];
-    const dewpointC = hourly.dewpoint_2m[i];
-
-    hourlyConditions.push({
-      time: t,
-      cloudCover: hourly.cloud_cover[i],
-      cloudCoverLow: hourly.cloud_cover_low[i],
-      cloudCoverMid: hourly.cloud_cover_mid[i],
-      cloudCoverHigh: hourly.cloud_cover_high[i],
-      seeing,
-      transparency,
-      windSpeed: hourly.wind_speed_10m[i],
-      humidity: hourly.relative_humidity_2m[i],
-      temperature: tempC,
-      dewpoint: dewpointC,
-      dewRisk: getDewRisk(tempC, dewpointC),
-    });
-  }
-
-  const darkDuskMs = darkWindow.astronomicalDusk.getTime();
-  const darkDawnMs = darkWindow.astronomicalDawn.getTime();
-  const moonIllumPct = moonInfo.illumination;
-  const moonUpPct = moonInfo.moonUpDuringDarkWindowPercent;
-
-  const darkHourIndices: number[] = [];
-  for (let i = 0; i < hourlyConditions.length; i++) {
-    const h = hourlyConditions[i];
-    const tMs = h.time.getTime();
-    if (darkWindow.status !== 'none' && tMs >= darkDuskMs && tMs <= darkDawnMs) {
-      darkHourIndices.push(i);
-    }
-
-    if (darkWindow.status === 'none') continue;
-
-    const result = scoreHour(
-      h.cloudCover,
-      moonIllumPct,
-      moonUpPct,
-      h.seeing,
-      h.transparency,
-      kmhToMph(h.windSpeed),
-      h.humidity,
-      cToF(h.temperature),
-      cToF(h.dewpoint),
-      h.cloudCoverHigh,
-      h.cloudCover,
-    );
-    hourlyConditions[i].hourlyScore = result.score;
-    hourlyConditions[i].hourlySubScores = result.subScores;
-    hourlyConditions[i].cirrusWarning = result.cirrusWarning;
-  }
-
-  const darkHourScores = darkHourIndices.map((i) => hourlyConditions[i].hourlyScore!);
-
-  const bestWindowResult = findBestWindow(darkHourScores, 3);
-
-  let bestWindow: BestWindow | null = null;
-  let headlineSubScores: StargazerSubScores;
-  let headlineScore: number;
-
-  if (bestWindowResult && darkHourIndices.length > 0) {
-    const bwStartIdx = darkHourIndices[bestWindowResult.startIndex];
-    const bwEndIdx = darkHourIndices[bestWindowResult.endIndex];
-
-    bestWindow = {
-      startTime: hourlyConditions[bwStartIdx].time,
-      endTime: hourlyConditions[bwEndIdx].time,
-      score: bestWindowResult.score,
-      label: getScoreLabel(bestWindowResult.score),
-      color: getScoreColor(getScoreLabel(bestWindowResult.score)),
-    };
-
-    const bwHours = darkHourIndices
-      .slice(bestWindowResult.startIndex, bestWindowResult.endIndex + 1)
-      .map((i) => hourlyConditions[i].hourlySubScores!);
-    headlineSubScores = {
-      cloud: Math.round(bwHours.reduce((s, h) => s + h.cloud, 0) / bwHours.length),
-      moon: Math.round(bwHours.reduce((s, h) => s + h.moon, 0) / bwHours.length),
-      seeing: Math.round(bwHours.reduce((s, h) => s + h.seeing, 0) / bwHours.length),
-      transparency: Math.round(bwHours.reduce((s, h) => s + h.transparency, 0) / bwHours.length),
-      ground: Math.round(bwHours.reduce((s, h) => s + h.ground, 0) / bwHours.length),
-    };
-    headlineScore = bestWindowResult.score;
-  } else {
-    const fallback = darkWindow.status !== 'none' && hourlyConditions.length > 0
-      ? hourlyConditions.map((h) => h.hourlySubScores!)
-      : null;
-    if (fallback && fallback.length > 0) {
-      headlineSubScores = {
-        cloud: Math.round(fallback.reduce((s, h) => s + h.cloud, 0) / fallback.length),
-        moon: Math.round(fallback.reduce((s, h) => s + h.moon, 0) / fallback.length),
-        seeing: Math.round(fallback.reduce((s, h) => s + h.seeing, 0) / fallback.length),
-        transparency: Math.round(fallback.reduce((s, h) => s + h.transparency, 0) / fallback.length),
-        ground: Math.round(fallback.reduce((s, h) => s + h.ground, 0) / fallback.length),
-      };
-    } else {
-      headlineSubScores = { cloud: 50, moon: 50, seeing: 50, transparency: 50, ground: 50 };
-    }
-    headlineScore = hourlyConditions.length > 0
-      ? Math.round(hourlyConditions.reduce((s, h) => s + (h.hourlyScore ?? 0), 0) / hourlyConditions.length)
-      : 50;
-  }
-
-  const nightAverage = darkWindow.status === 'none' ? null : darkHourScores.length > 0
-    ? Math.round(darkHourScores.reduce((s, v) => s + v, 0) / darkHourScores.length)
-    : headlineScore;
-
-  const avgCloudCover = darkHourIndices.length > 0
-    ? darkHourIndices.reduce((s, i) => s + hourlyConditions[i].cloudCover, 0) / darkHourIndices.length
-    : hourlyConditions.length > 0
-      ? hourlyConditions.reduce((s, h) => s + h.cloudCover, 0) / hourlyConditions.length
-      : 50;
-
-  const score: StargazerData['score'] = darkWindow.status === 'none'
-    ? {
-        overall: null,
-        label: 'Unavailable',
-        color: '#9ca3af',
-        summary: 'No astronomical darkness at this location tonight.',
-        subScores: null,
-      }
-    : {
-        ...calculateStargazerScore(headlineSubScores, moonIllumPct, avgCloudCover),
-        overall: headlineScore,
-        label: getScoreLabel(headlineScore),
-        color: getScoreColor(getScoreLabel(headlineScore)),
-      };
-
-  let limitingFactor: LimitingFactor | null = null;
-  if (darkWindow.status !== 'none' && headlineScore < 85) {
-    const { category, score: limitScore } = findLimitingFactor(headlineSubScores);
-    const label = getSubScoreLabel(category, limitScore);
-
-    let detail = '';
-    if (category === 'moon' && moonInfo.rise) {
-      const moonRiseStr = formatTime(moonInfo.rise, openMeteo.timezone, true);
-      detail = `rises at ${moonRiseStr} with ${Math.round(moonIllumPct)}% illumination`;
-    } else if (category === 'cloud') {
-      detail = `${Math.round(avgCloudCover)}% average cloud cover`;
-    } else if (category === 'seeing') {
-      detail = 'atmospheric turbulence limiting resolution';
-    } else if (category === 'transparency') {
-      const hasCirrus = hourlyConditions.some((h) => h.cirrusWarning);
-      detail = hasCirrus ? 'high-altitude cirrus reducing clarity' : 'haze or moisture reducing clarity';
-    } else if (category === 'ground') {
-      detail = 'wind, humidity, or dew risk affecting conditions';
-    }
-
-    limitingFactor = { category, label, detail };
-  }
+  const weatherHours = hours.filter(hour => hour.time.getTime() >= sunsetMs && hour.time.getTime() <= sunriseMs).map(hour => {
+    const point = sevenTimerData ? getSevenTimerAtTime(sevenTimerData, hour.time, now) : null;
+    return { ...hour, seeing: point?.seeing ?? null, transparency: point?.transparency ?? null };
+  });
+  const photography = getPhotographyForecast(weatherHours, darkWindow, moonInfo.illumination, moonInfo.moonUpDuringDarkWindowPercent);
 
   const showers = meteorShowerData as MeteorShower[];
   const meteorShowers: MeteorShowerEvent[] = showers
@@ -375,31 +156,30 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
   const locationName = place?.locationName;
   const displayName = place?.displayName;
   const population = place?.population;
-  const bortleEstimate = estimateBortleClass(population);
+  const bortleEstimate = typeof population === 'number' && Number.isFinite(population) && population >= 0 ? estimateBortleClass(population) : null;
 
   return {
-    score,
-    bestWindow,
-    nightAverage,
-    limitingFactor,
+    ...photography,
+    beginnerNight: buildBeginnerNight(weatherHours, { lat, lon, timezone: timeZone }, darkWindow, now.getTime()),
     darkWindow,
-    hourlyConditions,
     moon: moonInfo,
     planets,
     deepSkyHighlights,
     skyEvents,
     issPasses,
-    launches,
+    launches: launches ?? [],
+    optionalData: { iss: issTle !== null, launches: launches !== null },
     meteorShowers,
     location: {
-      timezone: openMeteo.timezone || 'UTC',
+      timezone: timeZone,
       lat,
       lon,
       name: locationName,
       displayName,
-      bortle: bortleEstimate.bortle,
-      bortleLabel: bortleEstimate.label,
+      bortle: bortleEstimate?.bortle,
+      bortleLabel: bortleEstimate?.label,
     },
+    weatherRetrievedAt,
     generatedAt: now.toISOString(),
   };
 }

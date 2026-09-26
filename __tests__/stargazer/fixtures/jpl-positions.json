@@ -1,0 +1,26 @@
+[
+  {
+    "name": "nyc-moon",
+    "body": "Moon",
+    "lat": 40.7128,
+    "lon": -74.006,
+    "time": "2026-09-27T01:00:00Z",
+    "azimuth": 106.080169,
+    "altitude": 26.169499,
+    "source": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27301%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40399%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27-74.006%2C40.7128%2C0%27&START_TIME=%272026-09-27+01%3A00%27&STOP_TIME=%272026-09-27+01%3A01%27&STEP_SIZE=%271m%27&QUANTITIES=%274%27&APPARENT=%27REFRACTED%27&CSV_FORMAT=%27YES%27",
+    "retrieved": "2026-09-26",
+    "method": "JPL Horizons observer table, apparent=refracted, sea level; tolerance 0.2 degrees for UI precision"
+  },
+  {
+    "name": "sydney-saturn",
+    "body": "Saturn",
+    "lat": -33.87,
+    "lon": 151.21,
+    "time": "2026-09-27T10:00:00Z",
+    "azimuth": 73.270618,
+    "altitude": 19.639744,
+    "source": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27699%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40399%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27151.21%2C-33.87%2C0%27&START_TIME=%272026-09-27+10%3A00%27&STOP_TIME=%272026-09-27+10%3A01%27&STEP_SIZE=%271m%27&QUANTITIES=%274%27&APPARENT=%27REFRACTED%27&CSV_FORMAT=%27YES%27",
+    "retrieved": "2026-09-26",
+    "method": "JPL Horizons observer table, apparent=refracted, sea level; tolerance 0.2 degrees for UI precision"
+  }
+]

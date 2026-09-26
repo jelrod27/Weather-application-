@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import type { DeepSkyHighlight } from '@/lib/stargazer/types';
+import { getStargazerHref } from '@/lib/stargazer/context';
+import type { StargazerContext } from '@/lib/stargazer/context';
 import { formatTime } from '@/lib/stargazer/format';
 
 interface DeepSkyHighlightsProps {
   timeZone?: string;
+  context?: StargazerContext;
   highlights: DeepSkyHighlight[];
 }
 
@@ -25,7 +28,7 @@ const difficultyColors: Record<string, string> = {
 };
 
 export default function DeepSkyHighlights({ timeZone = 'UTC',
-  highlights,
+  highlights, context,
 }: DeepSkyHighlightsProps) {
   const styles = themeTokens.card;
 
@@ -67,7 +70,7 @@ export default function DeepSkyHighlights({ timeZone = 'UTC',
             className="card-inner p-3 rounded"
           >
             <div className="mb-1 flex items-start justify-between gap-2">
-              <Link href={`/stargazer/objects/${obj.id}`} className="hover:underline">
+              <Link href={context ? getStargazerHref({ ...context, from: 'targets' }, { objectId: obj.id }) : `/stargazer/objects/${obj.id}`} className="hover:underline">
                 <h3 className="text-sm font-bold text-cyan-400">
                   {obj.id} - {obj.name}
                 </h3>

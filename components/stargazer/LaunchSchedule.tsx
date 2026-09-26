@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/stargazer/format';
 
 interface LaunchScheduleProps {
   timeZone?: string;
+  available?: boolean;
   launches: Launch[];
 }
 
@@ -33,7 +34,7 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   );
 }
 
-export default function LaunchSchedule({ timeZone = 'UTC', launches }: LaunchScheduleProps) {
+export default function LaunchSchedule({ timeZone = 'UTC', available, launches }: LaunchScheduleProps) {
   const styles = themeTokens.card;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -50,7 +51,7 @@ export default function LaunchSchedule({ timeZone = 'UTC', launches }: LaunchSch
 
       {!launches || launches.length === 0 ? (
         <p className="text-xs font-mono">
-          No upcoming launches scheduled.
+          {available === true ? 'No upcoming launches returned by the provider.' : 'Launch schedule unavailable. Try refreshing later.'}
         </p>
       ) : (
         <div className="overflow-x-auto">

@@ -1,257 +1,156 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, startTransition, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocationContext } from '@/components/location-context';
+import { getStargazerHref, parseStargazerCoordinates, readStargazerContext } from '@/lib/stargazer/context';
+import type { Dispatch, FormEvent, SetStateAction } from 'react';
+import type { StargazerContext, StargazerCoordinates } from '@/lib/stargazer/context';
 import type { StargazerData } from '@/lib/stargazer/types';
 import type { StargazerTabId } from '@/components/stargazer/StargazerNav';
 
-const VALID_TABS: StargazerTabId[] = ['conditions', 'targets', 'events', 'launches'];
-
+const VALID_TABS: StargazerTabId[] = ['start', 'conditions', 'targets', 'events', 'launches'];
 function getTabFromHash(): StargazerTabId {
-  if (typeof window === 'undefined') return 'conditions';
-  const hash = window.location.hash.replace('#', '') as StargazerTabId;
-  return VALID_TABS.includes(hash) ? hash : 'conditions';
+  const hash = window.location.hash.slice(1) as StargazerTabId;
+  return VALID_TABS.includes(hash) ? hash : 'start';
 }
 
-function parseCoord(value: string | null): number | null {
-  if (!value) return null;
-  const n = Number.parseFloat(value);
-  return Number.isFinite(n) ? n : null;
+async function geocodeLabel(label: string, signal: AbortSignal): Promise<StargazerCoordinates | null> {
+  const res = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(label)}&limit=1`, { signal });
+  if (!res.ok) return null;
+  const body = await res.json();
+  const place = Array.isArray(body) ? body[0] : body;
+  return parseStargazerCoordinates(String(place?.lat ?? ''), String(place?.lon ?? ''));
 }
 
-async function geocodeLabel(label: string): Promise<{ lat: number; lon: number } | null> {
-  try {
-    const geoRes = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(label)}&limit=1`);
-    if (!geoRes.ok) return null;
-    const geoData = await geoRes.json();
-    const result = Array.isArray(geoData) ? geoData[0] : geoData;
-    if (result?.lat != null && result?.lon != null) {
-      return { lat: result.lat, lon: result.lon };
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-export type UseStargazerControllerResult = {
+export interface UseStargazerControllerResult {
   data: StargazerData | null;
+  receivedAt: number | null;
+  invalidSharedTime: boolean;
+  acknowledgeSharedTime: () => void;
   isLoading: boolean;
   error: string | null;
   activeTab: StargazerTabId;
   searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
   isSearching: boolean;
   handleTabChange: (tab: StargazerTabId) => void;
-  handleLocationSearch: (e: React.FormEvent) => Promise<void>;
-};
+  handleLocationSearch: (event: FormEvent) => Promise<void>;
+  handleDeviceLocation: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
 
 export function useStargazerController(): UseStargazerControllerResult {
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const lat = params.get('lat');
+  const lon = params.get('lon');
+  const query = params.get('q') ?? '';
   const { currentLocation, locationInput } = useLocationContext();
-  const latParam = searchParams.get('lat');
-  const lonParam = searchParams.get('lon');
-  const qParam = searchParams.get('q')?.trim() ?? '';
+  const storedLabel = locationInput || currentLocation;
   const [data, setData] = useState<StargazerData | null>(null);
+  const [receivedAt, setReceivedAt] = useState<number | null>(null);
+  const [invalidSharedTime, setInvalidSharedTime] = useState(false);
+  const acknowledgeSharedTime = useCallback(() => setInvalidSharedTime(false), []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<StargazerTabId>('conditions');
-  const [searchQuery, setSearchQuery] = useState(qParam);
+  const [searchQuery, setSearchQuery] = useState(query);
   const [isSearching, setIsSearching] = useState(false);
-  const lastLoadedKeyRef = useRef<string | null>(null);
-
-  // Monotonic load id + in-flight abort. This surface resolves coordinates
-  // through geolocation, a geocode, or an imperative search box, so loads can
-  // overlap: without this guard a slow earlier response lands after a fast
-  // later one and overwrites it. useRemoteData applies the same rule for the
-  // surfaces whose load is a single keyed request.
-  const loadIdRef = useRef(0);
-  const inFlightRef = useRef<AbortController | null>(null);
-
-  // loadIdRef alone only covers work *inside* fetchData. Both callers below do
-  // async work (a geocode) BEFORE calling it, so an abandoned run's slow geocode
-  // would resolve late and start a brand-new load that then wins — a race the
-  // monotonic counter cannot see, because the stale work starts a fresh load
-  // rather than finishing an old one. intentRef versions the user-visible
-  // intent, and each caller re-checks it after every await.
-  const intentRef = useRef(0);
+  const [activeTab, setActiveTab] = useState<StargazerTabId>('start');
+  const intent = useRef(0);
+  const pending = useRef<AbortController | null>(null);
+  const loadedKey = useRef('');
+  const attempted = useRef<{ context: StargazerContext; device: boolean; history: 'push' | 'replace' } | null>(null);
 
   useEffect(() => {
-    return () => {
-      loadIdRef.current += 1;
-      inFlightRef.current?.abort();
-    };
+    const update = () => setActiveTab(getTabFromHash());
+    update();
+    window.addEventListener('hashchange', update);
+    window.addEventListener('popstate', update);
+    return () => { window.removeEventListener('hashchange', update); window.removeEventListener('popstate', update); loadedKey.current = ''; intent.current += 1; pending.current?.abort(); };
+  }, []);
+
+  const load = useCallback(async (context: StargazerContext, history: 'push' | 'replace' = 'replace', device = false) => {
+    const version = ++intent.current;
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
+    const current = () => version === intent.current && !controller.signal.aborted;
+    attempted.current = { context, device, history };
+    setData(null);
+    setReceivedAt(null);
+    setInvalidSharedTime(context.invalidTime === true);
+    setError(null);
+    setIsLoading(true);
+    try {
+      if (context.invalidCoordinates) throw new Error('Invalid location coordinates. Search for a city.');
+      let coordinates = context.coordinates;
+      if (device) {
+        if (!navigator.geolocation) throw new Error('Location access is unavailable. Search for a city.');
+        const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }));
+        coordinates = parseStargazerCoordinates(String(position.coords.latitude), String(position.coords.longitude));
+        if (current() && !coordinates) throw new Error('Location unavailable. Search for a city.');
+      } else if (!coordinates && context.label) {
+        coordinates = await geocodeLabel(context.label, controller.signal);
+        if (!coordinates) throw new Error('Location not found. Try a different city.');
+      }
+      if (!current() || !coordinates) return;
+      attempted.current = { context: { ...context, coordinates }, device: false, history };
+      const res = await fetch(`/api/stargazer?lat=${coordinates.lat}&lon=${coordinates.lon}`, { signal: controller.signal });
+      if (!res.ok) throw new Error('Forecast unavailable. Retry or choose a different location.');
+      const payload: StargazerData = await res.json();
+      if (!current()) return;
+      setData(payload);
+      setReceivedAt(Date.now());
+      const resolved: StargazerContext = { ...context, coordinates, invalidCoordinates: false,
+        label: payload.location.displayName || payload.location.name || context.label,
+        timeZone: payload.location.timezone };
+      setSearchQuery(resolved.label);
+      loadedKey.current = JSON.stringify([String(coordinates.lat), String(coordinates.lon), resolved.label]);
+      // Next's native history integration updates useSearchParams without a page reload.
+      const href = getStargazerHref(resolved) + window.location.hash;
+      if (history === 'push') window.history.pushState(null, '', href);
+      else window.history.replaceState(null, '', href);
+    } catch (failure) {
+      if (!current()) return;
+      setError(device ? 'Could not access your location. Search for a city instead.'
+        : failure instanceof Error ? failure.message : 'Could not load this location. Please retry.');
+    } finally {
+      if (current()) { setIsLoading(false); setIsSearching(false); }
+    }
   }, []);
 
   useEffect(() => {
-    if (qParam) setSearchQuery(qParam);
-  }, [qParam]);
+    const key = JSON.stringify([lat, lon, query]);
+    if (loadedKey.current === key) return;
+    loadedKey.current = key;
+    const context = readStargazerContext(new URLSearchParams(window.location.search));
+    if (!context.label && !context.coordinates && !context.invalidCoordinates) context.label = storedLabel;
+    setSearchQuery(context.label);
+    void load(context);
+  }, [lat, lon, query, storedLabel, load]);
 
-  // Read hash on mount
-  useEffect(() => {
-    setActiveTab(getTabFromHash());
+  const handleLocationSearch = useCallback(async (event: FormEvent) => {
+    event.preventDefault();
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    await load({ ...readStargazerContext(new URLSearchParams(window.location.search)),
+      coordinates: null, invalidCoordinates: false, label: searchQuery.trim(), at: null, invalidTime: false }, 'push');
+  }, [load, searchQuery]);
 
-    const handleHashChange = () => setActiveTab(getTabFromHash());
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Update hash on tab change
+  const handleDeviceLocation = useCallback(async () => {
+    await load({ ...readStargazerContext(new URLSearchParams(window.location.search)),
+      coordinates: null, invalidCoordinates: false, label: '', at: null, invalidTime: false }, 'push', true);
+  }, [load]);
+  const refresh = useCallback(async () => {
+    if (data) await load(readStargazerContext(new URLSearchParams(window.location.search)));
+    else if (attempted.current) await load(attempted.current.context, attempted.current.history, attempted.current.device);
+  }, [data, load]);
   const handleTabChange = useCallback((tab: StargazerTabId) => {
     setActiveTab(tab);
-    window.location.hash = tab;
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}#${tab}`);
   }, []);
 
-  const fetchData = useCallback(async (customLat?: number, customLon?: number, options?: { usedFallback?: boolean }) => {
-    const loadId = ++loadIdRef.current;
-    inFlightRef.current?.abort();
-    const controller = new AbortController();
-    inFlightRef.current = controller;
-    const isCurrent = () => loadId === loadIdRef.current;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      let latitude: number;
-      let longitude: number;
-      let usedFallback = options?.usedFallback ?? false;
-
-      if (customLat != null && customLon != null) {
-        latitude = customLat;
-        longitude = customLon;
-      } else {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-          });
-          latitude = pos.coords.latitude;
-          longitude = pos.coords.longitude;
-        } catch {
-          latitude = 40.7128;
-          longitude = -74.006;
-          usedFallback = true;
-        }
-      }
-
-      if (!isCurrent()) return;
-
-      const response = await fetch(
-        `/api/stargazer?lat=${latitude}&lon=${longitude}`,
-        { signal: controller.signal }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const json = await response.json();
-      if (!isCurrent()) return;
-      setData(json);
-
-      if (usedFallback) {
-        setError(
-          'Could not determine your location. Showing forecast for New York City. Enable location access for personalized forecasts.'
-        );
-      }
-    } catch (err) {
-      // A load superseded by a newer one is not a failure to report.
-      if (controller.signal.aborted || !isCurrent()) return;
-      console.error('[Stargazer]', err);
-      setError(
-        'Failed to load stargazer forecast. Please try again later.'
-      );
-    } finally {
-      if (isCurrent()) setIsLoading(false);
-    }
-  }, []);
-
-  const resolveAndLoad = useCallback(async () => {
-    const urlLat = parseCoord(latParam);
-    const urlLon = parseCoord(lonParam);
-    const loadKey = `${urlLat ?? ''},${urlLon ?? ''},${qParam},${locationInput},${currentLocation}`;
-
-    if (lastLoadedKeyRef.current === loadKey) return;
-    lastLoadedKeyRef.current = loadKey;
-
-    if (qParam) {
-      setSearchQuery(qParam);
-    } else {
-      const contextLabel = (locationInput || currentLocation)?.trim();
-      if (contextLabel) setSearchQuery(contextLabel);
-    }
-
-    const intent = ++intentRef.current;
-
-    if (urlLat != null && urlLon != null) {
-      await fetchData(urlLat, urlLon);
-      return;
-    }
-
-    const contextLabel = (locationInput || currentLocation)?.trim();
-    if (contextLabel) {
-      const coords = await geocodeLabel(contextLabel);
-      // A newer resolve started while this geocode was in flight.
-      if (intent !== intentRef.current) return;
-      if (coords) {
-        await fetchData(coords.lat, coords.lon);
-        return;
-      }
-    }
-
-    await fetchData();
-  }, [latParam, lonParam, qParam, locationInput, currentLocation, fetchData]);
-
-  const handleLocationSearch = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    const intent = ++intentRef.current;
-    const isCurrent = () => intent === intentRef.current;
-
-    setIsSearching(true);
-    try {
-      const geoRes = await fetch(`/api/weather/geocoding?q=${encodeURIComponent(searchQuery.trim())}&limit=1`);
-      // A superseded search must not write "not found" over a newer result.
-      if (!isCurrent()) return;
-      if (!geoRes.ok) {
-        setError('Location not found. Try a different search.');
-        return;
-      }
-      const geoData = await geoRes.json();
-      if (!isCurrent()) return;
-      const result = Array.isArray(geoData) ? geoData[0] : geoData;
-      if (result?.lat != null && result?.lon != null) {
-        setSearchQuery('');
-        await fetchData(result.lat, result.lon);
-      } else {
-        setError('Location not found. Try a different search.');
-      }
-    } catch {
-      if (!isCurrent()) return;
-      setError('Failed to search location.');
-    } finally {
-      // Only the newest search owns the spinner.
-      if (isCurrent()) setIsSearching(false);
-    }
-  }, [searchQuery, fetchData]);
-
-  useEffect(() => {
-    startTransition(() => {
-      void resolveAndLoad();
-    });
-  }, [resolveAndLoad]);
-
-  return {
-    data,
-    isLoading,
-    error,
-    activeTab,
-    searchQuery,
-    setSearchQuery,
-    isSearching,
-    handleTabChange,
-    handleLocationSearch,
-  };
+  return { data, receivedAt, invalidSharedTime, acknowledgeSharedTime, isLoading, error, activeTab, searchQuery, setSearchQuery, isSearching,
+    handleTabChange, handleLocationSearch, handleDeviceLocation, refresh };
 }

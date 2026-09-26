@@ -1,19 +1,9 @@
 'use client';
 
-/**
- * 16-Bit Weather Platform - Stargazer Command Center
- *
- * Tabbed command center layout for astrophotography forecasting.
- * Matches space weather page patterns with persistent header card,
- * tab navigation, and organized content sections.
- */
-
 import React, { Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
-import { ShareButtons } from '@/components/share-buttons';
-import { formatTonightDate } from '@/lib/stargazer/bortle';
 import StargazerCommandCenter from '@/components/stargazer/StargazerCommandCenter';
 import StargazerSeoContent from '@/components/stargazer/stargazer-seo-content';
 
@@ -27,30 +17,18 @@ function StargazerShell({ children }: { children: React.ReactNode }) {
           <h1
             data-testid="stargazer-page-title"
             className={cn(
-              'text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 font-mono',
+              'text-3xl sm:text-4xl font-extrabold mb-3 font-mono',
               themeClasses.accentText,
               themeClasses.glow,
             )}
           >
-            STARGAZER COMMAND CENTER
+            STARGAZER
           </h1>
           <p className={cn('text-base sm:text-lg font-mono max-w-3xl', themeClasses.text)}>
-            Tonight&apos;s astrophotography forecast. Seeing, transparency, moon phase, planet
-            visibility, deep sky targets, ISS passes, and upcoming launches -- all in one place.
-          </p>
-          <p className="text-sm font-mono text-muted-foreground mt-2">
-            Tonight: {formatTonightDate(new Date())}
+            Find an hour to look up, choose what to try, and learn where to look.
+            Start with your eyes, then explore the detailed sky forecast.
           </p>
         </div>
-
-        <ShareButtons
-          config={{
-            title: 'Stargazer - Astrophotography Forecast',
-            text: "Tonight's stargazing conditions at 16bitweather.co",
-            url: 'https://www.16bitweather.co/stargazer',
-          }}
-          className="mt-3 mb-6"
-        />
 
         {children}
       </div>
@@ -61,6 +39,7 @@ function StargazerShell({ children }: { children: React.ReactNode }) {
 export default function StargazerPage() {
   return (
     <StargazerShell>
+      <div className="min-h-[75vh]">
       <Suspense
         fallback={
           <p className="font-mono text-sm text-muted-foreground animate-pulse">Loading location…</p>
@@ -68,6 +47,7 @@ export default function StargazerPage() {
       >
         <StargazerCommandCenter />
       </Suspense>
+      </div>
       {/* Outside the Suspense boundary: the command center reads search params,
           so only this copy survives into the prerendered HTML. */}
       <StargazerSeoContent />

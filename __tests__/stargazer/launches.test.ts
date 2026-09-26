@@ -46,10 +46,10 @@ describe('fetchUpcomingLaunches', () => {
     const launches = await fetchUpcomingLaunches(1);
 
     expect(launches).toHaveLength(1);
-    expect(launches[0].slug).toBe('falcon-9-block-5-starlink-group-10-63');
-    expect(launches[0].videoUrls).toEqual(['https://youtube.com/watch?v=abc']);
-    expect(launches[0].imageUrl).toBe('https://example.com/image.jpg');
-    expect(launches[0].padMapUrl).toBe('https://maps.google.com/?q=28.5618,-80.577');
+    expect(launches![0].slug).toBe('falcon-9-block-5-starlink-group-10-63');
+    expect(launches![0].videoUrls).toEqual(['https://youtube.com/watch?v=abc']);
+    expect(launches![0].imageUrl).toBe('https://example.com/image.jpg');
+    expect(launches![0].padMapUrl).toBe('https://maps.google.com/?q=28.5618,-80.577');
   });
 
   it('handles null vid_urls, string image, and missing pad map_url', async () => {
@@ -76,9 +76,18 @@ describe('fetchUpcomingLaunches', () => {
 
     const launches = await fetchUpcomingLaunches(1);
 
-    expect(launches[0].videoUrls).toEqual([]);
-    expect(launches[0].imageUrl).toBe('https://example.com/sls.jpg');
-    expect(launches[0].padMapUrl).toBeNull();
-    expect(launches[0].isCrewed).toBe(true);
+    expect(launches![0].videoUrls).toEqual([]);
+    expect(launches![0].imageUrl).toBe('https://example.com/sls.jpg');
+    expect(launches![0].padMapUrl).toBeNull();
+    expect(launches![0].isCrewed).toBe(true);
   });
+});
+
+it('distinguishes a failed provider from a successful empty schedule', async () => {
+  mockFetch.mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+  const silence = jest.spyOn(console, 'error').mockImplementation(() => {});
+  expect(await fetchUpcomingLaunches()).toBeNull();
+  mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) } as Response);
+  expect(await fetchUpcomingLaunches()).toEqual([]);
+  silence.mockRestore();
 });

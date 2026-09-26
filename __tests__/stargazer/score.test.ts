@@ -154,7 +154,8 @@ describe('Stargazer Score Algorithm', () => {
         5, 5
       );
       expect(summary.length).toBeGreaterThan(10);
-      expect(summary.toLowerCase()).toContain('clear');
+      expect(summary.toLowerCase()).toContain('photography');
+      expect(summary.toLowerCase()).not.toContain('new moon');
     });
 
     it('generates summary for overcast night', () => {
@@ -163,7 +164,8 @@ describe('Stargazer Score Algorithm', () => {
         5, 90
       );
       expect(summary.length).toBeGreaterThan(10);
-      expect(summary.toLowerCase()).toContain('overcast');
+      expect(summary.toLowerCase()).toContain('cloud');
+      expect(summary.toLowerCase()).not.toContain('all night');
     });
   });
 
@@ -251,4 +253,10 @@ describe('Stargazer Score Algorithm', () => {
       expect(total).toBeLessThanOrEqual(80);
     });
   });
+});
+
+it('does not invent a moonrise time for a bright Moon', () => {
+  const summary = generateSummary({ cloud: 95, moon: 10, seeing: 80, transparency: 80, ground: 90 }, 95, 5);
+  expect(summary).toMatch(/bright moonlight/i);
+  expect(summary).not.toMatch(/11pm|rises at|new moon/i);
 });

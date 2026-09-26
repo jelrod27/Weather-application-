@@ -1,3 +1,7 @@
+import { Suspense } from 'react';
+import CatalogBrowser from '@/components/stargazer/CatalogBrowser';
+import CatalogList from '@/components/stargazer/CatalogList';
+import StargazerContextLink from '@/components/stargazer/StargazerContextLink';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PageWrapper from '@/components/page-wrapper';
@@ -8,6 +12,7 @@ import type { DeepSkyObject } from '@/lib/stargazer/types';
 const BASE_URL = 'https://www.16bitweather.co';
 const PAGE_URL = `${BASE_URL}/stargazer/objects`;
 const OBJECTS = catalog as DeepSkyObject[];
+const ENTRIES = OBJECTS.map(({ id, name, altNames, type, constellation, magnitude, bestMonths, nakedEyeVisible, binocularTarget, telescopeMinAperture }) => ({ id, name, altNames, type, constellation, magnitude, bestMonths, nakedEyeVisible, binocularTarget, telescopeMinAperture }));
 const OG_IMAGE = `/api/og?title=${encodeURIComponent('Deep-Sky Catalog')}&subtitle=${encodeURIComponent(`${OBJECTS.length} Objects To Observe`)}`;
 
 const DESCRIPTION = `Observing guides for ${OBJECTS.length} deep-sky objects: every Messier target plus NGC, IC and Sharpless nebulae, clusters and galaxies, with best months, magnitude and imaging tips.`;
@@ -32,63 +37,6 @@ export const metadata: Metadata = {
     images: [OG_IMAGE],
   },
 };
-
-function formatType(type: string): string {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/**
- * Renders an observing window. Sorting alone is not enough: a winter target
- * carries months like [11, 12, 1, 2], which sorts to [1, 2, 11, 12] and would
- * read as "Jan-Dec", the opposite of the truth. A single gap in the sorted run
- * means the window wraps through December, so long as the months either side
- * of it account for the whole set.
- */
-function formatBestMonths(months: number[]): string {
-  if (months.length === 0 || months.length === 12) return 'year-round';
-  const sorted = [...months].sort((a, b) => a - b);
-  if (sorted.length === 1) return MONTH_NAMES[sorted[0] - 1];
-
-  const gaps: number[] = [];
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] - sorted[i - 1] > 1) gaps.push(i);
-  }
-
-  if (gaps.length === 0) {
-    return `${MONTH_NAMES[sorted[0] - 1]}–${MONTH_NAMES[sorted[sorted.length - 1] - 1]}`;
-  }
-
-  if (gaps.length === 1) {
-    const start = sorted[gaps[0]];
-    const end = sorted[gaps[0] - 1];
-    const span = ((end - start + 12) % 12) + 1;
-    if (span === sorted.length) {
-      return `${MONTH_NAMES[start - 1]}–${MONTH_NAMES[end - 1]}`;
-    }
-  }
-
-  // Two or more separate windows: name the months rather than invent a range.
-  return sorted.map((month) => MONTH_NAMES[month - 1]).join(', ');
-}
-
-function groupByType(objects: DeepSkyObject[]): Array<{ type: string; objects: DeepSkyObject[] }> {
-  const groups = new Map<string, DeepSkyObject[]>();
-  for (const obj of objects) {
-    const list = groups.get(obj.type) ?? [];
-    list.push(obj);
-    groups.set(obj.type, list);
-  }
-  return [...groups.entries()]
-    .map(([type, list]) => ({ type, objects: list.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true })) }))
-    .sort((a, b) => b.objects.length - a.objects.length || a.type.localeCompare(b.type));
-}
-
-const GROUPS = groupByType(OBJECTS);
 
 const catalogJsonLd = {
   '@context': 'https://schema.org',
@@ -128,7 +76,7 @@ export default function DeepSkyCatalogPage() {
         <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-wider text-muted-foreground">
           <Link href="/" className="hover:underline">Home</Link>
           <span aria-hidden="true"> / </span>
-          <Link href="/stargazer" className="hover:underline">Stargazer</Link>
+          <Suspense fallback={<Link href="/stargazer">Stargazer</Link>}><StargazerContextLink className="hover:underline">Stargazer</StargazerContextLink></Suspense>
           <span aria-hidden="true"> / </span>
           <span className="text-foreground">Deep-Sky Catalog</span>
         </nav>
@@ -141,31 +89,15 @@ export default function DeepSkyCatalogPage() {
             {OBJECTS.length} galaxies, nebulae and star clusters with an observing guide each:
             what the object is, how bright and how large it appears, which months put it
             highest in the evening sky, and how to image it. The{' '}
-            <Link href="/stargazer" className="text-primary underline">Stargazer</Link>{' '}
+            <Suspense fallback={<Link href="/stargazer">Stargazer</Link>}><StargazerContextLink className="text-primary underline">Stargazer</StargazerContextLink></Suspense>{' '}
             page checks tonight&apos;s sky at your location and picks the targets that are
-            well placed right now; this catalog is the full list.
+            suitable for a selected future hour; this catalog is reference material, not a promise of visibility.
           </p>
         </header>
 
-        {GROUPS.map((group) => (
-          <section key={group.type} className="rounded-md border border-border bg-card p-4">
-            <h2 className="mb-3 border-b border-border pb-2 text-xs uppercase tracking-wider text-muted-foreground">
-              {formatType(group.type)} <span className="text-foreground">({group.objects.length})</span>
-            </h2>
-            <ul className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
-              {group.objects.map((obj) => (
-                <li key={obj.id} className="flex flex-wrap items-baseline gap-x-2">
-                  <Link href={`/stargazer/objects/${obj.id}`} className="text-primary hover:underline">
-                    {obj.id} {obj.name}
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    {obj.constellation} · mag {obj.magnitude} · {formatBestMonths(obj.bestMonths)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <Suspense fallback={<CatalogList objects={ENTRIES} />}>
+          <CatalogBrowser objects={ENTRIES} />
+        </Suspense>
       </div>
     </PageWrapper>
   );

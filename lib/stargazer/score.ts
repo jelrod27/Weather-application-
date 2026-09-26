@@ -237,7 +237,7 @@ const SUB_SCORE_LABELS: Record<string, [string, string, string, string, string]>
   moon:         ['Severe interference', 'Heavy interference', 'Moderate interference', 'Minimal interference', 'No interference'],
   seeing:       ['Bad',                'Poor',                'Fair',                  'Good',                 'Excellent'],
   transparency: ['Opaque',             'Poor',                'Hazy',                  'Good',                 'Crystal clear'],
-  ground:       ['Dangerous',          'Windy/dew risk',      'Breezy/humid',          'Good',                 'Calm conditions'],
+  ground:       ['Difficult imaging',          'Windy/dew risk',      'Breezy/humid',          'Good',                 'Calm conditions'],
 };
 
 /** Descriptive text label for a sub-score value (0-100). */
@@ -260,26 +260,26 @@ export function getSubScoreLabel(key: string, value: number): string {
 export function generateSummary(
   subScores: StargazerSubScores,
   moonIllumination: number,
-  avgCloudCover: number,
+  _avgCloudCover: number,
 ): string {
   const { cloud, moon, seeing, transparency, ground } = subScores;
 
   // Overcast — dominant factor
   if (cloud < 30) {
-    return 'Overcast skies forecast all night - stay home and process data';
+    return 'Cloud cover may limit photography during the scored period';
   }
 
   // Clear skies path
   if (cloud >= 80) {
     if (moon >= 85) {
-      return 'Clear skies and new moon - exceptional night for deep sky imaging';
+      return 'Low cloud and little moonlight interference favor deep sky photography';
     }
     if (moon >= 60) {
       return 'Clear skies with moderate moonlight - consider narrowband or lunar targets';
     }
     // Bright moon
     if (moonIllumination > 60) {
-      return 'Clear skies but bright moon rises at 11pm - plan early targets';
+      return 'Low cloud with bright moonlight - consider lunar photography';
     }
   }
 

@@ -3,9 +3,9 @@ import { safeJsonLd } from '@/lib/utils'
 
 export const STARGAZER_FAQS = [
   {
-    question: 'What does the stargazing score mean?',
+    question: 'How is a beginner observing hour chosen?',
     answer:
-      'It is a single 0–100 read on how good tonight looks from your location, weighted mostly by cloud cover, then moon interference, then seeing and transparency, with a small penalty for ground conditions such as wind, humidity, and dew risk. The card also names the one factor that is holding the score down.',
+      'Start here compares complete future one-hour periods using forecast clouds, precipitation, wind and suitable targets for your equipment. Directions use the middle of that hour. Targets are checked every 15 minutes; objects move and visibility is never guaranteed. The separate 0–100 photography score in Conditions is for imaging and is unavailable when required measurements are missing.',
   },
   {
     question: 'What is the difference between seeing and transparency?',
@@ -15,12 +15,12 @@ export const STARGAZER_FAQS = [
   {
     question: 'What is the Bortle scale?',
     answer:
-      'The Bortle scale rates night sky darkness from 1, a pristine dark site where the Milky Way casts shadows, to 9, an inner-city sky. The page estimates a Bortle class for your location so you know which targets are realistic before you drive anywhere.',
+      'The Bortle scale describes sky darkness from class 1, very dark, to class 9, inner city. Where population data is available, this page shows a rough population-based estimate, not a sky measurement. Nearby lights, haze and terrain can change the view. This estimate does not determine beginner target eligibility.',
   },
   {
     question: 'What can I actually observe tonight?',
     answer:
-      'The targets tab ranks deep sky objects that are up and well placed for your date and location, and the full deep-sky catalog lists every Messier object plus NGC, IC, and Sharpless targets with best months, magnitude, and imaging notes.',
+      'Choose a city, future hour and equipment in Start here to see up to three reviewed targets. Bright planets look like points to your eyes, and faint objects often look like pale patches rather than photographs. The full catalog offers 151 reference guides with search and equipment filters; a catalog listing is not a claim that an object is visible tonight.',
   },
 ] as const
 
@@ -55,23 +55,22 @@ export default function StargazerSeoContent() {
         About tonight&apos;s stargazing forecast
       </h2>
       <p className="mb-4 text-foreground">
-        Stargazer answers the question every observer asks at dusk: is tonight worth setting up for?
-        Search a location and it scores the night from cloud cover, moon phase and illumination,
-        seeing, transparency, and ground conditions, then tells you the best window to be outside and
-        when true astronomical darkness starts and ends.
+        Choose a city and explore a beginner observing plan, weather tradeoffs and things to look for.
+        Start with your eyes or choose binoculars or a small telescope. Each suggestion includes
+        a direction, height and realistic description. Missing or stale weather is labeled clearly;
+        refresh before relying on a suggested hour.
       </p>
       <p className="mb-4 text-foreground">
-        The tabs go deeper. Conditions breaks the night down hour by hour; targets ranks deep sky
-        objects that are actually up from your latitude on your date; events lists visible ISS
-        passes; launches tracks upcoming rocket launches. An estimated Bortle class for the search
-        location tells you how much light pollution you are fighting.
+        Conditions retains detailed hourly weather and photography scores. Targets, Events and
+        Launches offer more depth. Forecast cloud cover describes an area; it cannot confirm a
+        clear view in a particular direction or account for nearby lights, trees and buildings.
       </p>
       <p className="mb-6 text-foreground">
         Browse the full{' '}
         <Link href="/stargazer/objects" className="text-primary underline underline-offset-2">
           deep-sky object catalog
         </Link>{' '}
-        for observing notes on every Messier, NGC, IC, and Sharpless target. When aurora is the
+        for observing notes on all Messier objects and selected NGC, IC and Sharpless targets. When aurora is the
         target instead, check the{' '}
         <Link href="/space-weather" className="text-primary underline underline-offset-2">
           space weather monitor
@@ -80,7 +79,7 @@ export default function StargazerSeoContent() {
         <Link href="/radar" className="text-primary underline underline-offset-2">
           live radar
         </Link>{' '}
-        to see whether the clouds are clearing in time.
+        to follow precipitation nearby; rain radar does not show all cloud cover.
       </p>
 
       <h3 className="mb-3 text-lg font-semibold text-primary">Stargazing FAQ</h3>
