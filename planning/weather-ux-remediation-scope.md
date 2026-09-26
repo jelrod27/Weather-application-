@@ -58,7 +58,7 @@ Deliver in three focused commits: complete-window comparisons and data coverage;
 
 ## PR 6: Beginner stargazing — six commits
 
-Scope prepared September 26, 2026, on `codex/beginner-stargazing` from merged PR 5 (`b6625a4`). Design approved and implemented September 26, 2026 in six focused commits; PR validation pending.
+Scope prepared September 26, 2026, on `codex/beginner-stargazing` from merged PR 5 (`b6625a4`). Design approved and implemented September 26, 2026 in six focused commits plus a device-location correction. Merged as PR #632 (`402f69f`).
 
 Add a beginner entry to Stargazer that answers when to look, what to try with the chosen equipment, which direction to face, and what to expect. Preserve the existing enthusiast tools. Include the location, time, unit and missing-data repairs needed to trust those answers.
 
@@ -69,3 +69,18 @@ See the [full PR 6 scope, data rules and acceptance criteria](prds/PRD-beginner-
 ## Later, separately scoped
 
 Route- and departure-time-aware travel, new forecasting/provider integrations, ensemble probabilities, and other features requiring new data or meaningful product decisions. Do not imply precise rain arrival from historical radar frames alone.
+
+
+## Post-batch stabilization — approved September 26, 2026
+
+The user approved the radar navigation, Stargazer sharing privacy, review-coverage and housekeeping follow-ups. Accessibility is deferred to a dedicated pass; security operations and new features are not part of this change.
+
+- Stop radar playback URL synchronization when a user follows the lesson or return link, including mobile controls. Retain playback, frame sharing and ordinary in-page controls; verify navigation with deliberately delayed responses.
+- Public Stargazer shares use coordinates rounded to a 0.1-degree grid and omit the place label. Explain that the area is approximate and conditions may differ. Preserve selected hour/equipment, and retain full precision for local calculations and guide navigation. Test social destinations, clipboard copying and shared-link recovery.
+- Explicitly review the previously rate-limited final PR632 correction alongside this diff. Run local Standards and Spec reviews, then read actual bot reviews after all applicable CI/CD checks settle. Record reused, unavailable and completed coverage accurately.
+- Close the merged PR6 status in these documents. Update local main, remove the merged feature branch, preserve the prototype and unrelated `.agents/`, and keep completed monitors paused.
+
+Deliver focused radar, privacy and closeout commits in one follow-up PR, with normal hooks and no automatic merge.
+
+
+Local stabilization validation: 54 focused unit tests, production build, both TypeScript projects, targeted lint and Knip passed. The 72-case Chromium/Firefox matrix covered radar controls, delayed desktop/mobile lesson and return journeys, Stargazer navigation and sharing; a new share assertion was synchronized to the rendered selected-hour link and both affected cases passed on rerun. Full CI and a fresh bot review remain required for the follow-up PR. Independent Standards and Spec reviews found no actionable issues in either this change or the previously rate-limited `52a39d1..ef15991` correction.

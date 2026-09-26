@@ -71,6 +71,15 @@ export function getStargazerHref(
   return `${path}?${params}${tab}`;
 }
 
+/** Public shares omit the place label and round to a 0.1-degree grid; local links retain precision. */
+export function getStargazerShareHref(context: StargazerContext): string {
+  const coordinates = context.coordinates ? {
+    lat: Number(context.coordinates.lat.toFixed(1)),
+    lon: Number(context.coordinates.lon.toFixed(1)),
+  } : null;
+  return getStargazerHref({ ...context, coordinates, label: '' });
+}
+
 /** Includes a date and UTC offset so repeated DST hours remain distinguishable. */
 export function formatObservingTime(instant: number, timeZone?: string): string {
   if (!Number.isFinite(instant)) return 'Time unavailable';
