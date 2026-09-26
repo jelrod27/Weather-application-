@@ -13,6 +13,7 @@ import {
   type GeoJSONSource,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import type { AircraftFeedStatus } from '@/lib/aviation/aircraft-feed-status';
 import { cn } from '@/lib/utils';
 import type { Aircraft } from '@/lib/aviation/aircraft-types';
 import {
@@ -27,13 +28,13 @@ import { useLiveAircraftPoll } from '@/hooks/useLiveAircraftPoll';
 
 export type { RouteMapEndpoints };
 
-export type LiveAircraftMapProps = {
+export interface LiveAircraftMapProps {
   className?: string;
   selectedIcao24?: string | null;
   onSelectAircraft?: (aircraft: Aircraft | null) => void;
   flyTo?: { lat: number; lon: number; zoom?: number; token?: string } | null;
-  onCountChange?: (count: number, meta: { source: string; degraded: boolean }) => void;
-  onDegradedChange?: (degraded: boolean, source: string | null) => void;
+  onStatusChange?: (status: AircraftFeedStatus) => void;
+  onWeatherOnly?: () => void;
   /** Soft-update selected aircraft from poll without resetting trail. */
   onSelectedAircraftUpdate?: (aircraft: Aircraft) => void;
   /** External aircraft override (e.g. callsign search result highlight). */
@@ -49,13 +50,13 @@ export default function LiveAircraftMap({
   selectedIcao24,
   onSelectAircraft,
   flyTo,
-  onCountChange,
-  onDegradedChange,
+  onStatusChange,
+  onWeatherOnly,
   onSelectedAircraftUpdate,
   highlightAircraft,
   routeEndpoints,
   trail,
-}: LiveAircraftMapProps) {
+}: LiveAircraftMapProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const aircraftByIdRef = useRef<Map<string, Aircraft>>(new Map());
@@ -66,25 +67,21 @@ export default function LiveAircraftMap({
   const lastFlyTokenRef = useRef<string | null>(null);
   const lastFittedRouteRef = useRef<string | null>(null);
   const onSelectRef = useRef(onSelectAircraft);
-  const onCountRef = useRef(onCountChange);
-  const onDegradedRef = useRef(onDegradedChange);
+  const onStatusRef = useRef(onStatusChange);
   const onSelectedUpdateRef = useRef(onSelectedAircraftUpdate);
   const [mapReady, setMapReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     selectedRef.current = selectedIcao24 ?? null;
     highlightRef.current = highlightAircraft ?? null;
     onSelectRef.current = onSelectAircraft;
-    onCountRef.current = onCountChange;
-    onDegradedRef.current = onDegradedChange;
+    onStatusRef.current = onStatusChange;
     onSelectedUpdateRef.current = onSelectedAircraftUpdate;
   }, [
     selectedIcao24,
     highlightAircraft,
     onSelectAircraft,
-    onCountChange,
-    onDegradedChange,
+    onStatusChange,
     onSelectedAircraftUpdate,
   ]);
 
@@ -96,7 +93,7 @@ export default function LiveAircraftMap({
     setMapReady,
   });
 
-  useLiveAircraftPoll({
+  const { status, retry } = useLiveAircraftPoll({
     mapRef,
     mapReady,
     aircraftByIdRef,
@@ -104,12 +101,10 @@ export default function LiveAircraftMap({
     highlightRef,
     visibleRef,
     fetchingRef,
-    onCountRef,
-    onDegradedRef,
+    onStatusRef,
     onSelectedUpdateRef,
     selectedIcao24,
     highlightIcao24: highlightAircraft?.icao24,
-    setError,
   });
 
   // One-shot camera move on explicit search/select token — never on poll updates.
@@ -167,12 +162,15 @@ export default function LiveAircraftMap({
         className="h-[min(70vh,640px)] w-full bg-[#e8e4dc]"
         data-testid="live-aircraft-map"
       />
-      {error && (
+      {status.state === 'unavailable' && (
         <div
           className="absolute bottom-3 left-3 right-3 rounded border border-orange-500/50 bg-black/70 px-3 py-2 font-mono text-xs text-orange-300"
           role="status"
         >
-          {error}
+          <p>Aircraft traffic unavailable. Previous traffic markers have been hidden.</p>
+          {status.updatedAt && <p>Last successful update: {new Date(status.updatedAt).toUTCString()}</p>}
+          <button type="button" className="underline mr-4 mt-2" onClick={() => void retry()}>Retry aircraft traffic</button>
+          {onWeatherOnly && <button type="button" className="underline mt-2" onClick={onWeatherOnly}>Use weather-only view</button>}
         </div>
       )}
     </div>

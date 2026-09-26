@@ -1,7 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
+import { INITIAL_AIRCRAFT_STATUS, type AircraftFeedStatus } from '@/lib/aviation/aircraft-feed-status'
 import type { Aircraft } from '@/lib/aviation/aircraft-types'
 import { AIRCRAFT_LABEL_DECLUTTER_COUNT } from '@/lib/aviation/airplane-icon'
 import {
@@ -21,17 +23,10 @@ type UseLiveAircraftPollArgs = {
   highlightRef: MutableRefObject<Aircraft | null>
   visibleRef: MutableRefObject<boolean>
   fetchingRef: MutableRefObject<boolean>
-  onCountRef: MutableRefObject<
-    | ((count: number, meta: { source: string; degraded: boolean }) => void)
-    | undefined
-  >
-  onDegradedRef: MutableRefObject<
-    ((degraded: boolean, source: string | null) => void) | undefined
-  >
+  onStatusRef: MutableRefObject<((status: AircraftFeedStatus) => void) | undefined>
   onSelectedUpdateRef: MutableRefObject<((aircraft: Aircraft) => void) | undefined>
   selectedIcao24?: string | null
   highlightIcao24?: string | null
-  setError: (message: string | null) => void
 }
 
 export function useLiveAircraftPoll({
@@ -42,13 +37,14 @@ export function useLiveAircraftPoll({
   highlightRef,
   visibleRef,
   fetchingRef,
-  onCountRef,
-  onDegradedRef,
+  onStatusRef,
   onSelectedUpdateRef,
   selectedIcao24,
   highlightIcao24,
-  setError,
-}: UseLiveAircraftPollArgs) {
+}: UseLiveAircraftPollArgs): { status: AircraftFeedStatus; retry: () => Promise<void> } {
+  const [status, setStatus] = useState<AircraftFeedStatus>(INITIAL_AIRCRAFT_STATUS)
+  const requestRef = useRef<AbortController | null>(null)
+  useEffect(() => { onStatusRef.current?.(status) }, [status, onStatusRef])
   const syncSelectionStyle = useCallback(() => {
     const map = mapRef.current
     if (!map || !map.getLayer(AIRCRAFT_LAYER_ID)) return
@@ -81,13 +77,13 @@ export function useLiveAircraftPoll({
   }, [mapRef, selectedRef])
 
   const applyAircraft = useCallback(
-    (list: Aircraft[]) => {
+    (list: Aircraft[], includeHighlight = true) => {
       const map = mapRef.current
       if (!map) return
       const byId = new Map<string, Aircraft>()
       for (const a of list) byId.set(a.icao24, a)
       const highlight = highlightRef.current
-      if (highlight) byId.set(highlight.icao24, highlight)
+      if (highlight && includeHighlight && !byId.has(highlight.icao24)) byId.set(highlight.icao24, highlight)
       aircraftByIdRef.current = byId
       const source = map.getSource('aircraft') as GeoJSONSource | undefined
       source?.setData(toFeatureCollection([...byId.values()]))
@@ -113,8 +109,11 @@ export function useLiveAircraftPoll({
 
   const fetchAircraft = useCallback(async () => {
     const map = mapRef.current
-    if (!map || !visibleRef.current || fetchingRef.current) return
+    if (!mapReady || !map || !visibleRef.current || fetchingRef.current) return
     fetchingRef.current = true
+    const controller = new AbortController()
+    requestRef.current = controller
+    setStatus((previous) => ({ ...previous, state: 'loading', count: null }))
     const center = map.getCenter()
     const radius = radiusForZoom(map.getZoom())
     try {
@@ -123,34 +122,31 @@ export function useLiveAircraftPoll({
         lon: String(center.lng),
         radius: String(radius),
       })
-      const res = await fetch(`/api/aviation/aircraft?${params}`)
+      const res = await fetchWithTimeout(`/api/aviation/aircraft?${params}`, { signal: controller.signal, timeoutMs: 15000, maxRetries: 0 })
       const data = (await res.json()) as {
         aircraft?: Aircraft[]
         source?: string
         degraded?: boolean
+        fetchedAt?: number
         error?: string
       }
-      if (!res.ok) {
-        setError(data.error ?? 'Live aircraft feed unavailable')
-        onDegradedRef.current?.(true, data.source ?? null)
-        return
-      }
-      setError(null)
-      const list = data.aircraft ?? []
-      applyAircraft(list)
-      onCountRef.current?.(list.length, {
-        source: data.source ?? 'adsb.lol',
-        degraded: Boolean(data.degraded),
+      if (controller.signal.aborted) return
+      if (!res.ok || !Array.isArray(data.aircraft)) throw new Error('Aircraft feed unavailable')
+      applyAircraft(data.aircraft)
+      setStatus({
+        state: 'ready', count: data.aircraft.length,
+        source: data.source ?? null, degraded: Boolean(data.degraded),
+        updatedAt: typeof data.fetchedAt === 'number' && Number.isFinite(data.fetchedAt) ? data.fetchedAt : null,
       })
-      onDegradedRef.current?.(Boolean(data.degraded), data.source ?? null)
     } catch (err) {
+      if (controller.signal.aborted) return
       console.error('[LiveAircraftMap]', err)
-      setError('Live aircraft feed unavailable')
-      onDegradedRef.current?.(true, null)
+      applyAircraft([], false)
+      setStatus((previous) => ({ ...previous, state: 'unavailable', count: null }))
     } finally {
-      fetchingRef.current = false
+      if (requestRef.current === controller) fetchingRef.current = false
     }
-  }, [applyAircraft, fetchingRef, mapRef, onCountRef, onDegradedRef, setError, visibleRef])
+  }, [applyAircraft, fetchingRef, mapRef, mapReady, visibleRef])
 
   useEffect(() => {
     if (!mapReady) return
@@ -163,20 +159,30 @@ export function useLiveAircraftPoll({
     }, POLL_MS)
 
     let moveTimer: number | null = null
+    const onMoveStart = () => {
+      requestRef.current?.abort()
+      fetchingRef.current = false
+      applyAircraft([], false)
+      setStatus((previous) => ({ ...previous, state: 'loading', count: null }))
+    }
     const onMoveEnd = () => {
       if (moveTimer != null) window.clearTimeout(moveTimer)
       moveTimer = window.setTimeout(() => {
         void fetchAircraft()
       }, MOVE_FETCH_DEBOUNCE_MS)
     }
+    map.on('movestart', onMoveStart)
     map.on('moveend', onMoveEnd)
 
     return () => {
       window.clearInterval(pollId)
       if (moveTimer != null) window.clearTimeout(moveTimer)
+      map.off('movestart', onMoveStart)
       map.off('moveend', onMoveEnd)
+      requestRef.current?.abort()
+      fetchingRef.current = false
     }
-  }, [fetchAircraft, mapReady, mapRef])
+  }, [applyAircraft, fetchAircraft, fetchingRef, mapReady, mapRef])
 
   useEffect(() => {
     const onVis = () => {
@@ -193,7 +199,9 @@ export function useLiveAircraftPoll({
   }, [aircraftByIdRef, selectedIcao24, syncLabelDeclutter, syncSelectionStyle])
 
   useEffect(() => {
-    if (!mapReady) return
+    if (!mapReady || status.state === 'unavailable') return
     applyAircraft([...aircraftByIdRef.current.values()])
-  }, [aircraftByIdRef, applyAircraft, highlightIcao24, mapReady])
+  }, [aircraftByIdRef, applyAircraft, highlightIcao24, mapReady, status.state])
+
+  return { status, retry: fetchAircraft }
 }
