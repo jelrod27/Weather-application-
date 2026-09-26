@@ -11,12 +11,13 @@ import { getPrecipSeverity } from "@/lib/weather/precip-utils"
 
 interface ForecastProps {
   forecast: ForecastDay[];
+  tempUnit?: string;
   theme?: ThemeType; // Kept for prop output compatibility
   onDayClick?: (index: number) => void;
   selectedDay?: number | null;
 }
 
-export default function Forecast({ forecast, onDayClick, selectedDay }: ForecastProps) {
+export default function Forecast({ forecast, onDayClick, selectedDay, tempUnit = '°F' }: ForecastProps) {
   // Determine number of days to show (max 7, or length if less)
   const daysToShow = forecast.length >= 7 ? 7 : Math.min(forecast.length, 5);
   const displayForecast = forecast.slice(0, daysToShow);
@@ -41,6 +42,7 @@ export default function Forecast({ forecast, onDayClick, selectedDay }: Forecast
             <ForecastCard
               key={index}
               day={day}
+              tempUnit={tempUnit}
               index={index}
               onDayClick={onDayClick}
               isSelected={selectedDay === index}
@@ -52,14 +54,13 @@ export default function Forecast({ forecast, onDayClick, selectedDay }: Forecast
   );
 }
 
-function ForecastCard({ day, index, onDayClick, isSelected }: {
+function ForecastCard({ day, index, onDayClick, isSelected, tempUnit }: {
   day: ForecastDay;
+  tempUnit: string;
   index: number;
   onDayClick?: (index: number) => void;
   isSelected?: boolean;
 }) {
-  const isUSALocation = day.country === 'US' || day.country === 'USA';
-  const tempUnit = isUSALocation ? '°F' : '°C';
 
   // M.DD.YY from local calendar; computed on client only to avoid SSR/client date skew
   const [formattedDate, setFormattedDate] = useState('');

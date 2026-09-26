@@ -12,6 +12,7 @@ import type { ForecastDay } from "@/lib/types"
 
 interface ForecastDetailsProps {
   forecast: ForecastDay[];
+  tempUnit?: string;
   theme?: ThemeType; // Kept for api compatibility
   selectedDay: number | null;
   currentWeatherData?: {
@@ -27,7 +28,8 @@ interface ForecastDetailsProps {
 export default function ForecastDetails({
   forecast,
   selectedDay,
-  currentWeatherData
+  currentWeatherData,
+  tempUnit = '°F'
 }: ForecastDetailsProps) {
   // Don't render anything if no day is selected
   if (selectedDay === null) {
@@ -55,13 +57,14 @@ export default function ForecastDetails({
             </div>
             <div className="text-right">
               <div className="text-xl font-bold text-primary pixel-glow">
-                {Math.round(forecast[selectedDay].highTemp)}° / {Math.round(forecast[selectedDay].lowTemp)}°
+                {Math.round(forecast[selectedDay].highTemp)}{tempUnit} / {Math.round(forecast[selectedDay].lowTemp)}{tempUnit}
               </div>
             </div>
           </div>
 
           <DetailedWeatherInfo
             selectedDay={selectedDay}
+            windUnit={tempUnit === '°C' ? 'km/h' : 'mph'}
             forecastDay={forecast[selectedDay]}
             currentWeatherData={currentWeatherData}
           />
@@ -74,9 +77,11 @@ export default function ForecastDetails({
 function DetailedWeatherInfo({
   selectedDay,
   forecastDay,
+  windUnit,
   currentWeatherData
 }: {
   selectedDay: number;
+  windUnit: string;
   forecastDay: ForecastDay & {
     details?: {
       humidity?: number;
@@ -119,9 +124,9 @@ function DetailedWeatherInfo({
       icon: <Wind className="w-4 h-4" />,
       label: "Wind",
       value: dayDetails?.windSpeed !== undefined ?
-        `${dayDetails.windSpeed} mph ${dayDetails.windDirection || ''}` :
+        `${dayDetails.windSpeed} ${windUnit} ${dayDetails.windDirection || ''}` :
         (isToday && currentWeatherData?.wind ?
-          `${Math.round(currentWeatherData.wind.speed)} mph ${currentWeatherData.wind.direction || ''}` :
+          `${Math.round(currentWeatherData.wind.speed)} ${windUnit} ${currentWeatherData.wind.direction || ''}` :
           "N/A")
     },
     {

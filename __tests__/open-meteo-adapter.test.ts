@@ -501,3 +501,12 @@ describe('hourly window edge cases', () => {
     expect(result.forecast).toHaveLength(7);
   });
 });
+
+it.each([
+  ['GB', 'imperial', '30.08 in'],
+  ['US', 'metric', '1019 hPa'],
+] as const)('uses selected pressure units for %s in %s', async (country, units, expected) => {
+  const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'Test', units, country);
+  expect(result.pressure).toBe(expected);
+  expect(result.forecast[0].details?.pressure).toBe(expected);
+});

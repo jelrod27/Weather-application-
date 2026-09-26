@@ -225,7 +225,7 @@ export async function buildWeatherDataFromOpenMeteo(
   const windGust = current?.wind_gusts_10m;
 
   const pressureHPa = current?.surface_pressure ?? 1013;
-  const pressure = formatPressureByRegion(pressureHPa, resolvedCountry);
+  const pressure = formatPressureByRegion(pressureHPa, resolvedCountry, unitSystem === 'metric' ? 'hPa' : 'inHg');
 
   const sunrise = daily?.sunrise?.[0]
     ? formatISOTimeToDisplay(daily.sunrise[0])
@@ -257,7 +257,7 @@ export async function buildWeatherDataFromOpenMeteo(
           humidity: 0,
           windSpeed: Math.round(daily.wind_speed_10m_max?.[i] ?? 0),
           windDirection: undefined,
-          pressure: `${Math.round(pressureHPa)} hPa`,
+          pressure,
           cloudCover: 0,
           precipitationChance: daily.precipitation_probability_max?.[i] ?? 0,
           visibility: undefined,

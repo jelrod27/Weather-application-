@@ -44,7 +44,8 @@ export function getPressureCategory(pressure: number | string): SeverityResult {
   return { label: 'High', textColor: NORD_ORANGE, bgColor: NORD_ORANGE }
 }
 
-export function getWindSeverity(speed: number): SeverityResult {
+export function getWindSeverity(speed: number, unit: 'mph' | 'km/h' = 'mph'): SeverityResult {
+  if (unit === 'km/h') speed /= 1.609344
   if (speed < 10) return { label: 'Calm', textColor: NORD_GREEN, bgColor: NORD_GREEN }
   if (speed < 25) return { label: 'Breezy', textColor: NORD_YELLOW, bgColor: NORD_YELLOW }
   if (speed < 40) return { label: 'Windy', textColor: NORD_ORANGE, bgColor: NORD_ORANGE }
