@@ -1,36 +1,27 @@
 /**
- * TripInput - origin/destination + mode + day selector for the trip planner.
+ * TripInput - controlled origin/destination form for the trip planner.
  *
- * Submits to /api/travel/trip-score and lifts the parsed `TripScoreResponse`
- * via callback. Autocomplete is sourced from MAJOR_US_AIRPORTS; in drive mode
+ * Mode, day, requests and result state are owned by the travel page.
+ * Autocomplete is sourced from MAJOR_US_AIRPORTS; in drive mode
  * a small set of major US cities is appended for convenience.
  */
 
 'use client';
 
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Plane, Car, Search, AlertTriangle, MapPin } from 'lucide-react';
+import React, { useId, useMemo } from 'react';
+import { Search, AlertTriangle, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MAJOR_US_AIRPORTS } from '@/lib/data/major-us-airports';
-import type { TripDay, TripMode, TripScoreResponse } from './trip-types';
-
+import type { TripInputs, TripMode } from './trip-types';
 
 interface TripInputProps {
-  defaultMode?: TripMode;
-  defaultDay?: TripDay;
-  onResult: (result: TripScoreResponse) => void;
-  onLoadingChange?: (loading: boolean) => void;
-  onError?: (error: string) => void;
+  value: TripInputs;
+  onChange: (value: TripInputs) => void;
+  onSubmit: () => void;
+  isLoading: boolean;
+  error: string | null;
   className?: string;
 }
-
-const DAY_LABELS: Record<TripDay, string> = {
-  0: 'Today',
-  1: 'Tomorrow',
-  2: 'Day 3',
-};
-
-const DAYS: TripDay[] = [0, 1, 2];
 
 /**
  * Lightweight set of additional drive-mode destinations. Keep this small —
@@ -104,138 +95,28 @@ function buildAutocompleteOptions(mode: TripMode): AutocompleteOption[] {
 }
 
 export default function TripInput({
-  defaultMode = 'fly',
-  defaultDay = 0,
-  onResult,
-  onLoadingChange,
-  onError,
+  value,
+  onChange,
+  onSubmit,
+  isLoading,
+  error,
   className,
-}: TripInputProps) {
-  const [mode, setMode] = useState<TripMode>(defaultMode);
-  const [day, setDay] = useState<TripDay>(defaultDay);
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const abortRef = useRef<AbortController | null>(null);
+}: TripInputProps): React.JSX.Element {
+  const { mode, origin, destination } = value;
   const reactId = useId();
   const datalistId = `trip-input-options-${reactId}`;
-
   const options = useMemo(() => buildAutocompleteOptions(mode), [mode]);
-
-  // Tear down any in-flight request when the component unmounts.
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
-
-  const setLoading = useCallback(
-    (value: boolean) => {
-      setIsLoading(value);
-      onLoadingChange?.(value);
-    },
-    [onLoadingChange],
-  );
-
-  const reportError = useCallback(
-    (message: string) => {
-      setError(message);
-      onError?.(message);
-    },
-    [onError],
-  );
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      const o = origin.trim();
-      const d = destination.trim();
-      if (!o || !d) {
-        reportError('Enter both an origin and a destination.');
-        return;
-      }
-
-      // Cancel any prior request before starting a new one.
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      setError(null);
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          origin: o,
-          destination: d,
-          mode,
-          day: String(day),
-        });
-        const res = await fetch(`/api/travel/trip-score?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        const payload = (await res.json().catch(() => null)) as
-          | TripScoreResponse
-          | { error?: string }
-          | null;
-
-        if (controller.signal.aborted) return;
-
-        if (!res.ok || !payload || 'error' in payload) {
-          const message =
-            (payload && 'error' in payload && payload.error) ||
-            `Trip lookup failed (${res.status})`;
-          reportError(message);
-          return;
-        }
-
-        onResult(payload as TripScoreResponse);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error('[TripInput]', err);
-        reportError('Unable to score this trip. Please try again.');
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    },
-    [origin, destination, mode, day, onResult, reportError, setLoading],
-  );
-
   const canSubmit = !isLoading && origin.trim().length > 0 && destination.trim().length > 0;
 
   return (
     <div className={cn('space-y-3', className)}>
-      {/* Mode toggle */}
-      <div
-        className="inline-flex rounded border-2 border-border overflow-hidden font-mono text-sm"
-        role="tablist"
-        aria-label="Trip mode"
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+        className="space-y-3"
       >
-        {(['fly', 'drive'] as const).map((m) => {
-          const active = mode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setMode(m)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 font-bold uppercase tracking-wider transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card/50 text-muted-foreground hover:bg-card/80',
-              )}
-              data-testid={`trip-mode-${m}`}
-            >
-              {m === 'fly' ? <Plane className="w-4 h-4" /> : <Car className="w-4 h-4" />}
-              {m === 'fly' ? 'Fly' : 'Drive'}
-            </button>
-          );
-        })}
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-3">
         {/* Origin / destination inputs */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2">
           <div className="relative">
@@ -243,20 +124,15 @@ export default function TripInput({
             <input
               type="text"
               value={origin}
-              onChange={(e) => {
-                setOrigin(e.target.value);
-                if (error) setError(null);
-              }}
+              onChange={(e) => onChange({ ...value, origin: e.target.value })}
               placeholder={mode === 'fly' ? 'Origin airport (e.g. ATL)' : 'Origin city or airport'}
               list={datalistId}
-              disabled={isLoading}
               autoComplete="off"
               spellCheck={false}
               className={cn(
-                'w-full pl-10 pr-3 py-2 font-mono text-sm border-2 rounded bg-card border-border',
+                'min-h-11 w-full pl-10 pr-3 py-2 font-mono text-sm border rounded-lg bg-background border-border',
                 'focus:outline-none focus:ring-2 focus:ring-primary',
                 'placeholder:text-muted-foreground',
-                isLoading && 'opacity-50 cursor-not-allowed',
               )}
               data-testid="trip-origin-input"
               aria-label="Origin"
@@ -268,22 +144,17 @@ export default function TripInput({
             <input
               type="text"
               value={destination}
-              onChange={(e) => {
-                setDestination(e.target.value);
-                if (error) setError(null);
-              }}
+              onChange={(e) => onChange({ ...value, destination: e.target.value })}
               placeholder={
                 mode === 'fly' ? 'Destination airport (e.g. DEN)' : 'Destination city or airport'
               }
               list={datalistId}
-              disabled={isLoading}
               autoComplete="off"
               spellCheck={false}
               className={cn(
-                'w-full pl-10 pr-3 py-2 font-mono text-sm border-2 rounded bg-card border-border',
+                'min-h-11 w-full pl-10 pr-3 py-2 font-mono text-sm border rounded-lg bg-background border-border',
                 'focus:outline-none focus:ring-2 focus:ring-primary',
                 'placeholder:text-muted-foreground',
-                isLoading && 'opacity-50 cursor-not-allowed',
               )}
               data-testid="trip-destination-input"
               aria-label="Destination"
@@ -294,7 +165,7 @@ export default function TripInput({
             type="submit"
             disabled={!canSubmit}
             className={cn(
-              'flex items-center justify-center gap-2 px-5 py-2 font-mono text-sm font-bold border-2 rounded uppercase tracking-wider transition-colors',
+              'flex min-h-11 items-center justify-center gap-2 px-5 py-2 font-mono text-sm font-bold border rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               'border-border min-w-[120px]',
               canSubmit
                 ? 'bg-primary text-primary-foreground hover:opacity-90'
@@ -307,34 +178,13 @@ export default function TripInput({
             {isLoading ? 'Scoring…' : 'Plan Trip'}
           </button>
         </div>
-
-        {/* Day selector */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-            When:
-          </span>
-          {DAYS.map((d) => {
-            const active = day === d;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDay(d)}
-                className={cn(
-                  'px-3 py-1 rounded font-mono text-xs font-bold uppercase tracking-wider transition-colors border',
-                  active
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card/50 text-muted-foreground hover:bg-card/80 border-border',
-                )}
-                aria-pressed={active}
-                data-testid={`trip-day-${d}`}
-              >
-                {DAY_LABELS[d]}
-              </button>
-            );
-          })}
-        </div>
       </form>
+
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {mode === 'fly'
+          ? 'Major U.S. hub airports only. Enter an IATA/ICAO airport code or hub city.'
+          : 'Enter cities or airport codes. Driving scores cover supported U.S. interstate corridors.'}
+      </p>
 
       {/* Datalist (shared between both inputs) */}
       <datalist id={datalistId}>
@@ -348,7 +198,7 @@ export default function TripInput({
       {/* Error */}
       {error && (
         <div
-          className="flex items-center gap-2 p-2 text-xs font-mono rounded border"
+          className="flex items-center gap-2 p-2 text-sm leading-relaxed rounded-lg border"
           style={{
             color: 'var(--severity-extreme)',
             backgroundColor: 'var(--severity-extreme-bg)',

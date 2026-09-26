@@ -11,6 +11,19 @@ import type { MiseryScore } from '@/lib/services/misery-score-service';
 export type TripMode = 'fly' | 'drive';
 export type TripDay = 0 | 1 | 2;
 
+export const TRIP_DAY_LABELS: Record<TripDay, string> = {
+  0: 'Today',
+  1: 'Tomorrow',
+  2: 'Day 3',
+};
+
+export interface TripInputs {
+  mode: TripMode;
+  day: TripDay;
+  origin: string;
+  destination: string;
+}
+
 export interface DriveSegment {
   lat: number;
   lon: number;
