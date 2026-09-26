@@ -1,6 +1,6 @@
 # PR 6: Beginner stargazing
 
-Status: approved and implemented September 26, 2026. Local validation complete; PR checks and review pending.
+Status: merged September 26, 2026 as [PR #632](https://github.com/jelrod27/Weather-application-/pull/632), merge `402f69f`. Follow-up stabilization is tracked in [the UX scope](../weather-ux-remediation-scope.md).
 
 This is the final PR in the [weather experience remediation batch](../weather-ux-remediation-scope.md). Audience: everyday users first, with depth for enthusiasts. Branch: `codex/beginner-stargazing`. Review baseline: `b6625a43164e8e434197885e9e3db19796f25cec`, the merged PR #631.
 
@@ -251,3 +251,10 @@ All six planned outcomes are implemented on `codex/beginner-stargazing`. The fir
 - NASA/JPL and independent Astropy/ERFA coordinate fixtures verify northern/southern body positions and catalog epoch conversion. The short-summer-darkness regression uses June 20 at 48.1°N, 0°E; June 21 correctly suppresses faint targets because the Moon exceeds the stated cutoff.
 
 Remaining limitations are intentional: conservative product thresholds and 15-minute sampling cannot guarantee visibility; light pollution is only a population estimate; catalog-wide reviewed eligibility, AR/orientation, notifications and CI hosting migration remain outside this PR. Required and advisory CI, including Lighthouse and preview E2E, and actual bot review feedback must settle before readiness. No automatic merge is authorized.
+
+
+## Merge record — September 26, 2026
+
+PR #632 merged at `402f69f`, including the final device-coordinate recovery correction (`ef15991`). Final CI passed Build, 267 unit suites / 2,062 tests, types, lint, security, Chromium, preview E2E, Vercel and Lighthouse. The push-only cache warmer was correctly skipped.
+
+CodeRabbit completed the original 71-file review. Its review of the final two-file correction was rate-limited despite a successful status; independent local Standards and Spec reviews covered that correction. Do not describe that last bot pass as completed. The correction is included explicitly in the follow-up stabilization review. A timing-dependent radar navigation failure and precise-location sharing concern are also carried into that follow-up.
