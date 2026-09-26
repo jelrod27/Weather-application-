@@ -44,6 +44,8 @@ interface HourlyForecastProps {
   timezone?: string;
   maxHours?: number;
   moreHref?: string;
+  selectedHour?: number;
+  onSelectHour?: (timestamp: number) => void;
 }
 
 export default function HourlyForecast({
@@ -52,6 +54,8 @@ export default function HourlyForecast({
   timezone = 'UTC',
   maxHours = 24,
   moreHref,
+  selectedHour,
+  onSelectHour,
 }: HourlyForecastProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   /** Client-only clock so server and client agree on first paint (no hydration mismatch for "NOW"). */
@@ -111,6 +115,8 @@ export default function HourlyForecast({
                   isMidnight={isMidnight}
                   tempUnit={tempUnit}
                   timezone={timezone}
+                  selected={selectedHour === hour.dt}
+                  onSelect={onSelectHour ? () => onSelectHour(hour.dt) : undefined}
                 />
               );
             })}
@@ -131,13 +137,17 @@ function HourlyCard({
   isCurrentHour,
   isMidnight,
   tempUnit,
-  timezone
+  timezone,
+  selected,
+  onSelect,
 }: {
   hour: HourlyForecastData;
   isCurrentHour: boolean;
   isMidnight: boolean;
   tempUnit: string;
   timezone: string;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   return (
     <Card
@@ -150,7 +160,8 @@ function HourlyCard({
         isCurrentHour
           ? "bg-primary/12 border border-primary/25 shadow-[0_0_20px_rgba(var(--theme-accent-rgb),0.28)] current-hour"
           : "bg-card/55 hover:bg-card/75 border border-[var(--border-invisible)] hover:border-[var(--border-subtle)] hover:shadow-[0_12px_32px_-14px_rgba(0,0,0,0.5)]",
-        isMidnight && "border-l-0"
+        isMidnight && "border-l-0",
+        selected && "ring-2 ring-primary"
       )}
     >
       {/* Time */}
@@ -185,6 +196,8 @@ function HourlyCard({
       )}>
         {Math.round(hour.temp)}{tempUnit}
       </div>
+
+      {onSelect && <button type="button" aria-pressed={selected} aria-label={`Details for ${hour.time}`} onClick={onSelect} className="my-1 min-h-11 rounded px-2 text-xs font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">Details</button>}
 
       {/* Stats Row */}
       <div className="flex items-center gap-3 w-full justify-center text-xs text-muted-foreground/90">

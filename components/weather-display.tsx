@@ -17,6 +17,8 @@ import { Progress } from "@/components/ui/progress"
 import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
 import type { ThemeType } from '@/lib/theme-config'
 import { themeTokens } from '@/lib/theme-tokens'
+import { WeatherJourney } from "@/components/weather-journey"
+import { getWeatherJourneyLinks } from "@/lib/weather/journey"
 import { ForecastBrief } from "@/components/forecast-brief"
 import { HeroWeatherCard } from "@/components/hero-weather-card"
 import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
@@ -76,12 +78,8 @@ export function WeatherDisplay({
   const themeClasses = themeTokens.weather
 
   const todayForecast = getTodayForecast(weather)
-  const hourlyParams = new URLSearchParams({ city: weather.location })
-  if (weather.coordinates) {
-    hourlyParams.set('lat', String(weather.coordinates.lat))
-    hourlyParams.set('lon', String(weather.coordinates.lon))
-  }
-  const hourlyHref = `/hourly?${hourlyParams}`
+  const weatherLinks = getWeatherJourneyLinks(weather)
+  const hourlyHref = weatherLinks.hourly
 
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
@@ -108,6 +106,7 @@ export function WeatherDisplay({
 
   return (
     <div className="space-y-5 sm:space-y-7 font-sans">
+      <WeatherJourney weather={weather} active="forecast" />
       <div className="grid items-center gap-5 lg:grid-cols-[1.15fr_1fr] lg:gap-10">
       <ForecastBrief weather={weather} hourlyHref={hourlyHref} />
       <HeroWeatherCard
@@ -183,7 +182,7 @@ export function WeatherDisplay({
                 Weather Radar
               </h2>
               <Link
-                href="/radar"
+                href={weatherLinks.radar}
                 className="px-2 py-1 border-0 rounded-md text-xs font-semibold transition-colors hover:text-primary text-muted-foreground hover:text-foreground"
               >
                 VIEW FULL →
