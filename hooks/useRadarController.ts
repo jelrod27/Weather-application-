@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { RefObject } from 'react'
 import type { ThemeType } from '@/lib/theme-config'
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service'
@@ -93,6 +94,14 @@ export function useRadarController({
   searchError,
   shareConfig,
 }: UseRadarControllerProps): UseRadarControllerResult {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const update = () => setNow(Date.now())
+    const timer = setInterval(update, 60_000)
+    document.addEventListener('visibilitychange', update)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', update) }
+  }, [])
+
   const isFullPage = displayMode === 'full-page'
   const isWidget = displayMode === 'widget'
 
@@ -164,7 +173,7 @@ export function useRadarController({
     frameIndex: overlay.frameIndex,
     isPlaying: overlay.isPlaying,
     isLiveFrame,
-    relativeTime: formatRadarFrameAgeLabel(currentFrame),
+    relativeTime: formatRadarFrameAgeLabel(currentFrame, now),
     suspendUrlSync: url.suspendUrlSync,
     speed: url.speed,
     setSpeed: url.setSpeed,

@@ -195,8 +195,9 @@ test.describe('Radar Map', () => {
     await expect(page.getByText(/^Live$/i)).toHaveCount(0);
     await expect(page.getByRole('slider', { name: /Radar timeline/i })).toHaveAttribute(
       'aria-valuetext',
-      /LATEST/,
+      /(?:\d+h(?: \d+m)?|\d+m) ago/,
     );
+    await expect(page.getByRole('button', { name: /^Latest$/i })).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('slider', { name: /Radar timeline/i }).fill('5');
     await expect(page.getByTestId('radar-player-dock').getByText(/^Now$/i)).toHaveCount(0);
     await page.getByRole('button', { name: /LAYERS/i }).click();
