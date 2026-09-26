@@ -14,6 +14,7 @@
  * Report issues: https://github.com/jelrod27/Weather-application-/issues
  */
 
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
@@ -41,12 +42,16 @@ interface HourlyForecastProps {
   theme?: ThemeType; // Kept for API compat
   tempUnit?: string;
   timezone?: string;
+  maxHours?: number;
+  moreHref?: string;
 }
 
 export default function HourlyForecast({
   hourly,
   tempUnit = '°F',
-  timezone = 'UTC'
+  timezone = 'UTC',
+  maxHours = 24,
+  moreHref,
 }: HourlyForecastProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   /** Client-only clock so server and client agree on first paint (no hydration mismatch for "NOW"). */
@@ -70,14 +75,15 @@ export default function HourlyForecast({
   }
 
   // Take first 24 hours for a cleaner view (user can scroll)
-  const displayHours = hourly.slice(0, 24);
+  const displayHours = hourly.slice(0, maxHours);
 
   return (
     <Card className="p-3 sm:p-4 lg:p-6 border-0 rounded-xl dashboard-surface backdrop-blur-md bg-card/55 animate-slide-in">
-      <CardHeader className="p-0 mb-3 sm:mb-4">
-        <CardTitle className="text-center text-base sm:text-lg lg:text-xl font-bold uppercase tracking-wider text-primary glow">
-          HOURLY FORECAST
+      <CardHeader className="p-0 mb-3 sm:mb-4 flex-row items-center justify-between gap-3">
+        <CardTitle className="text-base sm:text-lg font-semibold tracking-tight text-foreground">
+          Your day, hour by hour
         </CardTitle>
+        {moreHref && <Link href={moreHref} className="min-h-11 inline-flex items-center text-sm text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">View all hours →</Link>}
       </CardHeader>
 
       <CardContent className="p-0">
@@ -137,7 +143,7 @@ function HourlyCard({
     <Card
       className={cn(
         "hourly-forecast-card flex-shrink-0 flex flex-col items-center justify-between snap-start",
-        "rounded-xl p-3 sm:p-4 min-w-[100px] sm:min-w-[110px]",
+        "rounded-xl p-3 sm:p-4 min-w-[84px] sm:min-w-[100px]",
         "transition-all duration-200 hover:-translate-y-0.5",
         "backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)]",
@@ -167,7 +173,7 @@ function HourlyCard({
         <WeatherIconModern
           condition={hour.condition}
           isNight={hour.icon?.endsWith('n')}
-          size={54}
+          size={40}
           className="hover:scale-110 transition-transform"
         />
       </div>

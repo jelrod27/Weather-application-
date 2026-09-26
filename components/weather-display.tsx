@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress"
 import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
 import type { ThemeType } from '@/lib/theme-config'
 import { themeTokens } from '@/lib/theme-tokens'
+import { ForecastBrief } from "@/components/forecast-brief"
 import { HeroWeatherCard } from "@/components/hero-weather-card"
 import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
 import { AirQualityDisplay } from "@/components/air-quality-display"
@@ -75,6 +76,12 @@ export function WeatherDisplay({
   const themeClasses = themeTokens.weather
 
   const todayForecast = getTodayForecast(weather)
+  const hourlyParams = new URLSearchParams({ city: weather.location })
+  if (weather.coordinates) {
+    hourlyParams.set('lat', String(weather.coordinates.lat))
+    hourlyParams.set('lon', String(weather.coordinates.lon))
+  }
+  const hourlyHref = `/hourly?${hourlyParams}`
 
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
@@ -100,9 +107,11 @@ export function WeatherDisplay({
   const deltaSameClass = theme === 'daybreak' ? 'text-emerald-700' : 'text-emerald-400'
 
   return (
-    <div className="space-y-5 sm:space-y-7">
-      {/* 1. Hero Weather Card */}
+    <div className="space-y-5 sm:space-y-7 font-sans">
+      <div className="grid items-center gap-5 lg:grid-cols-[1.15fr_1fr] lg:gap-10">
+      <ForecastBrief weather={weather} hourlyHref={hourlyHref} />
       <HeroWeatherCard
+        compact
         location={weather.location}
         temperature={weather.temperature}
         unit={weather.unit}
@@ -119,11 +128,14 @@ export function WeatherDisplay({
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
+      </div>
 
       {/* 2. Hourly Forecast - Always visible if data exists */}
       {weather?.hourlyForecast && weather.hourlyForecast.length > 0 && (
         <LazyHourlyForecast
           hourly={weather.hourlyForecast}
+          maxHours={6}
+          moreHref={hourlyHref}
           theme={theme as ThemeType}
           tempUnit={weather.unit || '°F'}
           timezone={weather.timezone}

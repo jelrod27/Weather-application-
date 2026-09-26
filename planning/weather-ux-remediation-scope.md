@@ -30,6 +30,8 @@ Six commits for London lookup, Hourly location recovery, warning-to-radar/source
 
 ## PR 3: Correct educational content
 
+Merged as PR #629 (`aa6b257`), including citation review fixes.
+
 Separate commits for cloud taxonomy, flare classification, unsupported claims/source attribution, and outdated product descriptions.
 
 See the [PR 3 acceptance scope](pr3-correct-weather-education.md).
@@ -37,6 +39,8 @@ See the [PR 3 acceptance scope](pr3-correct-weather-education.md).
 ## PR 4: Improve the UI
 
 Local summaries; forecast → hourly → radar → explanation → return with location preserved; compact mobile radar; simpler travel controls; visual lessons; keyboard accessibility.
+
+See the [PR 4 acceptance scope and approved design](pr4-improve-weather-ui.md).
 
 ## Later, separately scoped
 

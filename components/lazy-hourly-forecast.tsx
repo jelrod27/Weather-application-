@@ -20,6 +20,8 @@ interface LazyHourlyForecastProps {
   theme?: ThemeType;
   tempUnit?: string;
   timezone?: string;
+  maxHours?: number;
+  moreHref?: string;
 }
 
 export default function LazyHourlyForecast(props: LazyHourlyForecastProps) {
