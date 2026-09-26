@@ -115,12 +115,15 @@ export default function TravelCorridorMap({ corridors, isLoading }: TravelCorrid
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || corridors.length === 0) return;
+    if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
+    setClickedCorridor(null);
     if (vectorLayerRef.current) {
       map.removeLayer(vectorLayerRef.current);
+      vectorLayerRef.current = null;
     }
+    if (corridors.length === 0) return;
 
     const features = corridors.map((corridor) => {
       const coords = corridor.path.map(([lon, lat]) => fromLonLat([lon, lat]));

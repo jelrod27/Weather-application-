@@ -48,11 +48,11 @@ export interface HourlyForecast {
 export interface EnhancedHourlyForecast {
   dt: number;          // Unix timestamp
   time: string;        // Formatted time (e.g., "2 PM")
-  temp: number;
+  temp: number | null;
   feelsLike?: number;
   condition: string;
   description: string;
-  precipChance: number;
+  precipChance: number | null;
   windSpeed?: number;
   windDirection?: string;
   humidity?: number;
@@ -178,4 +178,4 @@ export interface PrecipitationData {
 // Extended weather data with precipitation for authenticated users
 interface AuthenticatedWeatherData extends WeatherData {
   precipitation?: PrecipitationData;
-} 
+}

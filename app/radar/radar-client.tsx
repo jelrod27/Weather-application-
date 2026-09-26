@@ -8,15 +8,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dynamicImport from 'next/dynamic'
 import Link from 'next/link'
-import { Home, Map as MapIcon } from 'lucide-react'
+import { ArrowLeft, Map as MapIcon } from 'lucide-react'
 import { useLocationContext } from '@/components/location-context'
-import type { WeatherData } from '@/lib/types'
 import { parseRadarCoordinateTarget } from '@/lib/radar/radar-location-target'
 import { useTheme } from '@/components/theme-provider'
 import { fetchWeatherData } from '@/lib/weather'
 import WeatherSearch from '@/components/weather-search'
+import { getWeatherJourneyLinks, getWeatherLessonHref, getWeatherReturnHref } from '@/lib/weather/journey'
 import { useRadarWarning } from '@/hooks/useRadarWarning'
 import { getOfficialWarningHref, nwsGeometryBBox, radarWarningReturnHref } from '@/lib/warnings/alert-links'
+import type { WeatherData } from '@/lib/types'
 
 const RadarShell = dynamicImport(() => import('@/components/radar-v2/radar-shell'), {
   ssr: false,
@@ -35,7 +36,11 @@ function RadarOverlayShell({
   title,
   body,
   children,
+  returnHref = '/',
+  returnLabel = 'Back to forecast',
 }: {
+  returnHref?: string
+  returnLabel?: string
   message?: string
   title?: string
   body?: string
@@ -47,11 +52,11 @@ function RadarOverlayShell({
         <>
           <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
             <Link
-              href="/"
+              href={returnHref}
               className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-mono hover:bg-white/5"
             >
-              <Home className="h-4 w-4" />
-              HOME
+              <ArrowLeft className="h-4 w-4" />
+              {returnLabel}
             </Link>
             <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">Weather Radar</span>
           </header>
@@ -65,6 +70,7 @@ function RadarOverlayShell({
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
           <MapIcon className="h-10 w-10 text-cyan-400" aria-hidden="true" />
           <p className="font-mono text-sm uppercase tracking-widest text-zinc-400">{message}</p>
+          <Link href={returnHref} className="min-h-11 inline-flex items-center text-sm underline">{returnLabel}</Link>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
         </div>
       )}
@@ -79,7 +85,6 @@ export default function RadarClient() {
   const warningId = searchParams.get('warning')
   const warningState = useRadarWarning(warningId)
   const warning = warningState.warning
-  const returnHref = warningId ? radarWarningReturnHref(warningId, searchParams.get('returnTo')) : undefined
   const { currentLocation } = useLocationContext()
   const { theme } = useTheme()
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
@@ -87,7 +92,11 @@ export default function RadarClient() {
   const [searchError, setSearchError] = useState<string | undefined>()
 
   const coordinateTarget = useMemo(
-    () => (urlLocation ? null : parseRadarCoordinateTarget(searchParams)),
+    () => {
+      if (urlLocation) return null
+      const target = parseRadarCoordinateTarget(searchParams)
+      return target ? { ...target, label: searchParams.get('label')?.trim().slice(0, 120) || target.label } : null
+    },
     [searchParams, urlLocation],
   )
   const targetLocation = coordinateTarget || warningId ? null : urlLocation || currentLocation
@@ -154,6 +163,15 @@ export default function RadarClient() {
     return coordinateTarget
   }, [coordinateTarget, weatherData, warning])
 
+  const forecastReturn = getWeatherJourneyLinks({
+    location: activeTarget?.label || targetLocation || 'Weather',
+    coordinates: activeTarget ? { lat: activeTarget.latitude, lon: activeTarget.longitude } : undefined,
+  }).forecast
+  const returnHref = warningId ? radarWarningReturnHref(warningId, searchParams.get('returnTo'))
+    : getWeatherReturnHref(searchParams.get('returnTo')) || (activeTarget || targetLocation ? forecastReturn : '/')
+  const returnLabel = warningId ? 'Back to warning' : returnHref.startsWith('/hourly') ? 'Back to hourly' : 'Back to forecast'
+  const learnHref = getWeatherLessonHref('radar', `/radar?${searchParams}`)
+
   const shareUrl = useMemo(() => {
     if (!activeTarget) return 'https://www.16bitweather.co/radar'
 
@@ -175,15 +193,15 @@ export default function RadarClient() {
       return
     }
     setSearchError(undefined)
-    router.push(`/radar?location=${encodeURIComponent(trimmed)}`)
+    router.push(getWeatherJourneyLinks({ location: trimmed }).radar)
   }
 
   if (warningId && warningState.loading) {
-    return <RadarOverlayShell message="Loading selected warning" />
+    return <RadarOverlayShell message="Loading selected warning" returnHref={returnHref} returnLabel={returnLabel} />
   }
 
   if (warningId && warningState.error) {
-    return <RadarOverlayShell title="Warning map unavailable" body={warningState.error}>
+    return <RadarOverlayShell title="Warning map unavailable" body={warningState.error} returnHref={returnHref} returnLabel={returnLabel}>
       <Link href={returnHref!} className="underline">Back to warning</Link>
       <a href={getOfficialWarningHref(warningId)} className="underline" target="_blank" rel="noreferrer">Official NWS alert</a>
       <button className="underline" onClick={warningState.retry}>Retry warning map</button>
@@ -191,12 +209,14 @@ export default function RadarClient() {
   }
 
   if (isLoading) {
-    return <RadarOverlayShell message="Initializing radar terminal" />
+    return <RadarOverlayShell message="Loading radar" returnHref={returnHref} returnLabel={returnLabel} />
   }
 
   if (!activeTarget) {
     return (
       <RadarOverlayShell
+        returnHref={returnHref}
+        returnLabel={returnLabel}
         title="Choose a location"
         body="Search for a city to open full-screen global precipitation radar with severe weather overlays."
       >
@@ -217,10 +237,12 @@ export default function RadarClient() {
       <RadarShell
         selectedWarning={warning}
         returnHref={returnHref}
+        returnLabel={returnLabel}
+        learnHref={learnHref}
         latitude={activeTarget.latitude}
         longitude={activeTarget.longitude}
         locationName={activeTarget.label}
-        timeZone={weatherData?.timezone}
+        timeZone={weatherData?.timezone || searchParams.get('tz') || undefined}
         theme={theme || 'nord'}
         displayMode="full-page"
         onLocationSearch={handleRadarSearch}

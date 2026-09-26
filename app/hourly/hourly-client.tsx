@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
+import { WeatherJourney } from "@/components/weather-journey"
+import { formatLocationTimeWithZone } from "@/lib/format-location-time"
 import { useTheme } from "@/components/theme-provider"
 import { useLocationContext } from "@/components/location-context"
 import WeatherSearch from "@/components/weather-search"
@@ -27,6 +29,7 @@ export default function HourlyClient(): React.JSX.Element {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const [retry, setRetry] = useState(0)
   const lat = searchParams.get('lat')
   const lon = searchParams.get('lon')
@@ -78,10 +81,12 @@ export default function HourlyClient(): React.JSX.Element {
   const forecastHref = forecastName
     ? `/weather/${locationInputToSlug(forecastName)}?${new URLSearchParams({ location: returnQuery })}` : '/'
 
+  const hourDetail = weather?.hourlyForecast?.find(hour => hour.dt === selectedHour) ?? weather?.hourlyForecast?.[0]
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       <Link href={forecastHref} className="font-mono text-sm underline text-primary">Back to forecast</Link>
-      <h1 className="text-3xl font-bold font-mono">48-Hour Forecast</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">48-Hour Forecast</h1>
       <WeatherSearch
         onSearch={(value) => {
           const name = value.trim()
@@ -106,8 +111,18 @@ export default function HourlyClient(): React.JSX.Element {
         </div>
       ) : (
         <>
-          <p className="font-mono text-lg">{weather.location}</p>
-          <HourlyForecast hourly={weather.hourlyForecast} theme={theme} tempUnit={weather.unit} timezone={weather.timezone} />
+          <p className="text-lg font-semibold tracking-tight">{weather.location}</p>
+          <WeatherJourney weather={weather} active="hourly" />
+          <HourlyForecast hourly={weather.hourlyForecast} theme={theme} tempUnit={weather.unit} timezone={weather.timezone} maxHours={48} selectedHour={hourDetail?.dt} onSelectHour={setSelectedHour} />
+          {hourDetail && <section aria-label="Selected hour details" className="rounded-xl border border-border bg-card p-5">
+            <h2 className="text-xl font-semibold tracking-tight">{formatLocationTimeWithZone(hourDetail.dt * 1000, weather.timezone || 'UTC')} · {hourDetail.condition}</h2>
+            <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-4">
+              {hourDetail.temp !== null && Number.isFinite(hourDetail.temp) && <div><dt className="text-xs text-muted-foreground">Temperature</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.temp)}{weather.unit}</dd></div>}
+              {Number.isFinite(hourDetail.precipChance) && <div><dt className="text-xs text-muted-foreground">Precipitation chance</dt><dd className="text-xl tabular-nums">{hourDetail.precipChance}%</dd></div>}
+              {hourDetail.windSpeed != null && Number.isFinite(hourDetail.windSpeed) && <div><dt className="text-xs text-muted-foreground">Wind</dt><dd className="text-xl tabular-nums">{Math.round(hourDetail.windSpeed)} {weather.unit === '°C' ? 'km/h' : 'mph'}</dd></div>}
+            </dl>
+            <p className="mt-4 text-sm text-muted-foreground">Precipitation probability is a chance of rain or snow, not a guarantee.</p>
+          </section>}
           <p className="font-mono text-sm text-muted-foreground">Scroll horizontally to explore available hours. Times use the forecast location’s time zone.</p>
         </>
       )}

@@ -175,7 +175,8 @@ export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promi
       },
       hourly: {
         time: Array.from({ length: 48 }, (_, i) => {
-          const d = new Date(Date.now() + i * 60 * 60 * 1000);
+          // The response uses New York wall-clock strings with a -04:00 offset.
+          const d = new Date(Date.now() - 4 * 60 * 60 * 1000 + i * 60 * 60 * 1000);
           return d.toISOString().slice(0, 16);
         }),
         temperature_2m: Array.from({ length: 48 }, () => o.tempF),
@@ -1246,5 +1247,4 @@ export async function stubNewsApi(page: Page): Promise<void> {
     });
   });
 }
-
 

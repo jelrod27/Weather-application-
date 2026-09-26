@@ -9,31 +9,6 @@
 
 import React from "react"
 import Link from 'next/link'
-import { getTodayForecast } from '@/lib/weather/daily-forecast'
-import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
-import type { ThemeType } from '@/lib/theme-config'
-import { themeTokens } from '@/lib/theme-tokens'
-import { HeroWeatherCard } from "@/components/hero-weather-card"
-import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
-import { AirQualityDisplay } from "@/components/air-quality-display"
-import { PollenDisplay } from "@/components/pollen-display"
-import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
-import { ResponsiveGrid } from "@/components/responsive-container"
-import LazyWeatherMap from '@/components/lazy-weather-map'
-import { MoonPhaseIcon } from '@/components/moon-phase-icon'
-import type { WeatherData } from "@/lib/types"
-import {
-  getUVSeverity,
-  getHumiditySeverity,
-  getPressureCategory,
-  getWindSeverity,
-  getVisibilitySeverity,
-  windDirectionToDegrees,
-} from "@/lib/weather-severity"
 import {
   Sun,
   Thermometer,
@@ -50,6 +25,36 @@ import {
   ArrowUp,
   Sunset,
 } from "lucide-react"
+import { getTodayForecast } from '@/lib/weather/daily-forecast'
+import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
+import { themeTokens } from '@/lib/theme-tokens'
+import { WeatherJourney } from "@/components/weather-journey"
+import { getWeatherJourneyLinks } from "@/lib/weather/journey"
+import { ForecastBrief } from "@/components/forecast-brief"
+import { HeroWeatherCard } from "@/components/hero-weather-card"
+import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
+import { AirQualityDisplay } from "@/components/air-quality-display"
+import { PollenDisplay } from "@/components/pollen-display"
+import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
+import { ResponsiveGrid } from "@/components/responsive-container"
+import LazyWeatherMap from '@/components/lazy-weather-map'
+import { MoonPhaseIcon } from '@/components/moon-phase-icon'
+import {
+  getUVSeverity,
+  getHumiditySeverity,
+  getPressureCategory,
+  getWindSeverity,
+  getVisibilitySeverity,
+  windDirectionToDegrees,
+} from "@/lib/weather-severity"
+
+
+import type { ThemeType } from '@/lib/theme-config'
+import type { WeatherData } from '@/lib/types'
 
 interface WeatherDisplayProps {
   weather: WeatherData
@@ -75,6 +80,8 @@ export function WeatherDisplay({
   const themeClasses = themeTokens.weather
 
   const todayForecast = getTodayForecast(weather)
+  const weatherLinks = getWeatherJourneyLinks(weather)
+  const hourlyHref = weatherLinks.hourly
 
   // Compute severity values
   const uvSeverity = getUVSeverity(weather?.uvIndex ?? 0)
@@ -100,9 +107,12 @@ export function WeatherDisplay({
   const deltaSameClass = theme === 'daybreak' ? 'text-emerald-700' : 'text-emerald-400'
 
   return (
-    <div className="space-y-5 sm:space-y-7">
-      {/* 1. Hero Weather Card */}
+    <div className="space-y-5 sm:space-y-7 font-sans">
+      <WeatherJourney weather={weather} active="forecast" />
+      <div className="grid items-center gap-5 lg:grid-cols-[1.15fr_1fr] lg:gap-10">
+      <ForecastBrief weather={weather} hourlyHref={hourlyHref} />
       <HeroWeatherCard
+        compact
         location={weather.location}
         temperature={weather.temperature}
         unit={weather.unit}
@@ -119,11 +129,14 @@ export function WeatherDisplay({
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
+      </div>
 
       {/* 2. Hourly Forecast - Always visible if data exists */}
       {weather?.hourlyForecast && weather.hourlyForecast.length > 0 && (
         <LazyHourlyForecast
           hourly={weather.hourlyForecast}
+          maxHours={6}
+          moreHref={hourlyHref}
           theme={theme as ThemeType}
           tempUnit={weather.unit || '°F'}
           timezone={weather.timezone}
@@ -171,7 +184,7 @@ export function WeatherDisplay({
                 Weather Radar
               </h2>
               <Link
-                href="/radar"
+                href={weatherLinks.radar}
                 className="px-2 py-1 border-0 rounded-md text-xs font-semibold transition-colors hover:text-primary text-muted-foreground hover:text-foreground"
               >
                 VIEW FULL →

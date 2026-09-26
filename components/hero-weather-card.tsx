@@ -34,6 +34,7 @@ const HERO_CARD_BASE =
   "hero-weather-card weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
 
 interface HeroWeatherCardProps {
+  compact?: boolean
   location: string
   temperature: number | null | undefined
   unit: string
@@ -53,6 +54,7 @@ interface HeroWeatherCardProps {
 }
 
 export function HeroWeatherCard({
+  compact = false,
   location,
   temperature,
   unit,
@@ -68,7 +70,7 @@ export function HeroWeatherCard({
   precipChance,
   glowClass,
   timezone,
-}: HeroWeatherCardProps) {
+}: HeroWeatherCardProps): React.JSX.Element {
   const { theme } = useTheme()
   const accent = getHeroAccent(condition)
   const displayTemp = typeof temperature === 'number' ? Math.round(temperature) : null
@@ -79,14 +81,14 @@ export function HeroWeatherCard({
     <Card className={cn(HERO_CARD_BASE, accent, "relative overflow-hidden")}>
       <HeroAmbientBackdrop condition={condition} />
       <CardContent className="p-5 sm:p-7 relative z-10">
-        <div className="grid gap-5 sm:gap-6 sm:grid-cols-[1fr_auto] items-center">
+        <div className={cn("grid gap-5 items-center", !compact && "sm:gap-6 sm:grid-cols-[1fr_auto]")}>
           {/* Left: identity + temperature */}
           <div className="min-w-0 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-3 mb-1.5">
               {/* The card loads after the client fetch; the page's server-rendered <h1> owns the topic. */}
               <h2
                 className={cn(
-                  "font-extrabold tracking-wider uppercase text-primary font-sans",
+                  compact ? "font-semibold tracking-tight text-foreground font-sans" : "font-extrabold tracking-wider uppercase text-primary font-sans",
                   glowClass,
                 )}
                 style={{ fontSize: "clamp(18px, 3.2vw, 26px)" }}
@@ -119,11 +121,12 @@ export function HeroWeatherCard({
 
             <p
               data-testid="temperature-value"
-              className="text-6xl sm:text-8xl font-bold tabular-nums tracking-tight font-mono leading-none text-foreground glow-hero"
-              style={{ fontSize: "clamp(56px, 11vw, 104px)" }}
+              className={cn("text-6xl sm:text-8xl tabular-nums tracking-tight leading-none text-foreground glow-hero", compact ? "font-sans font-medium" : "font-mono font-bold")}
+              style={{ fontSize: compact ? "clamp(64px, 7vw, 88px)" : "clamp(56px, 11vw, 104px)" }}
             >
               {displayTemp ?? 'N/A'}
               {displayTemp != null ? '°' : ''}
+              <span className="ml-1 text-lg font-normal text-muted-foreground">{unit.replace('°', '')}</span>
             </p>
 
             <p className="mt-2 text-base sm:text-lg text-muted-foreground/90 leading-snug">
@@ -133,9 +136,9 @@ export function HeroWeatherCard({
           </div>
 
           {/* Right: icon + 2-row chip grid */}
-          <div className="flex flex-col items-center gap-4 sm:gap-5 sm:pr-2 sm:min-w-[280px]">
+          <div className={cn("flex items-center gap-4", compact ? "flex-row" : "flex-col sm:gap-5 sm:pr-2 sm:min-w-[280px]")}>
             <div className="drop-shadow-[0_4px_28px_rgba(var(--theme-accent-rgb),0.28)]">
-              <WeatherIconModern condition={condition} size={112} className="sm:scale-110" />
+              <WeatherIconModern condition={condition} size={compact ? 60 : 112} className="sm:scale-110" />
             </div>
 
             <div className="grid grid-cols-3 gap-1.5 text-xs sm:text-sm font-mono w-full">
@@ -152,21 +155,21 @@ export function HeroWeatherCard({
                   value={`${feelsLike}°${feelsLikeDelta !== 0 ? (feelsLikeDelta > 0 ? ' ↑' : ' ↓') : ''}`}
                 />
               )}
-              {humidity !== undefined && (
+              {!compact && humidity !== undefined && (
                 <HeroChip
                   icon={<Droplets size={12} className={chipIcon.hum} />}
                   label="HUM"
                   value={`${Math.round(humidity)}%`}
                 />
               )}
-              {windSpeed !== undefined && (
+              {!compact && windSpeed !== undefined && (
                 <HeroChip
                   icon={<Wind size={12} className={chipIcon.wind} />}
                   label="WIND"
                   value={`${Math.round(windSpeed)} ${windUnit}`}
                 />
               )}
-              {precipChance !== undefined && (
+              {!compact && precipChance !== undefined && (
                 <HeroChip
                   icon={<CloudRain size={12} className={chipIcon.rain} />}
                   label="RAIN"

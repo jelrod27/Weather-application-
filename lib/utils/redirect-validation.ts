@@ -17,6 +17,7 @@ const ALLOWED_REDIRECT_PATHS = [
   '/gfs-model',
   '/news',
   '/radar',
+  '/hourly',
   '/education',
   '/auth/update-password',
   '/',

@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["jest", "node"]
+    "types": ["jest", "node", "@testing-library/jest-dom"]
   },
   "include": [
     "lib/cron/**/*.ts",
@@ -18,7 +18,13 @@
     "__tests__/education-guides.test.ts",
     "__tests__/education/**/*.test.ts",
     "__tests__/education/**/*.test.tsx",
-    "__tests__/theme-contrast.test.ts"
+    "__tests__/theme-contrast.test.ts",
+    "__tests__/forecast-brief.test.tsx",
+    "__tests__/weather-journey.test.tsx",
+    "__tests__/radar-controls.test.tsx",
+    "__tests__/radar-shell-status.test.tsx",
+    "__tests__/travel-controls.test.tsx",
+    "__tests__/travel-corridor-map.test.tsx"
   ],
   "exclude": [
     "node_modules",

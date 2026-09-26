@@ -27,8 +27,8 @@ test('renders the Travel Hub shell', async ({ page }) => {
 });
 
 test('exposes Fly and Drive mode controls', async ({ page }) => {
-  const modeTabs = page.getByRole('tablist', { name: /Travel mode/i });
-  await expect(modeTabs).toBeVisible({ timeout: 30000 });
-  await expect(modeTabs.getByRole('tab', { name: /Fly/i })).toBeVisible();
-  await expect(modeTabs.getByRole('tab', { name: /Drive/i })).toBeVisible();
+  const mode = page.getByRole('group', { name: /Travel mode/i });
+  await expect(mode).toHaveCount(1);
+  await expect(mode.getByRole('button', { name: /Fly/i })).toBeVisible();
+  await expect(mode.getByRole('button', { name: /Drive/i })).toBeVisible();
 });

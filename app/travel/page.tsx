@@ -3,27 +3,25 @@
 /**
  * 16-Bit Weather Platform - Travel Hub Page
  *
- * Unified hub for "will my trip suck?" — Fly mode shows the airport misery board,
- * Drive mode shows the interstate corridor map + outlook images. A shared trip
- * planner (origin → destination) sits above the mode toggle.
+ * Shared inputs drive the trip form, result and national outlook.
+ * Input edits abort pending lookups before the selected view can change.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import PageWrapper from '@/components/page-wrapper';
 import dynamic from 'next/dynamic';
-import { MapSkeleton } from '@/components/skeletons/map-skeleton';
 import { useInView } from 'react-intersection-observer';
+import PageWrapper from '@/components/page-wrapper';
+import { MapSkeleton } from '@/components/skeletons/map-skeleton';
 import WorstCorridors from '@/components/travel/WorstCorridors';
 import DailyOutlookImages from '@/components/travel/DailyOutlookImages';
 import TravelHub from '@/components/travel/TravelHub';
 import TripInput from '@/components/travel/TripInput';
 import TripScoreCard from '@/components/travel/TripScoreCard';
 import { AirportMiseryBoard } from '@/components/aviation';
-import type { TripScoreResponse } from '@/components/travel/trip-types';
-import type { SeverityLevel } from '@/lib/services/travel-corridor-service';
 import { ShareButtons } from '@/components/share-buttons';
+import type { TripDay, TripInputs, TripMode, TripScoreResponse } from '@/components/travel/trip-types';
+import type { SeverityLevel } from '@/lib/services/travel-corridor-service';
 
 const TravelCorridorMap = dynamic(() => import('@/components/travel/TravelCorridorMap'), {
   ssr: false,
@@ -47,53 +45,113 @@ interface CorridorsResponse {
   fetchedAt: string;
 }
 
-const DAY_LABELS = ['Today', 'Tomorrow', 'Day 3'];
+const MODE_STORAGE_KEY = 'travel-hub-mode';
 
-export default function TravelPage() {
+export default function TravelPage(): React.JSX.Element {
+  const [inputs, setInputs] = useState<TripInputs>({ mode: 'drive', day: 0, origin: '', destination: '' });
   const [tripResult, setTripResult] = useState<TripScoreResponse | null>(null);
   const [tripLoading, setTripLoading] = useState(false);
   const [tripError, setTripError] = useState<string | null>(null);
+  const tripAbortRef = useRef<AbortController | null>(null);
+
+  const changeInputs = useCallback((next: TripInputs) => {
+    // Abort synchronously with the edit. Even a response already being parsed
+    // must not repopulate the result (or error) for the previous inputs.
+    tripAbortRef.current?.abort();
+    setInputs(next);
+    setTripResult(null);
+    setTripError(null);
+    setTripLoading(false);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+      if (stored === 'fly' || stored === 'drive') {
+        setInputs((current) => ({ ...current, mode: stored, day: 0 }));
+      }
+    } catch {
+      // Private browsing may make storage unavailable.
+    }
+    return () => tripAbortRef.current?.abort();
+  }, []);
+
+  const changeMode = (mode: TripMode) => {
+    if (mode === inputs.mode) return;
+    changeInputs({ ...inputs, mode, day: mode === 'fly' ? 0 : inputs.day });
+    try {
+      window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch {
+      // The selected mode still works when storage is unavailable.
+    }
+  };
+
+  const submitTrip = async () => {
+    tripAbortRef.current?.abort();
+    setTripResult(null);
+    setTripError(null);
+    const origin = inputs.origin.trim();
+    const destination = inputs.destination.trim();
+    if (!origin || !destination) {
+      setTripLoading(false);
+      setTripError('Enter both an origin and a destination.');
+      return;
+    }
+
+    const controller = new AbortController();
+    tripAbortRef.current = controller;
+    setTripLoading(true);
+    try {
+      const params = new URLSearchParams({ origin, destination, mode: inputs.mode, day: String(inputs.day) });
+      const res = await fetch(`/api/travel/trip-score?${params.toString()}`, { signal: controller.signal });
+      const payload = (await res.json().catch(() => null)) as TripScoreResponse | { error?: string } | null;
+      if (controller.signal.aborted) return;
+      if (!res.ok || !payload || 'error' in payload) {
+        setTripError((payload && 'error' in payload && payload.error) || `Trip lookup failed (${res.status})`);
+        return;
+      }
+      setTripResult(payload as TripScoreResponse);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error('[Travel trip]', error);
+      setTripError('Unable to score this trip. Please try again.');
+    } finally {
+      if (!controller.signal.aborted) setTripLoading(false);
+    }
+  };
 
   return (
     <PageWrapper>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+        <TravelHub
+          mode={inputs.mode}
+          day={inputs.day}
+          onModeChange={changeMode}
+          onDayChange={(day) => {
+            if (day !== inputs.day) changeInputs({ ...inputs, day });
+          }}
+          tripInput={
+            <TripInput
+              value={inputs}
+              onChange={changeInputs}
+              onSubmit={submitTrip}
+              isLoading={tripLoading}
+              error={tripError}
+            />
+          }
+          tripResult={tripResult || tripLoading ? (
+            <TripScoreCard result={tripResult ?? createPlaceholder()} day={inputs.day} isLoading={tripLoading} />
+          ) : null}
+          flyContent={<FlyContent />}
+          driveContent={<DriveContent day={inputs.day} />}
+        />
         <ShareButtons
           config={{
             title: 'Travel Hub',
             text: 'Plan your trip — flight delays, road conditions, and weather misery scoring at 16bitweather.co',
             url: 'https://www.16bitweather.co/travel',
           }}
-          className="mb-6 justify-center"
-        />
-
-        <TravelHub
-          tripInput={
-            <TripInput
-              onResult={(result) => {
-                setTripResult(result);
-                setTripError(null);
-              }}
-              onLoadingChange={setTripLoading}
-              onError={(message) => {
-                setTripError(message);
-                setTripResult(null);
-              }}
-            />
-          }
-          tripResult={
-            tripError ? (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 font-mono text-sm text-destructive"
-              >
-                {tripError}
-              </div>
-            ) : tripResult || tripLoading ? (
-              <TripScoreCard result={tripResult ?? createPlaceholder()} isLoading={tripLoading && !tripResult} />
-            ) : null
-          }
-          flyContent={<FlyContent />}
-          driveContent={<DriveContent />}
+          className="mt-6 justify-center"
         />
       </div>
     </PageWrapper>
@@ -123,16 +181,16 @@ function createPlaceholder(): TripScoreResponse {
 /* Fly mode content                                                            */
 /* -------------------------------------------------------------------------- */
 
-function FlyContent() {
+function FlyContent(): React.JSX.Element {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <AirportMiseryBoard />
       <div className="text-center">
         <Link
           href="/aviation"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded border border-border bg-card/50 hover:bg-card font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          Open detail console (SIGMETs · turbulence · METARs) →
+          Aviation details: alerts, turbulence & airport reports →
         </Link>
       </div>
     </div>
@@ -143,8 +201,7 @@ function FlyContent() {
 /* Drive mode content (preserves existing corridor map + outlooks UI)          */
 /* -------------------------------------------------------------------------- */
 
-function DriveContent() {
-  const [day, setDay] = useState(0);
+function DriveContent({ day }: { day: TripDay }): React.JSX.Element {
   const [data, setData] = useState<CorridorsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -189,55 +246,34 @@ function DriveContent() {
     return () => abortRef.current?.abort();
   }, []);
 
+  const currentData = data?.forecastDay === day ? data : null;
+  const loadingCurrentDay = isLoading || (data !== null && data.forecastDay !== day);
+
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <p className="text-xs font-mono text-muted-foreground tracking-wider uppercase">
-          // Interstate driving conditions &amp; outlooks
-        </p>
-      </div>
-
-      <div className="flex gap-2 justify-center">
-        {DAY_LABELS.map((label, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setDay(i)}
-            className={cn(
-              'px-5 py-2 rounded-lg font-mono text-sm font-bold transition-colors',
-              day === i
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-card/50 text-muted-foreground hover:bg-card/80 border border-border'
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
+    <div className="space-y-6">
       {error && (
-        <div className="text-center py-8 border border-border rounded-lg bg-card/30">
-          <p className="text-sm font-mono text-orange-400">{error}</p>
+        <div role="alert" className="rounded-lg border border-border bg-card p-4 text-center">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       <div ref={ref} style={{ minHeight: '500px', contain: 'layout style paint' }}>
         {inView ? (
-          <TravelCorridorMap corridors={data?.corridors ?? []} isLoading={isLoading} />
+          <TravelCorridorMap corridors={currentData?.corridors ?? []} isLoading={loadingCurrentDay} />
         ) : (
           <MapSkeleton height="h-[500px]" />
         )}
       </div>
 
       {!error && (
-        <WorstCorridors corridors={data?.worstCorridors ?? []} isLoading={isLoading} />
+        <WorstCorridors corridors={currentData?.worstCorridors ?? []} isLoading={loadingCurrentDay} />
       )}
 
-      <DailyOutlookImages />
+      <DailyOutlookImages day={day} />
 
-      {data?.fetchedAt && (
+      {currentData?.fetchedAt && (
         <p className="text-center text-xs font-mono text-muted-foreground">
-          Last updated: {new Date(data.fetchedAt).toLocaleTimeString()}
+          Last updated: {new Date(currentData.fetchedAt).toLocaleTimeString()}
         </p>
       )}
     </div>

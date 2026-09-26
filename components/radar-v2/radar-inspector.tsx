@@ -7,25 +7,25 @@ interface RadarInspectorProps {
   onClose: () => void
 }
 
-export function RadarInspector({ title, body, link, onClose }: RadarInspectorProps) {
+export function RadarInspector({ title, body, link, onClose }: RadarInspectorProps): React.JSX.Element {
   return (
-    <div className="pointer-events-auto absolute bottom-28 left-3 right-3 z-[2500] mx-auto max-w-md rounded-xl border border-white/10 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-md sm:left-4 sm:right-auto">
+    <div className="pointer-events-auto relative mx-3 mb-2 max-h-[40dvh] max-w-md overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elev)] p-4 text-[var(--text)] shadow-2xl sm:ml-4">
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-3 top-2 text-sm text-zinc-400 hover:text-white"
+        className="absolute right-3 top-1 min-h-11 rounded-md px-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         aria-label="Close details"
       >
         Close
       </button>
-      <h3 className="pr-12 text-sm font-semibold text-white">{title}</h3>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">{body}</p>
+      <h3 className="pr-16 text-sm font-semibold">{title}</h3>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-muted)]">{body}</p>
       {link ? (
         <a
           href={link}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 inline-flex text-sm font-semibold text-cyan-300 hover:underline"
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           View on weather.gov
         </a>

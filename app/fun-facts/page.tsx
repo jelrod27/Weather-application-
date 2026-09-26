@@ -83,8 +83,7 @@ export default function FunFactsPage() {
             return (
               <Card
                 key={phenomenon.id}
-                className={`container-primary transition-all duration-300 cursor-pointer h-fit`}
-                onClick={() => toggleCard(phenomenon.id)}
+                className="container-primary transition-all duration-300 h-fit"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between mb-2">
@@ -108,10 +107,6 @@ export default function FunFactsPage() {
                     <CardDescription className={`text-sm font-mono ${themeClasses.secondaryText}`}>
                       {phenomenon.category}
                     </CardDescription>
-                    {isExpanded ?
-                      <ChevronUp className="w-4 h-4 text-current" /> :
-                      <ChevronDown className="w-4 h-4 text-current" />
-                    }
                   </div>
                 </CardHeader>
 
@@ -121,8 +116,20 @@ export default function FunFactsPage() {
                     {phenomenon.description}
                   </p>
 
+                  <button
+                    type="button"
+                    aria-label={`${phenomenon.name} details`}
+                    aria-expanded={isExpanded}
+                    aria-controls={isExpanded ? `phenomenon-details-${phenomenon.id}` : undefined}
+                    onClick={() => toggleCard(phenomenon.id)}
+                    className={`mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)] ${themeClasses.accentText}`}
+                  >
+                    {isExpanded ? 'Hide details' : 'Show details'}
+                    {isExpanded ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
+                  </button>
+
                   {isExpanded && (
-                    <div className="space-y-4">
+                    <div id={`phenomenon-details-${phenomenon.id}`} role="region" aria-label={`${phenomenon.name} details`} className="space-y-4">
                       {/* Danger Level */}
                       <div>
                         <h4 className={`font-mono font-bold text-sm uppercase mb-2 ${themeClasses.headerText}`}>
@@ -239,9 +246,7 @@ export default function FunFactsPage() {
                       </div>
                     </div>
                   )}
-                  <div onClick={(event) => event.stopPropagation()}>
-                    <PhenomenonSources sources={phenomenon.sources} />
-                  </div>
+                  <PhenomenonSources sources={phenomenon.sources} />
                 </CardContent>
               </Card>
             )
@@ -250,7 +255,7 @@ export default function FunFactsPage() {
 
         <div className="text-center mt-12">
           <p className={`${themeClasses.secondaryText} font-mono text-sm`}>
-            Click any phenomenon card to expand and learn more!
+            Open a phenomenon’s details to learn more.
           </p>
         </div>
 

@@ -12,23 +12,27 @@ import React from 'react';
 import { Plane, Car, AlertTriangle, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MiseryBadge, MiseryDriverList } from '@/components/ui/misery-badge';
+import { TRIP_DAY_LABELS } from './trip-types';
 import type {
   DriveTripScore,
   FlyTripScore,
   TripScoreResponse,
+  TripDay,
 } from './trip-types';
 
 interface TripScoreCardProps {
   result: TripScoreResponse;
+  day: TripDay;
   isLoading?: boolean;
   className?: string;
 }
 
 export default function TripScoreCard({
   result,
+  day,
   isLoading = false,
   className,
-}: TripScoreCardProps) {
+}: TripScoreCardProps): React.JSX.Element {
   if (isLoading) {
     return <TripScoreCardSkeleton className={className} />;
   }
@@ -36,13 +40,13 @@ export default function TripScoreCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-border bg-card/50 p-4 md:p-6 space-y-5',
+        'rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4',
         className,
       )}
       data-testid="trip-score-card"
     >
       {result.mode === 'drive' ? (
-        <DriveBody result={result} />
+        <DriveBody result={result} day={day} />
       ) : (
         <FlyBody result={result} />
       )}
@@ -54,7 +58,7 @@ export default function TripScoreCard({
 /* Drive                                                                       */
 /* -------------------------------------------------------------------------- */
 
-function DriveBody({ result }: { result: DriveTripScore }) {
+function DriveBody({ result, day }: { result: DriveTripScore; day: TripDay }) {
   const { score, route, worstSegment } = result;
 
   return (
@@ -63,11 +67,11 @@ function DriveBody({ result }: { result: DriveTripScore }) {
         <div className="flex items-center gap-3 min-w-0">
           <Car className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              Drive
+            <p className="text-xs font-mono text-muted-foreground">
+              Drive · {TRIP_DAY_LABELS[day]}
             </p>
             <h3
-              className="font-mono font-bold text-lg md:text-xl truncate"
+              className="font-bold text-lg truncate"
               title={route.corridorName}
             >
               {route.corridorName}
@@ -86,7 +90,7 @@ function DriveBody({ result }: { result: DriveTripScore }) {
 
       <WorstStretchCallout segment={worstSegment} />
 
-      <p className="text-xs font-mono text-muted-foreground border-t border-border pt-3">
+      <p className="text-xs leading-relaxed text-muted-foreground border-t border-border pt-3">
         Corridor weather overview from sampled locations. Peak travel time is unavailable;
         this score does not account for your departure time or progress along the route.
       </p>
@@ -111,7 +115,7 @@ function WorstStretchCallout({
         aria-hidden="true"
       />
       <div className="flex-1 min-w-0 space-y-1">
-        <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs font-mono text-muted-foreground">
           Worst stretch
         </p>
         <p className="font-mono text-sm font-bold">
@@ -123,7 +127,7 @@ function WorstStretchCallout({
             </>
           )}
         </p>
-        <p className="text-[11px] font-mono text-muted-foreground">
+        <p className="text-xs font-mono text-muted-foreground">
           {segment.lat.toFixed(2)}°, {segment.lon.toFixed(2)}°
         </p>
       </div>
@@ -146,10 +150,10 @@ function FlyBody({ result }: { result: FlyTripScore }) {
         <div className="flex items-center gap-3 min-w-0">
           <Plane className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              Fly
+            <p className="text-xs font-mono text-muted-foreground">
+              Fly · Live
             </p>
-            <h3 className="font-mono font-bold text-lg md:text-xl">
+            <h3 className="font-bold text-lg">
               {routeSummary}
             </h3>
             <p className="text-xs font-mono text-muted-foreground truncate">
@@ -187,6 +191,10 @@ function FlyBody({ result }: { result: FlyTripScore }) {
           score={route.destination.score}
         />
       </div>
+      <p className="border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+        Live observations at major U.S. hub airports and a midpoint check of current aviation alerts.
+        This is a weather overview, not a full flight-path or departure-time forecast.
+      </p>
     </>
   );
 }
@@ -207,13 +215,13 @@ function FlyLegCard({
       className="rounded border border-border bg-card/40 p-3 space-y-2"
       data-testid={`trip-fly-leg-${label.toLowerCase()}`}
     >
-      <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
         <MapPin className="w-3 h-3" aria-hidden="true" />
         {label}
       </div>
       <div className="font-mono">
         <p className="text-sm font-bold leading-tight">{primary}</p>
-        <p className="text-[11px] text-muted-foreground truncate" title={secondary}>
+        <p className="text-xs text-muted-foreground truncate" title={secondary}>
           {secondary}
         </p>
       </div>
@@ -230,12 +238,13 @@ function TripScoreCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-border bg-card/50 p-4 md:p-6 space-y-5 animate-pulse',
+        'rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4 animate-pulse',
         className,
       )}
       data-testid="trip-score-card-skeleton"
       aria-busy="true"
     >
+      <span className="sr-only">Checking trip weather…</span>
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-2">
           <div className="h-3 w-16 rounded bg-muted/60" />

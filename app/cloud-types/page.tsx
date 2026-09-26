@@ -21,6 +21,7 @@ import EducationBreadcrumb from "@/components/education/education-breadcrumb"
 import GuideIndex from "@/components/education/guide-index"
 import EducationBackLink from "@/components/education/education-back-link"
 import { themeTokens } from '@/lib/theme-tokens'
+import { cn } from '@/lib/utils'
 
 // Shadcn UI components
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
@@ -249,8 +250,7 @@ export default function CloudTypesPage() {
             <React.Fragment key={cloud.id}>
               {/* Cloud Card */}
               <Card
-                onClick={() => handleCloudToggle(cloud.id)}
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 container-primary ${expandedCloudId === cloud.id ? themeClasses.glow : ''}`}
+                className={cn('transition-all duration-300 container-primary', expandedCloudId === cloud.id && themeClasses.glow)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -294,15 +294,26 @@ export default function CloudTypesPage() {
                   </div>
 
                   {/* Expand/Collapse Indicator */}
-                  <div className={`mt-3 text-xs font-mono text-center ${themeClasses.mutedText}`}>
-                    {expandedCloudId === cloud.id ? '[ CLICK TO COLLAPSE ]' : '[ CLICK FOR DETAILS ]'}
-                  </div>
+                  <button
+                    id={`cloud-trigger-${cloud.id}`}
+                    type="button"
+                    aria-label={`${cloud.name} details`}
+                    aria-expanded={expandedCloudId === cloud.id}
+                    aria-controls={expandedCloudId === cloud.id ? `cloud-details-${cloud.id}` : undefined}
+                    onClick={() => handleCloudToggle(cloud.id)}
+                    className={cn(
+                      'mt-3 min-h-11 w-full rounded border border-current px-3 py-2 text-xs font-mono font-bold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--weather-primary)]',
+                      themeClasses.accentText,
+                    )}
+                  >
+                    {expandedCloudId === cloud.id ? 'Hide details' : 'Show details'}
+                  </button>
                 </CardContent>
               </Card>
 
               {/* Expanded Details */}
               {expandedCloudId === cloud.id && (
-                <Card className={`col-span-full mt-6 container-primary ${themeClasses.glow}`}>
+                <Card id={`cloud-details-${cloud.id}`} role="region" aria-label={`${cloud.name} details`} className={cn('col-span-full mt-6 container-primary', themeClasses.glow)}>
                   <CardHeader>
                     <CardTitle className={`text-2xl font-mono uppercase tracking-wider text-center ${themeClasses.accentText}`}>
                       [{cloud.abbreviation}] {cloud.name} TECHNICAL ANALYSIS
@@ -438,7 +449,10 @@ export default function CloudTypesPage() {
                     {/* Close Button */}
                     <div className="mt-8 text-center">
                       <Button
-                        onClick={() => setExpandedCloudId(null)}
+                        onClick={() => {
+                          setExpandedCloudId(null)
+                          document.getElementById(`cloud-trigger-${cloud.id}`)?.focus()
+                        }}
                         variant="outline"
                         className="font-mono font-bold uppercase tracking-wider"
                       >
@@ -525,7 +539,7 @@ export default function CloudTypesPage() {
               <div className={themeClasses.text}>Legendary Spotter: Discover a legendary cloud</div>
             </div>
             <div className={`mt-4 text-center text-xs ${themeClasses.mutedText}`}>
-              Click on clouds to unlock achievements!
+              Open cloud details to unlock achievements!
             </div>
           </CardContent>
         </Card>

@@ -1,161 +1,112 @@
 'use client';
 
-/**
- * 16-Bit Weather Platform - Travel Hub
- *
- * Shell layout for the unified /travel page. Provides a Fly/Drive mode toggle,
- * slots for Trip Input + Trip Result, and renders the active mode's content.
- * Persists the selected mode in localStorage so the user's choice survives reloads.
- */
-
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import React from 'react';
 import { Plane, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-export type TravelHubMode = 'fly' | 'drive';
+import { TRIP_DAY_LABELS } from './trip-types';
+import type { ReactNode } from 'react';
+import type { TripDay, TripMode } from './trip-types';
 
 export interface TravelHubProps {
-  tripInput?: ReactNode;
-  tripResult?: ReactNode;
+  mode: TripMode;
+  day: TripDay;
+  onModeChange: (mode: TripMode) => void;
+  onDayChange: (day: TripDay) => void;
+  tripInput: ReactNode;
+  tripResult: ReactNode;
   flyContent: ReactNode;
   driveContent: ReactNode;
-  defaultMode?: TravelHubMode;
   className?: string;
 }
 
-const STORAGE_KEY = 'travel-hub-mode';
-
-function isTravelHubMode(value: unknown): value is TravelHubMode {
-  return value === 'fly' || value === 'drive';
-}
+const DAYS: TripDay[] = [0, 1, 2];
+const CONTROL_CLASS = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2 font-mono text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 export default function TravelHub({
+  mode,
+  day,
+  onModeChange,
+  onDayChange,
   tripInput,
   tripResult,
   flyContent,
   driveContent,
-  defaultMode,
   className,
-}: TravelHubProps) {
-  const initialMode: TravelHubMode = defaultMode ?? 'drive';
-  const [mode, setMode] = useState<TravelHubMode>(initialMode);
-
-  // Hydrate mode from localStorage after mount to avoid SSR mismatch.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (isTravelHubMode(stored)) {
-        setMode(stored);
-      }
-    } catch {
-      // Ignore storage access errors (private mode, etc.)
-    }
-  }, []);
-
-  const handleModeChange = (next: TravelHubMode) => {
-    setMode(next);
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Ignore storage access errors.
-    }
-  };
-
+}: TravelHubProps): React.JSX.Element {
   return (
-    <div className={cn('space-y-8', className)}>
-      {/* Hub header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight font-mono uppercase">
-          Travel Hub
-        </h1>
-        <p className="text-sm font-mono text-muted-foreground tracking-wider">
-          // WILL YOUR TRIP SUCK? PICK A MODE TO FIND OUT.
+    <div className={cn('space-y-6', className)}>
+      <header className="space-y-2">
+        <p className="font-mono text-xs font-bold uppercase tracking-wide text-primary">Weather for your journey</p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Travel Hub</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Check your route, then explore the bigger picture across U.S. roads and airports.
         </p>
-      </div>
+      </header>
 
-      {/* Trip input slot */}
-      {tripInput && (
-        <>
-          <div className="border-t border-border" />
-          <div>{tripInput}</div>
-        </>
-      )}
+      <section aria-label="Plan your trip" className="space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-mono text-muted-foreground">Travel mode</legend>
+            <div className="flex gap-2">
+              {(['drive', 'fly'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={mode === option}
+                  onClick={() => onModeChange(option)}
+                  className={cn(CONTROL_CLASS, 'flex-1 sm:flex-none', mode === option
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-foreground hover:bg-muted')}
+                >
+                  {option === 'fly' ? <Plane className="h-4 w-4" aria-hidden="true" /> : <Car className="h-4 w-4" aria-hidden="true" />}
+                  {option === 'fly' ? 'Fly' : 'Drive'}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="space-y-2" aria-describedby={mode === 'fly' ? 'travel-live-note' : undefined}>
+            <legend className="text-xs font-mono text-muted-foreground">Day</legend>
+            <div className="flex flex-wrap gap-2">
+              {DAYS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={day === option}
+                  disabled={mode === 'fly' && option !== 0}
+                  onClick={() => onDayChange(option)}
+                  className={cn(CONTROL_CLASS, 'px-3 disabled:cursor-not-allowed disabled:opacity-50', day === option
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-foreground enabled:hover:bg-muted')}
+                >
+                  {TRIP_DAY_LABELS[option]}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        {mode === 'fly' && (
+          <p id="travel-live-note" className="text-xs leading-relaxed text-muted-foreground">
+            Fly uses live airport observations and current aviation alerts. Future-day flight forecasts are unavailable.
+          </p>
+        )}
+        {tripInput}
+      </section>
 
-      {/* Trip result slot */}
-      {tripResult && (
-        <>
-          <div className="border-t border-border" />
-          <div>{tripResult}</div>
-        </>
-      )}
+      <div aria-live="polite" aria-atomic="true">{tripResult}</div>
 
-      {/* Mode toggle */}
-      <div className="border-t border-border" />
-      <div
-        role="tablist"
-        aria-label="Travel mode"
-        className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center items-stretch md:items-center"
-      >
-        <ModeButton
-          mode="fly"
-          active={mode === 'fly'}
-          onClick={() => handleModeChange('fly')}
-          icon={<Plane className="h-5 w-5" aria-hidden="true" />}
-          label="Fly"
-        />
-        <ModeButton
-          mode="drive"
-          active={mode === 'drive'}
-          onClick={() => handleModeChange('drive')}
-          icon={<Car className="h-5 w-5" aria-hidden="true" />}
-          label="Drive"
-        />
-      </div>
-
-      {/* Active mode content */}
-      <div className="border-t border-border" />
-      <div
-        role="tabpanel"
-        id={`travel-hub-panel-${mode}`}
-        aria-labelledby={`travel-hub-tab-${mode}`}
-      >
+      <section aria-labelledby="travel-national-heading" className="space-y-4 border-t border-border pt-5">
+        <div className="space-y-1">
+          <h2 id="travel-national-heading" className="text-lg font-bold tracking-tight">
+            {mode === 'fly' ? 'U.S. airport conditions · Live' : `U.S. driving outlook · ${TRIP_DAY_LABELS[day]}`}
+          </h2>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {mode === 'fly'
+              ? 'Current weather risk at major hubs, with more detail in Aviation.'
+              : 'Weather at sampled points along major interstates, plus the national forecast chart.'}
+          </p>
+        </div>
         {mode === 'fly' ? flyContent : driveContent}
-      </div>
+      </section>
     </div>
-  );
-}
-
-interface ModeButtonProps {
-  mode: TravelHubMode;
-  active: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-  label: string;
-}
-
-function ModeButton({ mode, active, onClick, icon, label }: ModeButtonProps) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      id={`travel-hub-tab-${mode}`}
-      aria-selected={active}
-      aria-controls={`travel-hub-panel-${mode}`}
-      onClick={onClick}
-      className={cn(
-        'flex-1 md:flex-none md:min-w-[180px] inline-flex items-center justify-center gap-3',
-        'px-6 py-4 md:px-8 md:py-3 rounded-lg font-mono text-base font-bold uppercase tracking-wider',
-        'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        active
-          ? 'bg-primary text-primary-foreground border border-primary'
-          : 'bg-card text-foreground border border-border hover:bg-card/80'
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
   );
 }

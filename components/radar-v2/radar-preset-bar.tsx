@@ -1,11 +1,12 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import type { RadarPreset } from '@/lib/radar/radar-url-state'
 
 interface RadarPresetBarProps {
   activePreset: RadarPreset
   onPresetChange: (preset: RadarPreset) => void
-  onOpenLayers: () => void
+  onOpenLayers?: () => void
 }
 
 const PRESETS: Array<{ id: RadarPreset; label: string }> = [
@@ -14,32 +15,37 @@ const PRESETS: Array<{ id: RadarPreset; label: string }> = [
   { id: 'outlook', label: 'Outlook' },
 ]
 
-export function RadarPresetBar({ activePreset, onPresetChange, onOpenLayers }: RadarPresetBarProps) {
+export function RadarPresetBar({ activePreset, onPresetChange, onOpenLayers }: RadarPresetBarProps): React.JSX.Element {
   return (
-    <div className="pointer-events-auto flex items-center justify-between gap-2 border-t border-white/10 bg-zinc-950/90 px-3 py-2 backdrop-blur-md">
-      <div className="flex flex-1 gap-2 overflow-x-auto">
+    <div className="pointer-events-auto flex items-center justify-between gap-2 bg-[var(--bg-elev)] px-3 py-2">
+      <div role="group" aria-label="Radar preset" className="flex flex-1 flex-wrap gap-2">
         {PRESETS.map((preset) => (
           <button
             key={preset.id}
             type="button"
             onClick={() => onPresetChange(preset.id)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            aria-pressed={activePreset === preset.id}
+            className={cn(
+              'min-h-11 shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
               activePreset === preset.id
-                ? 'bg-cyan-500 text-white'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
-            }`}
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-[var(--bg)] text-[var(--text-muted)] hover:text-[var(--text)]',
+            )}
           >
             {preset.label}
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onOpenLayers}
-        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
-      >
-        Layers
-      </button>
+      {onOpenLayers ? (
+        <button
+          type="button"
+          onClick={onOpenLayers}
+          aria-haspopup="dialog"
+          className="min-h-11 shrink-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg)] px-4 py-2 text-sm font-semibold text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Layers
+        </button>
+      ) : null}
     </div>
   )
 }
