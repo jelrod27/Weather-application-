@@ -1,5 +1,6 @@
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
+import { getForecastMoonInfo } from '@/lib/weather/forecast-moon';
 import { fetchOpenMeteoForecast } from '@/lib/open-meteo';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -56,7 +57,10 @@ export async function GET(request: NextRequest) {
         precipitationUnit,
       });
 
-      return NextResponse.json(data, {
+      let moonPhase = null;
+      try { moonPhase = getForecastMoonInfo(latitude, longitude, data.timezone); }
+      catch { console.warn('[forecast] Optional Moon calculation unavailable'); }
+      return NextResponse.json({ ...data, moonPhase }, {
         headers: {
           'Cache-Control': 'public, max-age=900, s-maxage=900',
           ...rateLimitHeaders,

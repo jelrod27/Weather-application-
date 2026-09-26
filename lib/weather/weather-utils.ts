@@ -14,14 +14,7 @@
 // Types
 // ============================================================================
 
-export interface MoonPhaseInfo {
-  phase: string;
-  illumination: number;
-  emoji: string;
-  phaseAngle: number;
-  nextFullMoon: string;
-  nextMoonset: string;
-}
+
 
 // ============================================================================
 // API URL Helper
@@ -232,94 +225,6 @@ export const getUVDescription = (uvIndex: number): string => {
 /**
  * Estimate current UV from daily maximum based on time of day
  */
-
-// ============================================================================
-// Moon Phase Functions
-// ============================================================================
-
-/**
- * Calculate moon phase for a given date
- * @param currentDate - Optional date to calculate phase for (defaults to current time).
- *                      Pass a stable timestamp from server to prevent hydration mismatches.
- */
-export const calculateMoonPhase = (currentDate?: Date | number): MoonPhaseInfo => {
-  const knownNewMoon = new Date('2024-01-11T11:57:00Z');
-  const synodicMonth = 29.530588853;
-
-  // Use provided date or current time
-  const now = currentDate instanceof Date
-    ? currentDate
-    : typeof currentDate === 'number'
-      ? new Date(currentDate)
-      : new Date();
-  const daysSinceNewMoon = (now.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
-  const lunarAge = daysSinceNewMoon % synodicMonth;
-  const phaseAngle = (lunarAge / synodicMonth) * 360;
-  const illumination = Math.round((1 - Math.cos((phaseAngle * Math.PI) / 180)) * 50);
-
-  let phase: string;
-  let emoji: string;
-
-  if (phaseAngle < 1 || phaseAngle > 359) {
-    phase = 'New Moon';
-    emoji = '🌑';
-  } else if (phaseAngle < 90) {
-    phase = 'Waxing Crescent';
-    emoji = '🌒';
-  } else if (phaseAngle < 91) {
-    phase = 'First Quarter';
-    emoji = '🌓';
-  } else if (phaseAngle < 180) {
-    phase = 'Waxing Gibbous';
-    emoji = '🌔';
-  } else if (phaseAngle < 181) {
-    phase = 'Full Moon';
-    emoji = '🌕';
-  } else if (phaseAngle < 270) {
-    phase = 'Waning Gibbous';
-    emoji = '🌖';
-  } else if (phaseAngle < 271) {
-    phase = 'Last Quarter';
-    emoji = '🌗';
-  } else {
-    phase = 'Waning Crescent';
-    emoji = '🌘';
-  }
-
-  // Calculate next full moon date
-  // Full moon occurs at phaseAngle = 180; calculate days remaining until next full moon
-  const daysToFullMoon = phaseAngle <= 180
-    ? ((180 - phaseAngle) / 360) * synodicMonth
-    : ((360 - phaseAngle + 180) / 360) * synodicMonth;
-  const nextFullMoonDate = new Date(now.getTime() + daysToFullMoon * 24 * 60 * 60 * 1000);
-  const nextFullMoon = nextFullMoonDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-
-  // Estimate next moonset time based on lunar age
-  // The moon sets roughly 50 minutes later each day relative to the sun.
-  // At new moon, moonset is near sunset (~6:00 PM). At full moon, moonset is near sunrise (~6:00 AM).
-  // This is an approximation since actual moonset depends on latitude and season.
-  const moonsetBaseHour = 18; // ~6 PM at new moon phase
-  const moonsetOffsetHours = (lunarAge / synodicMonth) * 24; // shifts ~24h over the cycle
-  const moonsetHour = (moonsetBaseHour + moonsetOffsetHours) % 24;
-  const moonsetHourInt = Math.floor(moonsetHour);
-  const moonsetMinute = Math.round((moonsetHour - moonsetHourInt) * 60);
-  const moonsetDate = new Date(now);
-  moonsetDate.setHours(moonsetHourInt, moonsetMinute, 0, 0);
-  // If the estimated moonset has already passed today, show tomorrow's
-  if (moonsetDate.getTime() < now.getTime()) {
-    moonsetDate.setDate(moonsetDate.getDate() + 1);
-  }
-  const nextMoonset = moonsetDate.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-
-  return { phase, illumination, emoji, phaseAngle, nextFullMoon, nextMoonset };
-};
 
 // ============================================================================
 // Weather Condition Mapping

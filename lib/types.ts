@@ -117,7 +117,10 @@ export interface WeatherData {
     phaseAngle: number;
     nextFullMoon: string;
     nextMoonset: string;
-  };
+    moonsetAt?: string | null;
+    timeZone?: string;
+    observingNight?: string;
+  } | null;
   uvIndex: number;
   aqi: number;
   aqiCategory?: string;

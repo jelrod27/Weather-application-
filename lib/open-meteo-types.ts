@@ -1,3 +1,5 @@
+import type { WeatherData } from '@/lib/types';
+
 /**
  * Open-Meteo API Response Types
  *
@@ -62,6 +64,8 @@ export interface OpenMeteoDaily {
 }
 
 export interface OpenMeteoForecastResponse {
+  /** Optional astronomy enrichment supplied by our server, never by the provider. */
+  moonPhase?: WeatherData['moonPhase'];
   latitude: number;
   longitude: number;
   generationtime_ms: number;
