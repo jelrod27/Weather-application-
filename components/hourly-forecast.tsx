@@ -14,13 +14,14 @@
  * Report issues: https://github.com/jelrod27/Weather-application-/issues
  */
 
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useRef, useState } from "react"
-import { cn } from "@/lib/utils"
+import Link from 'next/link'
 import { Droplets } from "lucide-react"
-import type { ThemeType } from "@/lib/theme-config"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { formatLocationTime } from '@/lib/format-location-time'
 import WeatherIconModern from "./weather-icon-modern"
+import type { ThemeType } from "@/lib/theme-config"
 
 export interface HourlyForecastData {
   dt: number;
@@ -56,7 +57,7 @@ export default function HourlyForecast({
   moreHref,
   selectedHour,
   onSelectHour,
-}: HourlyForecastProps) {
+}: HourlyForecastProps): React.JSX.Element | null {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   /** Client-only clock so server and client agree on first paint (no hydration mismatch for "NOW"). */
   const [now, setNow] = useState<number | null>(null);
@@ -68,9 +69,11 @@ export default function HourlyForecast({
   // Auto-scroll to current hour once client time is known
   useEffect(() => {
     if (now === null || !scrollContainerRef.current) return;
-    const currentHourCard = scrollContainerRef.current.querySelector('.current-hour');
+    const container = scrollContainerRef.current;
+    const currentHourCard = container.querySelector('.current-hour');
     if (currentHourCard) {
-      currentHourCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      // Move only this strip; scrollIntoView also pulls the whole page past the briefing.
+      container.scrollLeft += currentHourCard.getBoundingClientRect().left - container.getBoundingClientRect().left;
     }
   }, [now]);
 
@@ -78,7 +81,7 @@ export default function HourlyForecast({
     return null;
   }
 
-  // Take first 24 hours for a cleaner view (user can scroll)
+  // The forecast preview and dedicated hourly view choose their own window.
   const displayHours = hourly.slice(0, maxHours);
 
   return (
@@ -197,7 +200,7 @@ function HourlyCard({
         {Math.round(hour.temp)}{tempUnit}
       </div>
 
-      {onSelect && <button type="button" aria-pressed={selected} aria-label={`Details for ${hour.time}`} onClick={onSelect} className="my-1 min-h-11 rounded px-2 text-xs font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">Details</button>}
+      {onSelect && <button type="button" aria-pressed={selected} aria-label={`Details for ${formatLocationTime(hour.dt * 1000, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric' })}`} onClick={onSelect} className="my-1 min-h-11 rounded px-2 text-xs font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">Details</button>}
 
       {/* Stats Row */}
       <div className="flex items-center gap-3 w-full justify-center text-xs text-muted-foreground/90">

@@ -12,7 +12,7 @@ export function getWeatherReturnHref(value: string | null): string | null {
   if (!safe) return null
   const url = new URL(safe, 'https://www.16bitweather.co')
   if (url.origin !== 'https://www.16bitweather.co') return null
-  if (!['/', '/hourly', '/radar'].includes(url.pathname) && !/^\/weather\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(url.pathname)) return null
+  if (!['/', '/hourly', '/radar'].includes(url.pathname) && !/^\/weather\/[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/.test(url.pathname)) return null
   return `${url.pathname}${url.search}${url.hash}`
 }
 

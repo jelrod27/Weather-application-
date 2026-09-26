@@ -30,3 +30,9 @@ it('falls back to a named place when coordinates are invalid', () => {
   expect(new URL(links.radar, 'https://example.test').searchParams.get('location')).toBe('London')
   expect(links.hourly).toBe('/hourly?city=London')
 })
+
+it('preserves canonical city-region-country return links', () => {
+  const { forecast } = getWeatherJourneyLinks({ location: 'London, England, GB', coordinates: { lat: 51.5, lon: -0.12 } })
+  expect(forecast).toContain('/weather/london--england--gb?')
+  expect(getWeatherReturnHref(forecast)).toBe(forecast)
+})

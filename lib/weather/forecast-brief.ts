@@ -9,12 +9,12 @@ export interface ForecastBrief {
   windHigh: number | null
 }
 
-/** Only summarize the current hour and the next five; old or distant data is not a local briefing. */
+/** Use the next six hourly timestamps; Open-Meteo probabilities cover the hour ending at each timestamp. */
 export function getForecastBrief(hourly: EnhancedHourlyForecast[], now: number): ForecastBrief | null {
   const seconds = now / 1000
   const seen = new Set<number>()
   const hours = hourly.filter(hour => {
-    if (!Number.isFinite(hour.dt) || hour.dt + HOUR_SECONDS <= seconds || hour.dt > seconds + 5 * HOUR_SECONDS || seen.has(hour.dt)) return false
+    if (!Number.isFinite(hour.dt) || hour.dt < seconds || hour.dt > seconds + 6 * HOUR_SECONDS || seen.has(hour.dt)) return false
     seen.add(hour.dt)
     return true
   }).sort((a, b) => a.dt - b.dt).slice(0, 6)

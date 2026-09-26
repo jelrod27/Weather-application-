@@ -34,8 +34,8 @@ export function ForecastBrief({ weather, hourlyHref }: ForecastBriefProps): Reac
       <h2 className="mt-3 max-w-lg text-3xl sm:text-4xl lg:text-[2.75rem] font-semibold tracking-tight leading-[1.12] text-foreground">{headline}</h2>
       {brief ? <>
         <p className="mt-4 text-sm text-muted-foreground">
-          {formatLocationTimeWithZone(brief.hours[0].dt * 1000, timeZone)} – {formatLocationTimeWithZone((brief.hours[brief.hours.length - 1].dt + 3600) * 1000, timeZone)}
-          {timeZone === 'UTC' && !weather.timezone ? ' (location time zone unavailable)' : ''}
+          Hourly forecasts: {formatLocationTimeWithZone(brief.hours[0].dt * 1000, timeZone)} – {formatLocationTimeWithZone(brief.hours[brief.hours.length - 1].dt * 1000, timeZone)}
+          {timeZone === 'UTC' && weather.timezone !== 'UTC' ? ' (location time zone unavailable)' : ''}
         </p>
         <dl className="my-5 flex flex-wrap gap-x-7 gap-y-4 text-sm">
           {brief.temperature && <div><dt className="text-xs text-muted-foreground">Temperature</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{range(brief.temperature.low, brief.temperature.high)}{weather.unit}</dd></div>}

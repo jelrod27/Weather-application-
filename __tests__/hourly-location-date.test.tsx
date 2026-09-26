@@ -6,8 +6,9 @@ it('uses the same location day as its midnight hour', () => {
   render(<HourlyForecast timezone="Asia/Tokyo" hourly={[{
     dt: Date.parse('2026-09-25T15:00:00Z') / 1000, time: '12 AM', temp: 20,
     condition: 'Clear', description: 'clear', precipChance: 0,
-  }]} />);
+  }]} onSelectHour={jest.fn()} />);
   expect(screen.getByText('Sat')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Details for Sat, Sep 26, 12 AM/ })).toBeInTheDocument();
 });
 
 it('uses the forecast date rather than the browser current date and index', () => {

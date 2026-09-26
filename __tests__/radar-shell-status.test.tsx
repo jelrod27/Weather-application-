@@ -9,16 +9,28 @@ jest.mock('@/hooks/useRadarController', () => ({
   useRadarController: () => mockUseRadarController(),
 }))
 
-const retainedRadar = {
+const retainedRadar: ReturnType<typeof useRadarController> = {
   mapRef: createRef<HTMLDivElement>(),
   isFullPage: true,
   isWidget: false,
   tilePreferences: { smooth: true, snow: true, coverage: false },
   metadata: {
+    location: { lat: 35.47, lon: -97.52 },
     generatedAt: '2026-09-08T12:00:00.000Z',
-    selectedProvider: { shortName: 'RainViewer' },
+    selectedProvider: {
+      id: 'rainviewer', displayName: 'RainViewer Radar', shortName: 'RainViewer',
+      coverage: 'global', protocol: 'xyz', attribution: 'RainViewer',
+      refreshIntervalSeconds: 300, frameStepMinutes: 10, pastMinutes: 120,
+      supportsAnimation: true, qualityTier: 'community', notes: [],
+    },
+    frames: [], refreshIntervalSeconds: 300, legend: [],
+    selectionReason: 'Global composite selected.', coverageRegion: 'us',
+    rainviewer: {
+      host: 'https://tilecache.rainviewer.com', generated: 1_788_868_800,
+      version: '2.0', colorScheme: 2, smooth: true, snow: true, tileSize: 512,
+    },
   },
-  frames: [{ isLive: true }],
+  frames: [{ isLive: true, timestamp: 1_788_868_800_000, isoTime: '2026-09-08T12:00:00Z', epochSeconds: 1_788_868_800, offsetMinutes: 0 }],
   metadataError: null,
   updatedLabel: '5:00 AM',
   activeLayers: {
@@ -26,7 +38,6 @@ const retainedRadar = {
     alerts: false,
     spc: false,
     stormReports: false,
-    coverage: false,
   },
   layerSheetOpen: false,
   setLayerSheetOpen: jest.fn(),
@@ -44,6 +55,7 @@ const retainedRadar = {
   isLiveFrame: true,
   relativeTime: 'LATEST',
   speed: 1,
+  setSpeed: jest.fn(),
   handleLayersChange: jest.fn(),
   handlePresetChange: jest.fn(),
   handlePlayPause: jest.fn(),
@@ -51,7 +63,7 @@ const retainedRadar = {
   handleSkipToEnd: jest.fn(),
   handleFrameChange: jest.fn(),
   handleLiveTap: jest.fn(),
-} as ReturnType<typeof useRadarController>
+}
 
 describe('RadarShell retained-data status UI', () => {
   it('keeps severe feature details available when radar frames are unavailable', () => {

@@ -75,11 +75,11 @@ function fillTrip(): void {
 describe('shared travel controls', () => {
   it('uses one mode and day choice for the trip request, result and national outlook', async () => {
     render(<TravelPage />);
-    expect(screen.getAllByRole('button', { name: 'Drive', exact: true })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Fly', exact: true })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Today', exact: true })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Tomorrow', exact: true })).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Tomorrow', exact: true }));
+    expect(screen.getAllByRole('button', { name: 'Drive' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Fly' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Today' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Tomorrow' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Tomorrow' }));
     fillTrip();
     fireEvent.click(screen.getByRole('button', { name: 'Plan trip' }));
 
@@ -93,11 +93,11 @@ describe('shared travel controls', () => {
 
   it('keeps Fly on live conditions and restores the saved mode across reloads', async () => {
     const { unmount } = render(<TravelPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Day 3', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: 'Fly', exact: true }));
-    expect(screen.getByRole('button', { name: 'Today', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Tomorrow', exact: true })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Day 3', exact: true })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Day 3' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fly' }));
+    expect(screen.getByRole('button', { name: 'Today' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Tomorrow' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Day 3' })).toBeDisabled();
     expect(screen.getByText(/Fly uses live airport observations/)).toBeInTheDocument();
     expect(screen.getByText('Live airport board')).toBeInTheDocument();
     expect(screen.queryByTestId('corridor-map')).not.toBeInTheDocument();
@@ -110,13 +110,13 @@ describe('shared travel controls', () => {
     expect(within(screen.getByTestId('trip-score-card')).getByText('Fly · Live')).toBeInTheDocument();
     unmount();
     render(<TravelPage />);
-    expect(screen.getByRole('button', { name: 'Fly', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Fly' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByPlaceholderText('Origin airport (e.g. ATL)')).toBeInTheDocument();
   });
 
   const edits = {
-    mode: () => fireEvent.click(screen.getByRole('button', { name: 'Fly', exact: true })),
-    day: () => fireEvent.click(screen.getByRole('button', { name: 'Tomorrow', exact: true })),
+    mode: () => fireEvent.click(screen.getByRole('button', { name: 'Fly' })),
+    day: () => fireEvent.click(screen.getByRole('button', { name: 'Tomorrow' })),
     origin: () => fireEvent.change(screen.getByRole('combobox', { name: 'Origin' }), { target: { value: 'SEA' } }),
     destination: () => fireEvent.change(screen.getByRole('combobox', { name: 'Destination' }), { target: { value: 'BOS' } }),
   };
@@ -154,7 +154,7 @@ describe('shared travel controls', () => {
     fillTrip();
     fireEvent.click(screen.getByRole('button', { name: 'Plan trip' }));
     await waitFor(() => expect(readBody).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: 'Day 3', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Day 3' }));
     await act(async () => { body.resolve(driveResult); });
     expect(screen.queryByTestId('trip-score-card')).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'WPC Day 3 Forecast Chart' })).toBeInTheDocument();
