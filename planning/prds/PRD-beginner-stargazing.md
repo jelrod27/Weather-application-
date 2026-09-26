@@ -1,6 +1,6 @@
 # PR 6: Beginner stargazing
 
-Status: approved September 26, 2026. Implementation in progress.
+Status: approved and implemented September 26, 2026. Local validation complete; PR checks and review pending.
 
 This is the final PR in the [weather experience remediation batch](../weather-ux-remediation-scope.md). Audience: everyday users first, with depth for enthusiasts. Branch: `codex/beginner-stargazing`. Review baseline: `b6625a43164e8e434197885e9e3db19796f25cec`, the merged PR #631.
 
@@ -236,3 +236,18 @@ Reviewed September 26, 2026. Use short original explanations and direct links; d
 ## Approval record
 
 The user approved this six-commit design with “approve” on September 26, 2026. Proceed with implementation, focused validation, local code review, one PR, and the established babysit workflow. Do not merge automatically.
+
+## Implementation and local review record — September 26, 2026
+
+All six planned outcomes are implemented on `codex/beginner-stargazing`. The first five commits cover context, honest inputs, astronomy/selection, beginner presentation, and finding/catalog learning. The final commit completes recovery states, detailed time labels, SEO and journey verification.
+
+- Full Jest suite: **267 suites / 2,060 tests passed**. Stargazer unit tests and the beginner browser specification now participate in the test TypeScript project.
+- Production build, both TypeScript projects, full ESLint (no errors; 93 existing warnings), and Knip passed.
+- **36 production-mode Chromium/Firefox checks passed**: desktop and 390px layouts, Daybreak/Nord, keyboard navigation, context-preserving guide return, equipment/hour changes, missing/overcast/storm/stale forecasts, provider retry, optional seeing failure, DST and polar daylight.
+- Final UI checks: 39 focused unit/SEO assertions and 10 additional production Chromium/Firefox checks passed after contrast and layout fixes. A mobile Lighthouse spot check improved from 61 to **89 performance**, with **CLS 0**; accessibility **97**, best practices **96**, SEO **100**. Remaining contrast findings are in the unchanged site header/footer; local Vercel analytics scripts and shared weather-summary rate limits explain console findings. This single-run local result does not replace CI Lighthouse.
+- Initial production HTML retains all **151 catalog guide links**, route H1s and unparameterized canonicals. The astronomy engine chunk remains on the object guide, not the main Stargazer initial HTML.
+- A separate live Open-Meteo/provider smoke check returned an America/New_York forecast with 11 future observing hours. Browser CI uses deterministic fixtures, not live-provider timing.
+- Final independent Standards and Spec reviews compared the complete branch with `b6625a4`; all actionable findings were corrected. Regressions cover malformed shared-time recovery, no replacement coverage, draft search labels, geometric solar twilight, normal polar-night dates and repeated DST hours.
+- NASA/JPL and independent Astropy/ERFA coordinate fixtures verify northern/southern body positions and catalog epoch conversion. The short-summer-darkness regression uses June 20 at 48.1°N, 0°E; June 21 correctly suppresses faint targets because the Moon exceeds the stated cutoff.
+
+Remaining limitations are intentional: conservative product thresholds and 15-minute sampling cannot guarantee visibility; light pollution is only a population estimate; catalog-wide reviewed eligibility, AR/orientation, notifications and CI hosting migration remain outside this PR. Required and advisory CI, including Lighthouse and preview E2E, and actual bot review feedback must settle before readiness. No automatic merge is authorized.

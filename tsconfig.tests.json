@@ -2,7 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": [
+      "jest",
+      "node",
+      "@testing-library/jest-dom"
+    ]
   },
   "include": [
     "lib/cron/**/*.ts",
@@ -27,7 +31,10 @@
     "__tests__/travel-corridor-map.test.tsx",
     "__tests__/outdoor-windows.test.ts",
     "__tests__/outdoor-planner.test.tsx",
-    "tests/e2e/outdoor-planning.spec.ts"
+    "tests/e2e/outdoor-planning.spec.ts",
+    "__tests__/stargazer/**/*.test.ts",
+    "__tests__/stargazer/**/*.test.tsx",
+    "tests/e2e/stargazer-beginner.spec.ts"
   ],
   "exclude": [
     "node_modules",

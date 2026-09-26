@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { Moon } from 'lucide-react';
 import SkyLessons from '@/components/stargazer/SkyLessons';
 import BeginnerPanel from '@/components/stargazer/BeginnerPanel';
-import { formatDate, formatTime, nextCalendarDate } from '@/lib/stargazer/format';
+import { formatDate, nextCalendarDate } from '@/lib/stargazer/format';
 import { ShareButtons } from '@/components/share-buttons';
-import { getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
+import { formatObservingTime, getStargazerHref, readStargazerContext } from '@/lib/stargazer/context';
 import type { StargazerContext } from '@/lib/stargazer/context';
 import { cn } from '@/lib/utils';
 import type { StargazerData } from '@/lib/stargazer/types';
@@ -99,7 +99,7 @@ function PhotographySummary({ data }: { data: StargazerData }) {
             <div className="mb-2 px-3 py-1.5 bg-white/5 border border-subtle rounded inline-flex items-center gap-2 text-sm font-mono">
               <span className="text-muted-foreground">Highest-rated photography period:</span>
               <span className="font-bold">
-                {formatTime(bestWindow.startTime, data.location.timezone, true)} &ndash; {formatTime(bestWindow.endTime, data.location.timezone, true)}
+                {formatObservingTime(new Date(bestWindow.startTime).getTime(), data.location.timezone)} &ndash; {formatObservingTime(new Date(bestWindow.endTime).getTime(), data.location.timezone)}
               </span>
               <span className={cn('font-bold', scoreColor(bestWindow.score))}>
                 ({bestWindow.score}/100)
@@ -140,14 +140,14 @@ function PhotographySummary({ data }: { data: StargazerData }) {
               <div>
                 <span className="text-xs font-mono uppercase text-muted-foreground block">Dark Window</span>
                 <span className="font-bold">
-                  {darkWindow.status === 'none' ? 'No astronomical darkness' : darkWindow.status === 'continuous' ? 'Continuous darkness (next 24 hours)' : <>{formatTime(darkWindow.astronomicalDusk, data.location.timezone, true)} &ndash; {formatTime(darkWindow.astronomicalDawn, data.location.timezone, true)}</>}
+                  {darkWindow.status === 'none' ? 'No astronomical darkness' : darkWindow.status === 'continuous' ? 'Continuous darkness (next 24 hours)' : <>{formatObservingTime(new Date(darkWindow.astronomicalDusk).getTime(), data.location.timezone)} &ndash; {formatObservingTime(new Date(darkWindow.astronomicalDawn).getTime(), data.location.timezone)}</>}
                 </span>
               </div>
             )}
             {moon.set && (
               <div>
                 <span className="text-xs font-mono uppercase text-muted-foreground block">Moon Set</span>
-                <span className="font-bold">{formatTime(moon.set, data.location.timezone, true)}</span>
+                <span className="font-bold">{formatObservingTime(new Date(moon.set).getTime(), data.location.timezone)}</span>
               </div>
             )}
           </div>
@@ -243,7 +243,7 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
           <h2 className="border-b border-subtle py-3 mb-3 text-xs font-mono uppercase text-muted-foreground">
             Ground Conditions
             <span className="text-muted-foreground font-normal ml-2">
-              (at {groundConditions ? formatTime(groundConditions.time, data.location.timezone, true) : '--:--'})
+              (at {groundConditions ? formatObservingTime(new Date(groundConditions.time).getTime(), data.location.timezone) : '--:--'})
             </span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -310,14 +310,14 @@ function EventsPanel({ data }: { data: StargazerData }) {
   return (
     <div className="space-y-6">
       <SkyEvents timeZone={data.location.timezone} events={combinedEvents} />
-      <ISSPasses timeZone={data.location.timezone} passes={data.issPasses} />
+      <ISSPasses available={data.optionalData?.iss} timeZone={data.location.timezone} passes={data.issPasses} />
     </div>
   );
 }
 
 function LaunchesPanel({ data }: { data: StargazerData }) {
   return (
-    <LaunchSchedule timeZone={data.location.timezone} launches={data.launches} />
+    <LaunchSchedule available={data.optionalData?.launches} timeZone={data.location.timezone} launches={data.launches} />
   );
 }
 
@@ -418,7 +418,9 @@ export default function StargazerCommandCenter() {
         {data && !isLoading && (
           <div className="space-y-6">
             <p className="font-semibold">Observing place: {context.label || `${data.location.lat.toFixed(2)}, ${data.location.lon.toFixed(2)}`}</p>
-            <p className="text-sm">Observing night: {formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – {formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)} · {data.location.timezone || 'UTC'}</p>
+            <p className="text-sm">{!data.darkWindow.sunset && !data.darkWindow.sunrise && data.darkWindow.status !== 'normal'
+              ? `Next 24 hours: ${formatDate(new Date(data.generatedAt), data.location.timezone, true)} – ${formatDate(new Date(Date.parse(data.generatedAt) + 86400000), data.location.timezone, true)}`
+              : `Observing night: ${formatDate(data.darkWindow.sunset ?? data.darkWindow.astronomicalDusk, data.location.timezone, true)} – ${formatDate(data.darkWindow.sunrise ?? data.darkWindow.astronomicalDawn, data.location.timezone, true)}`} · {data.location.timezone || 'Time zone unavailable (UTC labels)'}</p>
             <ForecastFreshness retrievedAt={data.weatherRetrievedAt} receivedAt={receivedAt} now={now} timeZone={data.location.timezone} />
             <ShareButtons config={{ title: 'Stargazer', text: 'Explore the night sky', url: `https://www.16bitweather.co${getStargazerHref(context)}` }} />
 

@@ -65,7 +65,7 @@ export default function StargazerNav({ activeTab, onTabChange }: StargazerNavPro
                 'transition-all duration-200 whitespace-nowrap md:flex-1 md:justify-center',
                 'border-b-2 -mb-px focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-3px]',
                 isActive
-                  ? 'border-primary text-primary bg-primary/10 font-bold'
+                  ? 'border-primary text-foreground bg-primary/10 font-bold'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-muted-foreground/50'
               )}
             >

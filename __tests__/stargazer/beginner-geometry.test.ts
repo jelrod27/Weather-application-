@@ -34,3 +34,9 @@ it('offers no targets during polar daylight and can find southern targets in a d
   const targets = getHourTargets(-33.87, 151.21, Date.parse('2026-04-18T12:00:00Z'));
   expect(targets.map(target => target.id)).toContain('NGC5139');
 });
+
+it('uses geometric solar altitude for twilight at a short summer darkness boundary', () => {
+  // Sun center stays below -18° for these five samples. Refraction would incorrectly
+  // shift it above -18° and reject the entire hour; M13 clears the other gates.
+  expect(getHourTargets(48.1, 0, Date.parse('2026-06-20T23:30:00Z')).map(target => target.id)).toContain('M13');
+});

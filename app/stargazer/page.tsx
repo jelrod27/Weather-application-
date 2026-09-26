@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * 16-Bit Weather Platform - Stargazer Command Center
- *
- * Tabbed command center layout for astrophotography forecasting.
- * Matches space weather page patterns with persistent header card,
- * tab navigation, and organized content sections.
- */
-
 import React, { Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -47,6 +39,7 @@ function StargazerShell({ children }: { children: React.ReactNode }) {
 export default function StargazerPage() {
   return (
     <StargazerShell>
+      <div className="min-h-[75vh]">
       <Suspense
         fallback={
           <p className="font-mono text-sm text-muted-foreground animate-pulse">Loading location…</p>
@@ -54,6 +47,7 @@ export default function StargazerPage() {
       >
         <StargazerCommandCenter />
       </Suspense>
+      </div>
       {/* Outside the Suspense boundary: the command center reads search params,
           so only this copy survives into the prerendered HTML. */}
       <StargazerSeoContent />

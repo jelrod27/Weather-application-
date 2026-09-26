@@ -135,7 +135,7 @@ export function calculateDarkWindow(
     }
     // With no crossings, the current altitude distinguishes darkness from daylight.
     const sunEq = Equator(Body.Sun, astroTime, observer, true, true);
-    const sunHor = Horizon(astroTime, observer, sunEq.ra, sunEq.dec, 'normal');
+    const sunHor = Horizon(astroTime, observer, sunEq.ra, sunEq.dec);
     if (sunHor.altitude < -18) {
       // Polar night: it's dark all day — return full 24hr dark window
       const start = new Date(date);
@@ -430,10 +430,10 @@ export function catalogObjectAltAz(
 }
 
 /** Topocentric equator-of-date coordinates, then true-north horizontal position. */
-export function bodyAltAz(body: Body, lat: number, lon: number, time: Date): { altitude: number; azimuth: number } {
+export function bodyAltAz(body: Body, lat: number, lon: number, time: Date, refraction: 'normal' | 'none' = 'normal'): { altitude: number; azimuth: number } {
   const observer = new Observer(lat, lon, 0);
   const equator = Equator(body, time, observer, true, true);
-  const position = Horizon(time, observer, equator.ra, equator.dec, 'normal');
+  const position = Horizon(time, observer, equator.ra, equator.dec, refraction === 'none' ? undefined : refraction);
   return { altitude: position.altitude, azimuth: position.azimuth };
 }
 

@@ -167,7 +167,8 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     deepSkyHighlights,
     skyEvents,
     issPasses,
-    launches,
+    launches: launches ?? [],
+    optionalData: { iss: issTle !== null, launches: launches !== null },
     meteorShowers,
     location: {
       timezone: timeZone,

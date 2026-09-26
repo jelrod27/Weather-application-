@@ -103,3 +103,31 @@ it('keeps the resolved place above every tab when a search is only a draft', () 
   expect(screen.getByText('Observing place: London')).toBeInTheDocument();
   expect(screen.getByRole('textbox')).toHaveValue('Sydney');
 });
+
+it('distinguishes unavailable optional providers from an empty result', () => {
+  setData({ ...data, optionalData: { iss: false, launches: false } });
+  const { rerender } = render(<StargazerCommandCenter />);
+  expect(screen.getByText('ISS pass data unavailable. Try refreshing later.')).toBeInTheDocument();
+  setData({ ...data, optionalData: { iss: true, launches: true } });
+  rerender(<StargazerCommandCenter />);
+  expect(screen.getByText('No visible ISS passes calculated in the next few days.')).toBeInTheDocument();
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'launches', data: { ...data, optionalData: { iss: false, launches: false } } });
+  rerender(<StargazerCommandCenter />);
+  expect(screen.getByText('Launch schedule unavailable. Try refreshing later.')).toBeInTheDocument();
+});
+
+it('distinguishes photography periods that cross the repeated DST hour', () => {
+  setData({ ...data, location: { ...data.location, timezone: 'America/New_York' }, bestWindow: { startTime: new Date('2026-11-01T05:00:00Z'), endTime: new Date('2026-11-01T06:00:00Z'), score: 70, label: 'Good', color: '#00ff00' } });
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'conditions' });
+  render(<StargazerCommandCenter />);
+  expect(screen.getByText(/Nov 1, 1:00 AM GMT-4.*Nov 1, 1:00 AM GMT-5/)).toBeInTheDocument();
+});
+
+it('labels a polar night with real twilight crossings as an observing night', () => {
+  setData({ ...data, darkWindow: { status: 'normal', sunset: null, sunrise: null,
+    astronomicalDusk: new Date('2026-12-21T14:56:00Z'), astronomicalDawn: new Date('2026-12-22T04:28:00Z') },
+    location: { lat: 69.65, lon: 18.96, timezone: 'Europe/Oslo', displayName: 'Tromsø' } });
+  render(<StargazerCommandCenter />);
+  expect(screen.getByText(/Observing night: Dec 21, 2026 – Dec 22, 2026/)).toBeInTheDocument();
+  expect(screen.queryByText(/Next 24 hours:/)).not.toBeInTheDocument();
+});

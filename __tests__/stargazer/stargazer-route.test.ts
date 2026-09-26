@@ -92,7 +92,7 @@ const makeOpenMeteoBody = (utcOffsetSeconds: number, startDay = '2026-06-15') =>
 
 /** Set up fetchWithTimeout to return a nominal Open-Meteo response + failed nominatim. */
 const setupNominalFetches = (utcOffsetSeconds = -18000, startDay = '2026-06-15') => {
-  mockFetchWithTimeout.mockImplementation((url: string) => {
+  mockFetchWithTimeout.mockImplementation((url) => {
     const urlStr = String(url);
     if (urlStr.startsWith('https://api.open-meteo.com/')) {
       return Promise.resolve({
@@ -167,7 +167,7 @@ describe('GET /api/stargazer — validation and upstream failures', () => {
   });
 
   it('returns 502 when Open-Meteo responds with a non-ok status', async () => {
-    mockFetchWithTimeout.mockImplementation((url: string) => {
+    mockFetchWithTimeout.mockImplementation((url) => {
       if (String(url).startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({ ok: false, status: 503 } as Response);
       }
@@ -276,6 +276,8 @@ describe('GET /api/stargazer — contract with degraded externals', () => {
 
     // Degraded externals: ISS/launches are empty
     expect(body.issPasses).toEqual([]);
+    expect(body.optionalData.iss).toBe(false);
+    expect(body.optionalData.launches).toBe(true);
     expect(body.launches).toEqual([]);
 
     // Optional-provider failure must not invent readings or a complete score
@@ -315,7 +317,7 @@ describe('GET /api/stargazer — timezone-suffix handling', () => {
       doNotFake: ['queueMicrotask', 'setImmediate'],
     });
 
-    mockFetchWithTimeout.mockImplementation((url: string) => {
+    mockFetchWithTimeout.mockImplementation((url) => {
       const urlStr = String(url);
       if (urlStr.startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({
@@ -341,7 +343,7 @@ describe('GET /api/stargazer — timezone-suffix handling', () => {
       doNotFake: ['queueMicrotask', 'setImmediate'],
     });
 
-    mockFetchWithTimeout.mockImplementation((url: string) => {
+    mockFetchWithTimeout.mockImplementation((url) => {
       const urlStr = String(url);
       if (urlStr.startsWith('https://api.open-meteo.com/')) {
         return Promise.resolve({

@@ -58,7 +58,7 @@ Deliver in three focused commits: complete-window comparisons and data coverage;
 
 ## PR 6: Beginner stargazing — six commits
 
-Scope prepared September 26, 2026, on `codex/beginner-stargazing` from merged PR 5 (`b6625a4`). Design approved September 26, 2026; implementation in progress.
+Scope prepared September 26, 2026, on `codex/beginner-stargazing` from merged PR 5 (`b6625a4`). Design approved and implemented September 26, 2026 in six focused commits; PR validation pending.
 
 Add a beginner entry to Stargazer that answers when to look, what to try with the chosen equipment, which direction to face, and what to expect. Preserve the existing enthusiast tools. Include the location, time, unit and missing-data repairs needed to trust those answers.
 

@@ -280,6 +280,7 @@ export interface LimitingFactor {
 
 export interface StargazerData {
   beginnerNight?: BeginnerNight;
+  optionalData?: { iss: boolean; launches: boolean };
   score: StargazerScore | UnavailableStargazerScore;
   bestWindow: BestWindow | null;
   nightAverage: number | null;

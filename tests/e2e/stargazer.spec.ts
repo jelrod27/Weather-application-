@@ -1,36 +1,17 @@
 import { test, expect } from './fixtures';
 import { stargazerE2eFixture } from '../fixtures/stargazer-e2e-fixture';
 
-/**
- * Smoke coverage for /stargazer (Stargazer Command Center).
- *
- * The page uses geolocation (falling back to NYC) and fetches an astro
- * forecast on mount. We mock geolocation to return immediately so the test
- * never waits on the 10s permission timeout, stub the data endpoints, and
- * assert on the static shell (title, heading, section tabs, search form).
- */
-async function stubStargazerRoutes(page: import('@playwright/test').Page) {
-  await page.addInitScript(() => {
-    const coords = { latitude: 40.7128, longitude: -74.006, accuracy: 10 } as GeolocationCoordinates;
-    // @ts-expect-error - minimal mock for tests
-    navigator.geolocation = {
-      getCurrentPosition: (success: PositionCallback) =>
-        success({ coords, timestamp: 0 } as GeolocationPosition),
-      watchPosition: () => 0,
-      clearWatch: () => {},
-    };
-  });
+import type { Page } from '@playwright/test';
 
-  await page.route('**/api/stargazer**', route =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(stargazerE2eFixture()),
-    }),
-  );
-  await page.route('**/api/weather/geocoding**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
-  );
+/** Basic shell coverage, with provider coordinates matching each requested city. */
+async function stubStargazerRoutes(page: Page): Promise<void> {
+  await page.route('**/api/stargazer**', route => {
+    const params = new URL(route.request().url()).searchParams;
+    return route.fulfill({ json: { ...stargazerE2eFixture(), location: {
+      lat: Number(params.get('lat')), lon: Number(params.get('lon')),
+    } } });
+  });
+  await page.route('**/api/weather/geocoding**', route => route.fulfill({ json: [] }));
 }
 
 test.beforeEach(async ({ page }) => {

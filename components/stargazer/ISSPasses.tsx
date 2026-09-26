@@ -7,10 +7,11 @@ import { formatTime, formatDate } from '@/lib/stargazer/format';
 
 interface ISSPassesProps {
   timeZone?: string;
+  available?: boolean;
   passes: ISSPass[];
 }
 
-export default function ISSPasses({ timeZone = 'UTC', passes }: ISSPassesProps) {
+export default function ISSPasses({ timeZone = 'UTC', available, passes }: ISSPassesProps) {
   const styles = themeTokens.card;
 
   return (
@@ -26,7 +27,7 @@ export default function ISSPasses({ timeZone = 'UTC', passes }: ISSPassesProps) 
 
       {!passes || passes.length === 0 ? (
         <p className="text-xs font-mono">
-          No visible ISS passes in the next few days.
+          {available === true ? 'No visible ISS passes calculated in the next few days.' : 'ISS pass data unavailable. Try refreshing later.'}
         </p>
       ) : (
         <div className="overflow-x-auto">

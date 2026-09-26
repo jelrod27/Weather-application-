@@ -28,7 +28,8 @@ export function qualifiesBeginnerTarget(target: BeginnerTarget, samples: TargetS
 /** Server-side compact geometry for a whole hour, sampled every 15 minutes including endpoints. */
 export function getHourTargets(lat: number, lon: number, start: number): ObservingTarget[] {
   const times = Array.from({ length: 5 }, (_, index) => new Date(start + index * 15 * 60000));
-  const sky = times.map(time => ({ sunAltitude: bodyAltAz(Body.Sun, lat, lon, time).altitude,
+  // Twilight is defined by the geometric solar center; targets retain refraction.
+  const sky = times.map(time => ({ sunAltitude: bodyAltAz(Body.Sun, lat, lon, time, 'none').altitude,
     moonAltitude: bodyAltAz(Body.Moon, lat, lon, time).altitude, moonIllumination: Illumination(Body.Moon, time).phase_fraction * 100 }));
   const targets: ObservingTarget[] = [];
   for (const target of BEGINNER_TARGETS) {

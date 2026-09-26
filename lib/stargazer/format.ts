@@ -10,7 +10,7 @@ function formatInstant(date: Date | string | null, timeZone: string, options: In
 
 export function formatTime(date: Date | string | null, timeZone = 'UTC', hour12 = false): string {
   return formatInstant(date, timeZone, {
-    hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit',
+    hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', timeZoneName: 'shortOffset',
     ...(hour12 ? { hour12: true } : { hourCycle: 'h23' }),
   }) || '--:--';
 }

@@ -7,24 +7,24 @@ import { calculateDarkWindow } from '@/lib/stargazer/astronomy';
 
 it('formats an instant in the viewed location across midnight', () => {
   const instant = new Date('2026-09-26T03:30:00Z');
-  expect(formatTime(instant, 'America/New_York')).toBe('23:30');
+  expect(formatTime(instant, 'America/New_York')).toBe('23:30 GMT-4');
   expect(formatDate(instant, 'America/New_York')).toBe('Sep 25');
-  expect(formatTime(instant, 'Europe/London')).toBe('04:30');
+  expect(formatTime(instant, 'Europe/London')).toBe('04:30 GMT+1');
 });
 
 it('honors daylight saving transitions and safely handles missing times', () => {
-  expect(formatTime(new Date('2026-03-08T06:30:00Z'), 'America/New_York')).toBe('01:30');
-  expect(formatTime(new Date('2026-03-08T07:30:00Z'), 'America/New_York')).toBe('03:30');
+  expect(formatTime(new Date('2026-03-08T06:30:00Z'), 'America/New_York')).toBe('01:30 GMT-5');
+  expect(formatTime(new Date('2026-03-08T07:30:00Z'), 'America/New_York')).toBe('03:30 GMT-4');
   expect(formatTime(null, 'America/New_York')).toBe('--:--');
   expect(formatTime(new Date('invalid'), 'Invalid/Zone')).toBe('--:--');
 });
 
 it('labels astronomical dusk to dawn as the dark window', () => {
-  render(<HourlyTimeline conditions={[{ time: new Date('2026-09-26T01:00:00Z'), cloudCover: 0, cloudCoverLow: 0, cloudCoverMid: 0, cloudCoverHigh: 0, seeing: 1, transparency: 1, windSpeed: 0, humidity: 50, temperature: 10, dewpoint: 0, dewRisk: 'low' }]} timeZone="America/New_York" darkWindow={{
+  render(<HourlyTimeline conditions={[{ time: new Date('2026-09-26T01:00:00Z'), cloudCover: 0, cloudCoverLow: 0, cloudCoverMid: 0, cloudCoverHigh: 0, seeing: 1, transparency: 1, windSpeed: 0, humidity: 50, temperature: 10, dewpoint: 0, dewRisk: 'low', precipitationProbability: 0, weatherCode: 0 }]} timeZone="America/New_York" darkWindow={{
     sunset: new Date('2026-09-25T22:00:00Z'), sunrise: new Date('2026-09-26T10:00:00Z'),
     astronomicalDusk: new Date('2026-09-26T00:00:00Z'), astronomicalDawn: new Date('2026-09-26T08:00:00Z'),
   }} />);
-  expect(screen.getByText(/Dark window:/)).toHaveTextContent('20:00 – 04:00');
+  expect(screen.getByText(/Dark window:/)).toHaveTextContent('20:00 GMT-4 – 04:00 GMT-4');
 });
 
 it('does not substitute sunset for missing astronomical darkness in summer', () => {
@@ -56,4 +56,9 @@ it('preserves calendar-only sky events across viewer time zones', () => {
 it('keeps a peak occurring today instead of skipping to next year', () => {
   expect(nextCalendarDate(8, 12, 'America/Los_Angeles', new Date('2026-08-13T01:00:00Z'))).toBe('2026-08-12');
   expect(nextCalendarDate(8, 12, 'Asia/Tokyo', new Date('2026-08-13T01:00:00Z'))).toBe('2027-08-12');
+});
+
+it('distinguishes repeated local instants in every detailed time label', () => {
+  expect(formatTime('2026-11-01T05:00:00Z', 'America/New_York')).toBe('01:00 GMT-4');
+  expect(formatTime('2026-11-01T06:00:00Z', 'America/New_York')).toBe('01:00 GMT-5');
 });

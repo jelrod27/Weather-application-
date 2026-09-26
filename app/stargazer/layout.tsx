@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   // The root layout's title template appends the brand.
-  title: 'Stargazer: Astrophotography Forecast',
+  title: 'Stargazer: Tonight’s Sky and Beginner Guide',
   description:
-    "Get tonight's astrophotography conditions including seeing, transparency, moon phase, planet visibility, deep sky targets, ISS passes, and upcoming launches.",
+    "Plan a beginner stargazing hour with local weather, realistic targets, direction diagrams and observing guides. Explore detailed photography conditions too.",
   openGraph: {
-    title: 'Stargazer - Astrophotography Forecast',
+    title: 'Stargazer - Tonight’s Sky and Beginner Guide',
     description:
-      "Get tonight's astrophotography conditions including seeing, transparency, moon phase, planet visibility, and deep sky targets.",
+      "Choose an observing hour, find Moon and planet targets, and learn where to look with local weather and sky guides.",
     url: 'https://www.16bitweather.co/stargazer',
     siteName: '16 Bit Weather',
     images: [
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Stargazer - Astrophotography Forecast',
+    title: 'Stargazer - Tonight’s Sky and Beginner Guide',
     description:
-      "Tonight's seeing, transparency, moon phase, planets, and deep sky targets.",
+      "Local observing hours, beginner targets and direction guides, with detailed photography conditions.",
     images: ['/api/og?title=Stargazer&subtitle=Tonight%27s+Sky+Forecast'],
   },
   alternates: {
