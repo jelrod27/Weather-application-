@@ -10,9 +10,10 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, Plane, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-state';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { useDemoMode } from '@/hooks/useDemoMode';
@@ -47,6 +48,8 @@ export interface FlightData {
 }
 
 interface FlightNumberInputProps {
+  /** Invalidate a lookup when the user chooses a newer manual route. */
+  routeRevision?: number;
   onFlightFound: (data: FlightData) => void;
   onError?: (error: string) => void;
   className?: string;
@@ -56,13 +59,21 @@ export default function FlightNumberInput({
   onFlightFound,
   onError,
   className,
-}: FlightNumberInputProps) {
+  routeRevision = 0,
+}: FlightNumberInputProps): React.JSX.Element {
   const themeClasses = themeTokens.weather;
   const [demoMode, setDemoMode] = useDemoMode();
 
   const [flightNumber, setFlightNumber] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    requestRef.current?.abort();
+    setIsSearching(false);
+    setError(null);
+    return () => requestRef.current?.abort();
+  }, [routeRevision]);
 
   // Handle flight number search
   const handleSearch = useCallback(async () => {
@@ -75,14 +86,18 @@ export default function FlightNumberInput({
       return;
     }
 
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setIsSearching(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({ flight: trimmed });
       if (demoMode) params.set('mock', '1');
-      const response = await fetch(`/api/aviation/flight-lookup?${params.toString()}`);
+      const response = await fetchWithTimeout(`/api/aviation/flight-lookup?${params.toString()}`, { signal: controller.signal, timeoutMs: 15000, maxRetries: 0 });
       const result = await response.json();
+      if (controller.signal.aborted) return;
 
       if (!response.ok || !result.success) {
         const errMsg = result.error || 'Flight not found. Check the number and try again.';
@@ -95,12 +110,13 @@ export default function FlightNumberInput({
       onFlightFound(result.data);
       setFlightNumber(''); // Clear input on success
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('Flight lookup error:', err);
       const errMsg = 'Unable to search. Please try again.';
       setError(errMsg);
       onError?.(errMsg);
     } finally {
-      setIsSearching(false);
+      if (!controller.signal.aborted) setIsSearching(false);
     }
   }, [flightNumber, demoMode, onFlightFound, onError]);
 

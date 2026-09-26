@@ -10,13 +10,15 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Plane, MapPin, Search, AlertTriangle, Route, ArrowRight, RefreshCw, Info } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
 import { themeTokens } from '@/lib/theme-tokens';
-import dynamic from 'next/dynamic';
+import { resolveRouteAirport } from '@/lib/aviation/route-airport';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Lazy load FlightNumberInput for performance
 const FlightNumberInput = dynamic(() => import('./FlightNumberInput'), {
@@ -137,7 +139,7 @@ function getTurbulenceSeverityVar(intensity: string | null): string {
   return '--severity-light';
 }
 
-export default function FlightRouteLookup({ initialFlight, onRouteSearch }: FlightRouteLookupProps) {
+export default function FlightRouteLookup({ initialFlight, onRouteSearch }: FlightRouteLookupProps): React.JSX.Element {
   const themeClasses = themeTokens.weather;
 
   // Form state
@@ -151,6 +153,10 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const requestRef = useRef<AbortController | null>(null);
+  const [routeRevision, setRouteRevision] = useState(0);
+  const routeRevisionRef = useRef(0);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   // Fix hydration mismatch - only render time-dependent values after mount
   useEffect(() => {
@@ -160,26 +166,32 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
   // Search for PIREPs along route - defined before useEffect that uses it
   // Note: flight parameter is required to avoid circular dependency with flightData state
   const handleRouteSearch = useCallback(async (depCode: string, arrCode: string, flight?: FlightData | null) => {
-    const dep = depCode.trim().toUpperCase();
-    const arr = arrCode.trim().toUpperCase();
-
-    if (!dep || !arr) {
-      setSearchError('Please enter both departure and arrival airport codes');
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setRoutePireps([]);
+    setHasSearched(false);
+    setIsSearching(false);
+    const departure = resolveRouteAirport(depCode, flight?.departure);
+    const arrival = resolveRouteAirport(arrCode, flight?.arrival);
+    if (!departure || !arrival) {
+      setSearchError('Airport not found in the supported US hub list. Try SFO or KSFO, or use flight lookup for other airports.');
       return;
     }
-
-    if (dep === arr) {
+    if (departure.icao === arrival.icao) {
       setSearchError('Departure and arrival airports must be different');
       return;
     }
-
+    const dep = departure.icao;
+    const arr = arrival.icao;
+    const { lat: depLat, lon: depLon } = departure;
+    const { lat: arrLat, lon: arrLon } = arrival;
     setIsSearching(true);
     setSearchError(null);
-    setHasSearched(true);
 
     try {
       // Fetch PIREPs
-      const response = await fetch('/api/aviation/pireps?hours=4&turbulenceOnly=false');
+      const response = await fetchWithTimeout('/api/aviation/pireps?hours=4&turbulenceOnly=false', { signal: controller.signal, timeoutMs: 15000, maxRetries: 0 });
 
       if (!response.ok) {
         throw new Error('Failed to fetch PIREP data');
@@ -189,22 +201,6 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
 
       if (!result.success) {
         throw new Error(result.error || 'Unknown error');
-      }
-
-      // Get coordinates for filtering - flight parameter must be provided
-      // to avoid circular dependency with flightData state
-      let depLat: number, depLon: number, arrLat: number, arrLon: number;
-
-      if (flight && flight.departure.icao === dep && flight.arrival.icao === arr) {
-        depLat = flight.departure.lat;
-        depLon = flight.departure.lon;
-        arrLat = flight.arrival.lat;
-        arrLon = flight.arrival.lon;
-      } else {
-        // Cannot resolve coordinates without flight data - show error
-        setSearchError('Unable to resolve airport coordinates. Please use flight number lookup above.');
-        setIsSearching(false);
-        return;
       }
 
       // Filter PIREPs along route
@@ -222,17 +218,20 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
         })
         .slice(0, 20); // Limit to 20 results
 
+      if (controller.signal.aborted) return;
       setRoutePireps(filteredPireps);
+      setHasSearched(true);
 
       // Notify parent if callback provided
       if (onRouteSearch) {
         onRouteSearch(dep, arr);
       }
     } catch (error) {
-      console.error('Route search error:', error);
+      if (controller.signal.aborted) return;
+      console.error('[FlightRouteLookup]', error);
       setSearchError('Unable to fetch turbulence data. Please try again.');
     } finally {
-      setIsSearching(false);
+      if (!controller.signal.aborted) setIsSearching(false);
     }
   }, [onRouteSearch]);
 
@@ -249,28 +248,42 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
 
   // Handle flight found from FlightNumberInput
   const handleFlightFound = useCallback((data: FlightData) => {
+    if (routeRevision !== routeRevisionRef.current) return;
     setFlightData(data);
     setDepartureCode(data.departure.icao);
     setArrivalCode(data.arrival.icao);
     // Auto-search when flight is found
     handleRouteSearch(data.departure.icao, data.arrival.icao, data);
-  }, [handleRouteSearch]);
+  }, [handleRouteSearch, routeRevision]);
+
+  const invalidateFlightLookup = () => {
+    routeRevisionRef.current += 1;
+    setRouteRevision(routeRevisionRef.current);
+  };
+
+  const clearResults = () => {
+    invalidateFlightLookup();
+    requestRef.current?.abort();
+    setIsSearching(false);
+    setHasSearched(false);
+    setRoutePireps([]);
+    setSearchError(null);
+  };
 
   // Handle manual form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    invalidateFlightLookup();
     // Pass current flightData state since handleRouteSearch doesn't have it in closure
     handleRouteSearch(departureCode, arrivalCode, flightData);
   };
 
   // Clear flight data and form
   const handleClear = () => {
+    clearResults();
     setFlightData(null);
     setDepartureCode('');
     setArrivalCode('');
-    setRoutePireps([]);
-    setSearchError(null);
-    setHasSearched(false);
   };
 
   // Format altitude
@@ -290,6 +303,7 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
           <span className="text-sm font-mono font-bold uppercase">Search by Flight Number</span>
         </div>
         <FlightNumberInput
+          routeRevision={routeRevision}
           onFlightFound={handleFlightFound}
           onError={(error) => setSearchError(error)}
         />
@@ -367,19 +381,20 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
           <Route className="w-4 h-4 text-primary" aria-hidden="true" />
           <span className="text-sm font-mono font-bold uppercase">Manual Route Entry</span>
         </div>
+        <p className="text-xs font-mono text-muted-foreground mb-3">Manual entry supports major US hubs. Flight lookup can supply other airports.</p>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Departure Input */}
             <div className="flex-1">
               <label htmlFor="departure-code" className={cn('block text-xs font-mono mb-1 uppercase', themeClasses.text)}>
-                Departure (ICAO)
+                Departure (IATA or ICAO)
               </label>
               <input
                 id="departure-code"
                 type="text"
                 value={departureCode}
-                onChange={(e) => setDepartureCode(e.target.value.toUpperCase())}
-                placeholder="e.g. KLAX"
+                onChange={(e) => { clearResults(); setDepartureCode(e.target.value.toUpperCase()); }}
+                placeholder="SFO or KSFO"
                 maxLength={4}
                 className={cn(
                   'w-full px-3 py-2 font-mono text-sm border-2 rounded bg-card uppercase',
@@ -398,14 +413,14 @@ export default function FlightRouteLookup({ initialFlight, onRouteSearch }: Flig
             {/* Arrival Input */}
             <div className="flex-1">
               <label htmlFor="arrival-code" className={cn('block text-xs font-mono mb-1 uppercase', themeClasses.text)}>
-                Arrival (ICAO)
+                Arrival (IATA or ICAO)
               </label>
               <input
                 id="arrival-code"
                 type="text"
                 value={arrivalCode}
-                onChange={(e) => setArrivalCode(e.target.value.toUpperCase())}
-                placeholder="e.g. KJFK"
+                onChange={(e) => { clearResults(); setArrivalCode(e.target.value.toUpperCase()); }}
+                placeholder="DEN or KDEN"
                 maxLength={4}
                 className={cn(
                   'w-full px-3 py-2 font-mono text-sm border-2 rounded bg-card uppercase',
