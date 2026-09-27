@@ -39,6 +39,10 @@ export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   'earthquake.usgs.gov',
   'www.spc.noaa.gov',
   'www.nhc.noaa.gov',
+
+  // Primary data citations used by the Sunday newsletter.
+  'mesonet.agron.iastate.edu',
+  'api.open-meteo.com',
 ]);
 
 /**
