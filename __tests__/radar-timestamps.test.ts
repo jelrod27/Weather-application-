@@ -51,13 +51,21 @@ describe('radar timestamps', () => {
     }, now)).toBe('25m ago')
   })
 
-  it('labels the newest available frame as Latest', () => {
+  it('shows elapsed age even for the newest available frame', () => {
     expect(formatRadarFrameAgeLabel({
       timestamp: now - (15 * 60 * 1000),
       isoTime: new Date(now - (15 * 60 * 1000)).toISOString(),
       epochSeconds: Math.floor((now - (15 * 60 * 1000)) / 1000),
       offsetMinutes: 0,
       isLive: true,
-    }, now)).toBe('LATEST')
+    }, now)).toBe('15m ago')
   })
+})
+
+
+it('handles unavailable frames and future clock skew without negative ages', () => {
+  expect(formatRadarFrameAgeLabel(undefined, 100)).toBe('—')
+  const frame = buildRadarFrames({ now: 120000 })[0]
+  expect(formatRadarFrameAgeLabel({ ...frame, timestamp: Number.NaN }, 0)).toBe('—')
+  expect(formatRadarFrameAgeLabel({ ...frame, timestamp: 120000, isLive: true }, 110000)).toBe('0m ago')
 })

@@ -1,10 +1,10 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { fetchOpenMeteoForecast } from '@/lib/open-meteo'
+import { dashboardWeatherService } from '@/lib/dashboard-weather-service'
+import type { OpenMeteoForecastResponse } from '@/lib/open-meteo-types'
 import { openMeteoLocalTimeToEpoch } from '@/lib/pollen/open-meteo-pollen'
 import { getWMOCondition, getWMODescription } from '@/lib/wmo-codes'
 import { parseCoordinates } from '@/lib/api/query-params'
-import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
 /**
@@ -27,40 +27,50 @@ function wmoToIcon(code: number, isDay: number): string {
   return `02${d}`
 }
 
+const finite = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null
+const rounded = (value: unknown): number | null => {
+  const number = finite(value)
+  return number === null ? null : Math.round(number)
+}
+
 function buildCurrent(
-  forecast: Awaited<ReturnType<typeof fetchOpenMeteoForecast>>,
+  forecast: OpenMeteoForecastResponse,
   units: 'metric' | 'imperial',
+  windUnit: 'mph' | 'kmh' | 'ms',
 ) {
   const current = forecast.current
   const hourly = forecast.hourly
 
   const now = Date.now()
   const utcOffsetSeconds = forecast.utc_offset_seconds ?? 0
-  let visibilityRaw = 10000
+  let visibilityRaw: number | null = null
   if (hourly?.time && hourly?.visibility) {
     for (let i = 0; i < hourly.time.length; i++) {
       const hourEpoch = openMeteoLocalTimeToEpoch(hourly.time[i]!, utcOffsetSeconds)
       if (!Number.isNaN(hourEpoch) && hourEpoch >= now) {
-        visibilityRaw = hourly.visibility[i] ?? 10000
+        visibilityRaw = finite(hourly.visibility[i])
         break
       }
     }
   }
-  const visibility =
+  const visibility = visibilityRaw === null ? null :
     units === 'metric'
       ? Math.round(visibilityRaw / 1000)
       : Math.round(visibilityRaw / 1609)
 
   return {
-    temperature: Math.round(current?.temperature_2m ?? 0),
-    description: getWMODescription(current?.weather_code ?? 0).toLowerCase(),
-    humidity: current?.relative_humidity_2m ?? 0,
-    windSpeed: Math.round(current?.wind_speed_10m ?? 0),
-    icon: wmoToIcon(current?.weather_code ?? 0, current?.is_day ?? 1),
-    feelsLike: Math.round(current?.apparent_temperature ?? 0),
-    pressure: Math.round(current?.surface_pressure ?? 1013),
+    temperature: Math.round(current!.temperature_2m),
+    description: getWMODescription(current!.weather_code).toLowerCase(),
+    humidity: finite(current?.relative_humidity_2m),
+    windSpeed: rounded(current?.wind_speed_10m),
+    icon: wmoToIcon(current!.weather_code, current?.is_day ?? 1),
+    feelsLike: rounded(current?.apparent_temperature),
+    pressure: rounded(current?.surface_pressure),
     visibility,
     units,
+    windUnit,
+    observedAt: current?.time && Number.isFinite(openMeteoLocalTimeToEpoch(current.time, utcOffsetSeconds))
+      ? new Date(openMeteoLocalTimeToEpoch(current.time, utcOffsetSeconds)).toISOString() : null,
   }
 }
 
@@ -79,29 +89,26 @@ export async function GET(request: NextRequest) {
       }
       const { latitude, longitude } = coords
 
-      const forecast = await fetchOpenMeteoForecast(latitude, longitude, {
-        forecastDays: detail ? 7 : 1,
-        temperatureUnit: units === 'metric' ? 'celsius' : 'fahrenheit',
-        windSpeedUnit: units === 'metric' ? 'kmh' : 'mph',
-        precipitationUnit: units === 'metric' ? 'mm' : 'inch',
-      })
-
-      const current = buildCurrent(forecast, units)
+      const windParam = searchParams.get('wind_unit')
+      const windUnit = windParam === 'mph' || windParam === 'kmh' || windParam === 'ms'
+        ? windParam : units === 'metric' ? 'kmh' : 'mph'
+      const refresh = searchParams.get('refresh') === '1'
+      const { forecast, fetchedAt, stale } = await dashboardWeatherService.load({ latitude, longitude, units, windUnit, detail, refresh })
+      const current = { ...buildCurrent(forecast, units, windUnit), fetchedAt, stale }
+      // The service owns the original receipt time. Avoid a second cache extending freshness.
+      const headers = { 'Cache-Control': 'no-store', ...rateLimitHeaders }
 
       if (!detail) {
         return NextResponse.json(current, {
-          headers: {
-            'Cache-Control': 'public, max-age=600, s-maxage=600',
-            ...rateLimitHeaders,
-          },
+          headers,
         })
       }
 
       const daily = forecast.daily
       const days: Array<{
         day: string
-        highTemp: number
-        lowTemp: number
+        highTemp: number | null
+        lowTemp: number | null
         condition: string
         description: string
       }> = []
@@ -109,19 +116,19 @@ export async function GET(request: NextRequest) {
       if (daily?.time?.length) {
         const count = Math.min(daily.time.length, 5)
         for (let i = 0; i < count; i++) {
-          const code = daily.weather_code?.[i] ?? 0
+          const code = finite(daily.weather_code?.[i])
           const date = new Date(`${daily.time[i]}T12:00:00`)
           days.push({
             day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            highTemp: Math.round(daily.temperature_2m_max?.[i] ?? 0),
-            lowTemp: Math.round(daily.temperature_2m_min?.[i] ?? 0),
-            condition: getWMOCondition(code),
-            description: getWMODescription(code).toLowerCase(),
+            highTemp: rounded(daily.temperature_2m_max?.[i]),
+            lowTemp: rounded(daily.temperature_2m_min?.[i]),
+            condition: code === null ? 'Unavailable' : getWMOCondition(code),
+            description: code === null ? 'Unavailable' : getWMODescription(code).toLowerCase(),
           })
         }
       }
 
-      const uvIndex = Math.round(forecast.current?.uv_index ?? daily?.uv_index_max?.[0] ?? 0)
+      const uvIndex = rounded(forecast.current?.uv_index ?? daily?.uv_index_max?.[0])
 
       return NextResponse.json(
         {
@@ -130,17 +137,13 @@ export async function GET(request: NextRequest) {
           uvIndex,
         },
         {
-          headers: {
-            'Cache-Control': 'public, max-age=600, s-maxage=600',
-            ...rateLimitHeaders,
-          },
+          headers,
         },
       )
-    } catch (error) {
-      logRouteError('dashboard-weather', error)
+    } catch {
       return NextResponse.json(
-        { error: 'Failed to fetch weather data' },
-        { status: 500 },
+        { error: 'Weather is temporarily unavailable. Please retry.' },
+        { status: 502, headers: { 'Cache-Control': 'no-store' } },
       )
     }
   })

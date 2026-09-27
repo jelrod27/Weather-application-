@@ -1,3 +1,4 @@
+import type { WeatherData } from '@/lib/types';
 import type { Page} from '@playwright/test';
 import { expect } from '@playwright/test';
 import { stargazerE2eFixture } from './stargazer-e2e-fixture';
@@ -37,6 +38,7 @@ type StubOptions = {
   pressure?: number;
   conditionMain?: string;
   conditionDescription?: string;
+  moonPhase?: WeatherData['moonPhase'];
 };
 
 const defaultOptions: Required<StubOptions> = {
@@ -49,6 +51,7 @@ const defaultOptions: Required<StubOptions> = {
   pressure: 1015,
   conditionMain: 'Clear',
   conditionDescription: 'clear sky',
+  moonPhase: null,
 };
 
 export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promise<void> {
@@ -152,6 +155,7 @@ export async function stubWeatherApis(page: Page, opts: StubOptions = {}): Promi
     body: JSON.stringify({
       latitude: o.lat,
       longitude: o.lon,
+      moonPhase: o.moonPhase,
       timezone: 'America/New_York',
       utc_offset_seconds: -14400,
       current: {
@@ -279,7 +283,7 @@ export async function seedFreshWeatherCache(page: Page, opts: StubOptions = {}):
         hourlyForecast: [{ time: '10 AM', temp: o.tempF, condition: 'Sunny', precipChance: 0 }],
       },
     ],
-    moonPhase: { phase: 'Waxing Crescent', illumination: 20, emoji: 'Moon', phaseAngle: 45 },
+    moonPhase: o.moonPhase,
     uvIndex: 5,
     aqi: 30,
     aqiCategory: 'Good',

@@ -11,7 +11,6 @@ import {
   formatTime,
   calculateDewPoint,
   getUVDescription,
-  calculateMoonPhase,
   mapWeatherCondition,
   normalizeInput,
   shouldUseMetricUnits,
@@ -146,38 +145,6 @@ describe('UV Index', () => {
     it('should return Extreme for UV index 11+', () => {
       expect(getUVDescription(11)).toBe('Extreme');
       expect(getUVDescription(15)).toBe('Extreme');
-    });
-  });
-});
-
-describe('Moon Phase', () => {
-  describe('calculateMoonPhase', () => {
-    it('should return a valid moon phase object', () => {
-      const result = calculateMoonPhase();
-      expect(result).toHaveProperty('phase');
-      expect(result).toHaveProperty('illumination');
-      expect(result).toHaveProperty('emoji');
-    });
-
-    it('should return illumination between 0 and 100', () => {
-      const result = calculateMoonPhase();
-      expect(result.illumination).toBeGreaterThanOrEqual(0);
-      expect(result.illumination).toBeLessThanOrEqual(100);
-    });
-
-    it('should return a valid phase name', () => {
-      const validPhases = [
-        'New Moon',
-        'Waxing Crescent',
-        'First Quarter',
-        'Waxing Gibbous',
-        'Full Moon',
-        'Waning Gibbous',
-        'Last Quarter',
-        'Waning Crescent',
-      ];
-      const result = calculateMoonPhase();
-      expect(validPhases).toContain(result.phase);
     });
   });
 });

@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user, profile } = useAuth()
-  const { locations, loading, refetch } = useSavedLocations()
+  const { locations, loading, error, refetch } = useSavedLocations()
   const themeClasses = themeTokens.dashboard
   const searchParams = useSearchParams()
 
@@ -148,6 +148,7 @@ function DashboardContent() {
         )}
 
         <SavedLocationsPanel
+          error={error}
           locations={locations}
           loading={loading}
           onUpdate={handleLocationUpdate}

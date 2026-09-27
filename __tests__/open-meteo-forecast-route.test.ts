@@ -120,3 +120,10 @@ describe('GET /api/open-meteo/forecast', () => {
     });
   });
 });
+
+it('keeps the weather response usable if optional Moon calculation fails', async () => {
+  mockedFetch.mockResolvedValueOnce({ latitude: 40, longitude: -74, timezone: 'invalid-zone' } as never)
+  const res = await GET(new NextRequest('http://localhost/api/open-meteo/forecast?lat=40&lon=-74'))
+  expect(res.status).toBe(200)
+  expect(await res.json()).toMatchObject({ latitude: 40, moonPhase: null })
+})

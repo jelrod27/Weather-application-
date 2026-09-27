@@ -76,3 +76,13 @@ describe('SavedLocationsPanel', () => {
     expect(screen.getByText(/Other Locations \(2\)/i)).toBeInTheDocument()
   })
 })
+
+it('distinguishes loading and failed lists from an empty saved list', () => {
+  const props = { locations: [], loading: true, onUpdate: jest.fn(), onAddLocation: jest.fn() }
+  const { rerender } = render(<SavedLocationsPanel {...props} />)
+  expect(screen.queryByTestId('saved-locations-empty')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent(/loading/i)
+  rerender(<SavedLocationsPanel {...props} loading={false} error="Unavailable" />)
+  expect(screen.queryByTestId('saved-locations-empty')).not.toBeInTheDocument()
+  expect(screen.getByRole('alert')).toHaveTextContent(/could not load/i)
+})

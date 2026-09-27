@@ -18,7 +18,6 @@ import {
   type RoadMiseryInput,
 } from '@/lib/services/misery-score-service';
 import {
-  DEFAULT_WEATHER_CONDITIONS,
   fetchWeatherForWaypoints,
   getHazardDescription,
   type WeatherConditions,
@@ -262,10 +261,12 @@ export async function computeDriveTripScore(
 
   let weatherData: WeatherConditions[];
   try {
-    weatherData = await fetchWeatherForWaypoints(waypoints, forecastDay, {
+    const samples = await fetchWeatherForWaypoints(waypoints, forecastDay, {
       requestSignal,
       userAgent: '16-Bit-Weather/trip-score',
     });
+    if (samples.length !== waypoints.length || samples.some(sample => sample === null)) throw new Error('Incomplete route weather');
+    weatherData = samples.filter(sample => sample !== null);
   } catch (error) {
     logRouteError('trip-score', error, { stage: 'open-meteo' });
     return NextResponse.json(
@@ -275,7 +276,7 @@ export async function computeDriveTripScore(
   }
 
   const segments: DriveSegmentResult[] = waypoints.map((wp, idx) => {
-    const conditions = weatherData[idx] ?? { ...DEFAULT_WEATHER_CONDITIONS };
+    const conditions = weatherData[idx];
     return {
       lat: wp[0],
       lon: wp[1],

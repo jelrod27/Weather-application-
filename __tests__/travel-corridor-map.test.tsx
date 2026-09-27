@@ -33,7 +33,7 @@ jest.mock('ol/geom/LineString', () => jest.fn());
 
 const corridors: ComponentProps<typeof TravelCorridorMap>['corridors'] = [{
   name: 'I-25', score: 80, level: 'red', color: '#ff0000', hazard: 'Heavy snow',
-  path: [[-105, 39], [-104, 40]], segments: [],
+  path: [[-105, 39], [-104, 40]], segments: [], coverage: { available: 1, total: 1 }, worstPoint: null,
 }];
 
 const originalResizeObserver = global.ResizeObserver;

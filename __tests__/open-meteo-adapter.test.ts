@@ -47,7 +47,7 @@ afterAll(() => {
   global.fetch = originalFetch;
 });
 
-function makeForecastResponse(): OpenMeteoForecastResponse {
+function makeForecastResponse(): OpenMeteoForecastResponse & Required<Pick<OpenMeteoForecastResponse, 'current' | 'hourly' | 'daily'>> {
   return {
     latitude: 40.71,
     longitude: -74.01,
@@ -341,7 +341,7 @@ describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
     );
 
     // Fixture visibility is 10000 m for every hour -> 6.2 mi.
-    expect(result.forecast[0].details.visibility).toBe(6.2);
+    expect(result.forecast[0].details?.visibility).toBe(6.2);
   });
 });
 
@@ -572,4 +572,14 @@ it('preserves each daily sunrise and sunset rather than repeating today', async 
   const result = await buildWeatherDataFromOpenMeteo(40, -74, 'Test', 'imperial', 'US');
   expect(result.forecast[1].sunrise).toBe('6:50 am');
   expect(result.forecast[1].sunset).toBe('7:16 pm');
+});
+
+it('uses supplied Moon enrichment without inventing a client moonset', async () => {
+  const without = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial');
+  expect(without.moonPhase).toBeNull();
+  const forecast = makeForecastResponse();
+  forecast.moonPhase = { phase: 'Full Moon', illumination: 99, emoji: '🌕', phaseAngle: 180, nextMoonset: 'Nov 1, 7:00 AM EST', nextFullMoon: 'Nov 25', timeZone: 'America/New_York', observingNight: 'Observing night of Oct 31' };
+  stubClientApiFetches(forecast);
+  const enriched = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial');
+  expect(enriched.moonPhase).toEqual(forecast.moonPhase);
 });

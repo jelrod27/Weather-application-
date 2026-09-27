@@ -27,7 +27,6 @@ import { getWMODescription, getWMOCondition } from '../wmo-codes';
 import {
   formatPressureByRegion,
   getCompassDirection,
-  calculateMoonPhase,
   getApiUrl,
 } from './weather-utils';
 import { fetchPollenData } from './weather-forecast';
@@ -241,7 +240,14 @@ export async function buildWeatherDataFromOpenMeteo(
   const uvIndex = Math.round(current?.uv_index ?? 0);
   const aqi = airQuality?.current?.us_aqi ?? 0;
   const aqiCategory = getAQIDescription(aqi);
-  const moonPhase = calculateMoonPhase();
+  let moonPhase = forecast.moonPhase ?? null;
+  if (onServer) {
+    try {
+      // Keep the astronomy engine out of the initial forecast client bundle.
+      const { getForecastMoonInfo } = await import('./forecast-moon');
+      moonPhase = getForecastMoonInfo(lat, lon, forecast.timezone);
+    } catch { console.warn('[forecast] Optional Moon calculation unavailable'); }
+  }
 
   // Build 7-day forecast
   const forecastDays: WeatherData['forecast'] = [];

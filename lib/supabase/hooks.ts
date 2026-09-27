@@ -1,57 +1,36 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-// Single source of truth for auth state. This module previously had its own
-// getSession()-based useAuth, which could diverge from the app-wide
-// AuthProvider — everything now reads the shared context.
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth/auth-context'
-import type { SavedLocation } from './types'
 import { getSavedLocations } from './database'
+import type { SavedLocation } from './types'
 
-// Hook to get saved locations
-export const useSavedLocations = () => {
+export const useSavedLocations = (): {
+  locations: SavedLocation[]; loading: boolean; error: string | null; refetch: () => Promise<void>
+} => {
   const { user, loading: authLoading } = useAuth()
-  const [locations, setLocations] = useState<SavedLocation[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
+  const userId = user?.id ?? ''
+  const requestId = useRef(0)
+  const [state, setState] = useState<{ userId: string; locations: SavedLocation[]; loading: boolean; error: string | null }>({ userId: '', locations: [], loading: true, error: null })
+  const refetch = useCallback(async () => {
+    const id = ++requestId.current
+    if (authLoading) return
+    setState(previous => ({ userId, locations: previous.userId === userId ? previous.locations : [], loading: true, error: null }))
+    try {
+      const locations = userId ? await getSavedLocations(userId) : []
+      if (id === requestId.current) setState({ userId, locations, loading: false, error: null })
+    } catch {
+      if (id === requestId.current) setState(previous => ({ ...previous, loading: false, error: 'Saved locations are temporarily unavailable.' }))
+    }
+  }, [userId, authLoading])
   useEffect(() => {
-    const fetchLocations = async () => {
-      if (!user) {
-        setLocations([])
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        const locationsData = await getSavedLocations(user.id)
-        setLocations(locationsData)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch saved locations')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (!authLoading) {
-      fetchLocations()
-    }
-  }, [user, authLoading])
-
+    void refetch()
+    return () => { requestId.current++ }
+  }, [refetch])
   return {
-    locations,
-    loading: loading || authLoading,
-    error,
-    refetch: () => {
-      if (user) {
-        const fetchLocations = async () => {
-          const locationsData = await getSavedLocations(user.id)
-          setLocations(locationsData)
-        }
-        fetchLocations()
-      }
-    }
+    locations: state.userId === userId && !authLoading ? state.locations : [],
+    loading: authLoading || state.userId !== userId || state.loading,
+    error: state.userId === userId ? state.error : null,
+    refetch,
   }
 }

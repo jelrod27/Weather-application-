@@ -11,6 +11,7 @@ import LocationCard from '@/components/dashboard/location-card'
 interface SavedLocationsPanelProps {
   locations: SavedLocation[]
   loading: boolean
+  error?: string | null
   onUpdate: () => void
   onAddLocation: () => void
 }
@@ -18,6 +19,7 @@ interface SavedLocationsPanelProps {
 export default function SavedLocationsPanel({
   locations,
   loading,
+  error,
   onUpdate,
   onAddLocation,
 }: SavedLocationsPanelProps) {
@@ -41,7 +43,7 @@ export default function SavedLocationsPanel({
               Saved Locations
             </CardTitle>
             <CardDescription className={`font-mono mt-1 ${themeClasses.mutedText}`}>
-              {locations.length === 0
+              {loading ? 'Loading saved locations…' : error ? 'Saved locations could not refresh.' : locations.length === 0
                 ? 'No locations saved yet.'
                 : `${locations.length} saved location${locations.length === 1 ? '' : 's'}.`}
             </CardDescription>
@@ -72,7 +74,9 @@ export default function SavedLocationsPanel({
       </CardHeader>
 
       <CardContent>
-        {locations.length === 0 ? (
+        {error && <div role="alert" className="mb-4 font-mono text-sm">Could not load saved locations. <Button variant="outline" onClick={onUpdate} disabled={loading}>Retry locations</Button></div>}
+        {loading && <p role="status" className="mb-4 font-mono text-sm">Loading saved locations…</p>}
+        {locations.length === 0 ? (!loading && !error && (
           <div
             className={`text-center py-12 p-8 border-2 border-dashed ${themeClasses.borderColor} rounded-lg bg-black/20`}
             data-testid="saved-locations-empty"
@@ -111,7 +115,7 @@ export default function SavedLocationsPanel({
               </Button>
             </div>
           </div>
-        ) : (
+        )) : (
           <div className="space-y-8" data-testid="saved-locations-list">
             {favoriteLocations.length > 0 && (
               <section aria-labelledby="favorite-locations-heading" className="space-y-4">

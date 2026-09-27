@@ -19,7 +19,6 @@ export function formatRadarFrameAgeLabel(
   now = Date.now(),
 ): string {
   if (!frame) return '—'
-  if (frame.isLive) return 'LATEST'
   if (!Number.isFinite(frame.timestamp) || !Number.isFinite(now)) return '—'
 
   const minutes = Math.max(0, Math.floor((now - frame.timestamp) / 60000))

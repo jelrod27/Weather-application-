@@ -7,7 +7,7 @@ jest.mock('next/server', () => ({
   NextResponse: {
     json: jest.fn((body: unknown, init?: { status?: number; headers?: Record<string, string> }) => ({
       status: init?.status || 200,
-      headers: init?.headers || {},
+      headers: new Headers(init?.headers || {}),
       json: async () => body,
     })),
   },
@@ -157,8 +157,8 @@ describe('computeDriveTripScore', () => {
       totalCorridorLength: 2,
     });
     mockFetchWeather.mockResolvedValueOnce([
-      { precipitation: 0, snowfall: 0, windGusts: 10, visibility: 10000, freezingLevel: 3000 },
-      { precipitation: 1, snowfall: 0, windGusts: 20, visibility: 8000, freezingLevel: 2500 },
+      { precipitation: 0, snowfall: 0, windGusts: 10, visibility: 10000, freezingLevel: 3000, sampledAt: null, timeZone: null },
+      { precipitation: 1, snowfall: 0, windGusts: 20, visibility: 8000, freezingLevel: 2500, sampledAt: null, timeZone: null },
     ]);
 
     const origin = airportEndpoint('DEN');
@@ -166,7 +166,7 @@ describe('computeDriveTripScore', () => {
     const res = await computeDriveTripScore(origin, destination, day, new AbortController().signal);
 
     expect(res.status).toBe(200);
-    expect(res.headers['Cache-Control']).toBe(
+    expect(res.headers.get('Cache-Control')).toBe(
       'public, s-maxage=600, stale-while-revalidate=300',
     );
     const body = await res.json();
@@ -216,7 +216,7 @@ describe('computeFlyTripScore', () => {
 
     const res = await computeFlyTripScore(origin, destination);
     expect(res.status).toBe(200);
-    expect(res.headers['Cache-Control']).toBe(
+    expect(res.headers.get('Cache-Control')).toBe(
       'public, s-maxage=600, stale-while-revalidate=300',
     );
     const body = await res.json();

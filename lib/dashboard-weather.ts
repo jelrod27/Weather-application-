@@ -1,47 +1,36 @@
 // Dashboard-specific weather data fetching
 // Simplified version of weather-api.ts for location cards
 
-interface DashboardWeatherData {
+export interface DashboardWeatherData {
   temperature: number
   description: string
-  humidity: number
-  windSpeed: number
+  humidity: number | null
+  windSpeed: number | null
   icon: string
-  feelsLike: number
-  pressure: number
-  visibility: number
-  units?: 'metric' | 'imperial'
+  feelsLike: number | null
+  pressure: number | null
+  visibility: number | null
+  units: 'metric' | 'imperial'
+  windUnit: 'mph' | 'kmh' | 'ms'
+  fetchedAt: string
+  observedAt: string | null
+  stale: boolean
 }
+
+export const DASHBOARD_WEATHER_MAX_AGE_MS = 30 * 60_000
 
 export async function getDashboardWeather(
   latitude: number,
   longitude: number,
-  units: 'metric' | 'imperial' = 'imperial'
-): Promise<DashboardWeatherData | null> {
-  try {
-    const response = await fetch(
-      `/api/dashboard-weather?lat=${latitude}&lon=${longitude}&units=${units}`,
-      {
-        cache: 'default',
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || `Weather API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    
-    // Data is already transformed by the API route
-    return data
-  } catch (error) {
-    console.error('Error fetching dashboard weather:', error)
-    return null
-  }
+  units: 'metric' | 'imperial' = 'imperial',
+  options: { signal?: AbortSignal; refresh?: boolean; windUnit?: 'mph' | 'kmh' | 'ms' } = {},
+): Promise<DashboardWeatherData> {
+  const params = new URLSearchParams({ lat: String(latitude), lon: String(longitude), units })
+  if (options.windUnit) params.set('wind_unit', options.windUnit)
+  if (options.refresh) params.set('refresh', '1')
+  const response = await fetch(`/api/dashboard-weather?${params}`, { signal: options.signal, cache: 'no-store' })
+  if (!response.ok) throw new Error('Weather is temporarily unavailable. Please retry.')
+  return response.json()
 }
 
 export function getWeatherIcon(iconCode: string): string {
