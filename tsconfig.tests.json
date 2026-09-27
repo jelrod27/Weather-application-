@@ -19,6 +19,8 @@
     "__tests__/preferences-resolve.test.ts",
     "__tests__/weather-session-cache.test.ts",
     "__tests__/useWeatherSession.city.test.tsx",
+    "__tests__/useWeatherController.test.tsx",
+    "tests/e2e/home-first-visit.spec.ts",
     "__tests__/education-guides.test.ts",
     "__tests__/education/**/*.test.ts",
     "__tests__/education/**/*.test.tsx",

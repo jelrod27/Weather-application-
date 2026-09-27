@@ -2,19 +2,19 @@
 
 ## Problem
 
-A visitor without a saved city can see an empty weather area followed by city links. The current location flow avoids a browser permission prompt, tries IP location, and can fail without explaining the next step. The small “PRESS START” link and disabled location button in the search form do not clearly present the two ways to begin.
+A visitor without a saved city needs an immediate way to find local weather. The large Get Started panel was rejected in favor of a compact location action and search field. Footer and city lists should not fill the first-visit screen.
 
 ## Required behavior
 
-1. The home page gives a new visitor a prominent “Get started” introduction before weather data loads, including in the server-rendered loading state.
-2. The introduction offers “Use my location” and “Search for a city.” The latter moves focus to the existing city search. Device location permission is requested only after the visitor chooses “Use my location,” unless the browser has already granted permission.
-3. A visitor with no remembered city and no prior location permission can use either choice immediately. Automatic IP lookup must not block the first choice or silently replace it.
-4. If device location is denied or weather loading fails, the introduction and manual search remain available. Show the existing error message rather than stranding the visitor.
-5. Returning visitors with a usable saved/default city continue loading it automatically. Visitors who previously granted device location may continue automatic detection. The city links remain available below the main experience.
+1. Replace the large Get Started panel with a compact “Use my location” action beside the search guidance. The field says “Search for a location…”. The server-rendered shell also has concise guidance, without a large weather skeleton.
+2. With no remembered city and automatic location enabled, request browser location access once on arrival. The browser controls its native prompt. If it blocks or dismisses the request, allow retry through the location action. An unanswered request recovers after 15 seconds and ignores any late result.
+3. City search remains usable while location permission or detection is pending. No IP lookup should silently substitute for device location. A late device response must not overwrite a manually chosen city, including after navigation away.
+4. If device location is denied or weather loading fails, show one clear error and keep manual search and location retry available.
+5. Hide the homepage footer, city lists, and discovery sections until weather has loaded. Other pages retain their normal footers. Returning visitors with a usable saved/default city continue loading it automatically and regain the normal homepage content.
 
 ## Verification
 
-- Exercise a fresh browser with no stored city and browser permission at `prompt`; check both choices and keyboard focus.
-- Exercise denied device location and confirm manual city search remains available.
-- Check a returning visitor with saved weather still reaches the weather display without seeing a persistent start prompt.
-- Check desktop and narrow mobile layouts for the first-visit state.
+- Verify one automatic location request, usable search while pending, and no visible footer or city lists before weather.
+- Exercise denial, location success, and a late device response after choosing a city.
+- Check saved-city restoration and footer behavior on the home and another page.
+- Check desktop and narrow mobile layouts for the compact first-visit state.

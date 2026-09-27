@@ -1,9 +1,7 @@
 /**
  * Home weather bootstrap: shared session + auto-locate + last-displayed restore.
  */
-import { useEffect, useRef, useState } from 'react'
-import type { LocationData } from '@/lib/location-service'
-import { locationService } from '@/lib/location-service'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { userCacheService } from '@/lib/user-cache-service'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
@@ -13,8 +11,6 @@ import { fetchWeatherData } from '@/lib/weather'
 import { pickHomeBootstrapSource } from '@/lib/weather/home-bootstrap'
 import { safeStorage } from '@/lib/safe-storage'
 import { useWeatherSession } from '@/hooks/useWeatherSession'
-
-const GEOLOCATION_TIMEOUT_MS = 5000
 
 export type UseWeatherControllerResult = {
   weather: ReturnType<typeof useWeatherSession>['weather']
@@ -26,22 +22,7 @@ export type UseWeatherControllerResult = {
   handleLocationSearch: ReturnType<typeof useWeatherSession>['handleLocationSearch']
   isAutoDetecting: boolean
   autoLocationAttempted: boolean
-}
-
-async function detectWithTimeout(): Promise<LocationData> {
-  const locationPromise = locationService.getCurrentLocation()
-  let timeoutId: ReturnType<typeof setTimeout> | undefined
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(
-      () => reject(new Error('Location detection timeout')),
-      GEOLOCATION_TIMEOUT_MS,
-    )
-  })
-  try {
-    return (await Promise.race([locationPromise, timeoutPromise])) as LocationData
-  } finally {
-    if (timeoutId !== undefined) clearTimeout(timeoutId)
-  }
+  cancelLocationDetection: () => void
 }
 
 export function useWeatherController(): UseWeatherControllerResult {
@@ -53,13 +34,12 @@ export function useWeatherController(): UseWeatherControllerResult {
     remainingSearches,
     handleSearch,
     handleLocationSearch,
-    loadFromLocation,
     beginLoad,
     isStale,
     setWeather,
     setHasSearched,
     isClient,
-  } = useWeatherSession({ enforceRateLimit: true })
+  } = useWeatherSession({ enforceRateLimit: true, locationTimeoutMs: 15_000 })
 
   const { setLocationInput, setShouldClearOnRouteChange } = useLocationContext()
   const { profile, preferences, loading: authLoading } = useAuth()
@@ -68,16 +48,41 @@ export function useWeatherController(): UseWeatherControllerResult {
   const [isAutoDetecting, setIsAutoDetecting] = useState(false)
   const autoLocationStartedRef = useRef(false)
   const manualLocationStartedRef = useRef(false)
+  const locationRequestRef = useRef(0)
+
+  const runLocationDetection = useCallback(async () => {
+    const requestId = ++locationRequestRef.current
+    setIsAutoDetecting(true)
+    try {
+      await handleLocationSearch()
+    } finally {
+      if (requestId === locationRequestRef.current) setIsAutoDetecting(false)
+    }
+  }, [handleLocationSearch])
+
+  const cancelLocationDetection = () => {
+    manualLocationStartedRef.current = true
+    locationRequestRef.current += 1
+    beginLoad()
+    setAutoLocationAttempted(true)
+    setIsAutoDetecting(false)
+  }
 
   const handleChosenLocationSearch = async () => {
     manualLocationStartedRef.current = true
     setAutoLocationAttempted(true)
-    await handleLocationSearch()
+    await runLocationDetection()
   }
 
   useEffect(() => {
     setShouldClearOnRouteChange(true)
   }, [setShouldClearOnRouteChange])
+
+  // A late device response must not replace the city chosen on another route.
+  useEffect(() => () => {
+    locationRequestRef.current += 1
+    beginLoad()
+  }, [beginLoad])
 
   useEffect(() => {
     if (!isClient || autoLocationAttempted) return
@@ -111,36 +116,9 @@ export function useWeatherController(): UseWeatherControllerResult {
           return
         }
 
-        let geolocationGranted = false
-        if (navigator.permissions?.query) {
-          const permission = await navigator.permissions
-            .query({ name: 'geolocation' })
-            .catch(() => null)
-          geolocationGranted = permission?.state === 'granted'
-        }
-
-        if (manualLocationStartedRef.current) return
-
-        // A fresh visitor chooses when to request device location. In particular,
-        // do not hide the start options behind a silent network-based IP lookup.
-        if (!geolocationGranted) {
-          setAutoLocationAttempted(true)
-          return
-        }
-
-        setIsAutoDetecting(true)
-        try {
-          await loadFromLocation(await detectWithTimeout())
-        } catch {
-          try {
-            const ipLocation = await locationService.getLocationByIP()
-            await loadFromLocation(ipLocation)
-          } catch {
-            // Silent fail
-          }
-        } finally {
-          setIsAutoDetecting(false)
-        }
+        // Ask the browser once on arrival. City search stays available while
+        // permission is pending; blocked requests can be retried with a click.
+        await runLocationDetection()
         setAutoLocationAttempted(true)
       } catch {
         setIsAutoDetecting(false)
@@ -157,7 +135,7 @@ export function useWeatherController(): UseWeatherControllerResult {
     profile,
     preferences,
     handleSearch,
-    loadFromLocation,
+    runLocationDetection,
   ])
 
   useEffect(() => {
@@ -211,5 +189,6 @@ export function useWeatherController(): UseWeatherControllerResult {
     handleLocationSearch: handleChosenLocationSearch,
     isAutoDetecting,
     autoLocationAttempted,
+    cancelLocationDetection,
   }
 }

@@ -47,14 +47,17 @@ import { useWeatherController } from "@/hooks/useWeatherController"
 import { usePrecipitationHistory } from "@/hooks/usePrecipitationHistory"
 import { locationInputToSlug } from "@/lib/city-slug"
 import { useHubLocation } from "@/hooks/use-hub-location"
-import { HomeStartIntro } from '@/components/home/home-start-intro'
 
 // Note: UV Index data is now only available in One Call API 3.0 (paid subscription required)
 // The main weather API handles UV index estimation for free accounts
 
 // API keys are now handled by internal API routes
 
-function WeatherApp() {
+interface WeatherAppProps {
+  children?: React.ReactNode
+}
+
+function WeatherApp({ children }: WeatherAppProps): React.ReactElement {
   const { theme } = useTheme()
   const router = useRouter()
 
@@ -64,6 +67,7 @@ function WeatherApp() {
     error,
     remainingSearches,
     handleLocationSearch,
+    cancelLocationDetection,
     isAutoDetecting,
     autoLocationAttempted
   } = useWeatherController()
@@ -82,65 +86,37 @@ function WeatherApp() {
   // loaded WeatherDisplay chunk has time to expand before the cities append.
   const [showCityLinks, setShowCityLinks] = React.useState(false)
   React.useEffect(() => {
-    if (autoLocationAttempted && !loading && !isAutoDetecting) {
+    if (weather && autoLocationAttempted && !loading && !isAutoDetecting) {
       const id = requestAnimationFrame(() => setShowCityLinks(true))
       return () => cancelAnimationFrame(id)
     }
-  }, [autoLocationAttempted, loading, isAutoDetecting])
+  }, [weather, autoLocationAttempted, loading, isAutoDetecting])
 
   // Manual searches use the same /weather/[city] experience as footer city links.
   const handleSearchWrapper = (locationInput: string) => {
     const trimmed = locationInput.trim()
     if (trimmed.length < 3) return
+    cancelLocationDetection()
     router.push(`/weather/${locationInputToSlug(trimmed)}`)
   }
 
-  const focusCitySearch = () => {
-    document.querySelector<HTMLInputElement>('[data-testid="location-search-input"]')?.focus()
-  }
-
   return (
+    <>
     <PageWrapper
       weatherLocation={weather?.location}
       weatherTemperature={weather?.temperature}
       weatherUnit={weather?.unit}
+      showFooter={Boolean(weather)}
     >
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="2xl" padding="md">
-          {!weather && (
-            <HomeStartIntro id="home-get-started">
-              <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={handleLocationSearch}
-                  disabled={loading || isAutoDetecting}
-                  className="rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
-                >
-                  Use my location
-                </button>
-                <button
-                  type="button"
-                  onClick={focusCitySearch}
-                  disabled={loading || isAutoDetecting || remainingSearches <= 0}
-                  className="rounded-md border border-primary px-5 py-3 font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
-                >
-                  Search for a city
-                </button>
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {remainingSearches <= 0
-                  ? 'City search is temporarily unavailable because the search limit was reached.'
-                  : loading || isAutoDetecting
-                    ? 'Search will be available when the current weather load finishes.'
-                    : 'Your browser will ask for location access only if you choose to use it.'}
-              </p>
-            </HomeStartIntro>
-          )}
           <ErrorBoundary componentName="Weather Search">
             <WeatherSearch
               onSearch={handleSearchWrapper}
               onLocationSearch={handleLocationSearch}
-              isLoading={loading || isAutoDetecting}
+              isLoading={loading && !isAutoDetecting}
+              isAutoDetecting={isAutoDetecting}
+              compactLocationPrompt={!weather}
               error={error}
               rateLimitError=""
               isDisabled={remainingSearches <= 0}
@@ -148,9 +124,9 @@ function WeatherApp() {
             />
           </ErrorBoundary>
 
-          <HomeHub userLocation={hubLocation} />
+          {weather && <HomeHub userLocation={hubLocation} />}
 
-          {(loading || isAutoDetecting) && !weather && (
+          {loading && !isAutoDetecting && !weather && (
             <div className="mt-8">
               <WeatherSkeleton />
             </div>
@@ -162,17 +138,6 @@ function WeatherApp() {
               <span className="ml-2 text-weather-text">
                 Updating weather data...
               </span>
-            </div>
-          )}
-
-          {error && (
-            <div className="max-w-2xl mx-auto mt-4 px-2">
-              <div data-testid="global-error">
-                <div role="alert" className="relative w-full rounded-lg border border-red-500/50 p-4 text-red-500">
-                  <div className="mb-1 font-medium leading-none tracking-tight">Error</div>
-                  <div className="text-sm">{error}</div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -193,10 +158,12 @@ function WeatherApp() {
 
           {/* SEO City Links Section with Random Display — deferred until the weather
               region above has settled, so it appends instead of being shoved (CLS). */}
-          {showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
+          {weather && showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
         </ResponsiveContainer>
       </div>
     </PageWrapper>
+    <div hidden={!weather} data-testid="home-discovery">{children}</div>
+    </>
   )
 }
 

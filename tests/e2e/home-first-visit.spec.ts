@@ -1,77 +1,131 @@
 import { test, expect } from './fixtures';
-import { stubWeatherApis } from '../fixtures/utils';
+import { stubHomeHubApis, stubWeatherApis } from '../fixtures/utils';
+import type { Page } from '@playwright/test';
+
+async function holdLocationRequest(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: () => {
+          const root = document.documentElement;
+          root.dataset.locationRequests = String(Number(root.dataset.locationRequests || 0) + 1);
+        },
+      },
+    });
+  });
+}
 
 test.describe('first-visit home', () => {
   test.beforeEach(async ({ page }) => {
     await stubWeatherApis(page);
+    await stubHomeHubApis(page);
+    await page.route('**/api/weather/alerts**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ alerts: [] }),
+    }));
     await page.route('https://ipapi.co/json/', (route) => route.fulfill({ status: 503 }));
     await page.route('https://ipinfo.io/json', (route) => route.fulfill({ status: 503 }));
   });
 
-  test('a fresh visitor can choose a city without waiting for location detection', async ({ page }) => {
+  test('requests location once while keeping city search usable and hiding city lists', async ({ page }) => {
     let ipLookups = 0;
     page.on('request', (request) => {
       if (/https:\/\/(ipapi\.co|ipinfo\.io)\//.test(request.url())) ipLookups += 1;
     });
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'permissions', {
-        configurable: true,
-        value: { query: async () => ({ state: 'prompt' }) },
-      });
-    });
-
+    await holdLocationRequest(page);
     await page.goto('/');
-
-    const start = page.getByRole('heading', { name: /get started/i });
-    await expect(start).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use my location' })).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Shuffle cities' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-location-requests', '1');
+    await expect(page.getByRole('button', { name: 'Waiting for location access' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Get started' })).toHaveCount(0);
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
+    await expect(page.getByTestId('home-discovery').filter({ visible: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Shuffle cities' })).toHaveCount(0);
     expect(ipLookups).toBe(0);
-    await page.getByRole('button', { name: 'Search for a city' }).click();
 
-    const input = page.getByRole('main').getByTestId('location-search-input');
-    await expect(input).toBeFocused();
+    const input = page.getByRole('main').getByPlaceholder('Search for a location…');
     await expect(input).toBeEnabled();
     await input.fill('New York, NY');
     await page.getByRole('main').getByRole('button', { name: 'Search for weather' }).click();
     await expect(page).toHaveURL(/\/weather\/new-york-ny/);
   });
 
-  test('denied device location keeps both the start guidance and city search available', async ({ page, context }) => {
+  test('denied location leaves one error, location retry and city search available', async ({ page, context }) => {
     await context.grantPermissions([]);
     await page.goto('/');
-
-    await expect(page.getByRole('heading', { name: /get started/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Use my location' }).click();
-
-    await expect(page.getByTestId('global-error')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /get started/i })).toBeVisible();
+    const error = page.getByRole('main').getByRole('alert');
+    await expect(error).toBeVisible();
+    await expect(error).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Use my location', exact: true })).toBeEnabled();
     await expect(page.getByRole('main').getByTestId('location-search-input')).toBeEnabled();
-    await page.getByRole('button', { name: 'Search for a city' }).click();
-    await expect(page.getByRole('main').getByTestId('location-search-input')).toBeFocused();
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
+    await expect(page.getByTestId('home-discovery').filter({ visible: true })).toHaveCount(0);
   });
 
-  test('initial HTML explains how to begin before client controls load', async ({ request }) => {
+  test('initial HTML has concise search guidance without a large intro', async ({ request }) => {
     const response = await request.get('/');
     await expect(response).toBeOK();
-    expect((await response.text()).includes('Get started')).toBe(true);
+    const html = await response.text();
+    expect(html.includes('Search for a location')).toBe(true);
+    expect(html.includes('Get started')).toBe(false);
+    expect(html.includes('<footer')).toBe(false);
   });
 
-  test('returning visitors load their saved city without a persistent start panel', async ({ page }) => {
+  test('city search remains usable while retrying a denied location request', async ({ page }) => {
+    await page.addInitScript(() => {
+      let calls = 0;
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition: (_success: PositionCallback, error?: PositionErrorCallback) => {
+            calls += 1;
+            document.documentElement.dataset.locationRequests = String(calls);
+            if (calls === 1) error?.({ code: 1, message: 'Denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+          },
+        },
+      });
+    });
+    await page.goto('/');
+    await expect(page.getByRole('main').getByRole('alert')).toBeVisible();
+    await page.getByRole('button', { name: 'Use my location', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-location-requests', '2');
+    await expect(page.getByRole('button', { name: 'Waiting for location access' })).toBeVisible();
+    await expect(page.getByRole('main').getByPlaceholder('Search for a location…')).toBeEnabled();
+  });
+
+  test('granted location loads weather and restores the normal footer', async ({ page, context }) => {
+    await context.setGeolocation({ latitude: 40.7128, longitude: -74.006 });
+    await context.grantPermissions(['geolocation']);
+    await page.goto('/');
+    await expect(page.getByTestId('temperature-value')).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toBeVisible();
+    await expect(page.getByTestId('home-discovery').filter({ visible: true })).toHaveCount(1);
+  });
+
+  test('returning visitors load their saved city without requesting location again', async ({ page }) => {
+    await holdLocationRequest(page);
     await page.addInitScript(() => {
       window.localStorage.setItem('bitweather_city', 'New York, US');
     });
     await page.goto('/');
     await expect(page.getByTestId('temperature-value')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Get started' })).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveAttribute('data-location-requests');
+    await expect(page.getByRole('contentinfo')).toBeVisible();
   });
 
-  test('first-visit choices remain visible on a narrow screen', async ({ page }) => {
+  test('the narrow first-visit screen stays compact with no footer', async ({ page }) => {
+    await holdLocationRequest(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Get started' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use my location' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Search for a city' })).toBeVisible();
-    await expect(page.getByRole('main').getByTestId('location-search-input')).toBeVisible();
+    await expect(page.getByRole('main').getByPlaceholder('Search for a location…')).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Waiting for location access' })).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test('other pages retain their footer for new visitors', async ({ page }) => {
+    await page.goto('/about');
+    await expect(page.getByRole('contentinfo')).toBeVisible();
   });
 });
