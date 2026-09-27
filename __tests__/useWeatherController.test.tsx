@@ -3,10 +3,8 @@
  * Pins rate limiting, search-cache keying, stale-response (loadId) guards,
  * and error paths as they behave today. See plan 001.
  *
- * NOTE: Auto-location effect tests (Step 6) are intentionally omitted.
- * The 50ms setTimeout + navigator.permissions + IP-geolocation chain makes
- * fake-timer interleaving too fragile to be a reliable characterization pin.
- * Plan 009 can revisit once the effect is extracted.
+ * Automatic first-visit location requests are pinned alongside cancellation
+ * so a delayed device response cannot replace a chosen city.
  */
 import { renderHook, act } from '@testing-library/react'
 import type { WeatherData } from '@/lib/types'
@@ -47,14 +45,18 @@ jest.mock('@/lib/auth', () => ({
 }))
 
 import { useWeatherController } from '@/hooks/useWeatherController'
-import { fetchWeatherData } from '@/lib/weather'
+import { fetchWeatherData, fetchWeatherByLocation } from '@/lib/weather'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
 import { toastService } from '@/lib/toast-service'
+import { locationService } from '@/lib/location-service'
+import type { LocationData } from '@/lib/location-service'
 
 const mockFetchWeatherData = fetchWeatherData as jest.MockedFunction<typeof fetchWeatherData>
 const mockUseLocationContext = useLocationContext as jest.Mock
 const mockUseAuth = useAuth as jest.Mock
+const mockGetCurrentLocation = locationService.getCurrentLocation as jest.Mock
+const mockGetLocationByIP = locationService.getLocationByIP as jest.Mock
 
 /** Build a minimal valid WeatherData object. All required fields are present; optional fields omitted. */
 const makeWeather = (overrides: Record<string, unknown> = {}): WeatherData => ({
@@ -104,10 +106,85 @@ beforeEach(() => {
     setCurrentLocation: jest.fn(),
     setShouldClearOnRouteChange: jest.fn(),
   })
-  // authLoading: true keeps the auto-location effect dormant (effect returns
-  // early at line 389 of the hook while auth is loading), isolating the
-  // callback layer for all tests in this file.
+  // Keep bootstrap dormant for callback tests; bootstrap cases override this.
   mockUseAuth.mockReturnValue({ profile: null, preferences: null, loading: true })
+})
+
+describe('automatic location bootstrap', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    mockUseAuth.mockReturnValue({ profile: null, preferences: null, loading: false })
+    mockGetCurrentLocation.mockReset()
+  })
+
+  afterEach(() => { jest.useRealTimers() })
+
+  it('requests device location once on arrival without an IP fallback', async () => {
+    mockGetCurrentLocation.mockImplementation(() => new Promise(() => {}))
+    const { result } = renderHook(() => useWeatherController())
+    await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+    expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1)
+    expect(result.current.isAutoDetecting).toBe(true)
+    await act(async () => { await jest.advanceTimersByTimeAsync(1000) })
+    expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1)
+    expect(mockGetLocationByIP).not.toHaveBeenCalled()
+  })
+
+  it('does not duplicate a manual request made before automatic startup', async () => {
+    mockGetCurrentLocation.mockRejectedValue(new Error('permission denied'))
+    const { result } = renderHook(() => useWeatherController())
+    await act(async () => { await result.current.handleLocationSearch() })
+    await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+    expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1)
+    expect(mockGetLocationByIP).not.toHaveBeenCalled()
+  })
+
+  it.each(['city search', 'unmount'])('ignores late location after %s', async (action) => {
+    let resolveLocation: (value: LocationData) => void = () => {}
+    mockGetCurrentLocation.mockImplementation(() => new Promise<LocationData>((resolve) => {
+      resolveLocation = resolve
+    }))
+    const { result, unmount } = renderHook(() => useWeatherController())
+    await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+    expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      if (action === 'city search') result.current.cancelLocationDetection()
+      else unmount()
+    })
+    await act(async () => {
+      resolveLocation({ latitude: 40.7, longitude: -74, displayName: 'New York', source: 'geolocation' })
+    })
+    expect(fetchWeatherByLocation).not.toHaveBeenCalled()
+    expect(mockGetLocationByIP).not.toHaveBeenCalled()
+    expect(result.current.weather).toBeNull()
+  })
+
+  it('finishes detection with an error when access is denied', async () => {
+    mockGetCurrentLocation.mockRejectedValue(new Error('Location access denied'))
+    const { result } = renderHook(() => useWeatherController())
+    await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+    expect(result.current.isAutoDetecting).toBe(false)
+    expect(result.current.error).toBe('Location access denied')
+    expect(mockGetLocationByIP).not.toHaveBeenCalled()
+  })
+
+  it('recovers from an unanswered permission prompt and ignores its late result', async () => {
+    let resolveLocation: (value: LocationData) => void = () => {}
+    mockGetCurrentLocation.mockImplementation(() => new Promise<LocationData>((resolve) => {
+      resolveLocation = resolve
+    }))
+    const { result } = renderHook(() => useWeatherController())
+    await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+    await act(async () => { await jest.advanceTimersByTimeAsync(15_000) })
+    expect(result.current.isAutoDetecting).toBe(false)
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toMatch(/Location request timed out/)
+    await act(async () => {
+      resolveLocation({ latitude: 40.7, longitude: -74, displayName: 'New York', source: 'geolocation' })
+    })
+    expect(fetchWeatherByLocation).not.toHaveBeenCalled()
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -213,6 +290,7 @@ describe('handleSearch validation/errors', () => {
   })
 
   it('sets error "City not found" when fetchWeatherData resolves null', async () => {
+    // @ts-expect-error Deliberately exercise the defensive invalid-provider-response path.
     mockFetchWeatherData.mockResolvedValueOnce(null)
 
     const { result } = renderHook(() => useWeatherController())

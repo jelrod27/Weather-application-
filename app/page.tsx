@@ -12,7 +12,6 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { safeJsonLd } from '@/lib/utils'
-import { WeatherCardsSkeleton } from '@/components/home-shell'
 import FeaturedCityLinks from '@/components/featured-city-links'
 import HomeSeoContent from '@/components/home/home-seo-content'
 import {
@@ -21,6 +20,7 @@ import {
   HOMEPAGE_OG_TITLE,
   HOMEPAGE_TITLE,
 } from '@/lib/seo/homepage'
+import type { ReactElement } from 'react'
 
 // PERFORMANCE: Use next/dynamic for proper SSR streaming with fallback
 // This enables the server-rendered shell to display immediately as LCP
@@ -122,55 +122,20 @@ const jsonLd = {
 }
 
 /**
- * Server-rendered shell for LCP optimization
- * This renders immediately while the client component loads
- * Contains a large text element that becomes the LCP
+ * Compact server-rendered guidance while the interactive search loads.
  */
 function HomePageShell() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* LCP text only — document h1 lives on HomePage so the fallback is not a second heading */}
-        <p
-          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-8 text-primary glow"
-          style={{
-            fontFamily: 'var(--theme-font), monospace',
-            contentVisibility: 'auto',
-            containIntrinsicSize: '0 80px'
-          }}
-        >
-          16 BIT WEATHER
-        </p>
-
-        {/* Search placeholder */}
-        <div className="w-full max-w-2xl mx-auto mb-6">
-          <div className="flex gap-2">
-            <div className="flex-1 h-12 rounded-md border-2 bg-gray-800/50 border-gray-700 animate-pulse" />
-            <div className="w-24 h-12 rounded-md border-2 bg-gray-700/50 border-gray-600 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Welcome message */}
-        <div className="text-center mt-8 mb-8 px-2 sm:px-0">
-          <div className="w-full max-w-xl mx-auto">
-            <div className="p-2 sm:p-3 container-outer">
-              <p className="text-sm font-bold uppercase tracking-wider text-white" style={{
-                fontSize: "clamp(10px, 2.4vw, 14px)"
-              }}>
-                ══ INITIALIZING WEATHER TERMINAL ══
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Weather cards skeleton */}
-        <WeatherCardsSkeleton />
+    <div className="min-h-screen bg-background px-4 py-6">
+      <div className="mx-auto max-w-2xl">
+        <p className="mb-3 text-center text-sm text-muted-foreground">Allow location access, or search for a location.</p>
+        <div className="h-12 rounded-md border border-border bg-muted animate-pulse" aria-hidden="true" />
       </div>
     </div>
   )
 }
 
-export default function HomePage() {
+export default function HomePage(): ReactElement {
   return (
     <>
       {/* JSON-LD structured data - safe as jsonLd is a static constant */}
@@ -181,16 +146,11 @@ export default function HomePage() {
       />
       {/* PERFORMANCE: Suspense boundary for streaming - shell renders server-side */}
       <Suspense fallback={<HomePageShell />}>
-        <HomeClient />
+        <HomeClient>
+          <HomeSeoContent />
+          <FeaturedCityLinks title="Weather by city" />
+        </HomeClient>
       </Suspense>
-      {/* Deliberately after PageWrapper rather than inside <main>. The live
-          weather card is ~2000px tall and arrives after a client fetch; a block
-          this size sitting below it inside the viewport gets shoved down when
-          it lands, which measured a 0.33 cumulative layout shift. Down here the
-          shift happens off-screen and costs nothing, and the copy is still
-          server-rendered and indexed. */}
-      <HomeSeoContent />
-      <FeaturedCityLinks title="Weather by city" />
     </>
   )
 }

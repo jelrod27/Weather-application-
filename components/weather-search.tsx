@@ -21,6 +21,7 @@ import { type CityData } from "@/lib/cities"
 import { useLocationContext } from "./location-context"
 import { useTheme } from "./theme-provider"
 import { Input } from "@/components/ui/input"
+import type { ReactElement } from 'react'
 
 interface WeatherSearchProps {
   onSearch: (location: string) => void;
@@ -31,6 +32,7 @@ interface WeatherSearchProps {
   rateLimitError?: string;
   hideLocationButton?: boolean;
   isAutoDetecting?: boolean;
+  compactLocationPrompt?: boolean;
 }
 
 export default function WeatherSearch({
@@ -41,8 +43,9 @@ export default function WeatherSearch({
   isDisabled = false,
   rateLimitError,
   hideLocationButton = false,
-  isAutoDetecting = false
-}: WeatherSearchProps) {
+  isAutoDetecting = false,
+  compactLocationPrompt = false
+}: WeatherSearchProps): ReactElement {
   const { locationInput, setLocationInput, clearLocationState } = useLocationContext()
   const { theme } = useTheme()
   const [searchTerm, setSearchTerm] = useState(locationInput || "")
@@ -189,7 +192,21 @@ export default function WeatherSearch({
 
   return (
     <div className="mb-4 sm:mb-6 w-full max-w-2xl mx-auto">
-      <p className="mb-2 sm:mb-3 text-center px-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+      {compactLocationPrompt ? (
+        <div className="mb-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleLocationClick}
+            disabled={controlsDisabled || isAutoDetecting}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded px-2 font-medium text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:no-underline disabled:opacity-70"
+            aria-label={isAutoDetecting ? 'Waiting for location access' : 'Use my location'}
+          >
+            <MapPin className="size-4" aria-hidden="true" />
+            {isAutoDetecting ? 'Waiting for location…' : 'Use my location'}
+          </button>
+          <span>{isAutoDetecting ? 'or search below anytime' : 'or search below'}</span>
+        </div>
+      ) : <p className="mb-2 sm:mb-3 text-center px-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
         <span className="hidden sm:inline">
           Try{' '}
           <SearchExample value="90210" onPick={handleExamplePick} disabled={controlsDisabled} />
@@ -201,7 +218,7 @@ export default function WeatherSearch({
         <span className="sm:hidden">
           Search by ZIP, city and state, or city and country
         </span>
-      </p>
+      </p>}
 
       {/* Search Form - Mobile optimized */}
       <form onSubmit={handleSubmit} className="mb-3 sm:mb-4 px-2 sm:px-0">
@@ -213,7 +230,7 @@ export default function WeatherSearch({
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleInputKeyDown}
             onFocus={() => searchTerm.length >= 2 && setShowAutocomplete(true)}
-            placeholder={isDisabled ? "Rate limit reached…" : "Search city, state, or ZIP…"}
+            placeholder={isDisabled ? "Rate limit reached…" : compactLocationPrompt ? "Search for a location…" : "Search city, state, or ZIP…"}
             disabled={controlsDisabled}
             aria-label="Search location"
             className={cn(
@@ -283,7 +300,7 @@ export default function WeatherSearch({
       </form>
 
       {/* Location Button - Mobile friendly */}
-      {!hideLocationButton && onLocationSearch && (
+      {!hideLocationButton && !compactLocationPrompt && onLocationSearch && (
         <div className="flex justify-center px-2 sm:px-0">
           <Button
             onClick={handleLocationClick}
@@ -306,7 +323,7 @@ export default function WeatherSearch({
 
       {/* Error Display - Mobile responsive */}
       {(error || rateLimitError) && (
-        <div className={`p-3 sm:p-4 mx-2 sm:mx-0 ${themeClasses.errorBg} border ${themeClasses.errorText}
+        <div role="alert" className={`p-3 sm:p-4 mx-2 sm:mx-0 ${themeClasses.errorBg} border ${themeClasses.errorText}
                       text-xs sm:text-sm text-center pixel-font ${themeClasses.specialBorder}`}>
           <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
             <span>!</span>

@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-first-visit-weather.md](./PRD-first-visit-weather.md) | Clear first-visit weather choices and recovery when location is unavailable |
 | [PRD-weather-data-reliability.md](./PRD-weather-data-reliability.md) | Follow-up audit priorities 1–2: saved-location weather reliability, radar age, travel severity and location-aware Moon information; one authorized PR |
 | [PRD-beginner-stargazing.md](./PRD-beginner-stargazing.md) | PR 6 of the weather UX batch — approved beginner Stargazer path, suitable hours and targets, finding visuals, location continuity and data honesty; merged as PR #632; follow-up stabilization tracked in the UX scope |
 | [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | Travel turbulence forecast — **not started**. Stargazer-style command center at `/travel/turbulence`; v1 scores existing AWC G-AIRMET + PIREPs (ops map already ships on `/aviation`) |
