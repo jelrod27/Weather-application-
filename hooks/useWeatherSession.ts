@@ -16,6 +16,8 @@ export type UseWeatherSessionOptions = {
   enforceRateLimit?: boolean
   /** Initial loading flag (city pages start loading until the seed resolves). */
   initiallyLoading?: boolean
+  /** Optional deadline including time spent waiting for browser permission. */
+  locationTimeoutMs?: number
 }
 
 export type UseWeatherSessionResult = {
@@ -73,6 +75,7 @@ function hasFiniteCoords(latitude: unknown, longitude: unknown): boolean {
 export function useWeatherSession({
   enforceRateLimit = false,
   initiallyLoading = false,
+  locationTimeoutMs,
 }: UseWeatherSessionOptions = {}): UseWeatherSessionResult {
   const { setLocationInput, setCurrentLocation } = useLocationContext()
 
@@ -343,8 +346,20 @@ export function useWeatherSession({
     setError('')
     const loadId = beginLoad()
 
+    let locationTimer: ReturnType<typeof setTimeout> | undefined
     try {
-      const location = await locationService.getCurrentLocation()
+      const locationRequest = locationService.getCurrentLocation()
+      const location = locationTimeoutMs === undefined
+        ? await locationRequest
+        : await Promise.race([
+          locationRequest,
+          new Promise<never>((_, reject) => {
+            locationTimer = setTimeout(() => {
+              reject(new Error('Location request timed out. Search for a location or try again.'))
+            }, locationTimeoutMs)
+          }),
+        ])
+      if (locationTimer !== undefined) clearTimeout(locationTimer)
       if (isStale(loadId)) return
       await loadFromLocation(location, loadId)
       if (isStale(loadId)) return
@@ -356,11 +371,12 @@ export function useWeatherSession({
       console.error('Location error:', err)
       setError(err instanceof Error ? err.message : 'Failed to get your location')
     } finally {
+      if (locationTimer !== undefined) clearTimeout(locationTimer)
       if (!isStale(loadId)) {
         setLoading(false)
       }
     }
-  }, [beginLoad, enforceRateLimit, isClient, isStale, loadFromLocation])
+  }, [beginLoad, enforceRateLimit, isClient, isStale, loadFromLocation, locationTimeoutMs])
 
   const resetWeatherState = useCallback(() => {
     setWeather(null)

@@ -19,6 +19,7 @@ import dynamic from "next/dynamic"
 import Navigation from "./navigation"
 import Link from "next/link"
 import { getFeaturedCities } from "@/lib/featured-city-links"
+import type { ReactElement } from 'react'
 
 const WarningTakeover = dynamic(() => import("@/components/alerts/warning-takeover"), {
   ssr: false,
@@ -29,6 +30,7 @@ interface PageWrapperProps {
   weatherLocation?: string
   weatherTemperature?: number
   weatherUnit?: string
+  showFooter?: boolean
 }
 
 /**
@@ -40,7 +42,7 @@ interface PageWrapperProps {
  * Uses CSS variables for theming - colors automatically adapt
  * based on the data-theme attribute set by ThemeProvider.
  */
-export default function PageWrapper({ children, weatherLocation, weatherTemperature, weatherUnit }: PageWrapperProps) {
+export default function PageWrapper({ children, weatherLocation, weatherTemperature, weatherUnit, showFooter = true }: PageWrapperProps): ReactElement {
   const featuredCities = getFeaturedCities().slice(0, 10)
 
   return (
@@ -54,7 +56,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
       <main className="relative z-10">
         {children}
       </main>
-      <footer className="border-t border-border/40 bg-black/30 mt-16">
+      {showFooter && <footer className="border-t border-border/40 bg-black/30 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm font-mono">
             <div>
@@ -118,7 +120,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
             <p>&copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> 16-Bit Weather. All rights reserved.</p>
           </div>
         </div>
-      </footer>
+      </footer>}
     </div>
   )
-} 
+}

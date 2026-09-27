@@ -53,7 +53,11 @@ import { useHubLocation } from "@/hooks/use-hub-location"
 
 // API keys are now handled by internal API routes
 
-function WeatherApp() {
+interface WeatherAppProps {
+  children?: React.ReactNode
+}
+
+function WeatherApp({ children }: WeatherAppProps): React.ReactElement {
   const { theme } = useTheme()
   const router = useRouter()
 
@@ -63,6 +67,7 @@ function WeatherApp() {
     error,
     remainingSearches,
     handleLocationSearch,
+    cancelLocationDetection,
     isAutoDetecting,
     autoLocationAttempted
   } = useWeatherController()
@@ -81,24 +86,27 @@ function WeatherApp() {
   // loaded WeatherDisplay chunk has time to expand before the cities append.
   const [showCityLinks, setShowCityLinks] = React.useState(false)
   React.useEffect(() => {
-    if (autoLocationAttempted && !loading && !isAutoDetecting) {
+    if (weather && autoLocationAttempted && !loading && !isAutoDetecting) {
       const id = requestAnimationFrame(() => setShowCityLinks(true))
       return () => cancelAnimationFrame(id)
     }
-  }, [autoLocationAttempted, loading, isAutoDetecting])
+  }, [weather, autoLocationAttempted, loading, isAutoDetecting])
 
   // Manual searches use the same /weather/[city] experience as footer city links.
   const handleSearchWrapper = (locationInput: string) => {
     const trimmed = locationInput.trim()
     if (trimmed.length < 3) return
+    cancelLocationDetection()
     router.push(`/weather/${locationInputToSlug(trimmed)}`)
   }
 
   return (
+    <>
     <PageWrapper
       weatherLocation={weather?.location}
       weatherTemperature={weather?.temperature}
       weatherUnit={weather?.unit}
+      showFooter={Boolean(weather)}
     >
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="2xl" padding="md">
@@ -106,7 +114,9 @@ function WeatherApp() {
             <WeatherSearch
               onSearch={handleSearchWrapper}
               onLocationSearch={handleLocationSearch}
-              isLoading={loading || isAutoDetecting}
+              isLoading={loading && !isAutoDetecting}
+              isAutoDetecting={isAutoDetecting}
+              compactLocationPrompt={!weather}
               error={error}
               rateLimitError=""
               isDisabled={remainingSearches <= 0}
@@ -114,34 +124,9 @@ function WeatherApp() {
             />
           </ErrorBoundary>
 
-          <HomeHub userLocation={hubLocation} />
+          {weather && <HomeHub userLocation={hubLocation} />}
 
-          {/* Welcome Message — START is a clickable affordance that triggers geolocation. */}
-          {!weather && !loading && !error && !isAutoDetecting && (
-            <div className="text-center mt-8 mb-8 px-2 sm:px-0">
-              <div className="w-full max-w-xl mx-auto">
-                <div className="p-2 sm:p-3 border-0 shadow-lg bg-weather-bg-elev border-weather-primary shadow-weather-primary/20">
-                  <p className="text-sm font-bold uppercase tracking-wider text-white" style={{
-                    fontSize: "clamp(10px, 2.4vw, 14px)"
-                  }}>
-                    ══ PRESS{' '}
-                    <button
-                      type="button"
-                      onClick={handleLocationSearch}
-                      disabled={isAutoDetecting || loading}
-                      aria-label="Use my location to load weather"
-                      className="inline align-baseline font-bold uppercase tracking-wider text-weather-primary underline-offset-4 underline decoration-weather-primary/70 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-weather-primary focus-visible:outline-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer animate-pulse hover:animate-none"
-                    >
-                      START
-                    </button>
-                    {' '}TO INITIALIZE WEATHER DATA ══
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(loading || isAutoDetecting) && !weather && (
+          {loading && !isAutoDetecting && !weather && (
             <div className="mt-8">
               <WeatherSkeleton />
             </div>
@@ -153,17 +138,6 @@ function WeatherApp() {
               <span className="ml-2 text-weather-text">
                 Updating weather data...
               </span>
-            </div>
-          )}
-
-          {error && (
-            <div className="max-w-2xl mx-auto mt-4 px-2">
-              <div data-testid="global-error">
-                <div role="alert" className="relative w-full rounded-lg border border-red-500/50 p-4 text-red-500">
-                  <div className="mb-1 font-medium leading-none tracking-tight">Error</div>
-                  <div className="text-sm">{error}</div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -184,10 +158,12 @@ function WeatherApp() {
 
           {/* SEO City Links Section with Random Display — deferred until the weather
               region above has settled, so it appends instead of being shoved (CLS). */}
-          {showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
+          {weather && showCityLinks && <RandomCityLinks theme={theme || 'nord'} />}
         </ResponsiveContainer>
       </div>
     </PageWrapper>
+    <div hidden={!weather} data-testid="home-discovery">{children}</div>
+    </>
   )
 }
 
