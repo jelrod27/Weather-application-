@@ -67,6 +67,13 @@ export function useWeatherController(): UseWeatherControllerResult {
   const [autoLocationAttempted, setAutoLocationAttempted] = useState(false)
   const [isAutoDetecting, setIsAutoDetecting] = useState(false)
   const autoLocationStartedRef = useRef(false)
+  const manualLocationStartedRef = useRef(false)
+
+  const handleChosenLocationSearch = async () => {
+    manualLocationStartedRef.current = true
+    setAutoLocationAttempted(true)
+    await handleLocationSearch()
+  }
 
   useEffect(() => {
     setShouldClearOnRouteChange(true)
@@ -79,6 +86,7 @@ export function useWeatherController(): UseWeatherControllerResult {
     const tryAutoLocation = async () => {
       if (autoLocationStartedRef.current) return
       autoLocationStartedRef.current = true
+      if (manualLocationStartedRef.current) return
       try {
         const shouldAutoLocate = resolveAutoLocation(
           preferences,
@@ -103,21 +111,26 @@ export function useWeatherController(): UseWeatherControllerResult {
           return
         }
 
+        let geolocationGranted = false
+        if (navigator.permissions?.query) {
+          const permission = await navigator.permissions
+            .query({ name: 'geolocation' })
+            .catch(() => null)
+          geolocationGranted = permission?.state === 'granted'
+        }
+
+        if (manualLocationStartedRef.current) return
+
+        // A fresh visitor chooses when to request device location. In particular,
+        // do not hide the start options behind a silent network-based IP lookup.
+        if (!geolocationGranted) {
+          setAutoLocationAttempted(true)
+          return
+        }
+
         setIsAutoDetecting(true)
         try {
-          let geolocationGranted = false
-          if (navigator.permissions?.query) {
-            const perm = await navigator.permissions
-              .query({ name: 'geolocation' })
-              .catch(() => null)
-            geolocationGranted = perm?.state === 'granted'
-          }
-
-          if (geolocationGranted) {
-            await loadFromLocation(await detectWithTimeout())
-          } else {
-            throw new Error('Geolocation requires prompt, using IP fallback for perf')
-          }
+          await loadFromLocation(await detectWithTimeout())
         } catch {
           try {
             const ipLocation = await locationService.getLocationByIP()
@@ -195,7 +208,7 @@ export function useWeatherController(): UseWeatherControllerResult {
     hasSearched,
     remainingSearches,
     handleSearch,
-    handleLocationSearch,
+    handleLocationSearch: handleChosenLocationSearch,
     isAutoDetecting,
     autoLocationAttempted,
   }

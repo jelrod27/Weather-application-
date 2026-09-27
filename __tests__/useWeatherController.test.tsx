@@ -3,10 +3,8 @@
  * Pins rate limiting, search-cache keying, stale-response (loadId) guards,
  * and error paths as they behave today. See plan 001.
  *
- * NOTE: Auto-location effect tests (Step 6) are intentionally omitted.
- * The 50ms setTimeout + navigator.permissions + IP-geolocation chain makes
- * fake-timer interleaving too fragile to be a reliable characterization pin.
- * Plan 009 can revisit once the effect is extracted.
+ * The delayed permission check is pinned below so a visitor's manual choice
+ * cannot race the automatic granted-permission path.
  */
 import { renderHook, act } from '@testing-library/react'
 import type { WeatherData } from '@/lib/types'
@@ -51,10 +49,13 @@ import { fetchWeatherData } from '@/lib/weather'
 import { useLocationContext } from '@/components/location-context'
 import { useAuth } from '@/lib/auth'
 import { toastService } from '@/lib/toast-service'
+import { locationService } from '@/lib/location-service'
 
 const mockFetchWeatherData = fetchWeatherData as jest.MockedFunction<typeof fetchWeatherData>
 const mockUseLocationContext = useLocationContext as jest.Mock
 const mockUseAuth = useAuth as jest.Mock
+const mockGetCurrentLocation = locationService.getCurrentLocation as jest.Mock
+const mockGetLocationByIP = locationService.getLocationByIP as jest.Mock
 
 /** Build a minimal valid WeatherData object. All required fields are present; optional fields omitted. */
 const makeWeather = (overrides: Record<string, unknown> = {}): WeatherData => ({
@@ -108,6 +109,45 @@ beforeEach(() => {
   // early at line 389 of the hook while auth is loading), isolating the
   // callback layer for all tests in this file.
   mockUseAuth.mockReturnValue({ profile: null, preferences: null, loading: true })
+})
+
+describe('automatic location bootstrap', () => {
+  it('lets a manual location choice cancel a pending automatic permission check', async () => {
+    jest.useFakeTimers()
+    const originalPermissions = navigator.permissions
+    let resolvePermission: (value: { state: string }) => void = () => {}
+    const permissionQuery = jest.fn(() => new Promise<{ state: string }>((resolve) => {
+      resolvePermission = resolve
+    }))
+    Object.defineProperty(navigator, 'permissions', {
+      configurable: true,
+      value: { query: permissionQuery },
+    })
+    mockUseAuth.mockReturnValue({ profile: null, preferences: null, loading: false })
+    mockGetCurrentLocation.mockRejectedValue(new Error('permission denied'))
+
+    try {
+      const { result } = renderHook(() => useWeatherController())
+      await act(async () => { await jest.advanceTimersByTimeAsync(50) })
+      expect(permissionQuery).toHaveBeenCalledTimes(1)
+
+      await act(async () => { await result.current.handleLocationSearch() })
+      await act(async () => {
+        resolvePermission({ state: 'granted' })
+        await Promise.resolve()
+      })
+
+      expect(mockGetCurrentLocation).toHaveBeenCalledTimes(1)
+      expect(mockGetLocationByIP).not.toHaveBeenCalled()
+      expect(result.current.autoLocationAttempted).toBe(true)
+    } finally {
+      Object.defineProperty(navigator, 'permissions', {
+        configurable: true,
+        value: originalPermissions,
+      })
+      jest.useRealTimers()
+    }
+})
 })
 
 // ---------------------------------------------------------------------------

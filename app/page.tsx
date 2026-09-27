@@ -15,6 +15,7 @@ import { safeJsonLd } from '@/lib/utils'
 import { WeatherCardsSkeleton } from '@/components/home-shell'
 import FeaturedCityLinks from '@/components/featured-city-links'
 import HomeSeoContent from '@/components/home/home-seo-content'
+import { HomeStartIntro } from '@/components/home/home-start-intro'
 import {
   HOMEPAGE_DESCRIPTION,
   HOMEPAGE_OG_IMAGE,
@@ -150,18 +151,9 @@ function HomePageShell() {
           </div>
         </div>
 
-        {/* Welcome message */}
-        <div className="text-center mt-8 mb-8 px-2 sm:px-0">
-          <div className="w-full max-w-xl mx-auto">
-            <div className="p-2 sm:p-3 container-outer">
-              <p className="text-sm font-bold uppercase tracking-wider text-white" style={{
-                fontSize: "clamp(10px, 2.4vw, 14px)"
-              }}>
-                ══ INITIALIZING WEATHER TERMINAL ══
-              </p>
-            </div>
-          </div>
-        </div>
+        <HomeStartIntro id="home-shell-get-started">
+          <p className="mt-3 text-sm text-muted-foreground">Preparing location options…</p>
+        </HomeStartIntro>
 
         {/* Weather cards skeleton */}
         <WeatherCardsSkeleton />

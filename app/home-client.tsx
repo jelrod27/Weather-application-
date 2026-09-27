@@ -47,6 +47,7 @@ import { useWeatherController } from "@/hooks/useWeatherController"
 import { usePrecipitationHistory } from "@/hooks/usePrecipitationHistory"
 import { locationInputToSlug } from "@/lib/city-slug"
 import { useHubLocation } from "@/hooks/use-hub-location"
+import { HomeStartIntro } from '@/components/home/home-start-intro'
 
 // Note: UV Index data is now only available in One Call API 3.0 (paid subscription required)
 // The main weather API handles UV index estimation for free accounts
@@ -94,6 +95,10 @@ function WeatherApp() {
     router.push(`/weather/${locationInputToSlug(trimmed)}`)
   }
 
+  const focusCitySearch = () => {
+    document.querySelector<HTMLInputElement>('[data-testid="location-search-input"]')?.focus()
+  }
+
   return (
     <PageWrapper
       weatherLocation={weather?.location}
@@ -102,6 +107,35 @@ function WeatherApp() {
     >
       <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--background))] to-[hsl(var(--card))]">
         <ResponsiveContainer maxWidth="2xl" padding="md">
+          {!weather && (
+            <HomeStartIntro id="home-get-started">
+              <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleLocationSearch}
+                  disabled={loading || isAutoDetecting}
+                  className="rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
+                >
+                  Use my location
+                </button>
+                <button
+                  type="button"
+                  onClick={focusCitySearch}
+                  disabled={loading || isAutoDetecting || remainingSearches <= 0}
+                  className="rounded-md border border-primary px-5 py-3 font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
+                >
+                  Search for a city
+                </button>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {remainingSearches <= 0
+                  ? 'City search is temporarily unavailable because the search limit was reached.'
+                  : loading || isAutoDetecting
+                    ? 'Search will be available when the current weather load finishes.'
+                    : 'Your browser will ask for location access only if you choose to use it.'}
+              </p>
+            </HomeStartIntro>
+          )}
           <ErrorBoundary componentName="Weather Search">
             <WeatherSearch
               onSearch={handleSearchWrapper}
@@ -115,31 +149,6 @@ function WeatherApp() {
           </ErrorBoundary>
 
           <HomeHub userLocation={hubLocation} />
-
-          {/* Welcome Message — START is a clickable affordance that triggers geolocation. */}
-          {!weather && !loading && !error && !isAutoDetecting && (
-            <div className="text-center mt-8 mb-8 px-2 sm:px-0">
-              <div className="w-full max-w-xl mx-auto">
-                <div className="p-2 sm:p-3 border-0 shadow-lg bg-weather-bg-elev border-weather-primary shadow-weather-primary/20">
-                  <p className="text-sm font-bold uppercase tracking-wider text-white" style={{
-                    fontSize: "clamp(10px, 2.4vw, 14px)"
-                  }}>
-                    ══ PRESS{' '}
-                    <button
-                      type="button"
-                      onClick={handleLocationSearch}
-                      disabled={isAutoDetecting || loading}
-                      aria-label="Use my location to load weather"
-                      className="inline align-baseline font-bold uppercase tracking-wider text-weather-primary underline-offset-4 underline decoration-weather-primary/70 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-weather-primary focus-visible:outline-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer animate-pulse hover:animate-none"
-                    >
-                      START
-                    </button>
-                    {' '}TO INITIALIZE WEATHER DATA ══
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {(loading || isAutoDetecting) && !weather && (
             <div className="mt-8">
