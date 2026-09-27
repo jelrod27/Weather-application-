@@ -8,6 +8,26 @@ import {
 import { TOPIC_SLUGS } from '../../scripts/newsletter/topics';
 import { allowedBlogUrl } from '../../lib/blog/allowed-hosts';
 
+describe('newsletter source links', () => {
+  it.each([
+    'https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-09-20T16%3A30%3A00Z',
+    'https://api.open-meteo.com/v1/forecast?latitude=32.78&longitude=-96.8',
+  ])('keeps a primary-data citation clickable: %s', (url) => {
+    expect(allowedBlogUrl(url)).toBe(url);
+  });
+
+  it.each([
+    'http://mesonet.agron.iastate.edu/api/1/',
+    'http://api.open-meteo.com/v1/forecast',
+    'https://mesonet.agron.iastate.edu.attacker.example/api/1/',
+    'https://api.open-meteo.com.attacker.example/v1/forecast',
+    'https://api.open-meteo.com@attacker.example/v1/forecast',
+    '//api.open-meteo.com/v1/forecast',
+  ])('rejects insecure or misleading citation destinations: %s', (url) => {
+    expect(allowedBlogUrl(url)).toBeNull();
+  });
+});
+
 describe('IMAGES catalog', () => {
   it('contains at least 50 entries', () => {
     expect(IMAGES.length).toBeGreaterThanOrEqual(50);
