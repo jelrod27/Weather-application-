@@ -37,3 +37,11 @@
 [data-theme="clear-sky"] :is(button,a,input,select,textarea):focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:3px; }
 
 [data-theme="clear-sky"] :is(.site-footer,.supporting-site-content) { background:hsl(var(--card)); }
+
+/* Keep small labels fully opaque on pale forecast cards and severity badge fills. */
+[data-theme="clear-sky"] :is(.hourly-forecast-card,.forecast-day-card) .text-muted-foreground\/90 { color:hsl(var(--muted-foreground)); }
+[data-theme="clear-sky"] :is(.hourly-forecast-card,.forecast-day-card) :is(.text-primary\/85,.text-primary\/90) { color:hsl(var(--primary)); }
+[data-theme="clear-sky"] .wis-badge.text-green-400 { color:#166534; }
+[data-theme="clear-sky"] .wis-badge.text-yellow-400 { color:#713f12; }
+[data-theme="clear-sky"] .wis-badge.text-orange-400 { color:#7c2d12; }
+[data-theme="clear-sky"] .wis-badge.text-red-400 { color:#881337; }

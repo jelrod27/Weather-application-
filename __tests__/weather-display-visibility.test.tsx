@@ -103,6 +103,7 @@ it.each(['°F', '°C'])('preserves supplied condition readings and units in %s',
   for (const reading of ['58°', '6° cooler', '71%', unit === '°F' ? '29.36 in' : '994 hPa', '7:00 am', '6:56 pm', '0.12"', '39.1']) {
     expect(within(conditions).getByText(reading)).toBeInTheDocument();
   }
+  expect(within(conditions).getByRole('progressbar', { name: 'Humidity' })).toHaveAttribute('aria-valuenow', '71');
   expect(within(conditions).getByText(`Gusts 16.1 ${unit === '°F' ? 'mph' : 'km/h'}`)).toBeInTheDocument();
   expect(screen.getByText('0% illuminated')).toBeInTheDocument();
 });

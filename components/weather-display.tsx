@@ -207,6 +207,7 @@ export function WeatherDisplay({
                     {hasIllumination ? `${illumination}% illuminated` : 'Illumination unavailable'}
                   </p>
                   {hasIllumination && <Progress
+                    aria-label="Moon illumination"
                     value={illumination}
                     className="h-1.5 mt-1"
                     indicatorColor="#EBCB8B"

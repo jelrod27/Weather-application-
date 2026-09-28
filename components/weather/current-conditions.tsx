@@ -66,11 +66,13 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
             >
               {uvSeverity.label}
             </Badge>
-            <Progress
+            {uvValue != null && <Progress
+              aria-label="UV index severity"
+              aria-valuetext={`UV index ${uvValue}, ${uvSeverity.label}`}
               value={uvSeverity.percentage}
               className="h-1.5 mt-3"
               indicatorColor={uvSeverity.bgColor}
-            />
+            />}
           </CardContent>
         </Card>
 
@@ -155,11 +157,12 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
               {humidityValue != null ? `${humidityValue}%` : 'N/A'}
             </p>
-            <Progress
-              value={humidityValue ?? 0}
+            {humidityValue != null && <Progress
+              aria-label="Humidity"
+              value={humidityValue}
               className="h-1.5 mt-3"
               indicatorColor={humiditySeverity.bgColor}
-            />
+            />}
             <Badge
               variant="outline"
               className="mt-2 border-0"
