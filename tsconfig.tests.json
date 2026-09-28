@@ -38,6 +38,7 @@
     "__tests__/stargazer/**/*.test.tsx",
     "tests/e2e/stargazer-beginner.spec.ts",
     "tests/e2e/weather-ui-journey.spec.ts",
+    "tests/e2e/clear-sky.spec.ts",
     "__tests__/dashboard-weather-service.test.ts",
     "__tests__/dashboard-weather-route.test.ts",
     "__tests__/useDashboardWeather.test.tsx",
@@ -55,7 +56,13 @@
     "__tests__/worst-corridors.test.tsx",
     "__tests__/trip-score-service.test.ts",
     "__tests__/cache/ttl-cache.test.ts",
-    "tests/e2e/weather-data-reliability.spec.ts"
+    "tests/e2e/weather-data-reliability.spec.ts",
+    "__tests__/theme-provider.test.tsx",
+    "__tests__/theme-config.test.ts",
+    "__tests__/theme-constraint-parity.test.ts",
+    "tests/e2e/clear-sky.spec.ts",
+    "__tests__/theme-contrast.test.ts",
+    "__tests__/air-quality-display.test.tsx"
   ],
   "exclude": [
     "node_modules",
