@@ -87,7 +87,7 @@ export default function UpdatePasswordPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className={`w-12 h-12 border-2 flex items-center justify-center mx-auto mb-4 ${themeClasses.accentBg} ${themeClasses.borderColor}`}>
-            <span className="text-black font-bold text-lg">16</span>
+            <span className="text-primary-foreground font-bold text-lg">16</span>
           </div>
           <h1 className={`text-2xl font-bold uppercase tracking-wider font-mono mb-2 ${themeClasses.text}`}>
             Set New Password
@@ -118,7 +118,7 @@ export default function UpdatePasswordPage() {
             </p>
             <Link
               href="/auth/reset-password"
-              className={`inline-block w-full px-4 py-3 border-2 text-sm font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} ${themeClasses.borderColor} text-black ${themeClasses.glow}`}
+              className={`inline-block w-full px-4 py-3 border-2 text-sm font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} ${themeClasses.borderColor} text-primary-foreground ${themeClasses.glow}`}
             >
               Request New Link
             </Link>
@@ -166,7 +166,7 @@ export default function UpdatePasswordPage() {
             <button
               type="submit"
               disabled={loading || hasSession === null}
-              className={`w-full px-4 py-3 border-2 text-sm font-mono font-bold uppercase tracking-wider transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.accentBg} ${themeClasses.borderColor} text-black ${themeClasses.glow}`}
+              className={`w-full px-4 py-3 border-2 text-sm font-mono font-bold uppercase tracking-wider transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.accentBg} ${themeClasses.borderColor} text-primary-foreground ${themeClasses.glow}`}
               data-testid="update-password-submit"
             >
               {loading ? 'Updating...' : 'Update Password'}

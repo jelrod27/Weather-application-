@@ -56,7 +56,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
       <main className="relative z-10">
         {children}
       </main>
-      {showFooter && <footer className="border-t border-border/40 bg-black/30 mt-16">
+      {showFooter && <footer className="site-footer border-t border-border/40 bg-black/30 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm font-mono">
             <div>

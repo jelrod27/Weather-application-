@@ -11,7 +11,7 @@ export default function HomeSeoContent() {
   return (
     <section
       aria-labelledby="home-about-heading"
-      className="border-t border-border/40 bg-black/20 py-10"
+      className="supporting-site-content border-t border-border/40 bg-black/20 py-10"
       data-testid="home-seo-content"
     >
       <div className="mx-auto max-w-3xl px-4 font-mono text-sm leading-relaxed text-muted-foreground">

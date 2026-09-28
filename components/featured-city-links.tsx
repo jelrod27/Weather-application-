@@ -33,7 +33,7 @@ export default function FeaturedCityLinks({
   return (
     <section
       aria-labelledby="featured-city-forecasts"
-      className="border-t border-border/40 bg-black/20 py-10"
+      className="supporting-site-content border-t border-border/40 bg-black/20 py-10"
     >
       <div className="max-w-6xl mx-auto px-4">
         <h2
