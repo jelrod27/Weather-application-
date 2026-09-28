@@ -30,7 +30,13 @@ it.each([
   const card = screen.getByText('Visibility').closest('.weather-metric-card') as HTMLElement;
   expect(within(card).getByText(label)).toBeInTheDocument();
   expect(within(card).getByText(value)).toBeInTheDocument();
-  if (label === 'Unavailable') expect(within(card).queryByText('Clear')).not.toBeInTheDocument();
+  if (label === 'Unavailable') {
+    expect(within(card).queryByText('Clear')).not.toBeInTheDocument();
+    expect(within(card).queryByText('mi')).not.toBeInTheDocument();
+    expect(within(card).getByText(value)).toHaveTextContent(/^N\/A$/);
+  } else {
+    expect(within(card).getByText('mi')).toBeInTheDocument();
+  }
 });
 
 it.each([

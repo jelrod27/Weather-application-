@@ -269,9 +269,8 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
           <CardContent className="text-center pt-2 px-4 pb-4">
             <p className={cn("text-3xl font-bold tabular-nums", themeClasses.text)}>
               {visibilitySeverity
-                ? `${visibilityMi}`
+                ? <>{visibilityMi}<span className="text-lg ml-1">mi</span></>
                 : 'N/A'}
-              <span className="text-lg ml-1">mi</span>
             </p>
             <Badge
               variant="outline"
