@@ -1,0 +1,230 @@
+[
+  {
+    "name": "before",
+    "width": 320,
+    "browserName": "chromium",
+    "overflow": true,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 320,
+    "browserName": "chromium",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "before",
+    "width": 390,
+    "browserName": "chromium",
+    "overflow": false,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 390,
+    "browserName": "chromium",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "before",
+    "width": 1440,
+    "browserName": "chromium",
+    "overflow": false,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 1440,
+    "browserName": "chromium",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "before",
+    "width": 320,
+    "browserName": "firefox",
+    "overflow": true,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 320,
+    "browserName": "firefox",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "before",
+    "width": 390,
+    "browserName": "firefox",
+    "overflow": false,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 390,
+    "browserName": "firefox",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "before",
+    "width": 1440,
+    "browserName": "firefox",
+    "overflow": false,
+    "daily": 7,
+    "theme": "daybreak",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  },
+  {
+    "name": "after",
+    "width": 1440,
+    "browserName": "firefox",
+    "overflow": false,
+    "daily": 7,
+    "theme": "clear-sky",
+    "inventory": [
+      "UV Index3Moderate",
+      "Feels Like58°6° cooler",
+      "Sun TimesRise7:00 amSet6:56 pm",
+      "Humidity71%Humid",
+      "Pressure29.35 inLow",
+      "Wind11.9 mphWGusts 16.1 mphBreezy",
+      "Precipitation0.12\"24h Total",
+      "Visibility9.9miModerate",
+      "PollenPollen CountTreeBirchLowGrassGrassModerateWeedRagweedVery Low"
+    ]
+  }
+]
