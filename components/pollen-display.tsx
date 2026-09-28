@@ -19,6 +19,7 @@
 
 import { cn } from '@/lib/utils'
 import { getPollenColor } from '@/lib/air-quality-utils'
+import { isLightTheme } from '@/lib/theme-config'
 import type { ThemeType } from '@/lib/theme-config'
 
 interface PollenData {
@@ -43,7 +44,7 @@ interface PollenCategoryProps {
 
 function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCategoryProps) {
   // Theme-aware text styles using CSS variables
-  const textStyles = minimal ? 'text-white/80' : 'text-foreground'
+  const textStyles = 'text-foreground'
 
   // Filter out unavailable entries; None and numeric levels are valid readings
   const validData = Object.entries(categoryData ?? {}).filter(
@@ -55,7 +56,7 @@ function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCa
   const renderPollenData = () => {
     if (validData.length === 0) {
       return (
-        <p className={cn("text-sm whitespace-nowrap", textStyles)}>
+        <p className={cn("text-sm", textStyles)}>
           No Data
         </p>
       )
@@ -66,10 +67,10 @@ function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCa
         <ul className="space-y-1 leading-tight">
           {validData.map(([plant, category]) => (
             <li key={plant}>
-              <div className={cn("text-[11px] truncate", textStyles)} title={plant}>
+              <div className={cn("text-xs break-words", textStyles)} title={plant}>
                 {plant}
               </div>
-              <div className={cn("text-xs font-semibold whitespace-nowrap", getPollenColor(category))}>
+              <div className={cn("text-xs font-semibold", getPollenColor(category, isLightTheme(theme)))}>
                 {category}
               </div>
             </li>
@@ -79,7 +80,7 @@ function PollenCategory({ categoryName, categoryData, theme, minimal }: PollenCa
     }
 
     return validData.map(([plant, category]) => (
-      <p key={plant} className={cn("text-sm whitespace-nowrap", getPollenColor(category))}>
+      <p key={plant} className={cn("text-sm", getPollenColor(category, isLightTheme(theme)))}>
         {plant}: {category}
       </p>
     ))
@@ -101,7 +102,7 @@ export function PollenDisplay({ pollen, theme, className, minimal = false }: Pol
     ? {
         container: '',
         header: '',
-        text: 'text-white/80',
+        text: 'text-foreground',
         border: 'border-white/20'
       }
     : {
