@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures'
 import { stubWeatherApis, stubHomeHubApis, stubRadarApis, dismissWarningTakeoverIfPresent } from '../fixtures/utils'
 
-for (const width of [320, 390, 1440]) {
+for (const width of [320, 390, 768, 1024, 1440]) {
   test.describe(`Clear Sky complete forecast at ${width}px`, () => {
     test.use({ viewport: { width, height: 1000 }, contextOptions: { reducedMotion: 'reduce' } })
     test('preserves every condition and the connected forecast tools', async ({ page }) => {
@@ -33,6 +33,8 @@ for (const width of [320, 390, 1440]) {
       const discoveryBeforeDetails = await discovery.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('.weather-layout-details')!) & Node.DOCUMENT_POSITION_FOLLOWING))
       expect(discoveryBeforeDetails).toBe(width >= 1200)
       // Keyboard order should visit the next discovery link, then the first daily forecast on desktop.
+      // The forecast is a separate lazy chunk; wait for its focus target before tabbing.
+      await expect(page.locator('.forecast-day-card').first()).toBeVisible()
       await radarLink.focus()
       await page.keyboard.press('Tab')
       await expect(page.getByRole('link', { name:/Learn to read the sky/ })).toBeFocused()
@@ -46,6 +48,18 @@ for (const width of [320, 390, 1440]) {
       const day = page.locator('.forecast-day-card').first()
       await day.click()
       await expect(page.getByText('DETAILED FORECAST', { exact: true })).toBeVisible()
+      if (width === 768 || width === 1024) {
+        await page.setViewportSize({ width, height: 768 })
+        await page.getByRole('button', { name: 'Toggle navigation menu' }).click()
+        const menu = page.getByRole('navigation', { name: 'Mobile navigation' })
+        const about = menu.getByRole('link', { name: 'ABOUT', exact: true })
+        await about.scrollIntoViewIfNeeded()
+        const bounds = await about.boundingBox()
+        expect(bounds).not.toBeNull()
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(768)
+        await about.click()
+        await expect(page).toHaveURL(/\/about$/)
+      }
     })
   })
 }
