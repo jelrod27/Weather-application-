@@ -22,10 +22,10 @@ import type { WeatherData } from '@/lib/types'
 const RadarShell = dynamicImport(() => import('@/components/radar-v2/radar-shell'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-black">
-      <div className="text-center text-white">
+    <div className="flex h-full w-full items-center justify-center bg-background">
+      <div className="text-center text-foreground">
         <div className="mb-2 text-lg font-semibold">Loading radar…</div>
-        <div className="text-sm text-zinc-400">Fetching RainViewer frames</div>
+        <div className="text-sm text-muted-foreground">Fetching RainViewer frames</div>
       </div>
     </div>
   ),
@@ -47,31 +47,31 @@ function RadarOverlayShell({
   children?: React.ReactNode
 }) {
   return (
-    <div className="fixed inset-0 z-40 flex min-h-dvh flex-col bg-black text-white">
+    <div className="fixed inset-0 z-40 flex min-h-dvh flex-col bg-background text-foreground">
       {title ? (
         <>
-          <header className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+          <header className="flex items-center gap-3 border-b border-border px-4 py-3">
             <Link
               href={returnHref}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-mono hover:bg-white/5"
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-mono hover:bg-secondary"
             >
               <ArrowLeft className="h-4 w-4" />
               {returnLabel}
             </Link>
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">Weather Radar</span>
+            <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Weather Radar</span>
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-            <h2 className="text-xl font-bold font-mono text-cyan-300">{title}</h2>
-            {body ? <p className="max-w-md text-sm text-zinc-400">{body}</p> : null}
+            <h2 className="text-xl font-bold font-mono text-primary">{title}</h2>
+            {body ? <p className="max-w-md text-sm text-muted-foreground">{body}</p> : null}
             {children}
           </div>
         </>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
-          <MapIcon className="h-10 w-10 text-cyan-400" aria-hidden="true" />
-          <p className="font-mono text-sm uppercase tracking-widest text-zinc-400">{message}</p>
+          <MapIcon className="h-10 w-10 text-primary" aria-hidden="true" />
+          <p className="font-mono text-sm uppercase tracking-widest text-muted-foreground">{message}</p>
           <Link href={returnHref} className="min-h-11 inline-flex items-center text-sm underline">{returnLabel}</Link>
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}
     </div>
