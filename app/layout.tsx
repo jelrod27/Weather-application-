@@ -136,8 +136,8 @@ export const metadata: Metadata = {
     }
   },
   other: {
-    'theme-color': '#0a0a1a',
-    'msapplication-TileColor': '#0a0a1a',
+    'theme-color': '#f0f5fa',
+    'msapplication-TileColor': '#f0f5fa',
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
     'geo.region': 'US',

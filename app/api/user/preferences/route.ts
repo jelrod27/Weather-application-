@@ -22,6 +22,7 @@ import {
 } from '@/lib/validations/preferences'
 import { trySyncSevereAlertSubscriptions } from '@/lib/services/severe-alert-subscription-sync'
 import { logRouteError } from '@/lib/error-utils'
+import { DEFAULT_THEME } from '@/lib/theme-config'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
 // GET /api/user/preferences - Fetch user preferences
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         preferences: preferences || {
           user_id: user.id,
-          theme: 'nord',
+          theme: DEFAULT_THEME,
           temperature_unit: 'fahrenheit',
           wind_unit: 'mph',
           auto_location: false,

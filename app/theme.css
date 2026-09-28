@@ -1,17 +1,64 @@
 /* ═══════════════════════════════════════════════════════════
    16-BIT WEATHER - CANONICAL THEME DEFINITIONS
    Single source of truth for all themes.
-   Nord is the canonical default theme.
+   Clear Sky is the default for visitors without a saved preference.
    Every theme defines EXACTLY the same tokens.
    ═══════════════════════════════════════════════════════════ */
 
 @layer base {
 
-  /* 
-   * THEME: NORD (Default)
-   * The authoritative default theme. Uses official Nord palette.
-   */
+  /* Clear Sky: the selected light palette. Keep token types consistent with all themes. */
   :root,
+  [data-theme="clear-sky"] {
+    --background: 210 50% 96%;
+    --foreground: 210 52% 19%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 52% 19%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 52% 19%;
+    --primary: 216 72% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 58% 93%;
+    --secondary-foreground: 210 52% 19%;
+    --muted: 214 42% 92%;
+    --muted-foreground: 212 21% 40%;
+    --accent: 216 72% 47%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 43%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 212 20% 70%;
+    --input: 0 0% 100%;
+    --ring: 216 72% 47%;
+    --radius: 0.375rem;
+    --bg: hsl(210 50% 96%);
+    --bg-elev: hsl(0 0% 100%);
+    --text: hsl(210 52% 19%);
+    --text-muted: hsl(212 21% 40%);
+    --weather-primary: hsl(216 72% 47%);
+    --weather-accent: hsl(216 72% 47%);
+    --theme-accent-rgb: 33, 101, 206;
+    --theme-bg-rgb: 240, 245, 250;
+    --border-invisible: rgba(23, 47, 73, 0.10);
+    --border-subtle: rgba(23, 47, 73, 0.18);
+    --border-hover: rgba(33, 101, 206, 0.5);
+    --border-focus: rgba(33, 101, 206, 0.8);
+    --glow-container: 0 1px 3px rgba(23, 47, 73, 0.06);
+    --glow-hover: 0 0 0 1px rgba(33, 101, 206, 0.4);
+    --glow-focus: 0 0 0 2px rgba(33, 101, 206, 0.8);
+    --glow-subtle: 0 1px 2px rgba(23, 47, 73, 0.05);
+    --glow-medium: 0 3px 12px -6px rgba(23, 47, 73, 0.12);
+    --glow-strong: 0 6px 20px -8px rgba(23, 47, 73, 0.16);
+    --card-bg-tint: rgba(33, 101, 206, 0.03);
+    --card-bg-hover: rgba(33, 101, 206, 0.06);
+    --theme-font: var(--font-inconsolata), 'Inconsolata', monospace;
+    --font-body: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  }
+
+
+  /* 
+   * THEME: NORD
+   * Uses the official Nord palette.
+   */
   [data-theme="nord"] {
     --background: 220 16% 22%;
     --foreground: 218 27% 94%;

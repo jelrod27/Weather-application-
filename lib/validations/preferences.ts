@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod'
-import { THEME_LIST, type ThemeType } from '@/lib/theme-config'
+import { DEFAULT_THEME, THEME_LIST, type ThemeType } from '@/lib/theme-config'
 
 // Unit type enums (matching database schema)
 export const temperatureUnitSchema = z.enum(['celsius', 'fahrenheit'])
@@ -38,7 +38,7 @@ export const updatePreferencesSchema = z.object({
  * Uses defaults for required fields
  */
 export const createPreferencesSchema = z.object({
-  theme: themeSchema.default('nord'),
+  theme: themeSchema.default(DEFAULT_THEME),
   temperature_unit: temperatureUnitSchema.default('fahrenheit'),
 }).strict()
 
