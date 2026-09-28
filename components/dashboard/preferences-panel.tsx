@@ -166,7 +166,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
                   className={cn(
                     'px-4 py-2 font-mono text-sm uppercase tracking-wider transition-colors',
                     selected
-                      ? `${themeClasses.accentBg} text-black`
+                      ? `${themeClasses.accentBg} text-primary-foreground`
                       : `${themeClasses.text} hover:bg-white/10`,
                   )}
                 >
@@ -192,7 +192,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
             onChange={(event) => setWindUnit(event.target.value as WindUnit)}
             className={cn(
               'w-full max-w-xs rounded-md border-2 px-3 py-2 font-mono text-sm',
-              'bg-black/40 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]',
+              'bg-card focus:outline-none focus:ring-2 focus:ring-ring',
               themeClasses.borderColor,
               themeClasses.text,
             )}
@@ -206,7 +206,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
         </div>
 
         {/* Auto-detect Location */}
-        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-black/20 border-[var(--weather-border)]">
+        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-secondary/40 border-[var(--weather-border)]">
           <div className="space-y-0.5">
             <Label className={`flex items-center gap-2 font-mono uppercase tracking-wider ${themeClasses.text}`}>
               <MapPin className="w-4 h-4" aria-hidden="true" />
@@ -224,7 +224,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
         </div>
 
         {/* Notifications (UI only until Condition Watch ships) */}
-        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-black/20 border-[var(--weather-border)]">
+        <div className="flex items-center justify-between p-4 border-2 rounded-lg bg-secondary/40 border-[var(--weather-border)]">
           <div className="space-y-0.5">
             <Label className={`flex items-center gap-2 font-mono uppercase tracking-wider ${themeClasses.text}`}>
               <Bell className="w-4 h-4" aria-hidden="true" />
@@ -257,7 +257,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
               onChange={(event) => setDefaultLocation(event.target.value)}
               className={cn(
                 'w-full max-w-md rounded-md border-2 px-3 py-2 font-mono text-sm',
-                'bg-black/40 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]',
+                'bg-card focus:outline-none focus:ring-2 focus:ring-ring',
                 themeClasses.borderColor,
                 themeClasses.text,
               )}

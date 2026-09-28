@@ -12,7 +12,7 @@
 /**
  * Get color class for AQI value using EPA AQI scale (0-500, lower = better)
  */
-export const getAQIColor = (aqi: number): string => {
+const aqiColor = (aqi: number): string => {
   if (aqi <= 50) return 'text-green-400 font-semibold';        // Good (0-50)
   if (aqi <= 100) return 'text-yellow-400 font-semibold';      // Moderate (51-100)
   if (aqi <= 150) return 'text-orange-400 font-semibold';      // Unhealthy for Sensitive Groups (101-150)
@@ -86,7 +86,7 @@ export const getAQISeverityChrome = (aqi: number): AQISeverityChrome => {
 /**
  * Get color class for pollen category level
  */
-export const getPollenColor = (category: string | number): string => {
+const pollenColor = (category: string | number): string => {
   const cat = typeof category === 'string' ? category.toLowerCase().trim() : String(category ?? '');
 
   if (cat === 'no data' || cat === 'unavailable' || cat === '0') {
@@ -153,3 +153,15 @@ export const AQI_COLOR_SEGMENTS = [
   { color: 'bg-purple-600', width: '20%', label: 'Very Unhealthy (201-300)' },
   { color: 'bg-red-900', width: '40%', label: 'Hazardous (301-500)' }
 ];
+
+function readableStatusText(classes: string, light: boolean): string {
+  if (!light) return classes
+  return classes.replace(/text-(green-400|yellow-400|orange-400|red-400|purple-400|gray-400|white)/, (_, color: string) => ({
+    'green-400': 'text-green-800', 'yellow-400': 'text-yellow-800',
+    'orange-400': 'text-orange-800', 'red-400': 'text-red-800',
+    'purple-400': 'text-purple-800', 'gray-400': 'text-muted-foreground', white: 'text-foreground',
+  })[color] ?? 'text-foreground')
+}
+
+export const getAQIColor = (aqi: number, light = false): string => readableStatusText(aqiColor(aqi), light)
+export const getPollenColor = (category: string | number, light = false): string => readableStatusText(pollenColor(category), light)

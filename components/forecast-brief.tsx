@@ -29,7 +29,7 @@ export function ForecastBrief({ weather, hourlyHref }: ForecastBriefProps): Reac
     ? String(Math.round(low)) : `${Math.round(low)}–${Math.round(high)}`
 
   return (
-    <section aria-label="Next few hours" className="flex flex-col justify-center py-4 sm:py-6">
+    <section aria-label="Next few hours" className="forecast-brief flex flex-col justify-center">
       <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">The next few hours · {weather.location}</p>
       <h2 className="mt-3 max-w-lg text-3xl sm:text-4xl lg:text-[2.75rem] font-semibold tracking-tight leading-[1.12] text-foreground">{headline}</h2>
       {brief ? <>

@@ -30,7 +30,13 @@ it.each([
   const card = screen.getByText('Visibility').closest('.weather-metric-card') as HTMLElement;
   expect(within(card).getByText(label)).toBeInTheDocument();
   expect(within(card).getByText(value)).toBeInTheDocument();
-  if (label === 'Unavailable') expect(within(card).queryByText('Clear')).not.toBeInTheDocument();
+  if (label === 'Unavailable') {
+    expect(within(card).queryByText('Clear')).not.toBeInTheDocument();
+    expect(within(card).queryByText('mi')).not.toBeInTheDocument();
+    expect(within(card).getByText(value)).toHaveTextContent(/^N\/A$/);
+  } else {
+    expect(within(card).getByText('mi')).toBeInTheDocument();
+  }
 });
 
 it.each([
@@ -50,4 +56,60 @@ it.each([
 it('retains the unavailable message when there is no Moon information', () => {
   render(<WeatherDisplay weather={{ ...weather, moonPhase: null }} theme="dark" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
   expect(screen.getByText('Moon information unavailable')).toBeInTheDocument();
+});
+
+describe('Clear Sky full-data layout', () => {
+  it('keeps all nine conditions and adds coordinate-preserving discovery links', () => {
+    render(<WeatherDisplay weather={{ ...weather, coordinates: { lat: 51.5, lon: -0.12 }, timezone: 'Europe/London' }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
+    for (const label of ['UV Index', 'Feels Like', 'Sun Times', 'Humidity', 'Pressure', 'Wind', 'Precipitation', 'Visibility', 'Pollen']) {
+      expect(screen.getByRole('region', { name: 'Current conditions' })).toContainElement(screen.getByText(label));
+    }
+    expect(screen.getByRole('link', { name: /Explore local radar/ })).toHaveAttribute('href', expect.stringContaining('lat=51.5&lon=-0.12'));
+    expect(screen.getByRole('link', { name: /Learn to read the sky/ })).toHaveAttribute('href', expect.stringContaining('returnTo='));
+  });
+  it('does not label missing weather readings as low UV, comfortable humidity or calm wind', () => {
+    render(<WeatherDisplay weather={{ ...weather, uvIndex: NaN, humidity: NaN, pressure: '', wind: { speed: NaN } }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
+    for (const label of ['UV Index', 'Humidity', 'Pressure', 'Wind', 'Feels Like']) {
+      const card = screen.getByText(label).closest('.weather-metric-card') as HTMLElement;
+      expect(within(card).getByText('Unavailable')).toBeInTheDocument();
+      expect(within(card).queryByText(/^(Low|Comfortable|Calm|Same as actual)$/)).not.toBeInTheDocument();
+      expect(card).not.toHaveTextContent('NaN');
+    }
+  });
+});
+
+it('preserves measured zeros without inventing precipitation for an invalid snapshot', () => {
+  const { rerender } = render(<WeatherDisplay weather={{ ...weather, humidity: 0, wind: { speed: 0, gust: 0 } }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} precipitation={{ rain24h: 0, snow24h: 0 }} showRadar={false} />);
+  expect(screen.getByText('0.00"')).toBeInTheDocument();
+  expect(screen.getByText('0%')).toBeInTheDocument();
+  expect(screen.getByText('Gusts 0 mph')).toBeInTheDocument();
+  rerender(<WeatherDisplay weather={weather} theme="clear-sky" selectedDay={null} onDayClick={() => {}} precipitation={{ rain24h: NaN, snow24h: 0 }} showRadar={false} />);
+  const card = screen.getByText('Precipitation').closest('.weather-metric-card') as HTMLElement;
+  expect(within(card).getByText('N/A')).toBeInTheDocument();
+  expect(card).not.toHaveTextContent('NaN');
+});
+
+it.each([NaN, Infinity])('does not fabricate Moon illumination for %s', illumination => {
+  render(<WeatherDisplay weather={{ ...weather, moonPhase: { ...weather.moonPhase!, phase: '', illumination } }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
+  const card = screen.getByText('Moon Phase').closest('.bg-card') as HTMLElement;
+  expect(within(card).getByText('Illumination unavailable')).toBeInTheDocument();
+  expect(within(card).queryByText('0% illuminated')).not.toBeInTheDocument();
+  expect(within(card).queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(card.querySelector('svg defs')).toBeNull();
+});
+
+it.each(['°F', '°C'])('preserves supplied condition readings and units in %s', unit => {
+  render(<WeatherDisplay weather={{
+    ...weather, unit, temperature: 64, humidity: 71, pressure: unit === '°F' ? '29.36 in' : '994 hPa',
+    wind: { speed: 11.9, direction: 'W', gust: 16.1 }, sunrise: '7:00 am', sunset: '6:56 pm', uvIndex: 3,
+    hourlyForecast: [{ dt: 1790596800, time: '4 PM', temp: 64, feelsLike: 58, condition: 'Clouds', description: 'Cloudy', precipChance: 20 }],
+    forecast: [{ ...weather.forecast[0], details: { visibility: 39.1 } }],
+  }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} precipitation={{ rain24h: 0.12, snow24h: 0 }} showRadar={false} />);
+  const conditions = screen.getByRole('region', { name: 'Current conditions' });
+  for (const reading of ['58°', '6° cooler', '71%', unit === '°F' ? '29.36 in' : '994 hPa', '7:00 am', '6:56 pm', '0.12"', '39.1']) {
+    expect(within(conditions).getByText(reading)).toBeInTheDocument();
+  }
+  expect(within(conditions).getByRole('progressbar', { name: 'Humidity' })).toHaveAttribute('aria-valuenow', '71');
+  expect(within(conditions).getByText(`Gusts 16.1 ${unit === '°F' ? 'mph' : 'km/h'}`)).toBeInTheDocument();
+  expect(screen.getByText('0% illuminated')).toBeInTheDocument();
 });

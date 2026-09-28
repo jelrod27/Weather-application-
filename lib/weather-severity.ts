@@ -69,3 +69,16 @@ export function windDirectionToDegrees(direction: string): number {
   }
   return map[direction?.toUpperCase()] ?? 0
 }
+
+/** Preserve severity hue while making its text readable on light card surfaces. */
+export function getSeverityTextColor(color: string, light: boolean): string {
+  if (!light) return color
+  const lightText: Record<string, string> = {
+    [NORD_GREEN]: '#3f6212',
+    [NORD_YELLOW]: '#854d0e',
+    [NORD_ORANGE]: '#9a3412',
+    [NORD_RED]: '#9f1239',
+    [NORD_PURPLE]: '#6b21a8',
+  }
+  return lightText[color] ?? color
+}

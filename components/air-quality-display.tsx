@@ -18,6 +18,8 @@
  * and optional pollutant breakdown from Open-Meteo
  */
 
+import type { ReactElement } from 'react'
+
 import { cn } from '@/lib/utils'
 import {
   getAQIColor,
@@ -28,6 +30,7 @@ import {
   AQI_SCALE_LABELS,
   AQI_COLOR_SEGMENTS
 } from '@/lib/air-quality-utils'
+import { isLightTheme } from '@/lib/theme-config'
 import type { ThemeType } from '@/lib/theme-config'
 
 interface PollutantData {
@@ -57,13 +60,13 @@ const POLLUTANT_ITEMS: { label: string; key: keyof PollutantData; unit: string }
   { label: 'CO', key: 'carbon_monoxide', unit: 'μg/m³' },
 ]
 
-export function AirQualityDisplay({ aqi, theme, className, minimal = false, pollutants }: AirQualityDisplayProps) {
+export function AirQualityDisplay({ aqi, theme, className, minimal = false, pollutants }: AirQualityDisplayProps): ReactElement {
   // Theme-aware styles using CSS variables
   const styles = minimal
     ? {
         container: '',
         header: '',
-        text: 'text-white/80',
+        text: 'text-foreground',
         border: 'border-white/20'
       }
     : {
@@ -73,12 +76,14 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
         border: 'border-primary/40'
       };
 
+  const hasAqi = Number.isFinite(aqi) && aqi >= 0;
+
   // Check if we have any pollutant data to show
-  const hasPollutants = pollutants && Object.values(pollutants).some(v => v !== undefined && v !== null);
+  const hasPollutants = pollutants && Object.values(pollutants).some(v => v != null && Number.isFinite(v) && v >= 0);
 
   // Escalate card chrome when AQI enters actionable tiers (>100).
   // Left-border stripe only (matches hero card pattern) — no bg wash.
-  const severity = !minimal ? getAQISeverityChrome(aqi) : null;
+  const severity = !minimal && hasAqi ? getAQISeverityChrome(aqi) : null;
 
   return (
     <div
@@ -96,12 +101,12 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
       </h2>
 
       {/* AQI Value and Description */}
-      <p className={cn("text-lg font-bold mb-3", getAQIColor(aqi), minimal && "text-base mb-2")}>
-        {aqi} - {getAQIDescription(aqi)}
+      <p className={cn("text-lg font-bold mb-3", hasAqi ? getAQIColor(aqi, isLightTheme(theme)) : 'text-muted-foreground', minimal && "text-base mb-2")}>
+        {hasAqi ? `${aqi} - ${getAQIDescription(aqi)}` : 'Air quality unavailable'}
       </p>
 
       {/* Horizontal AQI Color Bar */}
-      <div className="mb-3">
+      {hasAqi && <div className="mb-3">
         <div className="relative w-full h-4 rounded-full overflow-hidden border border-gray-400/50">
           {/* Color segments */}
           <div className="absolute inset-0 flex">
@@ -133,11 +138,11 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Health Recommendation */}
       <p className={cn("text-sm font-medium mb-2", styles.text, minimal && "text-xs line-clamp-2")}>
-        {getAQIRecommendation(aqi)}
+        {hasAqi ? getAQIRecommendation(aqi) : 'No current air quality reading is available for this location.'}
       </p>
 
       {/* Pollutant Breakdown */}
@@ -147,7 +152,7 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
           <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
             {POLLUTANT_ITEMS.map(({ label, key, unit }) => {
               const value = pollutants[key]
-              if (value === undefined || value === null) return null
+              if (value == null || !Number.isFinite(value) || value < 0) return null
               return (
                 <div key={key} className="flex flex-col items-center">
                   <span className={cn("text-xs font-medium", styles.text)}>{label}</span>

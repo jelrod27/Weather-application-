@@ -44,11 +44,11 @@ export function buildRadarFaqJsonLd() {
 export default function RadarSeoContent() {
   return (
     <article
-      className="mx-auto max-w-3xl px-4 py-8 text-sm leading-relaxed text-zinc-300"
+      className="mx-auto max-w-3xl px-4 py-8 text-sm leading-relaxed text-foreground"
       aria-label="About the live weather radar"
       data-testid="radar-seo-content"
     >
-      <h1 className="mb-4 text-2xl font-bold font-mono text-cyan-300">
+      <h1 className="mb-4 text-2xl font-bold font-mono text-primary">
         Live Weather Radar Map — Global Precipitation &amp; Severe Overlays
       </h1>
       <p className="mb-4">
@@ -59,11 +59,11 @@ export default function RadarSeoContent() {
       <p className="mb-4">
         Use this page as your radar command center during active weather: zoom to your location,
         watch precipitation echoes move, then jump to the{' '}
-        <Link href="/warnings" className="text-cyan-400 underline underline-offset-2">
+        <Link href="/warnings" className="text-primary underline underline-offset-2">
           Warnings command center
         </Link>{' '}
         for filtered NWS alerts or the{' '}
-        <Link href="/severe" className="text-cyan-400 underline underline-offset-2">
+        <Link href="/severe" className="text-primary underline underline-offset-2">
           Severe Weather outlook
         </Link>{' '}
         for SPC convective outlook maps and live warning panels.
@@ -74,12 +74,12 @@ export default function RadarSeoContent() {
         are free on {BASE_URL.replace('https://', '')} — no account required.
       </p>
 
-      <h2 className="mb-3 text-lg font-semibold font-mono text-white">Radar FAQ</h2>
+      <h2 className="mb-3 text-lg font-semibold font-mono text-foreground">Radar FAQ</h2>
       <dl className="space-y-4">
         {RADAR_FAQS.map((faq) => (
           <div key={faq.question}>
-            <dt className="font-semibold text-white">{faq.question}</dt>
-            <dd className="mt-1 text-zinc-400">{faq.answer}</dd>
+            <dt className="font-semibold text-foreground">{faq.question}</dt>
+            <dd className="mt-1 text-muted-foreground">{faq.answer}</dd>
           </div>
         ))}
       </dl>

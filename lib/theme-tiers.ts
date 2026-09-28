@@ -28,6 +28,12 @@ export interface ThemeConfig {
 export const THEME_CONFIGS: ThemeConfig[] = [
   // FREE TIER - Available to everyone
   {
+    id: 'clear-sky', name: 'clear-sky', displayName: 'Clear Sky',
+    description: 'Cool blue-white surfaces, navy text, and cobalt accents',
+    tier: 'free', category: 'basic',
+    colors: { primary: 'hsl(216 72% 47%)', background: 'hsl(210 50% 96%)', accent: 'hsl(216 72% 47%)' }
+  },
+  {
     id: 'nord',
     name: 'nord',
     displayName: 'Nord',

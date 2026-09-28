@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import WeatherIconModern from "@/components/weather-icon-modern"
 import { ShareButton } from "@/components/share-weather-modal"
 import { useTheme } from "@/components/theme-provider"
+import { isLightTheme } from "@/lib/theme-config"
 import { getHeroAccent } from "@/lib/weather/hero-utils"
 import { formatLocationTimeWithZone } from "@/lib/format-location-time"
 import { ArrowDown, ArrowUp, CloudRain, Droplets, Thermometer, Wind } from "lucide-react"
@@ -43,7 +44,7 @@ interface HeroWeatherCardProps {
   highTemp?: number
   lowTemp?: number
   feelsLike: number | null
-  feelsLikeDelta: number
+  feelsLikeDelta: number | null
   humidity?: number
   windSpeed?: number
   windUnit?: string
@@ -73,8 +74,8 @@ export function HeroWeatherCard({
 }: HeroWeatherCardProps): React.JSX.Element {
   const { theme } = useTheme()
   const accent = getHeroAccent(condition)
-  const displayTemp = typeof temperature === 'number' ? Math.round(temperature) : null
-  const chipIcon = theme === 'daybreak' ? HERO_CHIP_ICON.daybreak : HERO_CHIP_ICON.dark
+  const displayTemp = typeof temperature === 'number' && Number.isFinite(temperature) ? Math.round(temperature) : null
+  const chipIcon = isLightTheme(theme) ? HERO_CHIP_ICON.daybreak : HERO_CHIP_ICON.dark
   const localTimeLabel = useLocationLocalTime(timezone)
 
   return (
@@ -152,7 +153,7 @@ export function HeroWeatherCard({
                 <HeroChip
                   icon={<Thermometer size={12} className={chipIcon.feels} />}
                   label="FEELS"
-                  value={`${feelsLike}°${feelsLikeDelta !== 0 ? (feelsLikeDelta > 0 ? ' ↑' : ' ↓') : ''}`}
+                  value={`${feelsLike}°${feelsLikeDelta != null && feelsLikeDelta !== 0 ? (feelsLikeDelta > 0 ? ' ↑' : ' ↓') : ''}`}
                 />
               )}
               {!compact && humidity !== undefined && (

@@ -6,6 +6,7 @@ Canonical location for **long-form product specs** used by humans and AI agents.
 
 | Document | Summary |
 |----------|---------|
+| [PRD-clear-sky.md](./PRD-clear-sky.md) | Selected Clear Sky default theme and full responsive forecast design; preserves all weather data, saved themes, radar and learning tools; implemented with local verification; see `../clear-sky-verification.md` |
 | [PRD-first-visit-weather.md](./PRD-first-visit-weather.md) | Clear first-visit weather choices and recovery when location is unavailable |
 | [PRD-weather-data-reliability.md](./PRD-weather-data-reliability.md) | Follow-up audit priorities 1–2: saved-location weather reliability, radar age, travel severity and location-aware Moon information; one authorized PR |
 | [PRD-beginner-stargazing.md](./PRD-beginner-stargazing.md) | PR 6 of the weather UX batch — approved beginner Stargazer path, suitable hours and targets, finding visuals, location continuity and data honesty; merged as PR #632; follow-up stabilization tracked in the UX scope |

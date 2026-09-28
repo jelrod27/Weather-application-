@@ -5,7 +5,7 @@
  * Colors are defined in globals.css as CSS custom properties
  */
 
-export type ThemeType = 'nord' | 'daybreak' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
+export type ThemeType = 'clear-sky' | 'nord' | 'daybreak' | 'synthwave84' | 'dracula' | 'cyberpunk' | 'matrix';
 
 export interface ThemeDefinition {
   name: ThemeType;
@@ -16,6 +16,12 @@ export interface ThemeDefinition {
 
 export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
   // Free themes
+  'clear-sky': {
+    name: 'clear-sky',
+    displayName: 'Clear Sky',
+    isPremium: false,
+    description: 'Cool blue-white surfaces, navy text, and clear cobalt accents'
+  },
   nord: {
     name: 'nord',
     displayName: 'Nord',
@@ -57,7 +63,7 @@ export const THEME_DEFINITIONS: Record<ThemeType, ThemeDefinition> = {
 
 // Default theme applied to guests (unauthenticated users) and as the
 // fallback when a premium theme is dropped on logout. Must be a free theme.
-export const DEFAULT_THEME: ThemeType = 'daybreak';
+export const DEFAULT_THEME: ThemeType = 'clear-sky';
 
 // Get list of all theme names
 export const THEME_LIST = Object.keys(THEME_DEFINITIONS) as ThemeType[];
@@ -79,5 +85,9 @@ export const isThemePremium = (theme: ThemeType): boolean => {
 
 // Get theme definition
 export const getThemeDefinition = (theme: ThemeType): ThemeDefinition => {
-  return THEME_DEFINITIONS[theme] || THEME_DEFINITIONS.nord;
+  return THEME_DEFINITIONS[theme] || THEME_DEFINITIONS[DEFAULT_THEME];
 };
+/** Light palettes need saturated status/icon text rather than pastel dark-theme tints. */
+export function isLightTheme(theme: string): boolean {
+  return theme === 'clear-sky' || theme === 'daybreak';
+}
