@@ -295,9 +295,9 @@ export const IMAGES: ImageEntry[] = [
     id: 'atmosphere-layers-diagram',
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Atmosphere_layers-en.svg?width=1280',
     caption: 'Vertical structure of Earth\'s atmosphere.',
-    credit: 'Kelvinsong / Wikimedia',
+    credit: 'NOAA / Mysid; Kármán line added by Latitude0116 — public domain',
     topic_tags: ['atmosphere_layers'],
-    license: 'CC0',
+    license: 'PD',
   },
   {
     id: 'jet-stream-pattern',
@@ -321,11 +321,14 @@ export const IMAGES: ImageEntry[] = [
   },
   {
     id: 'aurora-from-iss',
-    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Aurora_Borealis_and_Australis_Poster.jpg?width=1280',
-    caption: 'Aurora borealis and australis composite from the ISS.',
-    credit: 'NASA',
+    // NASA photograph ISS052-E-004913, verified on the Commons file page.
+    url: 'https://commons.wikimedia.org/wiki/Special:FilePath/ISS-52_Aurora_australis_above_the_Southern_Ocean.jpg?width=1280',
+    caption: 'Aurora australis above the Southern Ocean, photographed from the ISS on June 19, 2017.',
+    credit: 'NASA / Johnson Space Center, ISS052-E-004913 — public domain',
     topic_tags: ['space_weather'],
     license: 'PD-USGov',
+    kind: 'archival',
+    archival_year: 2017,
   },
   {
     id: 'aurora-forecast-northern',

@@ -10,6 +10,23 @@ import { allowedBlogUrl } from '../../lib/blog/allowed-hosts';
 
 describe('newsletter source links', () => {
   it.each([
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC1458630/',
+    'https://repository.library.noaa.gov/view/noaa/63587',
+    'https://www.ferc.gov/news-events/news/final-report-february-2021-freeze-underscores-winterization-recommendations',
+    'https://www.ecmwf.int/en/newsletter/150/meteorology/impact-orographic-drag-forecast-skill',
+  ])('allows an explainer citation without trusting lookalike hosts: %s', (url) => {
+    expect(allowedBlogUrl(url)).toBe(url);
+    expect(allowedBlogUrl(url.replace('https:', 'http:'))).toBeNull();
+    const lookalike = new URL(url);
+    lookalike.hostname += '.attacker.example';
+    expect(allowedBlogUrl(lookalike.href)).toBeNull();
+    const misleadingUserInfo = new URL(url);
+    misleadingUserInfo.username = misleadingUserInfo.hostname;
+    misleadingUserInfo.hostname = 'attacker.example';
+    expect(allowedBlogUrl(misleadingUserInfo.href)).toBeNull();
+  });
+
+  it.each([
     'https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-09-20T16%3A30%3A00Z',
     'https://api.open-meteo.com/v1/forecast?latitude=32.78&longitude=-96.8',
   ])('keeps a primary-data citation clickable: %s', (url) => {

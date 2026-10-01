@@ -40,6 +40,12 @@ export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   'www.spc.noaa.gov',
   'www.nhc.noaa.gov',
 
+  // Research and event reports cited by atmospheric-science explainers.
+  'pmc.ncbi.nlm.nih.gov',
+  'repository.library.noaa.gov',
+  'www.ferc.gov',
+  'www.ecmwf.int',
+
   // Primary data citations used by the Sunday newsletter.
   'mesonet.agron.iastate.edu',
   'api.open-meteo.com',
