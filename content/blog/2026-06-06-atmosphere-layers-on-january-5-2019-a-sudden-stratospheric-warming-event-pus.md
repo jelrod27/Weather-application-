@@ -52,8 +52,8 @@ At the tropopause, that lapse rate inverts. The stratosphere begins, and tempera
 
 Above the stratosphere, the mesosphere cools again with altitude, bottoming out around -90°C at the mesopause near 85 km. This is cold enough to freeze the trace amounts of water vapor that make it up there, producing noctilucent clouds — electric-blue wisps visible at high latitudes during summer twilight. The thermosphere above that absorbs extreme UV and X-ray radiation, heating to temperatures that would read as thousands of degrees on a thermometer but would transfer almost no heat to a physical object, because the air is too thin for meaningful molecular collision rates.
 
-![Aurora borealis and australis composite from the ISS.](https://commons.wikimedia.org/wiki/Special:FilePath/Aurora_Borealis_and_Australis_Poster.jpg?width=1280)
-*NASA*
+![Aurora australis above the Southern Ocean, photographed from the ISS on June 19, 2017.](https://commons.wikimedia.org/wiki/Special:FilePath/ISS-52_Aurora_australis_above_the_Southern_Ocean.jpg?width=1280)
+*NASA / Johnson Space Center, ISS052-E-004913 — public domain*
 
 For practical meteorology, the two layers that matter most are the troposphere and the stratosphere, and the tropopause between them is where the jet stream lives.
 
