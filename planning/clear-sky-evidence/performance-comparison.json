@@ -1,0 +1,44 @@
+[
+  {
+    "which": "before",
+    "run": 1,
+    "performance": 0.96,
+    "accessibility": 0.93,
+    "cls": 0.027739474828598887
+  },
+  {
+    "which": "before",
+    "run": 2,
+    "performance": 0.98,
+    "accessibility": 0.93,
+    "cls": 0.027739474828598887
+  },
+  {
+    "which": "before",
+    "run": 3,
+    "performance": 0.98,
+    "accessibility": 0.93,
+    "cls": 0.057082058117444615
+  },
+  {
+    "which": "after",
+    "run": 1,
+    "performance": 0.98,
+    "accessibility": 0.93,
+    "cls": 0.02765783666502815
+  },
+  {
+    "which": "after",
+    "run": 2,
+    "performance": 0.98,
+    "accessibility": 0.93,
+    "cls": 0.02765783666502815
+  },
+  {
+    "which": "after",
+    "run": 3,
+    "performance": 0.98,
+    "accessibility": 0.93,
+    "cls": 0.02765783666502815
+  }
+]

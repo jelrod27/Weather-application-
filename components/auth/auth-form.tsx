@@ -163,7 +163,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
       <Card className={`w-full max-w-md container-primary ${themeClasses.background}`}>
         <CardHeader className="text-center space-y-4">
           <div className={`w-12 h-12 border-2 flex items-center justify-center mx-auto rounded-md ${themeClasses.accentBg} ${themeClasses.borderColor}`}>
-            <span className="text-black font-bold text-lg">16</span>
+            <span className="text-primary-foreground font-bold text-lg">16</span>
           </div>
           <div>
             <CardTitle className={`text-2xl font-bold uppercase tracking-wider font-mono ${themeClasses.text}`}>
@@ -196,7 +196,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
             onClick={() => handleOAuthSignIn('google')}
             disabled={loading}
             data-testid="auth-google-button"
-            className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
+            className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-primary-foreground ${themeClasses.accentBg} hover:opacity-90`}
           >
             <Globe className="w-4 h-4 mr-2" />
             Continue with Google
@@ -226,7 +226,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
                 disabled={loading || (isTurnstileEnabled() && !captchaToken)}
                 data-testid="magic-link-submit"
                 variant="outline"
-                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
+                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary hover:text-primary-foreground`}
               >
                 <Mail className="w-4 h-4 mr-2" />
                 {loading ? 'Loading...' : 'Email Me a Sign-In Link'}
@@ -288,7 +288,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
               <Button
                 type="submit"
                 disabled={loading || (isTurnstileEnabled() && !captchaToken)}
-                className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-black ${themeClasses.accentBg} hover:opacity-90`}
+                className={`w-full font-mono font-bold uppercase tracking-wider h-12 text-primary-foreground ${themeClasses.accentBg} hover:opacity-90`}
               >
                 {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
               </Button>
@@ -332,7 +332,7 @@ export default function AuthForm({ mode: initialMode, initialError, next }: Auth
                 variant="outline"
                 onClick={() => handleOAuthSignIn('github')}
                 disabled={loading}
-                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:${themeClasses.accentBg} hover:text-black`}
+                className={`w-full font-mono font-bold uppercase tracking-wider border-2 h-12 ${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary hover:text-primary-foreground`}
               >
                 <Code className="w-4 h-4 mr-2" />
                 Continue with GitHub

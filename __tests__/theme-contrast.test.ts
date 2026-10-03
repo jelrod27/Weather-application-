@@ -95,3 +95,10 @@ describe('theme contrast', () => {
     }
   })
 })
+
+  it.each(['background', 'card', 'input'])('Clear Sky secondary text is legible on %s', (surface) => {
+    expect(contrast(token('clear-sky', 'muted-foreground'), token('clear-sky', surface))).toBeGreaterThanOrEqual(4.5)
+  })
+  it('Clear Sky action text is legible on its fill', () => {
+    expect(contrast(token('clear-sky', 'primary'), token('clear-sky', 'primary-foreground'))).toBeGreaterThanOrEqual(4.5)
+  })

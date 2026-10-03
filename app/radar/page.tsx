@@ -15,7 +15,7 @@ export default function RadarPage() {
       <RadarSeoContent />
       <Suspense
         fallback={
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black text-zinc-400">
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-background text-muted-foreground">
             Loading radar…
           </div>
         }

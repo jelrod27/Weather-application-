@@ -80,7 +80,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       return
     }
 
-    const localTheme = safeStorage.getItem('weather-edu-theme')
+    const localTheme = normalizeTheme(safeStorage.getItem('weather-edu-theme'))
     if (localTheme) return
 
     const dbTheme = normalizeTheme(preferences?.theme)

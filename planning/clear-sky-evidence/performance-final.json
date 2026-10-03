@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:3004/weather/london-uk?location=51.5%2C-0.12",
+  "scores": {
+    "performance": 0.98,
+    "accessibility": 1,
+    "best-practices": 0.96,
+    "seo": 0.66,
+    "agentic-browsing": 0.67
+  },
+  "cls": 0.02765783666502815,
+  "contrast": 1,
+  "progressbar-name": 1
+}

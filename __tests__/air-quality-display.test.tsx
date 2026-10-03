@@ -31,3 +31,12 @@ describe('AirQualityDisplay', () => {
     expect(screen.getByText('68.5')).toBeDefined();
   });
 });
+
+  it.each([NaN, Infinity, -1])('shows unavailable AQI without an invented health rating: %s', (aqi) => {
+    render(<AirQualityDisplay aqi={aqi} theme="clear-sky" pollutants={{ pm2_5: 0, pm10: NaN }} />);
+    expect(screen.getByText('Air quality unavailable')).toBeInTheDocument();
+    expect(screen.queryByText(/Hazardous|satisfactory|emergency conditions/)).not.toBeInTheDocument();
+    expect(screen.getByText('PM2.5')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.queryByText('PM10')).not.toBeInTheDocument();
+  });

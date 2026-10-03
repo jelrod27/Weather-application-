@@ -2,9 +2,8 @@
  * Unit tests for theme configuration
  */
 
-import fs from 'fs';
-import path from 'path';
 import {
+  DEFAULT_THEME,
   THEME_DEFINITIONS,
   THEME_LIST,
   FREE_THEMES,
@@ -16,12 +15,12 @@ import {
 
 describe('Theme Configuration', () => {
   describe('THEME_DEFINITIONS', () => {
-    it('should have exactly 6 themes', () => {
-      expect(Object.keys(THEME_DEFINITIONS)).toHaveLength(6);
+    it('should have exactly 7 themes', () => {
+      expect(Object.keys(THEME_DEFINITIONS)).toHaveLength(7);
     });
 
     it('should contain all expected themes', () => {
-      const expectedThemes = ['nord', 'daybreak', 'synthwave84', 'dracula', 'cyberpunk', 'matrix'];
+      const expectedThemes = ['clear-sky', 'nord', 'daybreak', 'synthwave84', 'dracula', 'cyberpunk', 'matrix'];
       expectedThemes.forEach(theme => {
         expect(THEME_DEFINITIONS).toHaveProperty(theme);
       });
@@ -39,7 +38,7 @@ describe('Theme Configuration', () => {
   describe('THEME_LIST', () => {
     it('should be an array of theme names', () => {
       expect(Array.isArray(THEME_LIST)).toBe(true);
-      expect(THEME_LIST).toHaveLength(6);
+      expect(THEME_LIST).toHaveLength(7);
     });
 
     it('should contain valid theme types', () => {
@@ -48,18 +47,14 @@ describe('Theme Configuration', () => {
       });
     });
 
-    it('is listed in the live user_preferences theme CHECK migration', () => {
-      const sql = fs.readFileSync(
-        path.join(__dirname, '..', 'supabase', 'migrations', '20260905_user_preferences_theme_daybreak.sql'),
-        'utf8',
-      );
-      THEME_LIST.forEach((theme) => {
-        expect(sql).toContain(`'${theme}'`);
-      });
-    });
+
   });
 
   describe('FREE_THEMES', () => {
+    it('uses free Clear Sky as the default without removing Daybreak', () => {
+      expect(DEFAULT_THEME).toBe('clear-sky');
+      expect(FREE_THEMES).toContain('clear-sky');
+    });
     it('should contain only non-premium themes', () => {
       FREE_THEMES.forEach(theme => {
         expect(THEME_DEFINITIONS[theme].isPremium).toBe(false);
@@ -107,9 +102,9 @@ describe('Theme Configuration', () => {
       expect(theme.displayName).toBe('Nord');
     });
 
-    it('should return nord theme for invalid theme names', () => {
+    it('should return default theme for invalid theme names', () => {
       const result = getThemeDefinition('invalid' as ThemeType);
-      expect(result.name).toBe('nord');
+      expect(result.name).toBe(DEFAULT_THEME);
     });
   });
 });

@@ -9,6 +9,7 @@
 @config "../tailwind.config.ts";
 
 @import "./theme.css";
+@import "./clear-sky.css";
 
 @layer base {
   * {

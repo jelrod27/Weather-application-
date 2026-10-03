@@ -60,7 +60,7 @@ export default function WISBadge() {
     <Link
       href="/warnings"
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-mono font-bold transition-all hover:scale-105',
+        'wis-badge flex items-center gap-1.5 px-2 py-1 rounded-full border text-xs font-mono font-bold transition-all hover:scale-105',
         levelColors[wis.level]
       )}
       title={`US nationwide weather intensity: ${wis.label} (${wis.totalAlerts} active alerts)`}

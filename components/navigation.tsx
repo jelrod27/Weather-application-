@@ -86,7 +86,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
       )}>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center justify-between px-6 py-3 max-w-7xl mx-auto">
+        <div className="hidden xl:flex items-center justify-between px-6 py-3 max-w-7xl mx-auto">
           {/* Logo/Brand with Weather Data - TOP LEFT */}
           {/* Logo/Brand with Weather Data - TOP LEFT */}
           <div className="flex items-center space-x-3">
@@ -179,7 +179,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
         </div>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3">
+        <div className="xl:hidden flex items-center justify-between px-4 py-3">
           {/* Mobile Logo with Weather Data */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             <div className="text-lg font-extrabold tracking-tight text-foreground truncate flex flex-col leading-tight">
@@ -217,7 +217,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
         {isMobileMenuOpen && (
           <div
             id="mobile-menu"
-            className="md:hidden absolute top-full left-0 right-0 border-b bg-background/95 backdrop-blur-lg shadow-xl animate-in slide-in-from-top-2"
+            className="xl:hidden absolute top-full left-0 right-0 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border-b bg-background/95 backdrop-blur-lg shadow-xl animate-in slide-in-from-top-2"
             role="navigation"
             aria-label="Mobile navigation"
           >
