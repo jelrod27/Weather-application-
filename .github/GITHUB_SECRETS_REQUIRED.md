@@ -9,7 +9,7 @@ workflow needs a Vercel token, org id, or project id.
 
 | Name | Used by | Purpose |
 | --- | --- | --- |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | `e2e-preview.yml` | Lets Playwright reach a protected Vercel preview deployment. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | `e2e-preview.yml` | Lets the trusted, checkout-free preview smoke workflow reach protected same-repository Vercel deployments. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. Never expose it to fork PR code or to arbitrary deployment URLs. |
 | `SUPABASE_BACKUP_DB_PASSWORD` | `db-backup.yml` | Password of the read-only `backup_reader` role, nothing else; the job percent-encodes it and builds the session-pooler URL itself. The weekly job refuses to run until it exists. |
 
 ## `Production` environment secrets
@@ -40,9 +40,8 @@ branches, so a `workflow_dispatch` from a feature branch cannot use them.
 - `KERNEL_API_KEY`: opt-in legacy mode for Playwright (see `playwright.config.ts`);
   no workflow sets it.
 
-## Vercel environment variables that CI depends on
+## Vercel preview trust boundary
 
-`NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=true` on Preview deployments so
-`e2e-preview.yml` can bypass auth via the test header (see
-`lib/playwright-test-mode.ts`; the bypass is refused when `NODE_ENV` is
-`production`).
+The full Playwright suite runs only in the secretless PR workflow, against a local server. The preview smoke workflow runs from the default branch, checks out **no** PR code, requires an open PR whose head branch is in this repository, and restricts the URL before sending the bypass header. Fork PRs are welcome for secretless checks, but cannot pass the preview gate until a maintainer moves/replays their changes onto an internal branch. Do not enable automatic Vercel builds of fork PRs with production-connected preview credentials. Configure fork preview access in Vercel separately; GitHub Actions settings do not control it.
+
+After merging this workflow, require the `Preview Smoke` check in branch protection only after verifying Vercel emits it for an internal PR. The old full-preview Playwright job is deliberately removed.

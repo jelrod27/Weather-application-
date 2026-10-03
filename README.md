@@ -127,7 +127,7 @@ Open http://localhost:3000.
 
 ## Quality gates
 
-CI (`.github/workflows/ci.yml`) runs `lint`, `typecheck`, `typecheck:tests`, `test:ci`, and `knip` in parallel, then `build` if all pass. **Knip failures break the build**, so remove orphaned exports, files, and dependencies as you go. E2E and Lighthouse run as separate workflows on pull requests.
+CI (`.github/workflows/ci.yml`) runs `lint`, `typecheck`, `typecheck:tests`, `test:ci`, and `knip` in parallel, then `build` if all pass. **Knip failures break the build**, so remove orphaned exports, files, and dependencies as you go. Lint, Type Check, Unit Tests, Knip, and Build must each be required checks: a failed prerequisite skips Build, and a skipped Build is not a substitute for a passing check. Full local Chromium E2E and Lighthouse run on PRs; the checkout-free preview smoke check tests the Vercel deployment separately. Fork PRs require a maintainer-controlled internal branch before a protected preview can pass the gate. A post-deployment production smoke check detects live failures but cannot prevent a production deploy.
 
 Locally, `pre-commit` runs a gitleaks scan of the staged diff and `pre-push` scans unpushed commits and type-checks both TypeScript projects. The type check is skipped when `CI` is set, so the newsletter workflows that push from CI do not compile the repo twice; the secret scan always runs.
 
