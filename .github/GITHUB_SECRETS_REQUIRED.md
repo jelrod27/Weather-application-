@@ -9,7 +9,7 @@ workflow needs a Vercel token, org id, or project id.
 
 | Name | Used by | Purpose |
 | --- | --- | --- |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | `e2e-preview.yml` | Lets the trusted, checkout-free preview smoke workflow reach protected same-repository Vercel deployments. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. Never expose it to fork PR code or to arbitrary deployment URLs. |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | `preview-gate.yml` | Lets the trusted, checkout-free `workflow_run` preview gate reach protected same-repository Vercel deployments. Value comes from Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation. Never expose it to the PR-branch `deployment_status` workflow or fork PR code. |
 | `SUPABASE_BACKUP_DB_PASSWORD` | `db-backup.yml` | Password of the read-only `backup_reader` role, nothing else; the job percent-encodes it and builds the session-pooler URL itself. The weekly job refuses to run until it exists. |
 
 ## `Production` environment secrets
@@ -42,6 +42,6 @@ branches, so a `workflow_dispatch` from a feature branch cannot use them.
 
 ## Vercel preview trust boundary
 
-The full Playwright suite runs only in the secretless PR workflow, against a local server. The preview smoke workflow runs from the default branch, checks out **no** PR code, requires an open PR whose head branch is in this repository, and restricts the URL before sending the bypass header. Fork PRs are welcome for secretless checks, but cannot pass the preview gate until a maintainer moves/replays their changes onto an internal branch. Do not enable automatic Vercel builds of fork PRs with production-connected preview credentials. Configure fork preview access in Vercel separately; GitHub Actions settings do not control it.
+The full Playwright suite runs only in the secretless PR workflow, against a local server. `e2e-preview.yml` is an unprivileged `deployment_status` bridge: its workflow file may be loaded from a PR branch, so it must never receive secrets or check out code. `preview-gate.yml` is a privileged `workflow_run` consumer loaded from **main**; it checks out no PR code, verifies the GitHub deployment and open internal PR through the API, restricts the URL, and only then sends the bypass header. It publishes a `Preview Smoke` commit status to the PR head SHA. Fork PRs can run secretless checks, but cannot pass the preview gate until a maintainer moves/replays their changes onto an internal branch. Do not enable automatic Vercel builds of fork PRs with production-connected preview credentials. Configure fork preview access in Vercel separately; GitHub Actions settings do not control it.
 
-After merging this workflow, require the `Preview Smoke` check in branch protection only after verifying Vercel emits it for an internal PR. The old full-preview Playwright job is deliberately removed.
+After merging these workflows, verify an internal PR receives a passing `Preview Smoke` status before adding it to branch protection. The old full-preview Playwright job is deliberately removed.

@@ -1,99 +1,19 @@
-name: Vercel Preview Smoke
+name: Vercel Preview Event
 
-# deployment_status runs the workflow from the default branch. Never check out
-# the deployed PR's code in a job that has the automation bypass secret.
+# Unprivileged bridge: deployment_status workflows can run from PR branches.
+# Never put repository secrets or privileged code in this workflow. The trusted
+# workflow_run consumer lives on main and does the actual preview smoke test.
 on:
   deployment_status:
 
-permissions:
-  contents: read
-  pull-requests: read
-
-concurrency:
-  group: preview-smoke-${{ github.event.deployment.sha }}
-  cancel-in-progress: true
+permissions: {}
 
 jobs:
-  preview-smoke:
-    name: Preview Smoke
-    # Do not create a successful check for intermediate deployment statuses.
-    if: >-
-      contains(github.event.deployment.environment, 'Preview') &&
-      (github.event.deployment_status.state == 'success' ||
-       github.event.deployment_status.state == 'failure' ||
-       github.event.deployment_status.state == 'error')
+  preview-event:
+    name: Preview Event
+    if: contains(github.event.deployment.environment, 'Preview')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      DEPLOY_SHA: ${{ github.event.deployment.sha }}
-      DEPLOY_CREATOR: ${{ github.event.deployment.creator.login }}
-      DEPLOY_STATE: ${{ github.event.deployment_status.state }}
-      PREVIEW_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
-      GH_TOKEN: ${{ github.token }}
+    timeout-minutes: 1
     steps:
-      - name: Confirm this is a trusted Vercel deployment of an internal PR
-        run: |
-          set -euo pipefail
-          if [ "$DEPLOY_CREATOR" != 'vercel[bot]' ]; then
-            echo '::error::Preview deployment was not created by Vercel'
-            exit 1
-          fi
-          # Fork PRs may run ordinary secretless PR checks, but must be moved
-          # onto a maintainer-controlled branch before privileged preview tests.
-          if ! gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/pulls" --paginate |
-            jq -es --arg repo "$GITHUB_REPOSITORY" --arg sha "$DEPLOY_SHA" \
-              'add | any(.[]; .state == "open" and .base.ref == "main" and .head.sha == $sha and .head.repo.full_name == $repo)'; then
-            echo '::error::No open internal PR matches this deployment SHA; refusing to use preview credentials'
-            exit 1
-          fi
-          if [ "$DEPLOY_STATE" != success ]; then
-            echo "::error::Vercel preview deployment ended in $DEPLOY_STATE"
-            exit 1
-          fi
-
-      - name: Smoke-test deployed preview without running PR code on the runner
-        env:
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-        run: |
-          set -euo pipefail
-          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET" || { echo '::error::Preview bypass secret is not configured'; exit 1; }
-          # An event-provided URL must never determine where we send a secret
-          # without checking its scheme, credentials, host, port and path.
-          python3 - <<'PY'
-          import os
-          from urllib.parse import urlsplit
-          url = urlsplit(os.environ['PREVIEW_URL'])
-          host = url.hostname or ''
-          if (url.scheme != 'https' or url.username or url.password or url.port or
-              url.path not in ('', '/') or url.query or url.fragment or
-              not host.startswith('weather-application-') or
-              not host.endswith('-justin-elrods-projects.vercel.app') or
-              url.netloc != host):
-              raise SystemExit('Invalid Vercel preview URL; refusing to send bypass secret')
-          PY
-          # curl does not follow redirects. The bypass header is sent only to
-          # this validated host, never to a PR-controlled redirect destination.
-          for route in / /about /weather/new-york-ny /sitemap.xml; do
-            status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
-              --output /dev/null --write-out '%{http_code}' \
-              --header "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
-              "${PREVIEW_URL%/}$route")
-            if [ "$status" != 200 ]; then
-              echo "::error::Preview $route returned HTTP $status (expected 200)"
-              exit 1
-            fi
-            echo "Preview $route: HTTP 200"
-          done
-          # Verify the API route responds with its own JSON validation error,
-          # not a deployment-protection page or an upstream API outage.
-          response=$(mktemp)
-          trap 'rm -f "$response"' EXIT
-          status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
-            --output "$response" --write-out '%{http_code}' \
-            --header "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
-            "${PREVIEW_URL%/}/api/weather/geocoding")
-          if [ "$status" != 400 ] || ! jq -e '.error == "Missing required parameter: q (location query), zip (ZIP code), or lat/lon"' "$response" >/dev/null; then
-            echo "::error::Geocoding API smoke check failed (HTTP $status)"
-            exit 1
-          fi
-          echo 'Preview geocoding API: expected validation response'
+      - name: Notify trusted preview gate
+        run: echo 'Preview deployment changed; trusted workflow_run gate will inspect it'
