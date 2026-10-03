@@ -1,92 +1,19 @@
-name: E2E Tests on Vercel Preview
+name: Vercel Preview Event
 
+# Unprivileged bridge: deployment_status workflows can run from PR branches.
+# Never put repository secrets or privileged code in this workflow. The trusted
+# workflow_run consumer lives on main and does the actual preview smoke test.
 on:
   deployment_status:
 
-permissions:
-  contents: read
-
-concurrency:
-  group: e2e-preview-${{ github.event.deployment.sha }}
-  cancel-in-progress: true
+permissions: {}
 
 jobs:
-  e2e-preview:
-    # Only run on successful deployments (Vercel uses "Preview" or "Preview – project-name")
-    if: |
-      github.event.deployment_status.state == 'success' &&
-      (contains(github.event.deployment_status.environment, 'Preview') ||
-       contains(github.event.deployment_status.environment, 'preview'))
+  preview-event:
+    name: Preview Event
+    if: contains(github.event.deployment.environment, 'Preview')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    env:
-      # Vercel may use target_url or environment_url depending on integration version
-      PREVIEW_URL: ${{ github.event.deployment_status.target_url || github.event.deployment_status.environment_url }}
-
+    timeout-minutes: 1
     steps:
-      # Event fields go through env, never straight into the script: a value
-      # containing shell metacharacters would otherwise execute. Only Vercel
-      # posts these events today, but the pattern should not depend on that.
-      - name: Debug deployment info
-        env:
-          DEPLOY_ENVIRONMENT: ${{ github.event.deployment_status.environment }}
-          DEPLOY_STATE: ${{ github.event.deployment_status.state }}
-          DEPLOY_TARGET_URL: ${{ github.event.deployment_status.target_url }}
-          DEPLOY_ENVIRONMENT_URL: ${{ github.event.deployment_status.environment_url }}
-        run: |
-          echo "Deployment status event:"
-          echo "  Environment: $DEPLOY_ENVIRONMENT"
-          echo "  State: $DEPLOY_STATE"
-          echo "  Target URL: $DEPLOY_TARGET_URL"
-          echo "  Environment URL: $DEPLOY_ENVIRONMENT_URL"
-          echo "  Using: $PREVIEW_URL"
-
-      - name: Validate preview URL
-        run: |
-          if [ -z "$PREVIEW_URL" ]; then
-            echo "::error::No preview URL found in deployment_status event"
-            exit 1
-          fi
-          echo "Preview URL: $PREVIEW_URL"
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E tests against Vercel preview
-        run: npx playwright test --project=chromium --reporter=github,html
-        env:
-          CI: true
-          PLAYWRIGHT_TEST_BASE_URL: ${{ env.PREVIEW_URL }}
-          PLAYWRIGHT_TEST_MODE: 'true'
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: playwright-report-${{ github.run_id }}
-          path: playwright-report/
-          retention-days: 14
-
-      - name: Upload Playwright test results
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: playwright-test-results-${{ github.run_id }}
-          path: test-results/
-          retention-days: 14
+      - name: Notify trusted preview gate
+        run: echo 'Preview deployment changed; trusted workflow_run gate will inspect it'

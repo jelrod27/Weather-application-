@@ -1,0 +1,71 @@
+name: Production Smoke
+
+# Vercel deploys main through its Git integration. This detects a broken live
+# deployment after promotion; PR preview gates remain the pre-merge control.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-${{ github.event.deployment.sha }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Production Smoke
+    if: >-
+      github.event.deployment.environment == 'Production' &&
+      (github.event.deployment_status.state == 'success' ||
+       github.event.deployment_status.state == 'failure' ||
+       github.event.deployment_status.state == 'error')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DEPLOY_SHA: ${{ github.event.deployment.sha }}
+      DEPLOY_CREATOR: ${{ github.event.deployment.creator.login }}
+      DEPLOY_STATE: ${{ github.event.deployment_status.state }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Confirm production deployment
+        id: verify
+        run: |
+          set -euo pipefail
+          if [ "$DEPLOY_CREATOR" != 'vercel[bot]' ]; then
+            echo '::error::Unexpected production deployment creator'
+            exit 1
+          fi
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')
+          if [ "$DEPLOY_SHA" != "$main_sha" ]; then
+            echo 'Older production deployment superseded by a newer main commit; skipping smoke checks'
+            exit 0
+          fi
+          echo 'current=true' >> "$GITHUB_OUTPUT"
+          if [ "$DEPLOY_STATE" != success ]; then
+            echo "::error::Production deployment ended in $DEPLOY_STATE"
+            exit 1
+          fi
+
+      - name: Smoke-test live site (no secrets)
+        if: github.event.deployment_status.state == 'success' && steps.verify.outputs.current == 'true'
+        run: |
+          set -euo pipefail
+          base='https://www.16bitweather.co'
+          for route in / /about /weather/new-york-ny /sitemap.xml; do
+            status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+              --output /dev/null --write-out '%{http_code}' "$base$route")
+            if [ "$status" != 200 ]; then
+              echo "::error::Production $route returned HTTP $status (expected 200)"
+              exit 1
+            fi
+            echo "Production $route: HTTP 200"
+          done
+          response=$(mktemp)
+          trap 'rm -f "$response"' EXIT
+          status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+            --output "$response" --write-out '%{http_code}' "$base/api/weather/geocoding")
+          if [ "$status" != 400 ] || ! jq -e '.error == "Missing required parameter: q (location query), zip (ZIP code), or lat/lon"' "$response" >/dev/null; then
+            echo "::error::Production geocoding API smoke check failed (HTTP $status)"
+            exit 1
+          fi
