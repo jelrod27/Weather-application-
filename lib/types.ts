@@ -60,6 +60,8 @@ export interface EnhancedHourlyForecast {
   humidity?: number;
   uvIndex?: number;
   icon?: string;
+  /** Daylight at this forecast hour and location, independent of the viewer. */
+  isDay?: boolean;
 }
 
 export interface WeatherData {

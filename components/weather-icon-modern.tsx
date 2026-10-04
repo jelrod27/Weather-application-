@@ -94,7 +94,7 @@ export default function WeatherIconModern({
       '--icon-warning': 'var(--terminal-accent-warning, #d29922)',
       '--icon-precip': 'var(--terminal-precip, #00d4ff)',
     } as React.CSSProperties,
-    'aria-label': `Weather: ${condition}`,
+    'aria-label': `Weather: ${condition}${isNight ? ' (night)' : ''}`,
     role: 'img'
   }
 

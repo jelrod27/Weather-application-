@@ -158,6 +158,53 @@ afterEach(() => {
 });
 
 describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
+  it('uses each Pleasanton forecast date sunrise and sunset for clear hourly icons', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-05T00:00:00Z'));
+    const forecast = makeForecastResponse();
+    forecast.timezone = 'America/Los_Angeles';
+    forecast.utc_offset_seconds = -7 * 3600;
+    forecast.daily.time = ['2026-10-04', '2026-10-05'];
+    forecast.daily.sunrise = ['2026-10-04T07:05', '2026-10-05T07:06'];
+    forecast.daily.sunset = ['2026-10-04T18:45', '2026-10-05T18:43'];
+    forecast.hourly.time = ['2026-10-04T18:00', '2026-10-04T18:45', '2026-10-04T19:00', '2026-10-05T00:00', '2026-10-05T07:00', '2026-10-05T07:06', '2026-10-05T08:00'];
+    forecast.hourly.weather_code = forecast.hourly.time.map(() => 0);
+    stubClientApiFetches(forecast);
+
+    const result = await buildWeatherDataFromOpenMeteo(37.66, -121.87, 'Pleasanton', 'imperial', 'US');
+    expect(result.hourlyForecast?.map(hour => hour.isDay)).toEqual([true, false, false, false, false, true, true]);
+  });
+
+  it.each([0, 1])('preserves provider daylight %s without solar events (polar locations)', async (flag) => {
+    const forecast = makeForecastResponse();
+    forecast.hourly.is_day = forecast.hourly.time.map(() => flag);
+    forecast.daily.sunrise = [];
+    forecast.daily.sunset = [];
+    stubClientApiFetches(forecast);
+
+    const result = await buildWeatherDataFromOpenMeteo(78.22, 15.65, 'Longyearbyen', 'metric', 'NO');
+    expect(result.hourlyForecast).toHaveLength(48);
+    expect(result.hourlyForecast?.every(hour => hour.isDay === (flag === 1))).toBe(true);
+  });
+
+  it('uses the provider daylight flag before solar-time fallback', async () => {
+    const forecast = makeForecastResponse();
+    forecast.hourly.time = ['2025-03-25T12:00'];
+    forecast.hourly.is_day = [0];
+    stubClientApiFetches(forecast);
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+    expect(result.hourlyForecast?.[0].isDay).toBe(false);
+  });
+
+  it('leaves daylight unknown when neither the flag nor valid solar times exist', async () => {
+    const forecast = makeForecastResponse();
+    forecast.hourly.is_day = forecast.hourly.time.map(() => null);
+    forecast.daily.sunrise = ['invalid'];
+    forecast.daily.sunset = [];
+    stubClientApiFetches(forecast);
+    const result = await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
+    expect(result.hourlyForecast?.every(hour => hour.isDay === undefined)).toBe(true);
+  });
+
   it('should use same-origin Open-Meteo API proxies and pollen API', async () => {
     await buildWeatherDataFromOpenMeteo(40.71, -74.01, 'New York', 'imperial', 'US');
 
