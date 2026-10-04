@@ -48,6 +48,7 @@ describe('fetchOpenMeteoForecast', () => {
     expect(calledUrl.searchParams.get('precipitation_unit')).toBe('inch');
     expect(calledUrl.searchParams.get('forecast_days')).toBe('7');
     expect(calledUrl.searchParams.get('timezone')).toBe('auto');
+    expect(calledUrl.searchParams.get('hourly')?.split(',')).toContain('is_day');
     expect(result).toEqual(mockResponse);
   });
 

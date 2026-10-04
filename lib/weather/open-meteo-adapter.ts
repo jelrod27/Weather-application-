@@ -45,6 +45,28 @@ function formatHourlyLabel(naiveLocalTime: string): string {
 
 type PollenPayload = WeatherData['pollen'];
 
+/** Provider daylight handles polar days/nights; older responses can use local solar times. */
+function hourlyDaylight(forecast: OpenMeteoForecastResponse, index: number): boolean | undefined {
+  const flag = forecast.hourly?.is_day?.[index];
+  if (flag === 0 || flag === 1) return flag === 1;
+
+  const hour = forecast.hourly?.time[index];
+  if (!hour) return undefined;
+  const dayIndex = forecast.daily?.time.indexOf(hour.slice(0, 10)) ?? -1;
+  const sunrise = forecast.daily?.sunrise?.[dayIndex];
+  const sunset = forecast.daily?.sunset?.[dayIndex];
+  if (!sunrise || !sunset) return undefined;
+
+  // All three timestamps are wall-clock times in the forecast location. Use
+  // the same offset so neither comparison depends on the browser timezone.
+  const offset = forecast.utc_offset_seconds ?? 0;
+  const hourMs = openMeteoLocalTimeToEpoch(hour, offset);
+  const sunriseMs = openMeteoLocalTimeToEpoch(sunrise, offset);
+  const sunsetMs = openMeteoLocalTimeToEpoch(sunset, offset);
+  if (![hourMs, sunriseMs, sunsetMs].every(Number.isFinite) || sunriseMs >= sunsetMs) return undefined;
+  return hourMs >= sunriseMs && hourMs < sunsetMs;
+}
+
 const UNAVAILABLE_POLLEN: PollenPayload = {
   tree: { Tree: 'Unavailable' },
   grass: { Grass: 'Unavailable' },
@@ -341,6 +363,7 @@ export async function buildWeatherDataFromOpenMeteo(
         humidity: hourly.relative_humidity_2m?.[i],
         uvIndex: hourly.uv_index?.[i] != null ? Math.round(hourly.uv_index[i]) : undefined,
         icon: undefined,
+        isDay: hourlyDaylight(forecast, i),
       });
     }
 

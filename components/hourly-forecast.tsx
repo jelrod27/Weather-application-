@@ -183,7 +183,7 @@ function HourlyCard({
       <div className="mb-3 flex items-center justify-center filter drop-shadow-md">
         <WeatherIconModern
           condition={hour.condition}
-          isNight={hour.icon?.endsWith('n')}
+          isNight={hour.isDay !== undefined ? !hour.isDay : hour.icon?.endsWith('n')}
           size={40}
           className="hover:scale-110 transition-transform"
         />

@@ -59,6 +59,7 @@ export async function fetchOpenMeteoForecast(
   ];
 
   const hourlyVars = [
+    'is_day',
     'temperature_2m',
     'apparent_temperature',
     'relative_humidity_2m',

@@ -33,6 +33,7 @@ export interface OpenMeteoCurrent {
 
 export interface OpenMeteoHourly {
   time: string[];
+  is_day?: (number | null)[];
   temperature_2m: (number | null)[];
   apparent_temperature: number[];
   relative_humidity_2m: number[];
@@ -43,7 +44,7 @@ export interface OpenMeteoHourly {
   visibility: number[];
   precipitation: number[];
   precipitation_probability: (number | null)[];
-  [key: string]: string[] | (number | null)[];
+  [key: string]: string[] | (number | null)[] | undefined;
 }
 
 export interface OpenMeteoDaily {
