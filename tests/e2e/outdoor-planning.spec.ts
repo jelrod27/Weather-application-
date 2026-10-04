@@ -52,7 +52,7 @@ for (const width of [390, 1280]) {
       await stubPlannerForecast(page);
       await page.goto('/weather/london-uk?location=51.5%2C-0.12');
       await dismissWarningTakeoverIfPresent(page);
-      await page.getByRole('link', { name: 'Compare outdoor windows' }).click();
+      await page.getByRole('link', { name: 'Outdoor planner' }).click();
       await expect(page).toHaveURL(/\/hourly\?.*lat=51.5&lon=-0.12.*#outdoor-planner/);
       const planner = page.getByRole('region', { name: 'Plan time outdoors' });
       await expect(planner.getByRole('article')).toHaveCount(3);

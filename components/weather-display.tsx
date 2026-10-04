@@ -97,7 +97,6 @@ export function WeatherDisplay({
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
       />
-      <ForecastBrief weather={weather} hourlyHref={hourlyHref} />
 
       {/* 2. Hourly Forecast - Always visible if data exists */}
       {weather?.hourlyForecast && weather.hourlyForecast.length > 0 && (
@@ -110,9 +109,12 @@ export function WeatherDisplay({
           timezone={weather.timezone}
         />
       )}
+      {!desktopDiscovery && <ForecastBrief weather={weather} hourlyHref={hourlyHref} />}
 
       </div>
-      {desktopDiscovery && <ForecastDiscovery weather={weather} />}
+      {desktopDiscovery && <ForecastDiscovery weather={weather}>
+        <ForecastBrief weather={weather} hourlyHref={hourlyHref} />
+      </ForecastDiscovery>}
       <div className="weather-layout-details space-y-6">
       {/* Full available daily forecast and selected-day detail */}
       {weather?.forecast && weather.forecast.length > 0 ? (

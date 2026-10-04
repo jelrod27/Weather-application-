@@ -21,7 +21,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       await expect(brief).toContainText('Precipitation chance')
       await dismissWarningTakeoverIfPresent(page)
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10)
-      await brief.getByRole('link', { name: 'Plan the next few hours' }).click()
+      await brief.getByRole('link', { name: 'Hourly details' }).click()
       await expect(page).toHaveURL(/\/hourly\?.*lat=51.5&lon=-0.12/)
       const hour = page.getByRole('button', { name: /^Details for/ }).nth(1)
       await hour.focus()

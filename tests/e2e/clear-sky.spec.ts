@@ -30,6 +30,27 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       if (width < 1200) expect(order.discovery).toBeGreaterThan(order.metrics)
       await expect(page.getByRole('complementary', { name:'Explore your weather' })).toHaveCount(1)
       const discovery = page.getByRole('complementary', { name:'Explore your weather' })
+      const brief = page.getByRole('region', { name: 'Next few hours', exact: true })
+      await expect(brief).toHaveCount(1)
+      for (const label of ['Temperature', 'Precipitation chance', 'Highest hourly wind']) {
+        await expect(brief.getByText(label, { exact: true })).toBeVisible()
+      }
+      await expect(page.getByText('A little detail. A better plan.', { exact: true })).toHaveCount(0)
+      const placement = await brief.evaluate(el => {
+        const main = document.querySelector('.weather-layout-main')!
+        const hero = main.querySelector('.hero-weather-card')!
+        const radar = document.querySelector('.forecast-discovery-card')!
+        return {
+          inSidebar: Boolean(el.closest('.forecast-discovery')),
+          heroNextIsBrief: hero.nextElementSibling === el,
+          beforeRadar: el.getBoundingClientRect().bottom <= radar.getBoundingClientRect().top,
+          afterHourly: main.lastElementChild === el,
+        }
+      })
+      expect(placement.heroNextIsBrief).toBe(false)
+      expect(placement.inSidebar).toBe(width >= 1200)
+      if (width >= 1200) expect(placement.beforeRadar).toBe(true)
+      else expect(placement.afterHourly).toBe(true)
       const discoveryBeforeDetails = await discovery.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('.weather-layout-details')!) & Node.DOCUMENT_POSITION_FOLLOWING))
       expect(discoveryBeforeDetails).toBe(width >= 1200)
       // Keyboard order should visit the next discovery link, then the first daily forecast on desktop.
@@ -70,4 +91,24 @@ test('a saved Daybreak choice survives a new-default reload', async ({ page }) =
   await expect(page.locator('html')).toHaveAttribute('data-theme','daybreak')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme','daybreak')
+})
+
+test('home forecast keeps one summary when resizing from desktop to mobile', async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await context.setGeolocation({ latitude: 51.5, longitude: -0.12 })
+  await context.grantPermissions(['geolocation'])
+  await stubWeatherApis(page, { cityName: 'London', country: 'GB', lat: 51.5, lon: -0.12 })
+  await stubHomeHubApis(page)
+  await stubRadarApis(page)
+  await page.goto('/')
+  await dismissWarningTakeoverIfPresent(page)
+  const brief = page.getByRole('region', { name: 'Next few hours', exact: true })
+  await expect(brief).toHaveCount(1)
+  await expect(page.locator('.forecast-discovery .forecast-brief')).toHaveCount(1)
+  await expect(brief).toContainText('London')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(brief).toHaveCount(1)
+  await expect(page.locator('.weather-layout-main > .forecast-brief:last-child')).toHaveCount(1)
+  await expect(page.locator('.forecast-discovery .forecast-brief')).toHaveCount(0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })

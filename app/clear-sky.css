@@ -4,9 +4,7 @@
 .forecast-discovery-card { display:block; min-width:0; border:1px solid var(--border-subtle); background:hsl(var(--card)); padding:1.5rem; border-radius:var(--radius); overflow-wrap:anywhere; }
 .forecast-discovery-card:hover { border-color:hsl(var(--primary)); }
 .forecast-discovery-card:focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:4px; }
-.forecast-brief { padding:1.25rem 1.5rem; background:hsl(var(--secondary) / .55); border-left:3px solid hsl(var(--primary)); }
-.forecast-brief h2 { font-size:clamp(1.2rem,2vw,1.5rem); line-height:1.3; margin-top:.6rem; }
-.forecast-brief dl { margin-block:1rem; }
+.forecast-brief { min-width:0; padding:1.25rem; border:1px solid var(--border-subtle); border-radius:var(--radius); background:hsl(var(--card)); overflow-wrap:anywhere; }
 @media(min-width:1200px) {
   .weather-layout { grid-template-columns:minmax(0,1fr) 290px; gap:1.5rem; }
   .weather-layout-journey { grid-column:1 / -1; }
