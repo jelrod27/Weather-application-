@@ -2,6 +2,30 @@
 
 All notable changes to 16-Bit Weather are documented in this file.
 
+## [2026.10.0] - 2026-10-03
+
+### Added
+
+- Expanded weather education with additional cloud and weather-system guides, related-guide navigation, indexes, and article structured data.
+- Added local outdoor planning with hourly comparisons and expanded Stargazer guidance for beginner observing plans and finding targets.
+
+### Changed
+
+- Made Clear Sky the default theme and updated the forecast interface while retaining forecast detail.
+- Updated radar controls, status and navigation; improved radar data-age and refresh handling.
+- Added space-weather intent pages and charts; corrected rendering and feed ordering.
+- Improved location search and first-visit flows, city discovery and indexing, and selected page rendering and layout stability.
+- Updated weather journey, warning, aviation, travel, and education flows based on correctness and usability work.
+- Strengthened CI workflows, preview credential handling, deployment smoke checks, dependency security, database backups, and Supabase configuration.
+
+### Fixed
+
+- Corrected weather and hazard data handling, including saved-location reliability, forecast details, radar timestamps, Moon information, and travel severity.
+- Improved alert delivery guards, outbound request validation, warning coverage handling, and aviation feed recovery.
+- Corrected education claims and source attribution; improved chart, SEO, and responsive rendering behavior.
+
+---
+
 ## [2026.9.0] - 2026-09-01
 
 First release under calendar versioning, covering 160 pull requests since
