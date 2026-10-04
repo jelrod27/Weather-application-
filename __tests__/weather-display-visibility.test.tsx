@@ -65,7 +65,7 @@ describe('Clear Sky full-data layout', () => {
       expect(screen.getByRole('region', { name: 'Current conditions' })).toContainElement(screen.getByText(label));
     }
     expect(screen.getByRole('link', { name: /Explore local radar/ })).toHaveAttribute('href', expect.stringContaining('lat=51.5&lon=-0.12'));
-    expect(screen.getByRole('link', { name: /Learn to read the sky/ })).toHaveAttribute('href', expect.stringContaining('returnTo='));
+    expect(screen.queryByRole('heading', { name: 'What can clouds tell you?' })).not.toBeInTheDocument();
   });
   it('does not label missing weather readings as low UV, comfortable humidity or calm wind', () => {
     render(<WeatherDisplay weather={{ ...weather, uvIndex: NaN, humidity: NaN, pressure: '', wind: { speed: NaN } }} theme="clear-sky" selectedDay={null} onDayClick={() => {}} showRadar={false} />);
