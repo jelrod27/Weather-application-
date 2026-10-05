@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import { withApiRoute } from '@/lib/api/with-api-route';
 import { logRouteError } from '@/lib/error-utils';
 import { fetchTurbulenceAdvisories } from '@/lib/services/aviation-turbulence-service';
+import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {

@@ -15,6 +15,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -24,8 +25,7 @@ import {
   useTurbulenceData,
   type PIREPData,
 } from '@/hooks/useTurbulenceData';
-import type { TurbulenceSeverity } from '@/lib/aviation/turbulence';
-import Link from 'next/link';
+import { nearestTurbulenceSnapshot } from '@/lib/aviation/turbulence';
 import TurbulenceLegend from './turbulence/TurbulenceLegend';
 import TurbulenceControls, { type AltitudeFilter } from './turbulence/TurbulenceControls';
 
@@ -43,6 +43,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import Overlay from 'ol/Overlay';
+import type { TurbulenceSeverity } from '@/lib/aviation/turbulence';
 
 interface TurbulenceMapProps {
   initialAltitude?: AltitudeFilter;
@@ -129,7 +130,7 @@ export default function TurbulenceMap({
   const visiblePolygons = useMemo(() => {
     const active = polygons.filter(polygon => Date.parse(polygon.validTo) > currentTime);
     const times = [...new Set(active.map(polygon => polygon.validFrom))].sort();
-    const nearest = times.find(time => Date.parse(time) >= currentTime) ?? times.at(-1);
+    const nearest = nearestTurbulenceSnapshot(times, currentTime);
     return active.filter(polygon => polygon.validFrom === nearest);
   }, [polygons, currentTime]);
 

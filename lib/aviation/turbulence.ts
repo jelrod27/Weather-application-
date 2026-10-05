@@ -107,6 +107,15 @@ export function parseGairmetJson(raw: unknown): { polygons: TurbulencePolygon[];
   return { polygons, rejectedRecords };
 }
 
+/** Choose the closest published snapshot; prefer the future at an exact tie. */
+export function nearestTurbulenceSnapshot(times: string[], now: number): string {
+  return times.reduce((nearest, time) => {
+    const distance = Math.abs(Date.parse(time) - now);
+    const nearestDistance = Math.abs(Date.parse(nearest) - now);
+    return !nearest || distance < nearestDistance || (distance === nearestDistance && time > nearest) ? time : nearest;
+  }, '');
+}
+
 export function selectTurbulenceAdvisories(
   polygons: TurbulencePolygon[], validTime: string, altitudeFt: number | null, now: number,
 ): TurbulencePolygon[] {

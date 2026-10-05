@@ -24,6 +24,8 @@ for (const mobile of [false, true]) {
   test(`advisory map and controls work on ${mobile ? 'mobile' : 'desktop'}`, async ({ page }) => {
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 });
     await page.goto('/travel/turbulence');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.16bitweather.co/travel/turbulence');
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'US Turbulence Advisory Map');
     await dismissWarningTakeoverIfPresent(page);
     await expect(page.getByRole('heading', { name: 'US turbulence advisory map' })).toBeVisible();
     await expect(page.getByRole('region', { name: /^US advisory map/ })).toBeVisible();

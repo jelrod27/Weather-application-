@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { formatTurbulenceAltitude, selectTurbulenceAdvisories } from '@/lib/aviation/turbulence';
+import { formatTurbulenceAltitude, nearestTurbulenceSnapshot, selectTurbulenceAdvisories } from '@/lib/aviation/turbulence';
 import type { TurbulenceData } from '@/lib/aviation/turbulence';
 
 const AdvisoryMap = dynamic(() => import('./AdvisoryMap'), { ssr: false,
@@ -56,7 +56,7 @@ export default function TurbulenceOutlook(): React.JSX.Element {
   const stale = Boolean(data && (data.status === 'stale' || expired || now - Date.parse(data.fetchedAt) > 15 * 60_000));
   const times = useMemo(() => [...new Set((data?.polygons ?? []).filter(polygon => Date.parse(polygon.validTo) > now)
     .map(polygon => polygon.validFrom))].sort(), [data, now]);
-  const selectedTime = times.includes(time) ? time : times.find(value => Date.parse(value) >= now) ?? times.at(-1) ?? '';
+  const selectedTime = times.includes(time) ? time : nearestTurbulenceSnapshot(times, now);
   const polygons = useMemo(() => stale ? [] : selectTurbulenceAdvisories(data?.polygons ?? [], selectedTime,
     altitude === 'all' ? null : Number(altitude), now), [data, selectedTime, altitude, now, stale]);
   const selectArea = useCallback((id: string | null) => setSelectedId(id), []);

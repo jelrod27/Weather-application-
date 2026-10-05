@@ -1,4 +1,4 @@
-import { parseGairmetJson, selectTurbulenceAdvisories } from '@/lib/aviation/turbulence';
+import { nearestTurbulenceSnapshot, parseGairmetJson, selectTurbulenceAdvisories } from '@/lib/aviation/turbulence';
 import { fetchTurbulenceAdvisories } from '@/lib/services/aviation-turbulence-service';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
@@ -19,6 +19,13 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe('AWC JSON contract', () => {
+  it('chooses the closest snapshot around boundaries, preferring future on ties', () => {
+    const times = ['2026-10-04T18:00:00.000Z', '2026-10-04T21:00:00.000Z'];
+    expect(nearestTurbulenceSnapshot(times, Date.parse('2026-10-04T18:01:00Z'))).toBe(times[0]);
+    expect(nearestTurbulenceSnapshot(times, Date.parse('2026-10-04T19:30:00Z'))).toBe(times[1]);
+    expect(nearestTurbulenceSnapshot(times, Date.parse('2026-10-04T22:00:00Z'))).toBe(times[1]);
+    expect(nearestTurbulenceSnapshot([], Date.now())).toBe('');
+  });
   it('preserves snapshot/issuance/expiry and converts string coordinates and flight levels', () => {
     const { polygons } = parseGairmetJson([advisory]);
     expect(polygons).toHaveLength(1);
