@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   await stubWeatherApis(page);
   await stubHomeHubApis(page);
   // Test interactions without sending automated map pans to public tile servers.
-  await page.route(/https:\/\/(tile\.openstreetmap\.org|.*\.basemaps\.cartocdn\.com)\//, route => route.fulfill({
+  await page.route(/^https:\/\/(?:tile\.openstreetmap\.org|[a-d]\.basemaps\.cartocdn\.com)\//, route => route.fulfill({
     contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#eef2f7"/></svg>',
   }));
   await page.route('**/api/aviation/turbulence', route => route.fulfill({ json: { success: true, data } }));
