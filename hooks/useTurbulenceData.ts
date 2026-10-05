@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { safeStorage } from '@/lib/safe-storage';
-import type { TurbulencePolygon } from '@/app/api/aviation/turbulence/route';
+import type { TurbulencePolygon } from '@/lib/aviation/turbulence';
 
 export interface PIREPData {
   id: string;

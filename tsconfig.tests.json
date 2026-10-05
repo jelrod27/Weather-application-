@@ -12,6 +12,8 @@
     "lib/cron/**/*.ts",
     "lib/api/**/*.ts",
     "lib/aviation/**/*.ts",
+    "__tests__/aviation-turbulence.test.ts",
+    "__tests__/aviation-turbulence-route.test.ts",
     "lib/geocoding/**/*.ts",
     "lib/us-states.ts",
     "lib/cities.ts",
