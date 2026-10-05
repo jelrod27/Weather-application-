@@ -41,7 +41,7 @@ export default function TurbulenceOutlook(): React.JSX.Element {
         if (!response.ok || !body.success || !Array.isArray(body.data?.polygons)) throw new Error('Unavailable');
         if (!controller.signal.aborted) { setData(body.data); setNow(Date.now()); }
       })
-      .catch(() => { if (!controller.signal.aborted) { setData(null); setError('Advisories are unavailable. Try refreshing, or check NOAA directly.'); } })
+      .catch(() => { if (!controller.signal.aborted) { setError('Advisories are unavailable. Try refreshing, or check NOAA directly.'); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [refresh]);
@@ -119,7 +119,7 @@ export default function TurbulenceOutlook(): React.JSX.Element {
       {searchStatus && <p role="status" className="text-sm text-muted-foreground">{searchStatus}</p>}
       <div aria-live="polite" className="text-sm">
         {loading && !data && <p>Loading NOAA advisories…</p>}
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert">{data && !stale ? 'Refresh failed. Showing the last retrieved advisories until they become stale or expire. Try refreshing, or check NOAA directly.' : error}</p>}
         {stale && <p role="alert">The available data is stale or expired. Areas are hidden until refreshed.</p>}
         {data?.status === 'partial' && <p role="status">Some advisory data is unavailable. Missing snapshots or areas are unknown, not clear.</p>}
         {data && <p className="text-muted-foreground">NOAA AWC G-AIRMET · Retrieved {utc(data.fetchedAt)} · Checks every 5 minutes.</p>}

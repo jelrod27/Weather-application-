@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TurbulenceOutlook from '@/components/travel/turbulence/TurbulenceOutlook';
 import type { TurbulenceData, TurbulencePolygon } from '@/lib/aviation/turbulence';
 
@@ -16,7 +16,7 @@ const data: TurbulenceData = { polygons: [polygon], fetchedAt: '2026-10-04T23:40
 const fetchMock = jest.fn();
 const originalFetch = global.fetch;
 beforeEach(() => { fetchMock.mockReset(); global.fetch = fetchMock; jest.spyOn(Date, 'now').mockReturnValue(now); });
-afterEach(() => { global.fetch = originalFetch; jest.restoreAllMocks(); });
+afterEach(() => { global.fetch = originalFetch; jest.restoreAllMocks(); jest.useRealTimers(); });
 function respond(next: TurbulenceData): void { fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, data: next }) }); }
 
 it('loads without trip details and keeps map/list altitude selections synchronized', async () => {
@@ -61,4 +61,23 @@ it('offers recovery on failure and clears the unavailable map', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Refresh advisories' }));
   await screen.findByRole('button', { name: 'Area 1 · MOD' });
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it.each(['age', 'expiry'] as const)('keeps advisories through refresh failure, then hides them at the %s limit', async limit => {
+  jest.useFakeTimers();
+  jest.setSystemTime(now);
+  const validData = limit === 'expiry'
+    ? { ...data, polygons: [{ ...polygon, validTo: new Date(now + 120_000).toISOString() }] } : data;
+  respond(validData); render(<TurbulenceOutlook />);
+  await screen.findByRole('button', { name: 'Area 1 · MOD' });
+  fetchMock.mockRejectedValue(new Error('network'));
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh advisories' }));
+  await screen.findByRole('alert');
+  expect(screen.getByTestId('map-count')).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'Area 1 · MOD' })).toBeVisible();
+  jest.spyOn(Date, 'now').mockReturnValue(now + (limit === 'expiry' ? 180_000 : 16 * 60_000));
+  act(() => jest.advanceTimersByTime(60_000));
+  expect(screen.getByTestId('map-count')).toHaveTextContent('0');
+  expect(screen.getByText(/available data is stale or expired/)).toBeVisible();
+  expect(screen.queryByText(/No matching turbulence advisories/)).not.toBeInTheDocument();
 });
