@@ -5,11 +5,14 @@
  * All functions return typed responses. No API key required.
  */
 
-import type {
-  OpenMeteoForecastResponse,
-  OpenMeteoAirQualityResponse,
-} from '@/lib/open-meteo-types';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import { isInConus } from '@/lib/geo/point-in-polygon';
+import {
+  applyNbmForecastTemperatures,
+  NBM_DAILY_TEMPERATURES,
+  NBM_HOURLY_TEMPERATURES,
+} from '@/lib/weather/open-meteo-temperature-source';
+import type { OpenMeteoForecastResponse, OpenMeteoAirQualityResponse } from '@/lib/open-meteo-types';
 
 const FORECAST_BASE = 'https://api.open-meteo.com/v1/forecast';
 const AIR_QUALITY_BASE = 'https://air-quality-api.open-meteo.com/v1/air-quality';
@@ -17,12 +20,16 @@ const AIR_QUALITY_BASE = 'https://air-quality-api.open-meteo.com/v1/air-quality'
 /**
  * Fetch current conditions + hourly + daily forecast from Open-Meteo.
  * Uses imperial units (fahrenheit, mph, inch) by default to match the app's US-first approach.
- * The app handles metric conversion client-side based on user preference.
+ * Callers request their display units; forecasts require no second conversion.
+ * Resolved mainland-US locations use NBM forecast temperatures with Best Match
+ * for current conditions and ancillary metrics. See PRD-forecast-temperature-quality.
  */
 export async function fetchOpenMeteoForecast(
   lat: number,
   lon: number,
   options?: {
+    /** Resolved geocoding country, not a default inferred from units or language. */
+    countryCode?: string;
     forecastDays?: number;
     pastDays?: number;
     temperatureUnit?: 'fahrenheit' | 'celsius';
@@ -33,6 +40,7 @@ export async function fetchOpenMeteoForecast(
   }
 ): Promise<OpenMeteoForecastResponse> {
   const {
+    countryCode,
     forecastDays = 7,
     pastDays,
     temperatureUnit = 'fahrenheit',
@@ -104,11 +112,33 @@ export async function fetchOpenMeteoForecast(
     url.searchParams.set('past_days', pastDays.toString());
   }
 
+  const baseline = requestForecast(url);
+  // Country plus bounds excludes Canada/Mexico, Alaska, Hawaii and territories.
+  // Limit this policy to the displayed short-range forecast; history and longer
+  // horizons keep the existing source until separately evaluated.
+  if (countryCode?.toUpperCase() !== 'US' || !isInConus(lat, lon) ||
+      (pastDays ?? 0) > 0 || forecastDays > 7) return baseline;
+
+  const nbmUrl = new URL(url);
+  nbmUrl.searchParams.set('models', 'ncep_nbm_conus');
+  nbmUrl.searchParams.delete('current');
+  nbmUrl.searchParams.set('hourly', NBM_HOURLY_TEMPERATURES.join(','));
+  nbmUrl.searchParams.set('daily', NBM_DAILY_TEMPERATURES.join(','));
+  // Optional request runs alongside Best Match. A slow or unavailable regional
+  // model must not add a retry chain to the required weather request.
+  const [base, nbm] = await Promise.all([
+    baseline,
+    requestForecast(nbmUrl, true).catch(() => null),
+  ]);
+  return applyNbmForecastTemperatures(base, nbm);
+}
+
+async function requestForecast(url: URL, optional = false): Promise<OpenMeteoForecastResponse> {
   const response = await fetchWithTimeout(url.toString(), {
-    timeoutMs: 8000,
+    timeoutMs: optional ? 3000 : 8000,
+    ...(optional ? { maxRetries: 0 } : {}),
     headers: { 'User-Agent': '16-Bit-Weather/open-meteo' },
   });
-
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     throw new Error(

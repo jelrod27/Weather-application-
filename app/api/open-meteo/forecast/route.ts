@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       const parsedDays = days ? parseInt(days, 10) : 7;
       const forecastDays = Number.isNaN(parsedDays) ? 7 : Math.min(Math.max(parsedDays, 1), 16);
       const data = await fetchOpenMeteoForecast(latitude, longitude, {
+        countryCode: sp.get('country_code')?.toUpperCase() === 'US' ? 'US' : undefined,
         forecastDays,
         temperatureUnit,
         windSpeedUnit,

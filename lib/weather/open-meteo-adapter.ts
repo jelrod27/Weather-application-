@@ -129,6 +129,7 @@ async function fetchForecastAndAirQualityViaApi(
   temperatureUnit: 'celsius' | 'fahrenheit',
   windSpeedUnit: 'kmh' | 'mph',
   precipitationUnit: 'mm' | 'inch',
+  countryCode?: string,
 ): Promise<{
   forecast: OpenMeteoForecastResponse;
   airQuality: OpenMeteoAirQualityResponse | null;
@@ -141,6 +142,7 @@ async function fetchForecastAndAirQualityViaApi(
     wind_speed_unit: windSpeedUnit,
     precipitation_unit: precipitationUnit,
   });
+  if (countryCode) forecastQuery.set('country_code', countryCode);
 
   const [forecastRes, airQualityRes] = await Promise.all([
     fetch(getApiUrl(`/api/open-meteo/forecast?${forecastQuery.toString()}`), {
@@ -169,12 +171,14 @@ async function fetchForecastAndAirQualityDirect(
   temperatureUnit: 'celsius' | 'fahrenheit',
   windSpeedUnit: 'kmh' | 'mph',
   precipitationUnit: 'mm' | 'inch',
+  countryCode?: string,
 ): Promise<{
   forecast: OpenMeteoForecastResponse;
   airQuality: OpenMeteoAirQualityResponse | null;
 }> {
   const [forecast, airQuality] = await Promise.all([
     fetchOpenMeteoForecast(lat, lon, {
+      countryCode,
       forecastDays: 7,
       temperatureUnit,
       windSpeedUnit,
@@ -221,6 +225,7 @@ export async function buildWeatherDataFromOpenMeteo(
         temperatureUnit,
         windSpeedUnit,
         precipitationUnit,
+        countryCode,
       )
     : await fetchForecastAndAirQualityViaApi(
         lat,
@@ -228,6 +233,7 @@ export async function buildWeatherDataFromOpenMeteo(
         temperatureUnit,
         windSpeedUnit,
         precipitationUnit,
+        countryCode,
       );
 
   const pollenData = pollenPromise

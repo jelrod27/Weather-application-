@@ -46,6 +46,12 @@ const mockedFetch = fetchOpenMeteoForecast as jest.MockedFunction<typeof fetchOp
 const mockedRateLimit = rateLimitRequest as jest.MockedFunction<typeof rateLimitRequest>;
 
 describe('GET /api/open-meteo/forecast', () => {
+  it.each([['us', 'US'], ['US', 'US'], ['CA', undefined], ['invalid', undefined]])('allows regional selection only for country_code=%s', async (country, expected) => {
+    mockedFetch.mockResolvedValueOnce({ latitude: 37.66, longitude: -121.87 } as never);
+    const res = await GET(new NextRequest(`http://localhost/api/open-meteo/forecast?lat=37.66&lon=-121.87&country_code=${country}`));
+    expect(res.status).toBe(200);
+    expect(mockedFetch).toHaveBeenCalledWith(37.66, -121.87, expect.objectContaining({ countryCode: expected }));
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRateLimit.mockResolvedValue({
