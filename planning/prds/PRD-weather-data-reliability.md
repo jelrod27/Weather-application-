@@ -1,8 +1,9 @@
 # Weather data reliability and consistency
 
-Date: September 26, 2026. Status: authorized for implementation in one PR.
-Branch: `codex/weather-data-reliability`.
-Base: `9268e34c9ccf2c492a588b5b0b20d2538c73c976` (merged PR633).
+Date: September 26, 2026.
+Status: Shipped — [PR #634](https://github.com/jelrod27/Weather-application-/pull/634), merge `9916b0f`.
+Base: `9268e34c9ccf2c492a588b5b0b20d2538c73c976` (merged PR #633).
+Verification: [implementation verification](../weather-data-reliability-verification.md).
 
 ## Goal and authority
 

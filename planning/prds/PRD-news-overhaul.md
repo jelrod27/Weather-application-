@@ -5,6 +5,8 @@
 **Author:** Justin Elrod / Claude Analysis
 **Project:** 16-Bit Weather (16bitweather.co)
 **Priority:** High (v1.0); follow-through after Phases 1–3 shipped
+**Status:** Core overhaul shipped — [PR #420](https://github.com/jelrod27/Weather-application-/pull/420) and [PR #455](https://github.com/jelrod27/Weather-application-/pull/455). Hazard-image honesty and weekly feed-health follow-ups shipped in [PR #507](https://github.com/jelrod27/Weather-application-/pull/507) and [PR #508](https://github.com/jelrod27/Weather-application-/pull/508).
+**Open follow-up:** Editorial news cards have credit metadata available, but a review of the current news UI did not find credit text rendered to readers. Track that separately; treat §§7–17 below as historical implementation notes.
 **Lighthouse Gate:** Performance score must remain >= 85 on mobile and desktop after all changes (per `lighthouserc.js`, enforced by the Lighthouse CI workflow).
 
 ---
@@ -51,13 +53,14 @@ v1.0 left `scripts/check-news-feeds.ts` as a **manual** gate (§14). That repeat
 
 **Required follow-through:** a scheduled GitHub Actions workflow runs `npx tsx scripts/check-news-feeds.ts` weekly (and on `workflow_dispatch`). Failure is allowed to fail the job so maintainers get notified; flaky upstream should be investigated, not silenced forever.
 
-### Open follow-ups (post-amendment)
+### Follow-up status (rechecked 2026-10-04)
 
-1. Ship hazard image honesty (no SF-1906 / wrong-peak stand-ins).
-2. Weekly feed-health workflow (this amendment).
-3. Visible stock image credits on editorial cards.
-4. Soften `stats.errors` / `NewsFeedBanner` so swallowed per-feed `[]` failures still surface.
-5. Archive or trim stale body sections of this PRD once honesty + credits land; keep this amendment as the living north star.
+- **Shipped:** Hazard image honesty — [PR #507](https://github.com/jelrod27/Weather-application-/pull/507).
+- **Shipped:** Weekly feed-health workflow — [PR #508](https://github.com/jelrod27/Weather-application-/pull/508).
+- **Shipped:** Feed errors surface through `NewsFeedBanner` and high-priority failures are reported by the feed service.
+- **Open:** Render image credits on editorial news cards. Credit metadata exists, but current news-card UI does not display it.
+
+The implementation sections below are retained as historical design and acceptance context; do not treat them as an uncompleted implementation plan.
 
 ---
 

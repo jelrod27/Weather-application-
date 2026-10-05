@@ -5,6 +5,8 @@
 **Author:** Justin Elrod / Claude Analysis
 **Project:** 16-Bit Weather (16bitweather.co)
 **Priority:** P3
+**Status:** Stale / archived — unimplemented proposal; last reviewed against its June 11, 2026 baseline on October 4, 2026.
+**Reason:** Severe-alert `alert_subscriptions` and `user_alerts` tables now exist, so the schema assumptions below are obsolete. This does not establish that proposed stargazing-window alerts shipped. Revalidate the product need, current schema, and implementation approach before reopening.
 **Effort estimate:** L (build is four separate executor plans, each M)
 **Spike commit:** `2243b04`, 2026-06-11
 

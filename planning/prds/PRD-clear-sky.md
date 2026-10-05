@@ -1,7 +1,8 @@
 # Clear Sky — default theme and complete weather experience
 
 **Date:** September 27, 2026
-**Status:** Implemented locally; release validation and PR publication in progress.
+**Status:** Shipped — [PR #638](https://github.com/jelrod27/Weather-application-/pull/638), merge `7834d12`.
+**Verification:** [Clear Sky verification](../clear-sky-verification.md).
 **Design selected:** Concept A, Clear Sky, from the local five-theme study.
 **Audience:** Everyday weather users first, with complete detail and learning paths for enthusiasts.
 **Delivery proposal:** One implementation PR with focused commits and local code review before pushing.

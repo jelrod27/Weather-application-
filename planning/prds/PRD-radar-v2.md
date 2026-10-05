@@ -5,6 +5,7 @@
 **Author:** Justin Elrod / Cursor  
 **Project:** 16-Bit Weather (16bitweather.co)  
 **Priority:** P1  
+**Status:** Shipped — [PR #449](https://github.com/jelrod27/Weather-application-/pull/449), merge `b82404f`; subsequent accuracy and navigation work includes [PR #618](https://github.com/jelrod27/Weather-application-/pull/618) and [PR #633](https://github.com/jelrod27/Weather-application-/pull/633).
 **Effort estimate:** L (one feature branch, one PR)  
 **Base branch:** `main` (post #445–#448 radar hotfixes)  
 **Review strategy:** Single PR for one CodeRabbit scan (free tier). Internal commits may be logical chunks, but merge as one unit.
