@@ -15,6 +15,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -24,7 +25,7 @@ import {
   useTurbulenceData,
   type PIREPData,
 } from '@/hooks/useTurbulenceData';
-import type { TurbulencePolygon, TurbulenceSeverity } from '@/app/api/aviation/turbulence/route';
+import { nearestTurbulenceSnapshot } from '@/lib/aviation/turbulence';
 import TurbulenceLegend from './turbulence/TurbulenceLegend';
 import TurbulenceControls, { type AltitudeFilter } from './turbulence/TurbulenceControls';
 
@@ -42,6 +43,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import Overlay from 'ol/Overlay';
+import type { TurbulenceSeverity } from '@/lib/aviation/turbulence';
 
 interface TurbulenceMapProps {
   initialAltitude?: AltitudeFilter;
@@ -50,6 +52,7 @@ interface TurbulenceMapProps {
 
 // Severity hex values must match --severity-* CSS tokens (canvas can't read CSS vars).
 const SEVERITY_HEX: Record<TurbulenceSeverity, string> = {
+  unknown: '#64748b',
   smooth: '#22c55e',
   light: '#22c55e',
   moderate: '#eab308',
@@ -121,6 +124,15 @@ export default function TurbulenceMap({
     refresh,
     currentTime,
   } = useTurbulenceData();
+
+  // The shared API now returns every published snapshot. Keep the operational
+  // map on one nearest snapshot rather than stacking several forecast times.
+  const visiblePolygons = useMemo(() => {
+    const active = polygons.filter(polygon => Date.parse(polygon.validTo) > currentTime);
+    const times = [...new Set(active.map(polygon => polygon.validFrom))].sort();
+    const nearest = nearestTurbulenceSnapshot(times, currentTime);
+    return active.filter(polygon => polygon.validFrom === nearest);
+  }, [polygons, currentTime]);
 
   // Filter PIREPs by age + altitude
   const filteredPireps = useMemo(() => {
@@ -272,15 +284,13 @@ export default function TurbulenceMap({
       map.removeLayer(polygonLayerRef.current);
     }
 
-    if (polygons.length === 0) {
+    if (visiblePolygons.length === 0) {
       polygonLayerRef.current = null;
       return;
     }
 
     const features: Feature[] = [];
-    for (const poly of polygons) {
-      // Show only the most relevant near-term forecast (≤6 hr) to avoid stacking.
-      if (poly.forecastHour > 6) continue;
+    for (const poly of visiblePolygons) {
       const rings = poly.coordinates
         .map((ring) => ring.map(([lon, lat]) => fromLonLat([lon, lat])));
       if (rings.length === 0 || rings[0].length < 3) continue;
@@ -305,7 +315,7 @@ export default function TurbulenceMap({
     });
     map.addLayer(layer);
     polygonLayerRef.current = layer;
-  }, [polygons]);
+  }, [visiblePolygons]);
 
   const closePopup = useCallback(() => {
     setSelectedPirep(null);
@@ -464,6 +474,9 @@ export default function TurbulenceMap({
       </div>
 
       <TurbulenceLegend />
+      <Link href="/travel/turbulence" className="inline-block text-sm text-primary underline underline-offset-4">
+        Explore US turbulence advisory times and altitudes →
+      </Link>
 
       <div className={cn('flex flex-wrap items-center gap-2 text-xs font-mono opacity-60', themeClasses.text)}>
         <Clock className="w-3 h-3" aria-hidden="true" />
@@ -471,7 +484,7 @@ export default function TurbulenceMap({
           PIREPs updated: {fetchedAt ? new Date(fetchedAt).toLocaleTimeString() : 'Loading...'}
         </span>
         <span className="mx-2 hidden sm:inline" aria-hidden="true">|</span>
-        <span>{polygons.length} G-AIRMET zones</span>
+        <span>{visiblePolygons.length} G-AIRMET zones{visiblePolygons[0] ? ` · snapshot ${new Date(visiblePolygons[0].validFrom).toUTCString()}` : ''}</span>
         <span className="mx-2 hidden sm:inline" aria-hidden="true">|</span>
         <span>Click markers for details</span>
       </div>

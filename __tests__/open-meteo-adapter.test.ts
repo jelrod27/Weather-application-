@@ -158,6 +158,11 @@ afterEach(() => {
 });
 
 describe('buildWeatherDataFromOpenMeteo (client / jsdom)', () => {
+  it.each(['US', 'CA', undefined])('passes only the resolved country %s to the forecast proxy', async country => {
+    await buildWeatherDataFromOpenMeteo(37.66, -121.87, 'Selected location', 'imperial', country);
+    const call = mockFetch.mock.calls.find(([url]) => String(url).includes('/api/open-meteo/forecast'));
+    expect(new URL(call![0], 'http://localhost').searchParams.get('country_code')).toBe(country ?? null);
+  });
   it('uses each Pleasanton forecast date sunrise and sunset for clear hourly icons', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-05T00:00:00Z'));
     const forecast = makeForecastResponse();
@@ -414,6 +419,7 @@ describe('buildWeatherDataFromOpenMeteo (server runtime)', () => {
     );
 
     expect(mockFetchOpenMeteoForecast).toHaveBeenCalledWith(40.71, -74.01, {
+      countryCode: 'US',
       forecastDays: 7,
       temperatureUnit: 'fahrenheit',
       windSpeedUnit: 'mph',
@@ -455,6 +461,7 @@ describe('buildWeatherDataFromOpenMeteo (server runtime)', () => {
     await buildWeatherDataFromOpenMeteo(35.68, 139.69, 'Tokyo', 'metric', 'JP');
 
     expect(mockFetchOpenMeteoForecast).toHaveBeenCalledWith(35.68, 139.69, {
+      countryCode: 'JP',
       forecastDays: 7,
       temperatureUnit: 'celsius',
       windSpeedUnit: 'kmh',

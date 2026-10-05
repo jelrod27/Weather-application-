@@ -176,6 +176,10 @@ function createPlaceholder(): TripScoreResponse {
 function FlyContent(): React.JSX.Element {
   return (
     <div className="space-y-4">
+      <Link href="/travel/turbulence" className="block rounded-xl border border-border bg-card p-4 text-primary hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <span className="block font-semibold">US turbulence advisory map →</span>
+        <span className="mt-1 block text-sm text-muted-foreground">Explore published times and altitude layers. No flight number needed.</span>
+      </Link>
       <AirportMiseryBoard />
       <div className="text-center">
         <Link

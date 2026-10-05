@@ -1,521 +1,349 @@
-# PRD: Travel Turbulence Forecast (Stargazer-style Command Center)
+# PRD: North America Turbulence Outlook
 
-**Version:** 2.1 (design + implementation; reconciled against main)  
-**Date:** 2026-08-05 (baseline 2026-08-26)  
-**Author:** Justin Elrod / Cursor  
-**Project:** 16-Bit Weather (16bitweather.co)  
-**Status:** Draft — `/travel/turbulence` is **not built**  
-**Priority:** P2  
-**Effort estimate:** M–L (one feature branch; ~4 implementation slices)  
-**Surface:** `/travel/turbulence`  
-**Design references:** Stargazer Command Center; NOAA AWC GTGN ([news](https://www.weather.gov/news/260803-gtgn))  
-**Research:** [`planning/research/gtgn-nws-2026-08.md`](../research/gtgn-nws-2026-08.md)  
-**Implementation slices:** §13 of this document (no separate plan file)
+**Version:** 3.0 — product direction rewrite
+**Originally drafted:** 2026-08-05; first added to the repository 2026-08-26
+**Revised:** 2026-10-04
+**Status:** US advisory first release approved October 4, 2026; implemented and validated for PR review, not yet shipped. The broader North America forecast and optional trip comparison remain proposals.
+**Project:** 16-Bit Weather (`16bitweather.co`)
+**Priority:** Proposed P2
+**Surface:** `/travel/turbulence`
+**Related work:** [Aviation uplift](../aviation-uplift.md), [GTGN research](../research/gtgn-nws-2026-08.md), [Aviation flight-tracker vision](../aviation-flight-tracker-vision.md)
 
 ---
 
-## Table of Contents
+## Approved first release — October 4, 2026
 
-1. [Problem](#1-problem)
-2. [Inspiration](#2-inspiration)
-3. [Goals and Non-Goals](#3-goals-and-non-goals)
-4. [Locked Product Decisions](#4-locked-product-decisions)
-5. [Information Architecture](#5-information-architecture)
-6. [Visual Design Spec](#6-visual-design-spec)
-7. [Screen Spec (wire-level)](#7-screen-spec-wire-level)
-8. [Copy Deck](#8-copy-deck)
-9. [Data Strategy](#9-data-strategy)
-10. [API Contract](#10-api-contract)
-11. [Scoring Algorithm](#11-scoring-algorithm)
-12. [File Inventory](#12-file-inventory)
-13. [Implementation Slices](#13-implementation-slices)
-14. [Verification](#14-verification)
-15. [Risks, Attribution, Kill Criteria](#15-risks-attribution-kill-criteria)
-16. [Decision Log](#16-decision-log)
+Tracking: [issue #657](https://github.com/jelrod27/Weather-application-/issues/657). After reviewing source feasibility, Justin explicitly selected **“Start with a clearly labeled US advisory map; expand later.”** This amendment governs the initial release; the continental product vision below is retained for later consideration.
 
----
+- Ship `/travel/turbulence` as **US turbulence advisory map**, with G-AIRMET coverage limited to the contiguous United States and adjacent coastal waters. No Canada, Mexico, Alaska or Hawaii coverage claim.
+- Display source-native advisories on a map and equivalent numbered list, actual published snapshot times, altitude-layer filtering, city centering, retrieval/issue/expiry details, and clear empty/partial/stale/failure states.
+- Reuse the corrected `/api/aviation/turbulence` endpoint and shared parser/acquisition service. No duplicate passenger endpoint or route-to-route HTTP is needed for an identical national dataset.
+- Request documented TANGO snapshots at `fore=0,3,6,9,12`, retaining turbulence areas and excluding other TANGO hazards. Product expiry and snapshot validity are distinct. Do not invent missing forecast steps or map absent advisories to smooth conditions.
+- Add entry links from Travel Fly and the aviation turbulence map. Preserve the operations map with one nearest valid snapshot rather than stacked forecast times.
+- Defer gridded guidance, additional observation layers, numeric ride scores, approximate trip comparison, continental coverage, accounts, subscriptions and GRIB processing. Existing aviation reports remain linked separately.
+- [Source feasibility and expansion gates](../research/turbulence-source-feasibility-2026-10.md) document the source choice. No paid service or provider account was introduced.
 
-## 1. Problem
+First-release acceptance: actual AWC polygons render; source times/altitudes survive normalization; invalid feeds cannot become healthy-empty results; expiry removes areas; snapshot/altitude changes update map and list together; city centering never expands coverage; both entry links and mobile/keyboard controls work. The broader acceptance checklist in §10 applies to future expansion, not this approved smaller release.
 
-### Current baseline (2026-08-26)
+### Local verification — October 4, 2026
 
-Reconciled against GitHub `main` (`b3ed851`).
+- 40 focused Jest tests passed across the new parser/service, route, and passenger UI suites plus existing Travel controls. Tests cover flat JSON versus GeoJSON, coordinate/altitude/time normalization, malformed and unknown fields, HTTP 204, failed snapshots, product expiry, exact-time/altitude filtering, stale/partial/empty UI and retry recovery.
+- 12 relevant Chromium journeys passed: four new desktop/mobile, navigation, city-search and error-recovery tests, six existing aviation tests, and two existing Travel tests. Browser suites stub external tiles for map interaction tests.
+- Live local acquisition returned five actual snapshot times with zero rejected records; a later upstream partial response retained the successful snapshots and reported partial status. These are live smoke observations, not permanent expected counts.
+- Agent-browser inspection confirmed real advisory polygons over a visible basemap, source details, working page/home navigation, and no reported browser errors. The new map uses the configured CARTO basemap, with direct OpenStreetMap tiles and visible attribution when no public CARTO key is configured; no proxy, prefetch, or offline downloads.
+- Production build, application/test TypeScript projects, changed-code ESLint, repository lint, Knip and whitespace checks passed. Existing repository warnings remain (including deprecated Next/Sentry conventions, optional local credentials and unrelated build-time upstream/cache diagnostics).
+- PR #658 review follow-up: configured-Supabase CI exposed an existing guest preference reset during INITIAL_SESSION. This was a real bug missed by the initial local forecast run without Supabase configuration. Auth initialization now preserves guest units/theme; SIGNED_OUT and explicit sign-out retain cleanup. Failed advisory refreshes retain the last successful data with an explicit warning, while age/expiry still hide stale areas. Regression tests cover both fixes. Final local validation passed all 281 Jest suites / 2,222 tests, all 148 runnable Chromium tests in one CI-equivalent configured-auth run (two intentional skips), production build, changed-file lint and test TypeScript. Earlier five-run Lighthouse validation passed; hosted checks will rerun for these fixes. Firefox is not installed; WebKit is not configured.
 
-| Already ships | Still missing |
-|---------------|---------------|
-| `/aviation` ops map: real AWC G-AIRMET polygons + PIREPs (`app/api/aviation/turbulence`, `app/api/aviation/pireps`, `hooks/useTurbulenceData`, `TurbulenceMap`) — see `planning/aviation-uplift.md` Phase 3 | `/travel/turbulence` page, travel forecast API, passenger score |
-| `/travel` Fly/Drive hub; Fly deep-links to `/aviation` | Fly CTA to a passenger forecast |
-| Fetch/parse lives **inside** the aviation API routes (no shared `aviation-turbulence-service` yet) | Extract those routes into services, then reuse (no HTTP loopback) |
-
-Do not re-implement G-AIRMET fetch. Extract, then score.
-
-`/travel` answers “will my trip suck?” with Fly and Drive. Fly shows airport misery and deep-links to `/aviation` (ops console: SIGMETs, METARs, TurbulenceMap with G-AIRMET + PIREPs).
-
-Aviation is **ops-shaped**. Stargazer is **forecast-shaped**: one hero score, best window, tabbed detail. Travel has no passenger answer to:
-
-> “How bumpy will the ride be, and when is the smoothest window?”
-
-GTGN (AWC, 2026-08) raises the bar for turbulence storytelling. We adopt the product idea (nowcast-grade bumpiness forecast) without becoming an EFB or ingesting GRIB2 in v1.
+Publication: the user authorized one combined PR on the existing branch. Keep the imported PRD reconciliation as a documentation commit separate from the #656 temperature change and #657 feature. Stage the shared `tsconfig.tests.json` additions by task. No production deployment or merge is authorized by this documentation.
 
 ---
 
-## 2. Inspiration
+## 1. Product intent
 
-### GTGN (product idea only)
+Build an easy-to-open, map-led turbulence outlook that gives travelers a useful view of current and forecast turbulence across North America without requiring an itinerary or flight number.
 
-| Trait | Our v1 translation |
-|-------|-------------------|
-| 15-min nowcast | Freshness stamp + “Updated Xm ago”; data refresh ~10 min cache |
-| Multi-altitude | Hazard-type sub-scores in v1; altitude bands deferred to GTGN phase |
-| Multi-signal | G-AIRMET + PIREPs → drivers list |
-| Pilot GFA UI | Do **not** clone; build Stargazer-like forecast page |
+A passenger opens **Turbulence Forecast** and immediately sees the latest available regional outlook, when it is valid, what altitude range it describes, and where the data does and does not cover. The passenger can explore a time window or altitude and, optionally, enter a departure, destination, and departure time to see how an approximate travel corridor relates to the outlook.
 
-### Stargazer (UX pattern — mirror closely)
+The feature provides weather context. It does not predict the exact ride on a particular aircraft, replace an airline or crew, or advise whether a flight is safe.
 
-| Stargazer | Turbulence forecast |
-|-----------|---------------------|
-| `STARGAZER COMMAND CENTER` | `TURBULENCE FORECAST` |
-| Overall score + label | Bumpiness 0–100 + SMOOTH→BRUTAL (misery vocab) |
-| Best window | Smoothest window next 12–24h |
-| Limiting factor | Dominant driver |
-| Sub-score bars | `gairmet` / `pirep` / `convective` (hazard-type) |
-| Tabs | `now` / `timeline` / `reports` / `about` |
-| Hourly timeline | Forecast-hour severity strip |
-| Location search | LocationContext + search (airport/city) |
-| Attribution | NOAA AWC |
+### Product promise
+
+> See the latest available turbulence outlook over North America. Explore when and where it applies; optionally compare it with an approximate trip corridor.
+
+“Latest available” and the source's issue/valid times are shown in the experience. The product must not imply that a forecast is a live measurement or updates continuously.
 
 ---
 
-## 3. Goals and Non-Goals
+## 2. Problem
+
+The existing aviation turbulence map is an operations-oriented surface. A general passenger may not know the relevant aviation terms, have a flight number, or want to submit trip details just to understand the broader picture. A single location score is also a poor fit for a journey that crosses regions, altitudes, and forecast periods.
+
+The product should answer these questions in order:
+
+1. **What is the latest available turbulence outlook over North America?**
+2. **When is that outlook valid, and at what altitudes?**
+3. **What areas are forecast to have turbulence, and what information is observed rather than forecast?**
+4. **If I want to, how might this outlook relate to my approximate trip?**
+
+A broad map is the primary experience. Trip-specific interpretation is an optional layer, not a prerequisite for seeing the forecast.
+
+---
+
+## 3. Goals and success criteria
 
 ### Goals
 
-- **G1.** Passenger-facing forecast at `/travel/turbulence` with Stargazer command-center layout.
-- **G2.** First viewport = one composition: title, score, best smooth window, one summary — not a card dashboard.
-- **G3.** CTA from Travel Hub Fly (and secondary from `/aviation` TurbulenceMap).
-- **G4.** v1 data = real AWC G-AIRMET + turbulence PIREPs via shared lib (no HTTP loopback).
-- **G5.** Explainable drivers; misery-family labels (`SMOOTH` / `BUMPY` / `ROUGH` / `BRUTAL`).
-- **G6.** Out-of-coverage / no-data never renders as smooth green.
-- **G7.** Educational disclaimer: not for operational flight planning.
-- **G8.** Theme tokens (`--severity-*`) + retro terminal aesthetic.
+- **G1 — Immediate value:** Opening `/travel/turbulence` displays a useful North America outlook without requiring a flight number, account, or trip form.
+- **G2 — Geographic honesty:** The map distinguishes geographic viewport from actual data coverage. North America-wide claims are made only if the validated sources support the represented regions.
+- **G3 — Time clarity:** Users can identify the source issue/observation time, valid time or period, last successful retrieval, and whether data is current, stale, unavailable, or outside coverage.
+- **G4 — Altitude clarity:** Users can see the forecast altitude range in plain language, with exact aviation levels available as detail where the source provides them.
+- **G5 — Source separation:** Forecast fields, advisories, and pilot reports are visually and verbally distinct; observations are not presented as forecast predictions.
+- **G6 — Optional trip context:** Users can enter origin, destination, and departure date/time without a flight number and compare an approximate corridor and time window with available forecast layers.
+- **G7 — Safe interpretation:** No-data, unsupported altitude, expired product, stale product, and fetch failure never appear as smooth or turbulence-free conditions.
+- **G8 — Accessibility:** Every map insight has an accessible text/list equivalent; the experience works with keyboard and screen reader and at mobile sizes.
 
-### Non-Goals (v1)
+### Initial success measures
 
-- NOMADS GTGN GRIB2 ingest.
-- Replacing `/aviation` TurbulenceMap.
-- Third Fly/Drive/Bump mode on `/travel`.
-- Origin→destination route sampling (location-only MVP).
-- Flight-number turbulence.
-- Push/email alerts.
-- EFB / dispatch fidelity.
+Measure these after launch; do not invent targets before collecting a baseline:
 
----
+- Share of page visits that reach a usable map state.
+- Use of time and altitude controls.
+- Use of the optional trip comparison and completion rate.
+- Failure, stale-data, and uncovered-area rates by source and region.
+- User feedback on whether the outlook was understandable and whether its limits were clear.
 
-## 4. Locked Product Decisions
-
-| # | Question | Decision |
-|---|----------|----------|
-| D1 | Placement | `/travel/turbulence` sibling page |
-| D2 | Naming | **Turbulence Forecast** (chrome + SEO) |
-| D3 | Location default | `LocationContext`; optional `?lat=&lon=` / `?q=`; snap label to nearest major airport within 80 km when available |
-| D4 | Sub-scores | Hazard-type: `gairmet`, `pirep`, `convective` (0–100 bumpiness each) |
-| D5 | Route mode | Deferred; location-only |
-| D6 | Score polarity | Higher = bumpier (misery-aligned); About tab explains vs Stargazer |
-| D7 | Labels | Map via existing `getSeverityLevel` + `MISERY_LEVEL_LABELS` |
-| D8 | GTGN | Phase B spike after v1 ships |
-| D9 | Radius | 400 km for polygon hit-test / PIREP inclusion |
-| D10 | Timeline | Buckets by G-AIRMET `forecastHour` (0, 3, 6, 9, …) within ≤12h; fill gaps as `null` (unknown), not 0 |
+Do not use engagement or trip-form completion as evidence that the forecast is accurate or improves flight outcomes.
 
 ---
 
-## 5. Information Architecture
+## 4. Non-goals and product boundaries
 
-```
-/travel                         Travel Hub (unchanged core)
-  └─ Fly CTA                    “Turbulence forecast →” → /travel/turbulence
-/travel/turbulence              NEW command center
-/aviation                       Ops console (unchanged)
-  └─ TurbulenceMap header CTA   “Passenger forecast →” (secondary)
-```
+Version 1 does not:
 
-Share URL: `https://www.16bitweather.co/travel/turbulence`  
-Hash tabs: `#now` `#timeline` `#reports` `#about` (same pattern as Stargazer).
+- Require a flight number or airline account.
+- Claim to know an airline's filed route, actual aircraft altitude, dispatch plan, or in-flight deviations.
+- Provide a safety, cancellation, delay, seat-selection, or flight-choice recommendation.
+- Present a route corridor as an exact flight track.
+- Replace the existing `/aviation` operations map or professional aviation weather products.
+- Generate an independent turbulence forecast by blending sparse PIREPs and advisories into an unexplained 0–100 score.
+- Promise live conditions, continuous updates, precise turbulence timing, or a specific passenger experience.
+- Add push/email alerts or paid provider integrations before a separate product and cost decision.
+- Ingest GTGN/NWP GRIB2 or other large model data unless provider access, licensing, compute, and validation have been separately approved.
 
 ---
 
-## 6. Visual Design Spec
+## 5. Primary user experience
 
-### Aesthetic
+### 5.1 Entry and default state
 
-Retro-terminal forecast console, Stargazer family. Not ops-map-as-hero, not marketing purple, not cream-serif editorial.
+The user chooses **Turbulence Forecast** from the Travel area or another clearly labeled entry point. The destination opens directly to a North America map and the latest available forecast state; no form blocks the initial view.
 
-- **Type:** Mono for title, score, labels (existing font stack / `font-mono`).
-- **Color:** `--severity-light|moderate|severe|extreme` (+ `-bg`); score text uses same ladder as misery badges.
-- **Motion (ship 2–3):** (1) header score fade/slide-in, (2) best-window chip delay, (3) tab panel fade. Timeline: hover cell highlight only.
-- **Atmosphere:** Optional subtle horizontal altitude-band lines behind header only (`opacity` ≤ 0.08); panels stay flat/readable.
-- **Layout:** `container mx-auto px-4 py-8` like Stargazer; header `container-primary`; tabs match `StargazerNav` structure (terminal `//` rail, `[ LABEL ]` active).
+The initial viewport contains:
 
-### First-viewport composition test
+- Page title and one-sentence explanation.
+- A map with the validated default time and altitude selection.
+- A visible data status: source, issued/observed time, valid period, last retrieved time, and coverage state.
+- Simple controls for **Time**, **Altitude**, **Layers**, and **My trip**.
+- A concise legend and a link to “How to read this map.”
 
-Must contain only: product title, one supporting sentence, location strip, score header (score + best window + summary). No PIREP list, no map, no secondary promos above the fold on desktop.
+If data is loading, show a loading state with no inferred conditions. If no valid forecast is available, explain that clearly and retain whatever independently valid reports or advisories can be shown.
+
+### 5.2 Map and controls
+
+The map is the main view, not a score dashboard. It should support pan/zoom, reset to North America, and location search. The geographic extent may include Canada, the United States, and Mexico, but must display actual provider coverage rather than implying that every visible area is forecast.
+
+- **Time:** Choose among the source's available valid times or periods. Show local time for a selected location and UTC in source details. Do not manufacture time steps between provider products.
+- **Altitude:** Provide a plain-language default such as **Typical cruise** only if the underlying source supports a defensible range. Offer source-aligned altitude bands, with exact flight levels in details. Do not imply that one band covers every aircraft or route.
+- **Layers:** Toggle forecast turbulence, relevant official advisories, and observed pilot reports only when each layer is available and useful. Each layer has a distinct symbol/color treatment and legend.
+- **Search:** Allow a city or airport search to center the map and show nearby data status; it must not turn absent coverage into a local forecast.
+- **Map alternative:** Provide a synchronized text/list view of the selected region/time/altitude, with source-native severity, location or area, validity, and data status.
+
+Use accessible colors, line patterns or icons as well as color. Do not use green “all clear” styling for missing, stale, or uncovered data.
+
+### 5.3 Reading the outlook
+
+The product should preserve the source's validated terminology and intensity categories. A short plain-language explanation may translate those categories, but it must not exaggerate them or imply certainty.
+
+When a user selects a forecast area, report:
+
+- What the source indicates, using its supported category/wording.
+- The altitude range or level and valid period.
+- The issuing source and issue/retrieval times.
+- Whether the feature is forecast guidance, an advisory, or an observation.
+- A short statement of coverage and uncertainty appropriate to the source.
+
+If the source exposes confidence or probability, display it only after its meaning and calibration are verified. Do not fabricate a confidence score.
+
+### 5.4 Optional trip comparison
+
+“My trip” is optional. It asks for:
+
+- Origin (airport or place).
+- Destination (airport or place).
+- Departure date and time, with the time zone made explicit or resolved from the selected origin.
+
+A flight number is not required. The tool estimates a great-circle or otherwise explicitly described corridor and a broad travel-time window only if that estimate has an approved, explainable basis. It overlays the approximate corridor on the map and identifies forecast products that overlap the selected time/altitude context.
+
+The results must say **approximate corridor — not your airline's route**. Without an actual route, cruise altitude, flight duration, or provider data for the corridor, do not claim that a forecast feature will intersect the user's flight. If required information is unavailable, show the broad outlook and state why trip-specific comparison is unavailable.
+
+Trip inputs are transient by default: do not persist them to an account, URL, analytics event, or server log unless a separate privacy review and explicit product decision approves it. Share links must not contain precise personal trip details by default.
+
+---
+
+## 6. Data model and source requirements
+
+### 6.1 Separate data types
+
+The UI and internal model must keep these concepts separate:
+
+1. **Forecast guidance:** a model/provider's predicted turbulence field or area with an issue time, valid time, altitude dimension, units/categories, and coverage.
+2. **Official advisory:** an issued aviation advisory with its own area, valid period, source and severity semantics.
+3. **Pilot report (PIREPs):** a point observation with observation time, reported altitude, and source-reported intensity. It is evidence of a report at that place/time, not a forecast for nearby flights.
+
+Do not merge these into one score or a single unqualified map layer. If multiple layers are selected, the legend and detail panel retain their separate identities.
+
+### 6.2 Source feasibility gate — before implementation approval
+
+The current implementation surface uses AWC G-AIRMETs and PIREPs. Those inputs alone do not establish a complete, passenger-oriented North America forecast. Before implementation is approved, document and test:
+
+- Which upstream product supplies broad forecast guidance (including whether GTGN/GTG is available for the intended use).
+- Geographic coverage in Canada, the United States, and Mexico; identify areas and altitudes not covered.
+- Forecast issue cadence, valid-time steps, altitude levels, resolution, and update/freshness semantics.
+- Public API or download mechanism, authentication, rate limits, terms/licensing, attribution, and operational availability.
+- Whether the project can legally and reliably display or transform the data on its Vercel deployment.
+- A reproducible fixture/sample and a known-good visualization method for every proposed forecast layer.
+
+**Launch requirement:** Call the product a North America outlook only when the data supports the mapped coverage claim. If a source supports only a subset, either obtain approved coverage for the missing regions or label the feature's real geographic coverage prominently and revise the product promise before launch. A basemap extending over North America is not evidence of North America forecast coverage.
+
+The existing research at [`planning/research/gtgn-nws-2026-08.md`](../research/gtgn-nws-2026-08.md) is an input, not proof that the source is available, current, licensed, or suitable for this product. Revalidate it against current primary-source documentation before choosing a provider.
+
+### 6.3 Provenance and freshness
+
+Every displayed data object should retain, as available:
+
+- Source/provider and product identifier.
+- `issuedAt` or observation time.
+- `validFrom` and `validTo`, or the source-defined valid period.
+- `retrievedAt` (our successful retrieval time).
+- Geographic and altitude coverage.
+- Source-native intensity/category and units.
+- Freshness state derived from documented provider cadence, not an arbitrary “live” badge.
+
+An expired advisory must not appear active. A delayed or stale forecast is labeled stale/delayed; it is not silently relabeled current. If a source does not provide a field, render it as unavailable rather than deriving a false value.
+
+### 6.4 Existing data reuse
+
+The existing aviation routes and map may provide useful advisory and PIREP data. Reuse their domain logic through shared services where appropriate; do not call one Next.js route from another over HTTP. Keep the existing `/aviation` operations experience intact.
+
+The current point-in-radius scoring design in earlier versions of this PRD is not a valid substitute for a broad gridded forecast. PIREPs and G-AIRMETs may be offered as separate layers where their coverage and interpretation are clear.
+
+---
+
+## 7. Safety, clarity, and privacy
+
+Persistent, concise disclaimer:
+
+> This is general weather information, not a forecast for a specific aircraft or flight and not for operational flight planning. Conditions and routes can change. Follow airline crew instructions and official aviation/weather guidance.
+
+Additional rules:
+
+- Never label an area “safe,” “clear to fly,” or “no turbulence” from absent reports or unavailable data.
+- Explain that turbulence can occur outside displayed forecast areas and forecast conditions may differ from a flight's actual experience.
+- Do not imply the airline's crew lacks this information or that passengers should act on the map during flight.
+- Do not display a precise route, arrival time, or cruise altitude unless supplied by an approved data source or explicitly marked as an estimate.
+- Do not collect flight number, account data, or precise location by default. Location search and browser geolocation are optional and user initiated.
+- User-facing copy avoids alarmist “BRUTAL”/“misery” labels. Use source-aligned severity and calm explanations.
+
+---
+
+## 8. Product and interaction requirements
+
+### Required states
+
+- Initial loading.
+- Forecast available and fresh.
+- Forecast available but delayed/stale.
+- Forecast unavailable due to provider failure.
+- No forecast issued for the selected time/altitude.
+- Region outside source coverage.
+- Advisory active/expired, if the source supplies it.
+- Reports available/none; none means no reports, not no turbulence.
+- Optional trip comparison incomplete, unsupported, or approximate.
+- Partial source failure while independent layers remain available.
+
+Each state explains what the user can still do (change time/altitude, view another layer, retry, or use the broad map). Retry and refresh use existing route/cache patterns and are rate-limited appropriately.
 
 ### Mobile
 
-- Score stacks above meta; sub-bars 3 columns.
-- Tabs horizontal scroll (`StargazerNav` pattern).
-- Timeline horizontal scroll with sticky hour labels.
+- Map remains usable with touch controls and no essential overlays hidden behind hover.
+- Time, altitude, layers, and trip comparison open in accessible sheets/panels.
+- Selected-area details do not obscure the map controls or make the map the only way to obtain information.
+- Support portrait and landscape layouts and reduced-motion preferences.
+
+### Sharing
+
+A share URL may encode public display state such as selected time, altitude band, and map view only if those values are non-sensitive and stable. Do not encode origin/destination, exact user location, or flight identifiers by default.
 
 ---
 
-## 7. Screen Spec (wire-level)
+## 9. Proposed technical boundaries
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ TURBULENCE FORECAST                                         │
-│ How bumpy is the sky near you — guidance, not a clearance.  │
-│ Valid: {local date} · Updated {Xm} ago                      │
-│ [ShareButtons]                                              │
-├─────────────────────────────────────────────────────────────┤
-│ Location: [________________] [GO]   {City / Kxxx if snapped}│
-├─────────────────────────────────────────────────────────────┤
-│ ┌─ HEADER ───────────────────────────────────────────────┐  │
-│ │  72  BUMPY                                              │  │
-│ │  Best smooth: 14:00–17:00 (28)                          │  │
-│ │  Limiting: G-AIRMET — Moderate turb FL180–FL340         │  │
-│ │  {summary one liner}                                    │  │
-│ │  [gairmet ##] [pirep ##] [convective ##]  sub-bars      │  │
-│ └────────────────────────────────────────────────────────┘  │
-│ ┌ now │ timeline │ reports │ about ┐                        │
-│ │ panel…                                         │          │
-│ └────────────────────────────────────────────────┘          │
-│ Attribution · disclaimer                                    │
-└─────────────────────────────────────────────────────────────┘
-```
+These are boundaries, not a finalized file-by-file implementation plan. Final architecture follows the verified source contract.
 
-### Tab: Now
+- **Provider adapter:** validates/normalizes forecast products while retaining provenance and native semantics.
+- **Domain model:** separates forecast guidance, advisories, and observations; represents missing coverage explicitly.
+- **Server route(s):** fetch/proxy data where required for credentials, CORS, rate limits, caching, and provider terms. Use the shared API route wrapper when applicable.
+- **Map layer(s):** renders source-aware products and explicit coverage; never turns missing values into zero/clear.
+- **Passenger UI:** map-first summary, time/altitude controls, layer legend, data details, accessible list alternative, optional approximate-trip overlay.
+- **Tests/fixtures:** captured or synthetic provider fixtures validated against documented contracts; unit tests for timestamps, coverage, altitude selection, stale/failure states, and layer separation.
 
-- Active polygon count in radius; max severity; top 3 drivers.
-- Short “what this means for passengers” blurb from score summary.
-- Link: “Ops map → `/aviation`”.
-
-### Tab: Timeline
-
-- Row of forecast-hour cells: label `+0h` `+3h` … severity color + numeric score or `—` if unknown.
-- Legend under strip.
-- Call out best smooth window with outline on those cells.
-
-### Tab: Reports
-
-- List of up to 20 recent turbulence PIREPs (intensity, altitude, time, aircraft, distance km).
-- Empty: “No recent pilot reports nearby.”
-- No hero map in v1 (optional later).
-
-### Tab: About
-
-- How score works (G-AIRMET + PIREPs).
-- Coverage CONUS+AK+HI.
-- Higher = bumpier.
-- Disclaimer.
-- NOAA AWC attribution + link.
-- Note: GTGN nowcast is a future data upgrade; v1 uses Graphical AIRMET turbulence.
-
-### States
-
-| State | Behavior |
-|-------|----------|
-| Loading | Skeleton header + pulse (clone Stargazer `SkeletonCard`) |
-| Error | Banner + Retry; no fake score |
-| Outside coverage | `coverage: 'none'`; message; no green score |
-| In coverage, no hazards | Score 0–15 SMOOTH OK — only when `coverage: 'conus'` (or ak/hi) and fetch succeeded |
-| No PIREPs | Reports empty copy; score may still use G-AIRMET |
+Read [`AGENTS.md`](../../AGENTS.md) and [`CODING.md`](../../CODING.md) before implementation. For Next.js work, follow the repository's Next.js 16 agent rules.
 
 ---
 
-## 8. Copy Deck
+## 10. Acceptance criteria
 
-| Slot | Copy |
-|------|------|
-| H1 | `TURBULENCE FORECAST` |
-| Subtitle | `How bumpy is the sky near you. Educational guidance — not for flight planning.` |
-| Fly CTA | `Turbulence forecast →` |
-| Aviation CTA | `Passenger forecast →` |
-| Best window prefix | `Best smooth:` |
-| Limiting prefix | `Limiting factor:` |
-| No coverage | `No turbulence guidance for this area. AWC G-AIRMET covers CONUS, Alaska, and Hawaii.` |
-| Error | `Unable to load turbulence forecast. Try again.` |
-| Disclaimer (footer) | `Not for operational flight planning or dispatch. Sources: NOAA / NWS Aviation Weather Center.` |
-| Share text | `Turbulence forecast near me — bumpiness score at 16bitweather.co` |
+### Product feasibility
 
----
+- [ ] A primary-source research note records provider terms, attribution, API/data access, current coverage, altitude/valid-time dimensions, cadence, and known limitations.
+- [ ] Coverage for the intended North America product is demonstrated with data, not inferred from map extent.
+- [ ] Product language matches actual coverage. Any excluded region or altitude is visible before users interpret the map.
+- [ ] A product approval explicitly authorizes the selected v1 data scope before feature implementation starts.
 
-## 9. Data Strategy
+### Passenger experience
 
-### Phase A (v1) — ship
+- [ ] A user can open the feature and inspect the latest available map without entering a flight number or trip details.
+- [ ] The default selection is supported by the source and labeled with its altitude range, issue time, and valid time.
+- [ ] The user can change supported time and altitude selections without seeing fabricated interpolated data.
+- [ ] Forecast, advisory, and observation layers have distinct labels, visual treatments, legends, and detail copy.
+- [ ] Area selection exposes source-native information, time validity, altitude, source, and coverage/freshness state.
+- [ ] A text/list alternative conveys the selected map information to keyboard and screen-reader users.
+- [ ] Missing, stale, failed, partial, or out-of-coverage data never appears as a reassuring no-turbulence forecast.
+- [ ] Optional trip comparison works without a flight number, is visibly approximate, and does not imply access to an airline route or actual cruise altitude.
+- [ ] Trip data is not persisted or placed in share URLs/analytics by default.
+- [ ] Safety disclaimer and non-alarmist copy are visible on desktop and mobile.
 
-| Source | How | Role |
-|--------|-----|------|
-| AWC G-AIRMET `type=turb` | Extract existing fetch/parse from `app/api/aviation/turbulence/route.ts` into `lib/services/aviation-turbulence-service.ts`; reuse from that route + new travel API | Polygons, severity, forecastHour, base/top |
-| AWC PIREPs | Extract shared bits from `app/api/aviation/pireps/route.ts`; filter `turbulenceIntensity` + radius | Reports + pirep sub-score |
-| Geo | `haversineMeters` + `pointInGeoJsonGeometry` | Inclusion |
-| Coverage | `isInConus` + simple AK/HI bounding boxes | `coverage` enum |
+### Engineering and release
 
-Prefer **service imports**, never Next.js route→route HTTP.
-
-### Phase B (later)
-
-GTGN GRIB2 / future AWC JSON — separate spike. Does not block v1.
+- [ ] Provider contract tests cover valid products, malformed data, missing fields, expired data, partial coverage, and upstream failures.
+- [ ] Unit tests cover time/altitude selection, freshness, coverage masking, report age, and separation of data types.
+- [ ] E2E tests cover initial load without trip details, map controls, no-data states, optional trip flow, and mobile accessibility.
+- [ ] Lint, both TypeScript projects, unit tests, Knip, production build, relevant Playwright tests, and required CI checks pass.
+- [ ] Provider outages and stale data are observable without logging precise user trip inputs.
 
 ---
 
-## 10. API Contract
+## 11. Delivery sequence and decision gates
 
-### `GET /api/travel/turbulence-forecast`
+1. **Revalidate sources:** complete §6.2 research and record primary-source evidence. Do not build the map around an assumed GTGN/GTG API.
+2. **Confirm product coverage:** decide whether launch requires US+Canada+Mexico, or a narrower explicitly named coverage area. Confirm that the available data supports the decision.
+3. **Approve the v1 product:** approve source(s), permitted use, coverage, supported times/altitudes, and whether optional trip comparison is in v1.
+4. **Prototype data comprehension:** test a map using source-representative fixtures with non-aviation users. Verify forecast/observed distinctions, altitude comprehension, and stale/no-data interpretation.
+5. **Implement a vertical slice:** provider adapter, one source-backed layer, source metadata, coverage/failure states, and accessible map/list; then add other independently useful layers.
+6. **Add optional trip context only after the broad outlook works:** corridor estimate, selected departure time, supported forecast periods, privacy-safe behavior, and explicit approximation copy.
+7. **Run validation and release review:** automated coverage, browser checks, data-source review, safety-copy review, and the repository's normal CI/CD gates.
 
-**Query**
-
-| Param | Required | Notes |
-|-------|----------|-------|
-| `lat` | yes* | number |
-| `lon` | yes* | number |
-| `q` | no | if lat/lon missing, geocode via `resolveGeocodingQuery` |
-| `radiusKm` | no | default `400`, clamp 50–800 |
-
-\* Or `q` alone.
-
-**Response 200**
-
-```ts
-type TurbulenceCoverage = 'conus' | 'ak' | 'hi' | 'none';
-
-type TurbulenceForecastLabel = 'SMOOTH' | 'BUMPY' | 'ROUGH' | 'BRUTAL';
-
-interface TurbulenceForecastResponse {
-  success: boolean;
-  data: {
-    location: {
-      lat: number;
-      lon: number;
-      label: string;
-      airportCode: string | null; // IATA/ICAO if snapped
-    };
-    coverage: TurbulenceCoverage;
-    score: {
-      overall: number; // 0–100, higher = bumpier
-      label: TurbulenceForecastLabel;
-      level: 'green' | 'yellow' | 'orange' | 'red';
-      color: string;
-      summary: string;
-      bestWindow: {
-        startISO: string;
-        endISO: string;
-        score: number;
-        forecastHours: number[]; // e.g. [3, 6]
-      } | null;
-      limitingFactor: {
-        category: 'gairmet' | 'pirep' | 'convective' | 'none';
-        label: string;
-        detail?: string;
-      } | null;
-      subScores: {
-        gairmet: number;
-        pirep: number;
-        convective: number;
-      };
-      drivers: Array<{
-        key: string;
-        label: string;
-        weight: number;
-        category: 'gairmet' | 'pirep' | 'convective';
-      }>;
-    } | null; // null when coverage === 'none' OR upstream hard-fail partial
-    timeline: Array<{
-      forecastHour: number;
-      validFrom: string | null;
-      score: number | null; // null = no data for hour
-      maxSeverity: 'smooth' | 'light' | 'moderate' | 'severe' | 'extreme' | null;
-      polygonCount: number;
-    }>;
-    reports: Array<{
-      id: string;
-      observationTime: string;
-      intensity: string;
-      altitudeFt: number | null;
-      aircraftRef: string;
-      distanceKm: number;
-      lat: number;
-      lon: number;
-      rawText: string;
-    }>;
-    meta: {
-      fetchedAt: string;
-      source: 'NOAA AWC G-AIRMET + PIREPs';
-      radiusKm: number;
-      polygonHits: number;
-      pirepHits: number;
-    };
-  };
-  error?: string;
-}
-```
-
-**Headers:** `Cache-Control: public, s-maxage=600, stale-while-revalidate=1200`  
-**Errors:** `400` bad coords; `502` upstream; body still includes `success: false` and empty-safe `data` shape where possible.
+If source feasibility fails for continent-scale forecast guidance, stop before implementation and return with the verified coverage options. Do not silently replace the broad forecast promise with a point score derived from PIREPs.
 
 ---
 
-## 11. Scoring Algorithm
+## 12. Open product decisions
 
-Pure module: `lib/travel/turbulence-score.ts` (Jest required).
+1. What does “North America” mean for launch coverage: Canada, the United States, and Mexico, or a narrower documented region?
+2. Which validated source can provide forecast guidance across that coverage, at useful altitude levels and time intervals, under acceptable terms?
+3. Should v1 include the optional origin/destination/departure-time comparison, or launch with map/search/time/altitude only?
+4. Which passenger-friendly altitude labels best explain source flight levels without hiding the exact levels?
+5. What refresh cadence is appropriate for each source, and when should the UI label data delayed or stale?
+6. Should advisory and PIREP layers be on by default or opt-in? Each must remain distinguishable from the forecast layer.
 
-### Severity → bumpiness points
-
-| G-AIRMET / PIREP intensity | Points |
-|----------------------------|--------|
-| smooth / none | 0 |
-| light / LGT | 25 |
-| moderate / MOD | 55 |
-| severe / SEV | 85 |
-| extreme / EXTRM | 100 |
-
-### Inclusion
-
-A polygon **hits** if either:
-
-1. Point is inside any outer ring (`pointInGeoJsonGeometry` with `Polygon` built from `coordinates`), or  
-2. Any vertex is within `radiusKm` of the point (`haversineMeters`).
-
-A PIREP **hits** if it has turbulence intensity and distance ≤ `radiusKm`.
-
-### Sub-scores
-
-- **gairmet:** max points among hitting polygons with `forecastHour ≤ 3` (near-term); if none, 0.
-- **pirep:** from hitting turb PIREPs in last 6 hours:  
-  `min(100, maxIntensityPoints + 10 * min(5, count-1))`.
-- **convective:** if any hitting polygon `rawSeverity`/`hazard` text suggests conv/TS or intensity paired with convective G-AIRMET — else 0. Practical v1: if `rawSeverity` or hazard string matches `/CONV|TS|THUNDER/i` → use that polygon’s points; else 0.
-
-### Overall
-
-```
-overall = clamp(0, 100,
-  round(0.55 * gairmet + 0.30 * pirep + 0.15 * convective)
-)
-```
-
-Map `overall` → `level` / `label` / `color` via `getSeverityLevel` + `MISERY_LEVEL_LABELS` + `SEVERITY_COLORS`.
-
-### Timeline bucket score
-
-For each forecast hour H in `{0,3,6,9,12}`: max points among hitting polygons with that `forecastHour`; `null` if zero polygons for that hour.
-
-### Best smooth window
-
-Among hours with non-null scores, find contiguous span of ≥2 buckets with minimal average score. If all null → `bestWindow: null`. If only one bucket → that single hour as window (start=end of validity). Prefer copying control flow style from `findBestWindow` in `lib/stargazer/score.ts`.
-
-### Limiting factor
-
-Category of the max sub-score; label from top driver. If overall &lt; 20 → `category: 'none'`, label `Conditions look relatively smooth`.
-
-### Summaries (template)
-
-- overall &lt; 20: `Skies look relatively smooth near {label}.`
-- &lt; 45: `Light to moderate bumpiness possible near {label}.`
-- &lt; 70: `Expect a bumpier ride near {label} — check the timeline for smoother hours.`
-- else: `Significant turbulence guidance near {label}. Prefer smoother windows if you can.`
+These questions are intentionally unresolved. Answer them with source evidence and user testing rather than assumptions in the old design.
 
 ---
 
-## 12. File Inventory
-
-### Create
-
-| Path | Responsibility |
-|------|----------------|
-| `lib/travel/turbulence-types.ts` | Shared types (API + UI) |
-| `lib/travel/turbulence-score.ts` | Pure scoring + best window + summaries |
-| `lib/travel/turbulence-geo.ts` | Radius filter helpers (polygon hit, pirep distance) |
-| `lib/services/aviation-turbulence-service.ts` | Fetch + parse G-AIRMET (extracted from route) |
-| `lib/services/aviation-pirep-service.ts` | Fetch + parse PIREPs (extract shared bits if not already) |
-| `app/api/travel/turbulence-forecast/route.ts` | API |
-| `app/travel/turbulence/page.tsx` | Page shell |
-| `app/travel/turbulence/layout.tsx` | Metadata / OG |
-| `hooks/useTurbulenceForecast.ts` | Fetch, location, tabs, abort |
-| `components/travel/turbulence/TurbulenceCommandCenter.tsx` | Layout orchestration |
-| `components/travel/turbulence/TurbulenceNav.tsx` | Tabs |
-| `components/travel/turbulence/TurbulenceHeader.tsx` | Score header |
-| `components/travel/turbulence/TurbulenceNow.tsx` | Now panel |
-| `components/travel/turbulence/TurbulenceTimeline.tsx` | Timeline panel |
-| `components/travel/turbulence/TurbulenceReports.tsx` | Reports panel |
-| `components/travel/turbulence/TurbulenceAbout.tsx` | About panel |
-| `components/travel/turbulence/TurbulenceAttribution.tsx` | Footer |
-| `__tests__/travel/turbulence-score.test.ts` | Unit tests |
-| `__tests__/travel/turbulence-geo.test.ts` | Geo filter tests |
-| `tests/e2e/travel-turbulence.spec.ts` | E2E |
-
-### Modify
-
-| Path | Change |
-|------|--------|
-| `app/api/aviation/turbulence/route.ts` | Keep response shape; delegate fetch/parse to aviation-turbulence-service |
-| `app/api/aviation/pireps/route.ts` | Share PIREP fetch if extracted |
-| `app/travel/page.tsx` | Fly CTA link (`href="/aviation"` today) |
-| `components/aviation/TurbulenceMap.tsx` (or parent) | Secondary CTA |
-| `planning/prds/README.md` | Index |
-
----
-
-## 13. Implementation Slices
-
-Slice summary:
-
-| Slice | Deliverable | Exit criteria |
-|-------|-------------|---------------|
-| **1. Score + geo lib** | Pure functions + Jest green | Scoring cases in §11 covered |
-| **2. Services + API** | Extract AWC services; forecast route returns contract | Manual curl / unit with mocks |
-| **3. Page shell + header + CTA** | `/travel/turbulence` renders score; Fly link works | Visual match Stargazer chrome |
-| **4. Tabs + E2E + polish** | All tabs, states, Playwright, knip | Ready for PR |
-
-Commit cadence: one commit per slice (or per plan task).
-
----
-
-## 14. Verification
-
-```bash
-npm test -- turbulence-score
-npm test -- turbulence-geo
-npm run typecheck
-npx playwright test tests/e2e/travel-turbulence.spec.ts --project=chromium
-npm run knip
-```
-
-E2E must mock `/api/travel/turbulence-forecast` (and not depend on live AWC).
-
-Manual: 3 themes; mobile 390px; compare side-by-side with `/stargazer`.
-
----
-
-## 15. Risks, Attribution, Kill Criteria
-
-| Risk | Mitigation |
-|------|------------|
-| Users treat as clearance | Disclaimer in subtitle + About + footer; never “clear to fly” |
-| Empty = smooth | `coverage: 'none'` and failed fetch block SMOOTH |
-| GTGN expectation | About tab honesty; source string names G-AIRMET |
-| Dual UI confusion | Travel = passenger forecast; Aviation = ops map |
-| Service extract regresses map | Keep turbulence route response shape identical; existing aviation E2E |
-
-**Attribution:** NOAA / NWS Aviation Weather Center — [aviationweather.gov](https://aviationweather.gov/).
-
-**Kill if:** AWC unusable with no honest fallback; empty states look smooth; page becomes “map with a score sticker.”
-
----
-
-## 16. Decision Log
+## 13. Decision log
 
 | Date | Decision |
-|------|----------|
-| 2026-08-05 | GTGN = inspiration; no GRIB2 in v1 |
-| 2026-08-05 | `/travel/turbulence` sibling; Stargazer UX |
-| 2026-08-05 | v1 = G-AIRMET + PIREPs |
-| 2026-08-05 | Lock D1–D10 (§4); bump to v2.0 design+implementation PRD |
-| 2026-08-26 | Reconciled with GitHub `main`. Aviation G-AIRMET + PIREP map already ships. Dropped missing `docs/superpowers/plans/…` path (`docs/` is gitignored). GTGN notes at `planning/research/gtgn-nws-2026-08.md`. |
+|---|---|
+| 2026-08-05 | Initial concept: passenger-facing turbulence forecast inspired by Stargazer; use existing AWC G-AIRMETs and PIREPs. |
+| 2026-08-26 | Reconciled baseline: aviation operations map already has G-AIRMETs and PIREPs; passenger forecast page was not built. |
+| 2026-10-04 | Reframed as map-first North America outlook with optional approximate trip comparison. Do not require a flight number. Validate continental source coverage, data contract, and licensing before implementation approval. |

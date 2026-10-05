@@ -1,5 +1,7 @@
 # First-visit weather start
 
+**Status:** Shipped — [PR #637](https://github.com/jelrod27/Weather-application-/pull/637), merge `53bd65b`.
+
 ## Problem
 
 A visitor without a saved city needs an immediate way to find local weather. The large Get Started panel was rejected in favor of a compact location action and search field. Footer and city lists should not fill the first-visit screen.

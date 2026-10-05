@@ -36,7 +36,7 @@ function staticMetadataLayouts(): string[] {
       } else if (entry.name === 'layout.tsx') {
         const source = fs.readFileSync(full, 'utf-8')
         if (source.includes('export const metadata')) {
-          found.push(path.relative(appDir, full))
+          found.push(path.relative(appDir, full).split(path.sep).join('/'))
         }
       }
     }

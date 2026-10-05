@@ -1,6 +1,7 @@
 # PR 6: Beginner stargazing
 
-Status: merged September 26, 2026 as [PR #632](https://github.com/jelrod27/Weather-application-/pull/632), merge `402f69f`. Follow-up stabilization is tracked in [the UX scope](../weather-ux-remediation-scope.md).
+**Status:** Shipped September 26, 2026 — [PR #632](https://github.com/jelrod27/Weather-application-/pull/632), merge `402f69f`.
+**Follow-up:** Stabilization is tracked in [the UX scope](../weather-ux-remediation-scope.md).
 
 This is the final PR in the [weather experience remediation batch](../weather-ux-remediation-scope.md). Audience: everyday users first, with depth for enthusiasts. Branch: `codex/beginner-stargazing`. Review baseline: `b6625a43164e8e434197885e9e3db19796f25cec`, the merged PR #631.
 

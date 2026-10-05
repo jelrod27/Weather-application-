@@ -3,7 +3,8 @@
 **Program:** Bitwatch  
 **Product:** 16-Bit Weather  
 **Date:** 2026-08-18  
-**Status:** In progress (phased delivery)
+**Status:** Shipped — [PR #537](https://github.com/jelrod27/Weather-application-/pull/537), merge `94e34f3`; later hardening includes PRs #540, #542, #544, #545, and #601.
+**Note:** The baseline and phased plan below are historical. Use [`CONTEXT.md`](../../CONTEXT.md) and current architecture documentation as the source of truth for the shipped system.
 
 Bitwatch is the 16-Bit Weather warning program. It is not a Ryan Hall clone brand. Forecast products stay our strength. This spec is the warning/alert gap: US NWS Warning Events, guest Web Push + email, warning desk, takeover, then radar/nowcast auto-detection (Scout).
 

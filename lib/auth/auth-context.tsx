@@ -157,7 +157,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setProfile(null)
       setPreferences(null)
       setProfileLoading(false)
-      userCacheService.resetMirroredSettings()
+      // An initial guest session must retain locally chosen units and theme.
+      // Clear account mirrors only when a sign-out actually occurs.
+      if (event === 'SIGNED_OUT') {
+        userCacheService.resetMirroredSettings()
+      }
     }
   }, [fetchProfile, fetchPreferences])
 
