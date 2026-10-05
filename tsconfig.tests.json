@@ -14,6 +14,8 @@
     "lib/aviation/**/*.ts",
     "__tests__/aviation-turbulence.test.ts",
     "__tests__/aviation-turbulence-route.test.ts",
+    "__tests__/turbulence-outlook.test.tsx",
+    "tests/e2e/turbulence-outlook.spec.ts",
     "lib/geocoding/**/*.ts",
     "lib/us-states.ts",
     "lib/cities.ts",
