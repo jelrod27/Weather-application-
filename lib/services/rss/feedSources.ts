@@ -162,9 +162,10 @@ export const FEED_SOURCES: FeedSource[] = [
     name: 'NWS National Alerts',
     // alerts.weather.gov/cap/us.php was decommissioned (returns 000), which
     // silently emptied the `severe` category. Replaced by the api.weather.gov
-    // active-alerts Atom feed, constrained to Severe/Extreme + Immediate/Expected
-    // so the category stays meaningful and isn't flooded by minor advisories.
-    url: 'https://api.weather.gov/alerts/active.atom?severity=Severe,Extreme&urgency=Immediate,Expected',
+    // active-alerts endpoint, requesting Atom through the Accept header. The
+    // /alerts/active.atom path rejects severity/urgency filters (HTTP 400).
+    // Keep Severe/Extreme + Immediate/Expected to exclude minor advisories.
+    url: 'https://api.weather.gov/alerts/active?severity=Severe,Extreme&urgency=Immediate,Expected',
     category: 'severe',
     priority: 'high',
     enabled: true,

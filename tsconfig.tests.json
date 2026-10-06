@@ -20,6 +20,7 @@
     "lib/us-states.ts",
     "lib/cities.ts",
     "__tests__/verify-cron-auth.test.ts",
+    "__tests__/nws-news-feed.test.ts",
     "__tests__/preferences-resolve.test.ts",
     "__tests__/auth-guest-preferences.test.tsx",
     "__tests__/weather-session-cache.test.ts",
