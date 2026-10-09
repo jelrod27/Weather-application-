@@ -18,7 +18,7 @@
  * and optional pollutant breakdown from Open-Meteo
  */
 
-import type { ReactElement } from 'react'
+import { Wind } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import {
@@ -31,6 +31,7 @@ import {
   AQI_COLOR_SEGMENTS
 } from '@/lib/air-quality-utils'
 import { isLightTheme } from '@/lib/theme-config'
+import type { ReactElement } from 'react'
 import type { ThemeType } from '@/lib/theme-config'
 
 interface PollutantData {
@@ -65,15 +66,13 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
   const styles = minimal
     ? {
         container: '',
-        header: '',
         text: 'text-foreground',
         border: 'border-white/20'
       }
     : {
-        container: 'bg-card/80 dashboard-surface rounded-xl glow-subtle',
-        header: 'text-primary',
+        container: 'bg-card rounded-lg border border-border shadow-sm',
         text: 'text-foreground',
-        border: 'border-primary/40'
+        border: 'border-border'
       };
 
   const hasAqi = Number.isFinite(aqi) && aqi >= 0;
@@ -88,7 +87,7 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
   return (
     <div
       className={cn(
-        !minimal && "aqi-panel p-4 rounded-lg text-center",
+        !minimal && "aqi-panel flex min-w-0 flex-col p-4 text-center [overflow-wrap:anywhere]",
         !minimal && styles.container,
         severity?.borderStripeClass,
         severity?.pulse && "motion-safe:animate-pulse",
@@ -96,12 +95,13 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
       )}
     >
       {/* Header */}
-      <h2 className={cn("text-xl font-semibold mb-3", styles.header, minimal && "text-lg mb-2 text-center md:text-left")}>
+      <h2 className={minimal ? "text-lg font-semibold mb-2 text-center md:text-left" : "mb-4 flex items-center justify-center gap-1.5 text-xs font-semibold leading-none uppercase tracking-widest text-muted-foreground"}>
+        {!minimal && <Wind size={14} className="shrink-0 text-primary" aria-hidden="true" />}
         Air Quality
       </h2>
 
       {/* AQI Value and Description */}
-      <p className={cn("text-lg font-bold mb-3", hasAqi ? getAQIColor(aqi, isLightTheme(theme)) : 'text-muted-foreground', minimal && "text-base mb-2")}>
+      <p className={cn("text-lg font-bold mb-3", hasAqi ? getAQIColor(aqi, isLightTheme(theme)) : 'text-muted-foreground', minimal ? "text-base mb-2" : "min-h-12")}>
         {hasAqi ? `${aqi} - ${getAQIDescription(aqi)}` : 'Air quality unavailable'}
       </p>
 
@@ -167,8 +167,8 @@ export function AirQualityDisplay({ aqi, theme, className, minimal = false, poll
 
       {/* EPA AQI Legend - Updated */}
       {!minimal && (
-        <div className={cn("text-xs border-t pt-2 mt-2", styles.text, styles.border)}>
-          <p className="font-medium">EPA Air Quality Index • Lower = Better</p>
+        <div className="mt-auto pt-3">
+          <p className={cn("border-t pt-3 text-xs font-medium", styles.text, styles.border)}>EPA Air Quality Index • Lower = Better</p>
         </div>
       )}
     </div>

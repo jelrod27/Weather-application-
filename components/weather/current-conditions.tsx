@@ -19,7 +19,7 @@ interface CurrentConditionsProps {
   theme: string
   precipitation?: { rain24h: number; snow24h: number } | null
 }
-const METRIC_CARD = 'weather-metric-card relative min-w-0 border border-border bg-card shadow-sm'
+const METRIC_CARD = 'weather-metric-card relative min-w-0 border border-border bg-card shadow-sm [overflow-wrap:anywhere]'
 
 export function CurrentConditions({ weather, theme, precipitation }: CurrentConditionsProps): ReactElement {
   const themeClasses = themeTokens.weather
@@ -44,7 +44,7 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
   const severityText = (color: string): string => getSeverityTextColor(color, isLightTheme(theme))
   return <section aria-label="Current conditions">
     <h2 className="mb-4 text-xl font-semibold text-foreground">Current conditions</h2>
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
 
         {/* UV Index */}
         <Card className={cn(METRIC_CARD, "relative")} style={{ animationDelay: '30ms' }}>

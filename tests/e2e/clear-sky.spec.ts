@@ -1,5 +1,37 @@
 import { test, expect } from './fixtures'
 import { stubWeatherApis, stubHomeHubApis, stubRadarApis, dismissWarningTakeoverIfPresent } from '../fixtures/utils'
+import type { Page } from '@playwright/test'
+
+async function expectConditionCardAlignment(page: Page, width: number): Promise<void> {
+  const bounds = await page.evaluate(() => {
+    const rect = (element: Element) => {
+      const { top, bottom, left, right, height, width } = element.getBoundingClientRect()
+      return { top, bottom, left, right, height, width }
+    }
+    return {
+      metrics: [...document.querySelectorAll('[aria-label="Current conditions"] .weather-metric-card')].map(rect),
+      air: rect(document.querySelector('.aqi-panel')!),
+      moon: rect(document.querySelector('[aria-label="Learn about Moon Phase"]')!.closest('.bg-card')!),
+    }
+  })
+  const columns = width >= 1280 ? 4 : width >= 640 ? 2 : 1
+  expect(bounds.metrics.filter(card => Math.abs(card.top - bounds.metrics[0].top) < 2)).toHaveLength(columns)
+  expect(Math.abs(bounds.air.left - bounds.metrics[0].left)).toBeLessThanOrEqual(2)
+  expect(Math.abs(bounds.air.top - bounds.metrics[7].bottom - 16)).toBeLessThanOrEqual(2)
+  if (width >= 640) {
+    for (const card of bounds.metrics) expect(Math.abs(card.height - bounds.metrics[0].height)).toBeLessThanOrEqual(2)
+  }
+  if (width >= 1024) {
+    expect(Math.abs(bounds.air.bottom - bounds.moon.bottom)).toBeLessThanOrEqual(2)
+    expect(Math.abs(bounds.air.width - bounds.moon.width)).toBeLessThanOrEqual(2)
+    expect(Math.abs(bounds.moon.left - bounds.air.right - 16)).toBeLessThanOrEqual(2)
+    expect(Math.abs(bounds.air.right - bounds.metrics[columns / 2 - 1].right)).toBeLessThanOrEqual(2)
+    expect(Math.abs(bounds.moon.right - bounds.metrics[columns - 1].right)).toBeLessThanOrEqual(2)
+    const airTitle = await page.getByRole('heading', { name: 'Air Quality', exact: true }).boundingBox()
+    const moonTitle = await page.getByText('Moon Phase', { exact: true }).boundingBox()
+    expect(Math.abs(airTitle!.y - moonTitle!.y)).toBeLessThanOrEqual(2)
+  }
+}
 
 for (const width of [320, 390, 768, 1024, 1200, 1280, 1440]) {
   test.describe(`Clear Sky complete forecast at ${width}px`, () => {
@@ -68,7 +100,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1280, 1440]) {
         const hero = document.querySelector('.hero-weather-card')!.getBoundingClientRect()
         const sidebar = document.querySelector('.forecast-discovery')!.getBoundingClientRect()
         const air = document.querySelector('.aqi-panel')!.getBoundingClientRect()
-        const moonBounds = document.querySelector('[aria-label="Learn about Moon Phase"]')!.closest('.weather-card-enter')!.getBoundingClientRect()
+        const moonBounds = document.querySelector('[aria-label="Learn about Moon Phase"]')!.closest('.bg-card')!.getBoundingClientRect()
         return {
           sidebarTop: sidebar.top - hero.top,
           sidebarBottom: sidebar.bottom - hero.bottom,
@@ -85,6 +117,7 @@ for (const width of [320, 390, 768, 1024, 1200, 1280, 1440]) {
         expect(Math.abs(alignment.cardsTop)).toBeLessThanOrEqual(2)
         expect(alignment.sideBySide).toBe(true)
       } else expect(alignment.stacked).toBe(true)
+      await expectConditionCardAlignment(page, width)
       const discoveryBeforeDetails = await discovery.evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('.weather-layout-details')!) & Node.DOCUMENT_POSITION_FOLLOWING))
       expect(discoveryBeforeDetails).toBe(width >= 1200)
       // Keyboard order moves from radar directly to the first daily forecast on desktop.
@@ -133,6 +166,12 @@ for (const theme of ['clear-sky', 'daybreak', 'nord']) {
       cityName: city, country: 'GB', lat: 53.22, lon: -4.20,
       moonPhase: { phase: 'Waning Crescent', illumination: 8, emoji: '', phaseAngle: 330, observingNight: 'Observing night of Oct 9', timeZone: 'Europe/London', nextMoonset: 'Oct 10, 6:10 PM BST', nextFullMoon: 'Oct 26, 4:12 AM GMT' },
     })
+    await page.route('**/api/open-meteo/air-quality**', route => route.fulfill({ json: {
+      current: { us_aqi: 156 },
+    } }))
+    await page.route('**/api/weather/pollen**', route => route.fulfill({ json: {
+      tree: { Birch: 'Low' }, grass: { Grass: 'None' }, weed: { Ragweed: 'Very Low' },
+    } }))
     await stubHomeHubApis(page)
     await stubRadarApis(page)
     await page.setViewportSize({ width: 1280, height: 900 })
@@ -143,6 +182,9 @@ for (const theme of ['clear-sky', 'daybreak', 'nord']) {
     const heading = hero.getByRole('heading', { level: 2 })
     await expect(heading).toContainText(city)
     await expect(page.getByText('8% illuminated', { exact: true })).toBeVisible()
+    await expect(page.getByText('156 - Unhealthy', { exact: true })).toBeVisible()
+    await page.evaluate(() => document.fonts.ready)
+    await page.getByRole('region', { name: 'Current conditions' }).locator('..').screenshot({ path: `/tmp/forecast-663-conditions-${theme}.png`, animations: 'disabled' })
     for (const width of [1280, 640, 320]) {
       await page.setViewportSize({ width, height: 900 })
       // 640px also covers the effective CSS viewport of a 1280px window at 200% zoom.
@@ -156,6 +198,7 @@ for (const theme of ['clear-sky', 'daybreak', 'nord']) {
       expect(bounds.overflow).toBe(false)
       expect(bounds.titleRight).toBeLessThanOrEqual(bounds.cardRight)
       expect(bounds.titleFits).toBe(true)
+      await expectConditionCardAlignment(page, width)
     }
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
