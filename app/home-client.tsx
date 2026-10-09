@@ -150,7 +150,6 @@ function WeatherApp({ children }: WeatherAppProps): React.ReactElement {
                   selectedDay={selectedDay}
                   onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
                   precipitation={precipitation}
-                  showRadar={true}
                 />
               </div>
             </ErrorBoundary>

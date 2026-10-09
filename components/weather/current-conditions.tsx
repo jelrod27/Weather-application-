@@ -1,4 +1,4 @@
-import { Sun, Thermometer, Sunrise, Droplets, Gauge, Wind, CloudRain, Eye, Leaf, Navigation, ArrowDown, ArrowUp, Sunset } from 'lucide-react'
+import { Sun, Thermometer, Droplets, Gauge, Wind, CloudRain, Eye, Leaf, Navigation, ArrowDown, ArrowUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +19,7 @@ interface CurrentConditionsProps {
   theme: string
   precipitation?: { rain24h: number; snow24h: number } | null
 }
-const METRIC_CARD = 'weather-metric-card relative min-w-0 border border-border bg-card shadow-sm'
+const METRIC_CARD = 'weather-metric-card relative min-w-0 border border-border bg-card shadow-sm [overflow-wrap:anywhere]'
 
 export function CurrentConditions({ weather, theme, precipitation }: CurrentConditionsProps): ReactElement {
   const themeClasses = themeTokens.weather
@@ -44,7 +44,7 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
   const severityText = (color: string): string => getSeverityTextColor(color, isLightTheme(theme))
   return <section aria-label="Current conditions">
     <h2 className="mb-4 text-xl font-semibold text-foreground">Current conditions</h2>
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
 
         {/* UV Index */}
         <Card className={cn(METRIC_CARD, "relative")} style={{ animationDelay: '30ms' }}>
@@ -109,40 +109,6 @@ export function CurrentConditions({ weather, theme, precipitation }: CurrentCond
             )}
           </CardContent>
         </Card>
-
-        {/* Sun Times */}
-        <Card className={cn(METRIC_CARD, "relative")} style={{ animationDelay: '90ms' }}>
-          <MetricInfoTooltip metricId="sun-times" />
-          <CardHeader className="pb-2 pt-4 px-4 text-center">
-            <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center justify-center gap-1.5">
-              <Sun size={14} className="text-primary group-hover:text-accent transition-colors" />
-              Sun Times
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2 px-4 pb-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-center flex-1">
-                <Sunrise size={20} className="mx-auto mb-1 text-amber-500" />
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Rise</p>
-                <p className={cn("text-lg font-bold tabular-nums", themeClasses.text)}>
-                  {weather?.sunrise || 'N/A'}
-                </p>
-              </div>
-              <div className="flex flex-col items-center px-1">
-                <div className="w-12 h-[2px] bg-gradient-to-r from-amber-500 via-yellow-300 to-orange-500 rounded-full" />
-              </div>
-              <div className="text-center flex-1">
-                <Sunset size={20} className="mx-auto mb-1 text-orange-500" />
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Set</p>
-                <p className={cn("text-lg font-bold tabular-nums", themeClasses.text)}>
-                  {weather?.sunset || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-
 
         {/* Humidity */}
         <Card className={cn(METRIC_CARD, "relative")} style={{ animationDelay: '120ms' }}>

@@ -34,10 +34,8 @@ for (const providerDaylight of [true, false]) {
     }))
     await page.goto('/weather/pleasanton-ca?location=37.6624%2C-121.8747')
     await dismissWarningTakeoverIfPresent(page)
-    const hourlyLink = page.getByRole('link', { name: 'View all hours →' })
+    const hourlyLink = page.getByRole('region', { name: 'Next few hours' }).getByRole('link', { name: 'Hourly details', exact: true })
     await expect(hourlyLink).toBeVisible()
-    // The city strip already shows nighttime icons, before opening all hours.
-    await expect(page.getByRole('img', { name: 'Weather: Clear (night)', exact: true }).first()).toBeVisible()
     await hourlyLink.click()
     await expect(page).toHaveURL(/\/hourly\?/)
     await expect(page.getByRole('img', { name: 'Weather: Clear (night)', exact: true })).toHaveCount(7)

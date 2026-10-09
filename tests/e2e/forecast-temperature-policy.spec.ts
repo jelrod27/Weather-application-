@@ -52,7 +52,7 @@ for (const units of ['imperial', 'metric'] as const) {
       await expect(page.getByRole('button', { name: new RegExp(`Forecast for Friday: High ${metric ? '31°C' : '89°F'}`) })).toBeVisible();
       await expect(page.getByRole('button', { name: new RegExp(`Forecast for Saturday: High ${metric ? '27°C' : '80°F'}`) })).toBeVisible();
       expect(forecastRequests).toBeGreaterThan(0);
-      await page.getByRole('link', { name: 'View all hours →' }).click();
+      await page.getByRole('region', { name: 'Next few hours' }).getByRole('link', { name: 'Hourly details', exact: true }).click();
       await expect(page).toHaveURL(/\/hourly\?/);
       await expect(page.getByText(metric ? '30°C' : '86°F', { exact: true }).first()).toBeVisible();
     });

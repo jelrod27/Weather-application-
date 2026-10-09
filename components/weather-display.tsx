@@ -8,11 +8,10 @@
  */
 
 import React, { useSyncExternalStore } from "react"
-import Link from 'next/link'
 import { Moon } from 'lucide-react'
 import { getTodayForecast } from '@/lib/weather/daily-forecast'
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
 import { themeTokens } from '@/lib/theme-tokens'
@@ -22,8 +21,6 @@ import { ForecastBrief } from "@/components/forecast-brief"
 import { HeroWeatherCard } from "@/components/hero-weather-card"
 import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
 import { AirQualityDisplay } from "@/components/air-quality-display"
-import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
-import LazyWeatherMap from '@/components/lazy-weather-map'
 import { MoonPhaseIcon } from '@/components/moon-phase-icon'
 import { CurrentConditions } from '@/components/weather/current-conditions'
 import { ForecastDiscovery } from '@/components/weather/forecast-discovery'
@@ -39,7 +36,6 @@ interface WeatherDisplayProps {
   selectedDay: number | null
   onDayClick: (index: number) => void
   precipitation?: { rain24h: number; snow24h: number } | null
-  showRadar?: boolean
 }
 
 // Match the visual breakpoint so keyboard order follows each layout, with one sidebar mounted.
@@ -52,16 +48,12 @@ function subscribeDiscoveryLayout(onChange: () => void): () => void {
 function isDesktopDiscovery(): boolean { return window.matchMedia?.(DISCOVERY_MEDIA).matches ?? false }
 function serverDiscoveryLayout(): boolean { return false }
 
-// Card style constants
-const HERO_CARD = "weather-card-enter border-0 border-l-4 border-l-primary shadow-md weather-metric-glow weather-card-gradient hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
-
 export function WeatherDisplay({
   weather,
   theme,
   selectedDay,
   onDayClick,
   precipitation,
-  showRadar = true
 }: WeatherDisplayProps): React.JSX.Element {
   const desktopDiscovery = useSyncExternalStore(subscribeDiscoveryLayout, isDesktopDiscovery, serverDiscoveryLayout)
   const illumination = weather.moonPhase?.illumination
@@ -96,19 +88,10 @@ export function WeatherDisplay({
         precipChance={todayForecast?.details?.precipitationChance}
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
+        sunrise={weather.sunrise}
+        sunset={weather.sunset}
       />
 
-      {/* 2. Hourly Forecast - Always visible if data exists */}
-      {weather?.hourlyForecast && weather.hourlyForecast.length > 0 && (
-        <LazyHourlyForecast
-          hourly={weather.hourlyForecast}
-          maxHours={6}
-          moreHref={hourlyHref}
-          theme={theme as ThemeType}
-          tempUnit={weather.unit || '°F'}
-          timezone={weather.timezone}
-        />
-      )}
       {!desktopDiscovery && <ForecastBrief weather={weather} hourlyHref={hourlyHref} />}
 
       </div>
@@ -147,92 +130,61 @@ export function WeatherDisplay({
         selectedDay={selectedDay}
       />
 
-      <CurrentConditions weather={weather} theme={theme} precipitation={precipitation} />
+      <div className="space-y-4">
+        <CurrentConditions weather={weather} theme={theme} precipitation={precipitation} />
 
-      {/* 4. Two-column layout: Radar (left) / AQI + Moon Phase stacked (right) */}
-      <div className={cn("grid grid-cols-1 gap-5 lg:gap-6", showRadar && "lg:grid-cols-2")}>
-        {/* LEFT: Radar */}
-        {showRadar && (
-          <div className="space-y-3 rounded-xl dashboard-surface bg-card/40 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-terminal-text-primary">
-                Weather Radar
-              </h2>
-              <Link
-                href={weatherLinks.radar}
-                className="px-2 py-1 border-0 rounded-md text-xs font-semibold transition-colors hover:text-primary text-muted-foreground hover:text-foreground"
-              >
-                VIEW FULL →
-              </Link>
-            </div>
-            <div className="h-[350px] rounded-lg overflow-hidden ring-1 ring-[var(--border-invisible)]">
-              <LazyWeatherMap
-                latitude={weather?.coordinates?.lat}
-                longitude={weather?.coordinates?.lon}
-                locationName={weather?.location}
-                timeZone={weather?.timezone}
-                theme={(theme || DEFAULT_THEME) as ThemeType}
-                displayMode="widget"
-              />
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+            <AirQualityDisplay
+              aqi={weather.aqi}
+              theme={(theme || DEFAULT_THEME) as ThemeType}
+              pollutants={weather.pollutants}
+            />
 
-        {/* RIGHT: AQI + Moon Phase stacked */}
-        <div className="space-y-4">
-          <AirQualityDisplay
-            aqi={weather.aqi}
-            theme={(theme || DEFAULT_THEME) as ThemeType}
-            pollutants={weather.pollutants}
-          />
-
-          {/* Moon Phase (compact) */}
-          <Card className={cn(HERO_CARD, "relative")} style={{ animationDelay: '0ms' }}>
-            <MetricInfoTooltip metricId="moon-phase" />
-            <CardHeader className="pb-2 px-4 pt-4">
-              <CardTitle className={cn("text-sm font-bold tracking-wide uppercase flex items-center gap-2", "text-terminal-text-primary")}>
-                <Moon size={14} className="text-primary" />
-                Moon Phase
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-1 px-4 pb-4">
-              {!weather.moonPhase ? <p className="text-sm text-muted-foreground">Moon information unavailable</p> : <>
-              {(weather.moonPhase.observingNight || weather.moonPhase.timeZone) && (
-                <p className="text-xs text-muted-foreground mb-2">
-                  {[weather.moonPhase.observingNight, weather.moonPhase.timeZone].filter(Boolean).join(' · ')}
-                </p>
-              )}
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1 flex-1 min-w-0">
-                  <p className={cn("text-base font-semibold", themeClasses.text)}>{weather?.moonPhase?.phase || 'Unknown'}</p>
-                  <p className={cn("text-xs", themeClasses.secondaryText)}>
-                    {hasIllumination ? `${illumination}% illuminated` : 'Illumination unavailable'}
-                  </p>
-                  {hasIllumination && <Progress
-                    aria-label="Moon illumination"
-                    value={illumination}
-                    className="h-1.5 mt-1"
-                    indicatorColor="#EBCB8B"
-                  />}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+            {/* Moon Phase */}
+            <Card className="relative flex min-w-0 flex-col border border-border bg-card shadow-sm [overflow-wrap:anywhere]">
+              <MetricInfoTooltip metricId="moon-phase" />
+              <CardHeader className="p-4 pb-0">
+                <h2 className="flex items-center justify-center gap-1.5 text-xs font-semibold leading-none uppercase tracking-widest text-muted-foreground">
+                  <Moon size={14} className="shrink-0 text-primary" aria-hidden="true" />
+                  Moon Phase
+                </h2>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col p-4">
+                {!weather.moonPhase ? <p className="text-sm text-muted-foreground">Moon information unavailable</p> : <>
+                <div className="flex min-h-12 items-center justify-between gap-3">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <p className={cn("text-lg font-bold", themeClasses.text)}>{weather?.moonPhase?.phase || 'Unknown'}</p>
                     <p className={cn("text-xs", themeClasses.secondaryText)}>
-                      Moonset: {weather?.moonPhase?.nextMoonset || 'N/A'}
-                    </p>
-                    <p className={cn("text-xs", themeClasses.secondaryText)}>
-                      Full: {weather?.moonPhase?.nextFullMoon || 'N/A'}
+                      {hasIllumination ? `${illumination}% illuminated` : 'Illumination unavailable'}
                     </p>
                   </div>
+                  {hasMoonPhase && hasIllumination && <MoonPhaseIcon
+                    phase={weather.moonPhase.phase}
+                    illumination={illumination}
+                    size={48}
+                    className="flex-shrink-0"
+                  />}
                 </div>
-                {hasMoonPhase && hasIllumination && <MoonPhaseIcon
-                  phase={weather.moonPhase.phase}
-                  illumination={illumination}
-                  size={48}
-                  className="flex-shrink-0"
+                {hasIllumination && <Progress
+                  aria-label="Moon illumination"
+                  value={illumination}
+                  className="h-1.5 mt-3"
+                  indicatorColor="#EBCB8B"
                 />}
-              </div>
-              </>}
-            </CardContent>
-          </Card>
+                {(weather.moonPhase.observingNight || weather.moonPhase.timeZone) && (
+                  <p className="mt-3 mb-3 text-xs text-muted-foreground">
+                    {[weather.moonPhase.observingNight, weather.moonPhase.timeZone].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+                <div className="mt-auto pt-3">
+                  <div className={cn("grid gap-2 border-t border-border pt-3 text-xs sm:grid-cols-2", themeClasses.secondaryText)}>
+                    <p>Moonset: {weather?.moonPhase?.nextMoonset || 'N/A'}</p>
+                    <p>Full: {weather?.moonPhase?.nextFullMoon || 'N/A'}</p>
+                  </div>
+                </div>
+                </>}
+              </CardContent>
+            </Card>
         </div>
       </div>
 

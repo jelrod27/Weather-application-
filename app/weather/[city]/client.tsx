@@ -147,7 +147,6 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
                   selectedDay={selectedDay}
                   onDayClick={(index) => setSelectedDay(selectedDay === index ? null : index)}
                   precipitation={precipitation}
-                  showRadar={true}
                 />
               </div>
             )}
