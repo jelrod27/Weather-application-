@@ -1,15 +1,18 @@
 /* Shared forecast composition. Data and reading order do not change with theme. */
 .weather-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem; }
 .weather-layout > * { min-width:0; }
-.forecast-discovery-card { display:block; min-width:0; border:1px solid var(--border-subtle); background:hsl(var(--card)); padding:1.5rem; border-radius:var(--radius); overflow-wrap:anywhere; }
+.forecast-discovery { display:flex; flex-direction:column; gap:.75rem; }
+.forecast-discovery-card { display:block; min-width:0; border:1px solid var(--border-subtle); background:hsl(var(--card)); padding:1rem; border-radius:var(--radius); overflow-wrap:anywhere; }
 .forecast-discovery-card:hover { border-color:hsl(var(--primary)); }
 .forecast-discovery-card:focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:4px; }
-.forecast-brief { min-width:0; padding:1.25rem; border:1px solid var(--border-subtle); border-radius:var(--radius); background:hsl(var(--card)); overflow-wrap:anywhere; }
+.forecast-brief { min-width:0; padding:1rem; border:1px solid var(--border-subtle); border-radius:var(--radius); background:hsl(var(--card)); overflow-wrap:anywhere; }
 @media(min-width:1200px) {
   .weather-layout { grid-template-columns:minmax(0,1fr) 290px; gap:1.5rem; }
   .weather-layout-journey { grid-column:1 / -1; }
-  .weather-layout-main { grid-column:1; grid-row:2; }
-  .forecast-discovery { grid-column:2; grid-row:2; align-self:start; }
+  .weather-layout-main { grid-column:1; grid-row:2; display:flex; flex-direction:column; }
+  .weather-layout-main > .hero-weather-card { flex:1; }
+  .forecast-discovery { grid-column:2; grid-row:2; }
+  .forecast-discovery > .forecast-brief { flex:1; display:flex; flex-direction:column; justify-content:center; }
   .weather-layout-details { grid-column:1 / -1; }
 }
 /* Clear Sky is a complete light surface, not a filter applied to weather imagery. */

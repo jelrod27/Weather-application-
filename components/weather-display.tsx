@@ -8,7 +8,6 @@
  */
 
 import React, { useSyncExternalStore } from "react"
-import Link from 'next/link'
 import { Moon } from 'lucide-react'
 import { getTodayForecast } from '@/lib/weather/daily-forecast'
 import { cn } from "@/lib/utils"
@@ -22,8 +21,6 @@ import { ForecastBrief } from "@/components/forecast-brief"
 import { HeroWeatherCard } from "@/components/hero-weather-card"
 import { LazyForecast, LazyForecastDetails } from "@/components/lazy-weather-components"
 import { AirQualityDisplay } from "@/components/air-quality-display"
-import LazyHourlyForecast from "@/components/lazy-hourly-forecast"
-import LazyWeatherMap from '@/components/lazy-weather-map'
 import { MoonPhaseIcon } from '@/components/moon-phase-icon'
 import { CurrentConditions } from '@/components/weather/current-conditions'
 import { ForecastDiscovery } from '@/components/weather/forecast-discovery'
@@ -39,7 +36,6 @@ interface WeatherDisplayProps {
   selectedDay: number | null
   onDayClick: (index: number) => void
   precipitation?: { rain24h: number; snow24h: number } | null
-  showRadar?: boolean
 }
 
 // Match the visual breakpoint so keyboard order follows each layout, with one sidebar mounted.
@@ -61,7 +57,6 @@ export function WeatherDisplay({
   selectedDay,
   onDayClick,
   precipitation,
-  showRadar = true
 }: WeatherDisplayProps): React.JSX.Element {
   const desktopDiscovery = useSyncExternalStore(subscribeDiscoveryLayout, isDesktopDiscovery, serverDiscoveryLayout)
   const illumination = weather.moonPhase?.illumination
@@ -96,19 +91,10 @@ export function WeatherDisplay({
         precipChance={todayForecast?.details?.precipitationChance}
         glowClass={themeClasses.glow}
         timezone={weather.timezone}
+        sunrise={weather.sunrise}
+        sunset={weather.sunset}
       />
 
-      {/* 2. Hourly Forecast - Always visible if data exists */}
-      {weather?.hourlyForecast && weather.hourlyForecast.length > 0 && (
-        <LazyHourlyForecast
-          hourly={weather.hourlyForecast}
-          maxHours={6}
-          moreHref={hourlyHref}
-          theme={theme as ThemeType}
-          tempUnit={weather.unit || '°F'}
-          timezone={weather.timezone}
-        />
-      )}
       {!desktopDiscovery && <ForecastBrief weather={weather} hourlyHref={hourlyHref} />}
 
       </div>
@@ -149,37 +135,7 @@ export function WeatherDisplay({
 
       <CurrentConditions weather={weather} theme={theme} precipitation={precipitation} />
 
-      {/* 4. Two-column layout: Radar (left) / AQI + Moon Phase stacked (right) */}
-      <div className={cn("grid grid-cols-1 gap-5 lg:gap-6", showRadar && "lg:grid-cols-2")}>
-        {/* LEFT: Radar */}
-        {showRadar && (
-          <div className="space-y-3 rounded-xl dashboard-surface bg-card/40 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-terminal-text-primary">
-                Weather Radar
-              </h2>
-              <Link
-                href={weatherLinks.radar}
-                className="px-2 py-1 border-0 rounded-md text-xs font-semibold transition-colors hover:text-primary text-muted-foreground hover:text-foreground"
-              >
-                VIEW FULL →
-              </Link>
-            </div>
-            <div className="h-[350px] rounded-lg overflow-hidden ring-1 ring-[var(--border-invisible)]">
-              <LazyWeatherMap
-                latitude={weather?.coordinates?.lat}
-                longitude={weather?.coordinates?.lon}
-                locationName={weather?.location}
-                timeZone={weather?.timezone}
-                theme={(theme || DEFAULT_THEME) as ThemeType}
-                displayMode="widget"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* RIGHT: AQI + Moon Phase stacked */}
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2 lg:gap-6">
           <AirQualityDisplay
             aqi={weather.aqi}
             theme={(theme || DEFAULT_THEME) as ThemeType}
@@ -233,7 +189,6 @@ export function WeatherDisplay({
               </>}
             </CardContent>
           </Card>
-        </div>
       </div>
 
       </div>

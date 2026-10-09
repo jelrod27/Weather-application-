@@ -1,15 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { ArrowDown, ArrowUp, CloudRain, Droplets, Sunrise, Sunset, Thermometer, Wind } from "lucide-react"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import WeatherIconModern from "@/components/weather-icon-modern"
 import { ShareButton } from "@/components/share-weather-modal"
+import { MetricInfoTooltip } from "@/components/metric-info-tooltip"
 import { useTheme } from "@/components/theme-provider"
 import { isLightTheme } from "@/lib/theme-config"
 import { getHeroAccent } from "@/lib/weather/hero-utils"
 import { formatLocationTimeWithZone } from "@/lib/format-location-time"
-import { ArrowDown, ArrowUp, CloudRain, Droplets, Thermometer, Wind } from "lucide-react"
 
 /** Icon tints tuned per theme — dark themes use pastel /90; daybreak uses saturated hues for cream bg. */
 const HERO_CHIP_ICON = {
@@ -52,6 +54,8 @@ interface HeroWeatherCardProps {
   glowClass?: string
   /** IANA timezone for the viewed location (city-local clock). */
   timezone?: string
+  sunrise?: string
+  sunset?: string
 }
 
 export function HeroWeatherCard({
@@ -71,6 +75,8 @@ export function HeroWeatherCard({
   precipChance,
   glowClass,
   timezone,
+  sunrise,
+  sunset,
 }: HeroWeatherCardProps): React.JSX.Element {
   const { theme } = useTheme()
   const accent = getHeroAccent(condition)
@@ -85,12 +91,13 @@ export function HeroWeatherCard({
         <div className={cn("grid gap-5 items-center", !compact && "sm:gap-6 sm:grid-cols-[1fr_auto]")}>
           {/* Left: identity + temperature */}
           <div className="min-w-0 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start gap-3 mb-1.5">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-1.5">
               {/* The card loads after the client fetch; the page's server-rendered <h1> owns the topic. */}
               <h2
                 className={cn(
                   compact ? "font-semibold tracking-tight text-foreground font-sans" : "font-extrabold tracking-wider uppercase text-primary font-sans",
                   glowClass,
+                  "min-w-0 [overflow-wrap:anywhere]",
                 )}
                 style={{ fontSize: "clamp(18px, 3.2vw, 26px)" }}
               >
@@ -137,8 +144,8 @@ export function HeroWeatherCard({
           </div>
 
           {/* Right: icon + 2-row chip grid */}
-          <div className={cn("flex items-center gap-4", compact ? "flex-row" : "flex-col sm:gap-5 sm:pr-2 sm:min-w-[280px]")}>
-            <div className="drop-shadow-[0_4px_28px_rgba(var(--theme-accent-rgb),0.28)]">
+          <div className={cn("flex items-center gap-4", compact ? "flex-col sm:flex-row" : "flex-col sm:gap-5 sm:pr-2 sm:min-w-[280px]")}>
+            <div className="shrink-0 drop-shadow-[0_4px_28px_rgba(var(--theme-accent-rgb),0.28)]">
               <WeatherIconModern condition={condition} size={compact ? 60 : 112} className="sm:scale-110" />
             </div>
 
@@ -179,6 +186,22 @@ export function HeroWeatherCard({
               )}
             </div>
           </div>
+          <section aria-label="Sun times" className="relative border-t border-border/50 pt-3">
+            <p className="pr-9 text-xs text-muted-foreground break-words">
+              Local sun times{timezone ? ` · ${timezone}` : ''}
+            </p>
+            <MetricInfoTooltip metricId="sun-times" />
+            <dl className="mt-2 grid grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground"><Sunrise size={16} className="shrink-0 text-primary" aria-hidden="true" />Sunrise</dt>
+                <dd className="mt-1 text-sm font-semibold tabular-nums">{sunrise && sunrise !== 'N/A' ? sunrise : 'Unavailable'}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground"><Sunset size={16} className="shrink-0 text-primary" aria-hidden="true" />Sunset</dt>
+                <dd className="mt-1 text-sm font-semibold tabular-nums">{sunset && sunset !== 'N/A' ? sunset : 'Unavailable'}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       </CardContent>
     </Card>
@@ -187,7 +210,7 @@ export function HeroWeatherCard({
 
 function HeroChip({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-md px-2 py-1 bg-card/80 border border-[var(--border-invisible)]">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-md px-2 py-1 bg-card/80 border border-[var(--border-invisible)]">
       {icon}
       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <span className="tabular-nums text-foreground">{value}</span>
