@@ -7,7 +7,7 @@
  * when no tags are shared, rather than padding the list.
  */
 
-import Link from 'next/link'
+import Link from './weather-learning-link'
 
 import type { EducationEntryKind } from '@/lib/education/entries'
 import { getRelatedGuides } from '@/lib/education/topics'

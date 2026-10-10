@@ -317,7 +317,7 @@ export default function WeatherSkills({ initialLesson = 'clouds', returnHref }: 
           </details>
         )}
         <Link
-          href={lesson.guide.href}
+          href={returnHref?.startsWith('/read-your-sky') ? `${lesson.guide.href}?${new URLSearchParams({ returnTo: returnHref })}` : lesson.guide.href}
           className={cn('inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--weather-primary)] hover:underline', FOCUS_STYLE)}
         >
           {lesson.guide.label}<ArrowRight aria-hidden="true" className="h-4 w-4" />

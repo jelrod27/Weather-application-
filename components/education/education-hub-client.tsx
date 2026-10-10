@@ -45,7 +45,7 @@ interface EducationHubClientProps {
 const START_HERE = [
   {
     step: '01',
-    title: 'Read the sky',
+    title: 'Explore cloud types',
     description: 'Start with common cloud types and altitude layers.',
     href: '/cloud-types',
     cta: 'Cloud Atlas',

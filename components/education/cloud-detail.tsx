@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from './weather-learning-link'
 import { ShareButtons } from '@/components/share-buttons'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import EducationBackLink from '@/components/education/education-back-link'

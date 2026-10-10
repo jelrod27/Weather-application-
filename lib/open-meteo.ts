@@ -17,6 +17,24 @@ import type { OpenMeteoForecastResponse, OpenMeteoAirQualityResponse } from '@/l
 const FORECAST_BASE = 'https://api.open-meteo.com/v1/forecast';
 const AIR_QUALITY_BASE = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 
+/** Eight current variables + one hourly variable, one place, requested on demand.
+ * No daily forecast, NBM request, astronomy, or background polling. */
+export async function fetchOpenMeteoSky(lat: number, lon: number): Promise<{ body: unknown; providerReceivedAt: number | null }> {
+  const url = new URL(FORECAST_BASE);
+  url.search = new URLSearchParams({
+    latitude: String(lat), longitude: String(lon), timezone: 'auto', timeformat: 'unixtime',
+    current: 'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,is_day,precipitation,weather_code,visibility',
+    hourly: 'cloud_cover', forecast_hours: '3', precipitation_unit: 'mm',
+  }).toString();
+  const response = await fetchWithTimeout(url, {
+    timeoutMs: 8000, maxRetries: 0, cache: 'no-store',
+    headers: { 'User-Agent': '16-Bit-Weather/read-your-sky' },
+  });
+  if (!response.ok) throw new Error(`Sky provider returned ${response.status}`);
+  const date = Date.parse(response.headers.get('date') ?? '');
+  return { body: await response.json(), providerReceivedAt: Number.isFinite(date) ? date : null };
+}
+
 /**
  * Fetch current conditions + hourly + daily forecast from Open-Meteo.
  * Uses imperial units (fahrenheit, mph, inch) by default to match the app's US-first approach.

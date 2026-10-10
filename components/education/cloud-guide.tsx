@@ -7,7 +7,7 @@
  * markdown Guide; everything else still renders CloudDetail.
  */
 
-import Link from 'next/link'
+import Link from './weather-learning-link'
 
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'

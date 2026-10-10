@@ -6,6 +6,7 @@ This index separates current proposals from shipped specifications and historica
 
 | Document | Status | Current scope / next step |
 |---|---|---|
+| [PRD-read-your-sky.md](./PRD-read-your-sky.md) | **Approved — implementation in progress** | [Issue #664](https://github.com/jelrod27/Weather-application-/issues/664): selected-place current sky, matching scientific illustration, approximately two-hour outlook, and explicit general-learning fallback. Layout A — Field note selected. Implement live selected-place estimates and verify the complete journey. |
 | [PRD-forecast-temperature-quality.md](./PRD-forecast-temperature-quality.md) | **Approved — PR review** | [Issue #656](https://github.com/jelrod27/Weather-application-/issues/656): scoped NBM temperature selection for home/city/hourly forecasts, complete-group fallback and preserved ancillary metrics; implemented and validated, not yet shipped. |
 | [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | **Approved US advisory slice — PR review** | [Issue #657](https://github.com/jelrod27/Weather-application-/issues/657): map-first contiguous-US advisories, source snapshot/altitude controls and accessible details. Broader North America forecast and optional approximate trip comparison remain proposals with source feasibility gates. |
 

@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link, { SkyLearningReturn } from './weather-learning-link'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { themeTokens } from '@/lib/theme-tokens'
@@ -19,7 +19,7 @@ export default function EducationBackLink({
   const themeClasses = themeTokens.weather
 
   return (
-    <Link
+    <><SkyLearningReturn /><Link
       href={href}
       className={cn(
         'inline-flex items-center gap-1.5 text-sm font-mono mb-6 hover:underline transition-colors',
@@ -29,6 +29,6 @@ export default function EducationBackLink({
     >
       <ArrowLeft size={14} />
       {label}
-    </Link>
+    </Link></>
   )
 }

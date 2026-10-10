@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { getWeatherJourneyLinks, getWeatherLessonHref } from '@/lib/weather/journey'
+import { getWeatherJourneyLinks, getReadYourSkyHref } from '@/lib/weather/journey'
 import type { WeatherData } from '@/lib/types'
 
 interface WeatherJourneyProps {
@@ -17,7 +17,7 @@ export function WeatherJourney({ weather, active }: WeatherJourneyProps): React.
     { label: 'Forecast', key: 'forecast', href: links.forecast },
     { label: 'Hourly', key: 'hourly', href: links.hourly },
     { label: 'Radar', key: 'radar', href: `/radar?${radarParams}` },
-    { label: 'Read the sky', key: 'learn', href: getWeatherLessonHref('clouds', currentHref) },
+    { label: 'Read your sky', key: 'learn', href: getReadYourSkyHref(weather, currentHref) },
   ]
   return (
     <nav aria-label={`Weather views for ${weather.location}`} className="border-b border-border">
