@@ -73,7 +73,10 @@
     "__tests__/theme-constraint-parity.test.ts",
     "tests/e2e/clear-sky.spec.ts",
     "__tests__/theme-contrast.test.ts",
-    "__tests__/air-quality-display.test.tsx"
+    "__tests__/air-quality-display.test.tsx",
+    "__tests__/sky/**/*.test.ts",
+    "__tests__/sky/**/*.test.tsx",
+    "tests/e2e/read-your-sky.spec.ts"
   ],
   "exclude": [
     "node_modules",

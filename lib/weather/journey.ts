@@ -12,7 +12,7 @@ export function getWeatherReturnHref(value: string | null): string | null {
   if (!safe) return null
   const url = new URL(safe, 'https://www.16bitweather.co')
   if (url.origin !== 'https://www.16bitweather.co') return null
-  if (!['/', '/hourly', '/radar'].includes(url.pathname) && !/^\/weather\/[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/.test(url.pathname)) return null
+  if (!['/', '/hourly', '/radar', '/read-your-sky'].includes(url.pathname) && !/^\/weather\/[a-z0-9]+(?:-{1,2}[a-z0-9]+)*$/.test(url.pathname)) return null
   return `${url.pathname}${url.search}${url.hash}`
 }
 
@@ -21,6 +21,17 @@ export function getWeatherLessonHref(lesson: WeatherLesson, returnTo: string): s
   const safe = getWeatherReturnHref(returnTo)
   if (safe) params.set('returnTo', safe)
   return `/education/weather-skills?${params}`
+}
+
+export function getReadYourSkyHref(viewed: JourneyLocation, returnTo?: string): string {
+  const { coordinates, location, timezone } = viewed
+  if (!coordinates || !Number.isFinite(coordinates.lat) || !Number.isFinite(coordinates.lon) ||
+    Math.abs(coordinates.lat) > 90 || Math.abs(coordinates.lon) > 180) return '/read-your-sky'
+  const params = new URLSearchParams({ lat: String(coordinates.lat), lon: String(coordinates.lon), label: location })
+  if (timezone) params.set('tz', timezone)
+  const safe = getWeatherReturnHref(returnTo ?? getWeatherJourneyLinks(viewed).forecast)
+  if (safe && !safe.startsWith('/read-your-sky')) params.set('returnTo', safe)
+  return `/read-your-sky?${params}`
 }
 
 export function getWeatherJourneyLinks(viewed: JourneyLocation): { forecast: string; hourly: string; radar: string } {

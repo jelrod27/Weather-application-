@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Cloud, Radar, Wind } from 'lucide-react'
 import PageWrapper from '@/components/page-wrapper'
 import CloudAltitudePlot from '@/components/education/diagrams/cloud-altitude-plot'
@@ -9,6 +8,7 @@ import StormCrossSection from '@/components/education/diagrams/storm-cross-secti
 import { cloudDatabase } from '@/data/cloud-types'
 import { cn } from '@/lib/utils'
 import { getWeatherLessonHref } from '@/lib/weather/journey'
+import Link from './weather-learning-link'
 import type { ReactElement } from 'react'
 import type { WeatherLesson as LessonId } from '@/lib/weather/journey'
 
@@ -317,7 +317,7 @@ export default function WeatherSkills({ initialLesson = 'clouds', returnHref }: 
           </details>
         )}
         <Link
-          href={lesson.guide.href}
+          href={returnHref?.startsWith('/read-your-sky') ? `${lesson.guide.href}?${new URLSearchParams({ returnTo: returnHref })}` : lesson.guide.href}
           className={cn('inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--weather-primary)] hover:underline', FOCUS_STYLE)}
         >
           {lesson.guide.label}<ArrowRight aria-hidden="true" className="h-4 w-4" />

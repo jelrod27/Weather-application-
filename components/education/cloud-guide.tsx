@@ -7,17 +7,16 @@
  * markdown Guide; everything else still renders CloudDetail.
  */
 
-import Link from 'next/link'
-
 import EducationBackLink from '@/components/education/education-back-link'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import GuideBody from '@/components/education/guide-body'
 import RelatedGuides from '@/components/education/related-guides'
 import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
+import { getEducationDetailHref } from '@/lib/education/entries'
+import Link from './weather-learning-link'
 import type { CloudData } from '@/data/cloud-types'
 import type { GuideContent } from '@/lib/education/content'
-import { getEducationDetailHref } from '@/lib/education/entries'
 
 interface CloudGuideProps {
   cloud: CloudData

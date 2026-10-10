@@ -18,6 +18,7 @@ const ALLOWED_REDIRECT_PATHS = [
   '/news',
   '/radar',
   '/hourly',
+  '/read-your-sky',
   '/education',
   '/auth/update-password',
   '/',

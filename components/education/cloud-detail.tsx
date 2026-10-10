@@ -1,16 +1,16 @@
 'use client'
 
-import Link from 'next/link'
 import { ShareButtons } from '@/components/share-buttons'
 import EducationBreadcrumb from '@/components/education/education-breadcrumb'
 import EducationBackLink from '@/components/education/education-back-link'
 import PageWrapper from '@/components/page-wrapper'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { CloudData } from '@/data/cloud-types'
 import { cloudSlug, getEducationDetailHref } from '@/lib/education/entries'
 import { cn } from '@/lib/utils'
 import { themeTokens } from '@/lib/theme-tokens'
+import Link from './weather-learning-link'
+import type { CloudData } from '@/data/cloud-types'
 
 interface CloudDetailProps {
   cloud: CloudData

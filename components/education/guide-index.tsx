@@ -7,10 +7,10 @@
  * it, and a crawler reaching the atlas finds every Guide of that kind.
  */
 
-import Link from 'next/link'
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getShareableGuideEntries, type EducationEntryKind } from '@/lib/education/entries'
+import { getShareableGuideEntries } from '@/lib/education/entries'
+import Link from './weather-learning-link'
+import type { EducationEntryKind } from '@/lib/education/entries'
 
 const HEADING: Record<EducationEntryKind, string> = {
   cloud: 'CLOUD GUIDES',
