@@ -52,6 +52,24 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
 }
 
 test.describe('Read your sky recovery and entry', () => {
+  for (const offset of [-60_000, 2 * 60 * 60_000]) {
+    test(`retains the current estimate and outlook when the device clock differs by ${offset} ms`, async ({ page }) => {
+      await page.clock.setFixedTime(NOW + offset)
+      await stubHomeHubApis(page)
+      await page.route('**/api/read-your-sky?**', route => route.fulfill({ json: sky() }))
+      await page.goto(SKY_URL)
+      await expect(page.getByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+      await expect(page.getByText(/Weather-model estimate/)).toContainText('2:15 PM GMT-7')
+      await expect(page.getByRole('region', { name: 'Two-hour outlook' })).toContainText('60%')
+      await expect(page.getByRole('region', { name: 'Two-hour outlook' })).toContainText('46%')
+      const refresh = page.getByRole('button', { name: 'Refresh estimate' })
+      await refresh.click()
+      await expect(refresh).toBeEnabled()
+      await expect(page.getByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+      await expect(page.getByText('General learning example · not your current sky')).not.toBeVisible()
+    })
+  }
+
   test('unavailable data is general learning, and keyboard retry obtains the current estimate', async ({ page }) => {
     await page.clock.setFixedTime(NOW)
     await stubHomeHubApis(page)

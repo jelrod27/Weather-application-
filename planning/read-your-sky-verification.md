@@ -21,6 +21,14 @@ Standards and specification reviewers independently reviewed the complete change
 - Imports follow the repository's documented order.
 - Related page, route, and browser tests are grouped into named suites. Regression checks exercise incomplete data, diagnostic behavior, cancellation, and the hub navigation paths.
 
+### CodeRabbit clock correction — PR #665
+
+The [clock-skew finding](https://github.com/jelrod27/Weather-application-/pull/665#discussion_r4236287734) was reproduced against `2a50491`: a browser one minute behind rejected a valid response, including after retry. The client now anchors freshness and outlook calculations to the server's `fetchedAt`, records client receipt time after reading the response body, and advances from elapsed time. Displayed weather timestamps and server-side validation are unchanged.
+
+The full request/body duration is added as a conservative transport allowance: exact one-way latency is unknown, so this may expire a reading or drop an outlook hour slightly early, by at most that request duration under stable clocks, rather than retain passed data. Monotonic elapsed time prevents a backward device-clock correction from extending freshness; wall-clock elapsed time also covers browsers whose monotonic clock pauses during sleep. A forward clock correction can conservatively expire a reading early; refresh establishes a new anchor. This adds no polling or provider calls.
+
+Six new page regressions cover clocks one minute behind and two hours ahead, retries, delayed-body expiry for current and provider timestamps, an outlook hour passed in transit, and backward clock correction. The existing expiry regression now explicitly exercises return from sleep. Four regressions failed on the old implementation; all 48 sky unit tests pass with the fix. Two production browser cases additionally verify slow/fast device clocks and refresh.
+
 ## Main files
 
 - [Page and interaction](../app/read-your-sky/sky-reading.tsx), [illustration](../app/read-your-sky/sky-illustration.tsx), [styles](../app/read-your-sky/sky-reading.module.css).
@@ -35,8 +43,8 @@ Release validation on October 9, 2026 used Node **22.23.3** and **`npm ci`** fro
 | Check | Result |
 |---|---|
 | Targeted Jest, sky and education | **238 passed across 20 suites** after the review fixes. All are included in the full-suite run below. |
-| Chromium browser suite | **7 passed against the production build**, using the locked Playwright and matching Chromium: desktop/mobile forecast → sky → lesson → Atlas → Education hub → Atlas → Guide → return; lesson → hub → encyclopedia card → return; failure and keyboard retry; clear night/partial layers/missing outlook/staleness; direct search; main-page entry. No retries. |
-| Whole Jest suite (`npm run test:ci`) | **2,270 passed across all 285 suites**. |
+| Chromium browser suite | **9 passed against the production build**, using the locked Playwright and matching Chromium: desktop/mobile forecast → sky → lesson → Atlas → Education hub → Atlas → Guide → return; lesson → hub → encyclopedia card → return; failure and keyboard retry; clear night/partial layers/missing outlook/staleness; direct search; main-page entry; slow/fast device clocks and refresh. No retries. |
+| Whole Jest suite (`npm run test:ci`) | **2,276 passed across all 285 suites** after the CodeRabbit clock correction. |
 | Database security tests (`npm run test:security-db`) | **9 passed** on the implementation before review; no database code changed in the review fixes. |
 | Repository lint | **0 errors**, 93 existing warnings. |
 | Knip | **Passed**, existing configuration hints only. |
@@ -50,7 +58,7 @@ Release validation on October 9, 2026 used Node **22.23.3** and **`npm ci`** fro
 
 An earlier shared installation used Node 26 and older dependencies, causing test/type/build failures that also reproduced on main. **None reproduces with Node 22 and the committed lockfile.** Both checkouts now have locked dependencies; stale generated development artifacts were preserved outside the build directory before the clean build. No unrelated application changes or test/CI relaxations were needed.
 
-**Not run locally:** Full repository E2E; the affected journey suite ran against the production server. Remote security and Preview Smoke must run on the published PR. Production Smoke applies after an authorized deployment. No CI gate was disabled or bypassed.
+**Not run locally:** Full repository E2E; the affected journey suite ran against the production server. All 12 required GitHub checks, including full E2E, security, and Preview Smoke, passed for `2a50491`. The clock-correction commit must pass those same gates again. Production Smoke applies after an authorized deployment. No CI gate was disabled or bypassed.
 
 ## Provider access and scope
 

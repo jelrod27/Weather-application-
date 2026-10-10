@@ -16,7 +16,7 @@ const response = (data: unknown): Response => ({ ok: true, json: async () => dat
 const fetchMock = jest.fn()
 const originalFetch = global.fetch
 beforeEach(() => { jest.spyOn(Date, 'now').mockReturnValue(now); jest.spyOn(console, 'error').mockImplementation(() => {}); global.fetch = fetchMock; fetchMock.mockReset() })
-afterEach(() => { jest.restoreAllMocks(); global.fetch = originalFetch })
+afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); global.fetch = originalFetch })
 
 describe('Read your sky page', () => {
   test('shows the same place, time and layer evidence in the words and illustration, and preserves the complete learning return', async () => {
@@ -41,6 +41,66 @@ describe('Read your sky page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  test.each([-60_000, 2 * 60 * 60_000])('keeps valid data and its outlook when the device clock differs by %s ms, including retry', async offset => {
+    jest.spyOn(Date, 'now').mockReturnValue(now + offset)
+    fetchMock.mockResolvedValue(response(estimate()))
+    render(<SkyReading context={context} />)
+    expect(await screen.findByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+    expect(screen.getByText(/Weather-model estimate/)).toHaveTextContent('2:15 PM GMT-7')
+    const outlook = screen.getByRole('region', { name: 'Two-hour outlook' })
+    expect(outlook).toHaveTextContent('60%')
+    expect(outlook).toHaveTextContent('46%')
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh estimate' }))
+    expect(await screen.findByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  test.each(['current', 'providerReceivedAt'] as const)('includes response-body delay when checking %s expiry', async field => {
+    jest.useFakeTimers()
+    jest.setSystemTime(now - 60_000)
+    const data = estimate()
+    const almostExpired = now - 30 * 60_000 + 3_000
+    if (field === 'current') data.current.time = almostExpired
+    else data.providerReceivedAt = almostExpired
+    fetchMock.mockResolvedValue({ ok: true, json: () => new Promise(resolve => setTimeout(() => resolve(data), 6_000)) } as Response)
+    render(<SkyReading context={context} />)
+    await act(async () => { await jest.advanceTimersByTimeAsync(6_000) })
+    expect(screen.getByText(/too old to describe the sky now/)).toBeVisible()
+    expect(screen.getByText('General learning example · not your current sky')).toBeVisible()
+  })
+
+  test('excludes an outlook hour that passes during response transport despite a slow device clock', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(now - 60_000)
+    const data = estimate()
+    data.hours[0].time = now + 3_000
+    fetchMock.mockResolvedValue({ ok: true, json: () => new Promise(resolve => setTimeout(() => resolve(data), 6_000)) } as Response)
+    render(<SkyReading context={context} />)
+    await act(async () => { await jest.advanceTimersByTimeAsync(6_000) })
+    expect(screen.getByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+    const outlook = screen.getByRole('region', { name: 'Two-hour outlook' })
+    expect(outlook).not.toHaveTextContent('60%')
+    expect(outlook).toHaveTextContent('46%')
+  })
+
+  test('advances the outlook and expires current data even if the device clock moves backward', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(now)
+    const data = estimate()
+    data.hours[0].time = now + 30_000
+    fetchMock.mockResolvedValue(response(data))
+    render(<SkyReading context={context} />)
+    await act(async () => { await jest.advanceTimersByTimeAsync(0) })
+    expect(screen.getByRole('region', { name: 'Two-hour outlook' })).toHaveTextContent('60%')
+    jest.setSystemTime(now - 60 * 60_000)
+    await act(async () => { await jest.advanceTimersByTimeAsync(60_000) })
+    expect(screen.getByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Two-hour outlook' })).not.toHaveTextContent('60%')
+    await act(async () => { await jest.advanceTimersByTimeAsync(25 * 60_000) })
+    expect(screen.getByText(/too old to describe the sky now/)).toBeVisible()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   test('clear/night and incomplete-layer states use an honest illustration with no invented heights', async () => {
@@ -116,7 +176,7 @@ describe('Read your sky page', () => {
     expect(console.error).not.toHaveBeenCalled()
   })
 
-  test('expires a displayed estimate instead of continuing to label it current', async () => {
+  test('expires a displayed estimate on return when the browser elapsed clock paused during sleep', async () => {
     jest.useFakeTimers()
     jest.setSystemTime(now)
     fetchMock.mockResolvedValue(response(estimate()))
@@ -124,10 +184,9 @@ describe('Read your sky page', () => {
     await act(async () => { await Promise.resolve() })
     expect(screen.getByRole('heading', { name: 'Clouds at more than one height' })).toBeVisible()
     jest.setSystemTime(now + 31 * 60_000)
-    act(() => { jest.advanceTimersByTime(60_000) })
+    act(() => { document.dispatchEvent(new Event('visibilitychange')) })
     expect(screen.getByText(/too old to describe the sky now/)).toBeVisible()
     expect(screen.getByText('General learning example · not your current sky')).toBeVisible()
-    jest.useRealTimers()
   })
 
   test('offers place selection for an invalid direct URL and rejects external returns', async () => {

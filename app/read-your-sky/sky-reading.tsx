@@ -22,6 +22,7 @@ const GENERAL = { title: 'Start with what you can see', description: 'Cloud shap
 const PLACE_ERROR = 'Location not found or unavailable. Try a city and region, or try again.'
 
 interface SkyReadingProps { context: SkyContext }
+interface SkyClock { serverTimeAtReceipt: number; receivedAt: number; receivedWallTime: number }
 
 export default function SkyReading({ context }: SkyReadingProps): ReactElement {
   const router = useRouter()
@@ -29,6 +30,7 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
   const [loading, setLoading] = useState(Boolean(context.coordinates))
   const [attempt, setAttempt] = useState(0)
   const [now, setNow] = useState(0)
+  const clock = useRef<SkyClock | null>(null)
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [showSearch, setShowSearch] = useState(!context.coordinates)
@@ -37,7 +39,13 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
   const lon = context.coordinates?.lon
 
   useEffect(() => {
-    const tick = (): void => setNow(Date.now())
+    const tick = (): void => {
+      const anchor = clock.current
+      if (!anchor) return
+      // Monotonic time survives clock corrections; wall elapsed also covers browser/OS sleep.
+      const elapsed = Math.max(0, performance.now() - anchor.receivedAt, Date.now() - anchor.receivedWallTime)
+      setNow(anchor.serverTimeAtReceipt + elapsed)
+    }
     tick()
     const interval = setInterval(tick, 60_000)
     document.addEventListener('visibilitychange', tick)
@@ -49,6 +57,8 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
     const controller = new AbortController()
     async function load(): Promise<void> {
       setLoading(true)
+      const requestStarted = performance.now()
+      const requestWallTime = Date.now()
       try {
         const response = await fetchWithTimeout(`/api/read-your-sky?${new URLSearchParams({ lat: String(lat), lon: String(lon) })}`, {
           signal: controller.signal, cache: 'no-store', timeoutMs: 12_000, maxRetries: 0,
@@ -59,7 +69,17 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
         }
         const parsed = skyEstimateSchema.safeParse(await response.json())
         if (!parsed.success) throw new Error('Invalid sky response')
-        if (!controller.signal.aborted) { setEstimate(parsed.data); setNow(Date.now()) }
+        if (!controller.signal.aborted) {
+          const receivedAt = performance.now()
+          const receivedWallTime = Date.now()
+          // One-way latency is unknown. The full request/body duration conservatively bounds
+          // transport age, so delayed responses cannot extend freshness or keep past outlook hours.
+          const requestDuration = Math.max(0, receivedAt - requestStarted, receivedWallTime - requestWallTime)
+          const serverTimeAtReceipt = parsed.data.fetchedAt + requestDuration
+          clock.current = { serverTimeAtReceipt, receivedAt, receivedWallTime }
+          setEstimate(parsed.data)
+          setNow(serverTimeAtReceipt)
+        }
       } catch (error) {
         if (!controller.signal.aborted) {
           if (!isAbortError(error)) console.error('[Read your sky: load estimate]', error)
