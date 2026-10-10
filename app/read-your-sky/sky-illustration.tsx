@@ -13,23 +13,23 @@ export default function SkyIllustration({ frame: current, title }: SkyIllustrati
   const frame = current ?? { total: null, layers: [65, 30, 45] }
 
   const id = useId().replaceAll(':', '')
-  const unknownLayers = !general && frame.layers.every(layer => layer === null)
+  const showTotalCoverage = !general && frame.total !== null && frame.layers.some(layer => layer === null)
   const sky = night ? ['#14233e', '#354d6a'] : ['#d5e9f6', '#f4f8fb']
   const ink = night ? '#e6f0f7' : '#344e68'
   const drawLayers = general ? [65, 30, 45] : frame.layers
   return <figure className={styles.figure}>
     <svg viewBox="0 0 540 285" role="img" aria-labelledby={`${id}-title ${id}-description`}>
-      <title id={`${id}-title`}>{general ? 'General cloud-layer illustration' : unknownLayers ? 'Overall cloud coverage diagram; layer heights unknown' : `${title}: schematic low, middle and high cloud layers`}</title>
+      <title id={`${id}-title`}>{general ? 'General cloud-layer illustration' : showTotalCoverage ? 'Overall cloud coverage diagram; layer details incomplete' : `${title}: schematic low, middle and high cloud layers`}</title>
       <desc id={`${id}-description`}>{general ? 'Examples at different heights, not current local conditions.' : `Total cloud cover ${frame.total ?? 'unknown'} percent. Low ${frame.layers[0] ?? 'unknown'}, middle ${frame.layers[1] ?? 'unknown'}, high ${frame.layers[2] ?? 'unknown'} percent. Layers overlap; their amounts are not added. Shapes and heights are illustrative, not measured.`}</desc>
       <defs><linearGradient id={`${id}-sky`} x2="0" y2="1"><stop stopColor={sky[0]} /><stop offset="1" stopColor={sky[1]} /></linearGradient></defs>
       <rect width="540" height="285" rx="14" fill={`url(#${id}-sky)`} />
       {night && <g fill="#f0f4fa" opacity=".5">{[[170, 31], [256, 22], [435, 29], [477, 103], [150, 119]].map(([x, y]) => <circle key={x} cx={x} cy={y} r="1.4" />)}</g>}
-      {unknownLayers ? <>
+      {showTotalCoverage ? <>
         <circle cx="270" cy="127" r="69" fill="none" stroke={night ? '#52667d' : '#b9cfe0'} strokeWidth="18" />
         <circle cx="270" cy="127" r="69" fill="none" stroke="#507593" strokeWidth="18" strokeDasharray={`${(frame.total ?? 0) / 100 * 433.54} 433.54`} transform="rotate(-90 270 127)" />
         <text x="270" y="130" textAnchor="middle" fill={ink} fontSize="29" fontWeight="600">{frame.total}%</text>
         <text x="270" y="153" textAnchor="middle" fill={ink} fontSize="12">cloud cover</text>
-        <text x="270" y="222" textAnchor="middle" fill={ink} fontSize="13">Layer heights unavailable</text>
+        <text x="270" y="222" textAnchor="middle" fill={ink} fontSize="13">Layer details incomplete</text>
       </> : <>
         {[{ label: 'High', index: 2, y: 68 }, { label: 'Middle', index: 1, y: 132 }, { label: 'Low', index: 0, y: 196 }].map(({ label, index, y }) => {
           const value = drawLayers[index]

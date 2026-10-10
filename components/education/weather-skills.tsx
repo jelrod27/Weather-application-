@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Cloud, Radar, Wind } from 'lucide-react'
 import PageWrapper from '@/components/page-wrapper'
 import CloudAltitudePlot from '@/components/education/diagrams/cloud-altitude-plot'
@@ -9,6 +8,7 @@ import StormCrossSection from '@/components/education/diagrams/storm-cross-secti
 import { cloudDatabase } from '@/data/cloud-types'
 import { cn } from '@/lib/utils'
 import { getWeatherLessonHref } from '@/lib/weather/journey'
+import Link from './weather-learning-link'
 import type { ReactElement } from 'react'
 import type { WeatherLesson as LessonId } from '@/lib/weather/journey'
 

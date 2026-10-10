@@ -9,6 +9,7 @@ import Navigation from '@/components/navigation'
 import WeatherSearch from '@/components/weather-search'
 import { getReadYourSkyHref, getWeatherLessonHref } from '@/lib/weather/journey'
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
+import { isAbortError } from '@/lib/abort-error'
 import { describeSky, describeSkyOutlook, formatSkyTime, isSkyFresh, skyEstimateSchema } from '@/lib/sky/estimate'
 import SkyIllustration from './sky-illustration'
 import styles from './sky-reading.module.css'
@@ -18,6 +19,7 @@ import type { SkyEstimate } from '@/lib/sky/estimate'
 
 const placeSchema = z.object({ name: z.string().min(1), state: z.string().optional(), country: z.string().optional(), lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) })
 const GENERAL = { title: 'Start with what you can see', description: 'Cloud shapes can help you compare types. The illustration is a general example, not a view of your selected location.', tip: 'Compare broad layers, rounded patches, and delicate streaks. Their appearance helps you distinguish clouds; a model percentage alone cannot identify them.' }
+const PLACE_ERROR = 'Location not found or unavailable. Try a city and region, or try again.'
 
 interface SkyReadingProps { context: SkyContext }
 
@@ -51,12 +53,18 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
         const response = await fetchWithTimeout(`/api/read-your-sky?${new URLSearchParams({ lat: String(lat), lon: String(lon) })}`, {
           signal: controller.signal, cache: 'no-store', timeoutMs: 12_000, maxRetries: 0,
         })
-        if (!response.ok) throw new Error('Sky unavailable')
+        if (!response.ok) {
+          if (!controller.signal.aborted) setEstimate(null)
+          return
+        }
         const parsed = skyEstimateSchema.safeParse(await response.json())
         if (!parsed.success) throw new Error('Invalid sky response')
         if (!controller.signal.aborted) { setEstimate(parsed.data); setNow(Date.now()) }
-      } catch {
-        if (!controller.signal.aborted) setEstimate(null)
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          if (!isAbortError(error)) console.error('[Read your sky: load estimate]', error)
+          setEstimate(null)
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false)
       }
@@ -75,16 +83,22 @@ export default function SkyReading({ context }: SkyReadingProps): ReactElement {
     setSearchError('')
     try {
       const response = await fetchWithTimeout(`/api/weather/geocoding?${new URLSearchParams({ q: query, limit: '1' })}`, { signal: controller.signal, timeoutMs: 12_000, maxRetries: 0 })
-      if (!response.ok) throw new Error('Place unavailable')
+      if (!response.ok) {
+        if (!controller.signal.aborted) setSearchError(PLACE_ERROR)
+        return
+      }
       const data: unknown = await response.json()
       const parsed = placeSchema.safeParse(Array.isArray(data) ? data[0] : data)
-      if (!parsed.success) throw new Error('Place unavailable')
+      if (!parsed.success) throw new Error('Invalid place response')
       if (controller.signal.aborted) return
       const place = parsed.data
       router.push(getReadYourSkyHref({ location: [place.name, place.state, place.country].filter(Boolean).join(', '), coordinates: { lat: place.lat, lon: place.lon } }))
       setShowSearch(false)
-    } catch {
-      if (!controller.signal.aborted) setSearchError('Location not found or unavailable. Try a city and region, or try again.')
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        if (!isAbortError(error)) console.error('[Read your sky: place search]', error)
+        setSearchError(PLACE_ERROR)
+      }
     } finally { if (!controller.signal.aborted) setSearching(false) }
   }
 

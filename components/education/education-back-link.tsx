@@ -1,9 +1,9 @@
 'use client'
 
-import Link, { SkyLearningReturn } from './weather-learning-link'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { themeTokens } from '@/lib/theme-tokens'
+import Link, { SkyLearningReturn } from './weather-learning-link'
 
 interface EducationBackLinkProps {
   href?: string

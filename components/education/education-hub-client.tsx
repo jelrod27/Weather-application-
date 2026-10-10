@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import {
   Cloud,
   Zap,
@@ -14,20 +13,21 @@ import {
   Newspaper,
   ArrowRight,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import PageWrapper from '@/components/page-wrapper'
 import LearningCard from '@/components/learn/LearningCard'
 import CloudAltitudeStack from '@/components/education/cloud-altitude-stack'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ShareButtons } from '@/components/share-buttons'
 import { countEncyclopediaEntries, countShareableGuidePages } from '@/lib/education/entries'
-import type { EducationEntryRef } from '@/lib/education/entries'
 import { cloudDatabase } from '@/data/cloud-types'
 import { weatherPhenomena } from '@/data/fun-facts'
 import { weatherSystemsDatabase } from '@/data/weather-systems'
 import { decodeHtmlEntities } from '@/lib/services/rss/html-utils'
 import { getAllConcepts } from '@/lib/weather-concepts'
 import { getAllMetrics } from '@/lib/weather-definitions'
+import Link, { SkyLearningReturn } from './weather-learning-link'
+import type { LucideIcon } from 'lucide-react'
+import type { EducationEntryRef } from '@/lib/education/entries'
 
 export interface EducationHubPost {
   slug: string
@@ -162,6 +162,7 @@ export default function EducationHubClient({ latestPosts, shareableGuides }: Edu
   return (
     <PageWrapper>
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-12">
+        <SkyLearningReturn />
         {/* Hero */}
         <div className="space-y-4">
           <p className="text-xs font-mono tracking-widest text-muted-foreground uppercase">

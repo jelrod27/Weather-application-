@@ -1,6 +1,6 @@
 # Read your sky
 
-Status: **Approved — layout A implemented locally; local validation passed**. The user confirmed the complete design and selected A — Field note on October 9, 2026. The implementation pairs the short explanation with its matching scientific illustration, followed by the two-hour outlook. This approval does not authorize a push, merge, or deployment.
+Status: **Approved — layout A implemented; review fixes complete; PR authorized**. The user confirmed the complete design and selected A — Field note on October 9, 2026. The implementation pairs the short explanation with its matching scientific illustration, followed by the two-hour outlook. The user subsequently authorized resolving the review findings, pushing the branch, and opening a PR. Merge and production deployment are not authorized.
 
 Canonical specification: [GitHub issue #664](https://github.com/jelrod27/Weather-application-/issues/664). This file is the local specification copy; keep behavior changes synchronized with the issue.
 
@@ -74,7 +74,7 @@ When usable current data is unavailable, explicitly say “We don't have a curre
 - An interactive cloud-identification quiz or a new reference-photo library.
 - Long-range outlooks, new warnings/alerts, or safety conclusions from cloud coverage.
 - New education URLs for every cloud Entry, replacement of existing Guides/Atlas URLs, or a glossary migration of unrelated domains.
-- Push, PR, merge, production deployment, or purchase authorization.
+- Merge, production deployment, or purchase authorization. Push and PR publication were separately authorized after code review.
 
 ## Further Notes
 
@@ -85,4 +85,4 @@ When usable current data is unavailable, explicitly say “We don't have a curre
 
 ## Local implementation
 
-Layout A is implemented locally on `feat/read-your-sky` at commit `3460520`. See [verification and release limitations](../read-your-sky-verification.md). A clean Node 22 installation from the committed lockfile passes the production build, both TypeScript projects, all 2,263 unit tests, nine database tests, lint, Knip, all six affected production browser tests, and the five-run Lighthouse gate. The earlier shared-installation failures do not reproduce. Next: publish a PR linked to #664 when authorized, then satisfy the normal CI/security/preview gates. Nothing has been pushed or deployed.
+Layout A is implemented on `feat/read-your-sky`, with all five standards/specification review findings resolved. See [verification and release limitations](../read-your-sky-verification.md). Node 22 and the committed lockfile pass the clean production build, both TypeScript projects, all 2,270 unit tests, lint, Knip, all seven affected production browser tests, and the five-run Lighthouse gate. Nine database tests also passed before the review fixes, which do not touch database code. The PR links to #664 and must satisfy the normal CI/security/preview gates. Production deployment remains a separate step.
