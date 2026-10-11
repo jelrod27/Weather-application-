@@ -10,7 +10,6 @@ module.exports = {
       ],
       numberOfRuns: 3,
       settings: {
-        preset: 'mobile',
         chromeFlags: '--no-sandbox --headless',
       },
     },

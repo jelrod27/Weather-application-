@@ -130,7 +130,7 @@ export default function CommandCenterTab({
                   'text-2xl font-bold font-mono',
                   'text-muted-foreground'
                 )}>
-                  {alerts.length}
+                  {alertsAvailable ? alerts.length : '—'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
                   Recent messages
@@ -160,8 +160,8 @@ export default function CommandCenterTab({
         </Card>
       </div>
 
-      {/* Alerts section (only shown if alerts exist) */}
-      {alerts.length > 0 && (
+      {/* Alerts section also explains when the feed is unavailable. */}
+      {(alerts.length > 0 || !alertsAvailable) && (
         <Card className={cn('container-primary', themeClasses.background)}>
           <CardContent className="p-0">
             <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} unavailable={!alertsAvailable} />
