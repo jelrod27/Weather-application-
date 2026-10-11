@@ -63,7 +63,9 @@ export async function fetchPastWeekReports(days = 7, now = new Date()): Promise<
   };
 }
 
-function parseCsv(text: string, date: string): { reports: SpcReport[]; rejected: number } {
+interface ParsedSpcReports { reports: SpcReport[]; rejected: number }
+
+function parseCsv(text: string, date: string): ParsedSpcReports {
   const reports: SpcReport[] = [];
   const headers = new Set<SpcReportCategory>();
   let category: SpcReportCategory | null = null;

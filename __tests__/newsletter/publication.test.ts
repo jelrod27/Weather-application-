@@ -11,6 +11,7 @@ import { promoteDraft, recordReview } from '../../scripts/newsletter/review';
 import { validateGeneratedPost } from '../../scripts/newsletter/validate-post';
 import { validateNewsletterChanges } from '../../scripts/newsletter/validate-changes';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
+import type { BlogPost } from '@/lib/blog';
 import type { PublishSundayInput } from '../../scripts/newsletter/publish';
 
 jest.mock('@/components/education/education-hub-client', () => ({ __esModule: true, default: () => null }));
@@ -67,7 +68,7 @@ async function expectPublicExclusion(slug: string): Promise<void> {
     const { default: sitemap } = await import('@/app/sitemap');
     expect((await sitemap()).some(entry => entry.url.endsWith(`/blog/${slug}`))).toBe(false);
     const { default: EducationPage } = await import('@/app/education/page');
-    expect(EducationPage().props.latestPosts.some((post: { slug: string }) => post.slug === slug)).toBe(false);
+    expect(EducationPage().props.latestPosts.some((post: Pick<BlogPost, 'slug'>) => post.slug === slug)).toBe(false);
   });
 }
 

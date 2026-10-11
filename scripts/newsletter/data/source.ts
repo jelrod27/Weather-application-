@@ -3,6 +3,7 @@ import type { ReportingWindow, CoverageAudit } from '@/lib/newsletter/coverage';
 export type SourceAudit = CoverageAudit['sources'][number];
 
 export interface Collected<T> { data: T | null; sources: SourceAudit[] }
+interface SourceResult<T> { data: T | null; audit: SourceAudit }
 
 export function inWindow(time: number, window: ReportingWindow): boolean {
   return Number.isFinite(time) && time >= Date.parse(window.start) && time < Date.parse(window.end);
@@ -32,7 +33,7 @@ export async function collectSource<T>(
   source: SourceRequest,
   parse: (raw: unknown) => ParsedSource<T>,
   text = false,
-): Promise<{ data: T | null; audit: SourceAudit }> {
+): Promise<SourceResult<T>> {
   const base = {
     ...source, retrievedAt: new Date().toISOString(), covered: [], records: 0,
     observationStart: null, observationEnd: null,

@@ -9,7 +9,7 @@ import { getSpotlight } from '../blog-spotlight';
 import { pickCloser, type CloserChoice } from './closers';
 import { embedImagesInDraft, filterPlacementsByNarrativeFit, pickImagesForContent, type ImagePlacement } from './content-match';
 import { selectImages, type ImageAuditEntry, type ImageEntry } from './images';
-import { findAngleForTopic, fetchHeadlines, type NewsAngle } from './news';
+import { findAngleForTopic, fetchHeadlines, formatWednesdayNewsContext, type NewsAngle } from './news';
 import {
   callAnthropic,
   checkOpenerCollision,
@@ -257,14 +257,7 @@ async function generate(opts: GenerateOpts): Promise<string> {
   const sections: string[] = [];
   sections.push(`Write a 600-900 word deep-dive post on this topic. The reader should leave knowing something they did not know that morning.`);
 
-  if (newsAngle) {
-    sections.push(`CURRENT ANGLE: ${newsAngle.angle}`);
-    if (newsAngle.sources.length > 0) {
-      sections.push(`Headlines that informed the angle (do not link directly, just inform):\n${newsAngle.sources.map((s) => `- ${s}`).join('\n')}`);
-    }
-  } else {
-    sections.push(`No fresh news hook identified — write evergreen-educational, with a one-sentence acknowledgment that nothing major moved on this front this week if it's natural to do so.`);
-  }
+  sections.push(formatWednesdayNewsContext(newsAngle));
 
   if (spotlight) {
     sections.push(`EDITORIAL SPOTLIGHT: ${spotlight}`);

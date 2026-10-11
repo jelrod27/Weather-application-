@@ -62,7 +62,9 @@ export interface PublishResult {
   title: string;
 }
 
-export async function publishPost(input: PublishInput, opts: { coverage: CoverageAudit; dryRun?: boolean; root?: string }): Promise<PublishResult> {
+interface PublishOptions { coverage: CoverageAudit; dryRun?: boolean; root?: string }
+
+export async function publishPost(input: PublishInput, opts: PublishOptions): Promise<PublishResult> {
   const coverage = coverageAuditSchema.parse(opts.coverage);
   const outcome = coverageOutcome(coverage);
   if (outcome === 'fatal') throw new Error('Cannot write a narrative without usable evidence');

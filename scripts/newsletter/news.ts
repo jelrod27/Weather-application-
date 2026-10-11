@@ -62,6 +62,17 @@ export interface NewsAngle {
   sources: string[];
 }
 
+export function formatWednesdayNewsContext(angle: NewsAngle | null): string {
+  if (!angle || !angle.sources.length) {
+    return 'No current-event hook was verified from the available headline evidence. Write an evergreen educational article. Say current-event coverage is unavailable; do not claim a quiet week, no events, or that nothing major happened.';
+  }
+  return [
+    `CURRENT ANGLE (editorial interpretation, not independently verified): ${sanitizeForPrompt(angle.angle)}`,
+    'These sampled headlines are the only supplied current-event evidence. Restrict claims to what they support; include source links and dates. Do not infer complete coverage or invent additional details.',
+    ...angle.sources.map(source => `- ${sanitizeForPrompt(source)}`),
+  ].join('\n');
+}
+
 export async function fetchHeadlines(onAudit: (audit: SourceAudit) => void = () => {}, now = new Date()): Promise<NewsHeadline[]> {
   const requested = { start: new Date(now.getTime() - 72 * 3_600_000).toISOString(), end: now.toISOString() };
   const result = await collectSource({
@@ -155,8 +166,9 @@ function parseAngle(raw: string, headlines: NewsHeadline[]): NewsAngle | null {
   if (!angle) return null;
   const indices = Array.isArray(parsed.source_indices) ? (parsed.source_indices as unknown[]) : [];
   const sources = indices
-    .map((i) => (typeof i === 'number' ? headlines[i - 1] ? `${headlines[i - 1].title} (${headlines[i - 1].url}; ${headlines[i - 1].publishedAt})` : undefined : undefined))
+    .map((i) => (typeof i === 'number' && Number.isInteger(i) && i >= 1 && i <= 30 && headlines[i - 1]
+      ? `${headlines[i - 1].title} (${headlines[i - 1].url}; ${headlines[i - 1].publishedAt})` : undefined))
     .filter((s): s is string => Boolean(s))
     .slice(0, 5);
-  return { angle, sources };
+  return sources.length ? { angle, sources } : null;
 }

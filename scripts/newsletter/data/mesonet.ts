@@ -35,18 +35,18 @@ export async function fetchPastWeekWarnings(days = 7, now = new Date()): Promise
     for (const entry of payload.data) {
       try {
         const row = objectRecord(entry);
+        if (typeof row.phenomena !== 'string' || typeof row.significance !== 'string') { rejected++; continue; }
+        // Other polygon products (for example FA.Y) are outside the stated scope.
+        if (!['TO', 'SV', 'FF', 'MA', 'EW'].includes(row.phenomena) || row.significance !== 'W') continue;
         const issued = typeof row.utc_issue === 'string' ? swpcTimeTagMs(row.utc_issue) : NaN;
         const expired = typeof row.utc_expire === 'string' ? swpcTimeTagMs(row.utc_expire) : NaN;
         if (!Number.isFinite(issued) || !Number.isFinite(expired) || expired < issued ||
             typeof row.wfo !== 'string' || !/^[A-Z]{3,4}$/.test(row.wfo) ||
-            typeof row.phenomena !== 'string' || typeof row.significance !== 'string' ||
             typeof row.eventid !== 'number' || !Number.isInteger(row.eventid) || row.eventid < 0) {
           rejected++;
           continue;
         }
         if (!inWindow(issued, window)) continue;
-        // Other valid polygon products (for example FA.Y) are outside this explicitly labeled scope.
-        if (!['TO', 'SV', 'FF', 'MA', 'EW'].includes(row.phenomena) || row.significance !== 'W') continue;
         // The archive contains polygon updates. Count each official VTEC event once.
         const key = `${new Date(issued).getUTCFullYear()}/${row.wfo}/${row.phenomena}.${row.significance}/${row.eventid}`;
         const locations = typeof row.locations === 'string' ? row.locations : typeof row.ugclist === 'string' ? row.ugclist : 'Area not supplied';

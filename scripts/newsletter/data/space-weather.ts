@@ -58,6 +58,7 @@ export async function fetchSpaceWeatherSummary(window = reportingWindow()): Prom
     }, raw => {
       if (!Array.isArray(raw)) throw new SyntaxError('Expected X-ray series');
       const rows = new Map<string, Observation>();
+      const conflicted = new Set<string>();
       let rejected = 0;
       for (const entry of raw) {
         try {
@@ -70,7 +71,12 @@ export async function fetchSpaceWeatherSummary(window = reportingWindow()): Prom
           const flux = finiteNumber(row.flux);
           if (!Number.isFinite(time) || flux === null || flux < 0) { rejected++; continue; }
           const tag = new Date(time).toISOString();
-          if (rows.has(tag) && rows.get(tag)!.value !== flux) rejected++;
+          if (conflicted.has(tag) || (rows.has(tag) && rows.get(tag)!.value !== flux)) {
+            rejected++;
+            rows.delete(tag);
+            conflicted.add(tag);
+            continue;
+          }
           rows.set(tag, { time: tag, value: flux });
         } catch { rejected++; }
       }

@@ -11,6 +11,7 @@ import { fetchForecastOutlook } from '../../scripts/newsletter/data/forecast';
 import { collectSundayEvidence, formatSundayEvidence } from '../../scripts/newsletter/data/sunday-evidence';
 import { runSunday } from '../../scripts/newsletter/sunday';
 import { callAnthropic } from '../../scripts/newsletter/repetition';
+import { fetchHeadlines, formatWednesdayNewsContext } from '../../scripts/newsletter/news';
 
 jest.mock('../../scripts/newsletter/repetition', () => ({
   ...jest.requireActual('../../scripts/newsletter/repetition'), callAnthropic: jest.fn(),
@@ -140,6 +141,52 @@ describe('full NOAA series and observation windows', () => {
     expect(result.data?.peakKpObserved).toBe(0);
     expect(result.sources[0]).toMatchObject({ status: 'partial', expectedUnits: 56, observedUnits: 8 });
     expect(result.sources[1]).toMatchObject({ status: 'unavailable', usable: false });
+  });
+
+  it.each([false, true])('quarantines conflicting Kp and X-ray timestamps in either order (reversed=%s)', async reversed => {
+    const kp = [
+      { time_tag: WINDOW.start, Kp: 1 }, { time_tag: WINDOW.start, Kp: 9 },
+      { time_tag: kpRows[1].time_tag, Kp: 2 },
+    ];
+    const xray = [
+      { energy: '0.1-0.8nm', time_tag: WINDOW.start, flux: 1e-6 },
+      { energy: '0.1-0.8nm', time_tag: WINDOW.start, flux: 1e-4 },
+      { energy: '0.1-0.8nm', time_tag: new Date(START + 60_000).toISOString(), flux: 2e-6 },
+    ];
+    fetchMock.mockImplementation(async input => json(String(input).includes('k-index') ? (reversed ? [...kp].reverse() : kp) : (reversed ? [...xray].reverse() : xray)));
+    const result = await fetchSpaceWeatherSummary(WINDOW);
+    expect(result.data?.peakKpObserved).toBe(2);
+    expect(result.data?.recentXrayClass).toBe('C2.0');
+    expect(result.sources.map(s => s.observedUnits)).toEqual([1, 1]);
+    expect(result.sources.every(s => s.status === 'partial' && s.covered[0].start > WINDOW.start)).toBe(true);
+  });
+
+  it('keeps failed Wednesday news evidence unknown in the writing context', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+    const onAudit = jest.fn();
+    expect(await fetchHeadlines(onAudit, NOW)).toEqual([]);
+    expect(onAudit).toHaveBeenCalledWith(expect.objectContaining({ status: 'unavailable', usable: false }));
+    expect(formatWednesdayNewsContext(null)).toContain('current-event coverage is unavailable');
+    expect(formatWednesdayNewsContext(null)).not.toContain('acknowledgment that nothing major moved');
+    expect(formatWednesdayNewsContext({ angle: 'Unverified claim', sources: [] })).not.toContain('Unverified claim');
+  });
+
+  it('keeps every evidence section after sanitizing long upstream text fields', async () => {
+    fetchMock.mockRejectedValue(new Error('offline'));
+    const evidence = await collectSundayEvidence(NOW);
+    evidence.warnings = { totalWarnings: 1, byType: { 'TO.W': 1 }, daysCovered: 7, notable: [{
+      phenomena: 'TO', significance: 'W', wfo: 'ABC', issued: WINDOW.start, expired: WINDOW.end,
+      event_id: 1, area_desc: 'A long source description '.repeat(100),
+    }] };
+    evidence.spaceSummary = { peakKpObserved: 7, recentKp: [], recentXrayClass: 'M2.0', notableFlares: [] };
+    evidence.quakeSummary = { significantCount: 6, m45PlusCount: 156, largest: null, significant: [] };
+    evidence.forecast = { conusQuadrants: [], international: [{ region: 'Tokyo', lat: 35.68, lon: 139.69, daily: [] }], fetchedAt: WINDOW.end };
+    const prompt = formatSundayEvidence(evidence);
+    const serialized = JSON.parse(prompt.slice(prompt.lastIndexOf('\n\n') + 2));
+    expect(serialized.warnings.notable[0].area_desc.length).toBeLessThanOrEqual(300);
+    expect(serialized.spaceSummary.peakKpObserved).toBe(7);
+    expect(serialized.quakeSummary.m45PlusCount).toBe(156);
+    expect(serialized.forecast.international[0].region).toBe('Tokyo');
   });
 });
 

@@ -30,7 +30,9 @@ export interface ValidationResult {
   auditMarkdown: string;
 }
 
-export function validateGeneratedPost(filePath: string, opts: { publication?: boolean; draft?: boolean; root?: string } = {}): ValidationResult {
+interface PostValidationOptions { publication?: boolean; draft?: boolean; root?: string }
+
+export function validateGeneratedPost(filePath: string, opts: PostValidationOptions = {}): ValidationResult {
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const errors: string[] = [];

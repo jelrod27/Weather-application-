@@ -59,6 +59,7 @@ export function parsePlanetaryKpSeries(payload: unknown): KpSeries {
   if (!Array.isArray(payload)) return { samples: [], rejectedRows: 0, supported: false };
   const rows = dataRows(payload);
   const samples = new Map<number, KpSample>();
+  const conflicted = new Set<number>();
   let rejectedRows = 0;
   for (const row of rows) {
     const sample = readKpFromRow(row);
@@ -67,8 +68,14 @@ export function parsePlanetaryKpSeries(payload: unknown): KpSeries {
       rejectedRows++;
       continue;
     }
-    // Conflicting duplicates cannot be used to establish complete coverage.
-    if (samples.has(time) && samples.get(time)!.kp !== sample.kp) rejectedRows++;
+    // No revision marker establishes which duplicate is authoritative. Quarantine
+    // the timestamp so response ordering cannot decide a peak or prove coverage.
+    if (conflicted.has(time) || (samples.has(time) && samples.get(time)!.kp !== sample.kp)) {
+      rejectedRows++;
+      samples.delete(time);
+      conflicted.add(time);
+      continue;
+    }
     samples.set(time, { timeTag: new Date(time).toISOString(), kp: sample.kp });
   }
   return { samples: [...samples.values()].sort((a, b) => a.timeTag.localeCompare(b.timeTag)), rejectedRows, supported: true };
