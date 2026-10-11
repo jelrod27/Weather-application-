@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -70,16 +70,10 @@ const G_DESCRIPTIONS: Record<number, string> = {
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const response = await fetchSwpc('https://services.swpc.noaa.gov/products/noaa-scales.json', {
+    const data: NOAAScalesResponse = await fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-scales.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 300 }, // Cache for 5 minutes
     });
-
-    if (!response.ok) {
-      throw new Error(`NOAA SWPC API error: ${response.status}`);
-    }
-
-    const data: NOAAScalesResponse = await response.json();
 
     // Parse current scales (index '0' is current)
     const current = data['0'];

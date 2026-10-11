@@ -58,6 +58,7 @@ const KpIndexGauge = dynamic(() => import('../KpIndexGauge'), {
 interface AlertsForecastTabProps {
   scales: SpaceWeatherScalesData | null;
   alerts: SpaceWeatherAlert[];
+  alertsAvailable?: boolean;
   kpIndex: KpIndexData | null;
   isLoading?: boolean;
 }
@@ -65,6 +66,7 @@ interface AlertsForecastTabProps {
 export default function AlertsForecastTab({
   scales,
   alerts,
+  alertsAvailable = true,
   kpIndex,
   isLoading = false
 }: AlertsForecastTabProps) {
@@ -83,9 +85,9 @@ export default function AlertsForecastTab({
       <Card className={cn('container-primary', themeClasses.background)}>
         <CardContent className="p-4">
           <div className={cn('text-sm font-mono font-bold uppercase mb-3', themeClasses.headerText)}>
-            Recent NOAA messages ({alerts.length})
+            Recent NOAA messages ({alertsAvailable ? alerts.length : 'unavailable'})
           </div>
-          <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} />
+          <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} unavailable={!alertsAvailable} />
         </CardContent>
       </Card>
 

@@ -12,3 +12,9 @@ it('does not imply all-clear when the recent feed is empty', () => {
   expect(screen.queryByText('ALL QUIET')).not.toBeInTheDocument()
   expect(screen.getByText(/No recent messages available/)).toBeInTheDocument()
 })
+it('distinguishes an unavailable feed from an empty feed', () => {
+  render(<Ticker alerts={[]} unavailable />)
+  expect(screen.getByText('UNAVAILABLE')).toBeInTheDocument()
+  expect(screen.getByText(/temporarily unavailable/)).toBeInTheDocument()
+  expect(screen.queryByText('NO MESSAGES')).not.toBeInTheDocument()
+})

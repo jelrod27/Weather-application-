@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -30,6 +30,12 @@ export interface XRayFluxData {
     flareClass: string;
     timeTag: string;
   } | null;
+}
+
+interface XRayReading {
+  energy?: unknown;
+  flux?: unknown;
+  time_tag?: unknown;
 }
 
 // Convert flux value to flare classification
@@ -57,16 +63,10 @@ function getFlareClass(flux: number): { class: string; fullClass: string } {
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const response = await fetchSwpc('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
+    const data = await fetchSwpcJson<XRayReading[]>('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 60 }, // Cache for 1 minute
     });
-
-    if (!response.ok) {
-      throw new Error(`NOAA SWPC API error: ${response.status}`);
-    }
-
-    const data = await response.json();
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No X-ray flux data available');
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     // timestamp. NOAA's flare classes use the 0.1–0.8 nm band. Keep the
     // short-wavelength channel out of both the chart and flare summaries.
     const longWavelengthReadings = data.filter(
-      (entry: { energy?: unknown; flux?: unknown; time_tag?: unknown }) =>
+      (entry): entry is XRayReading & { flux: number; time_tag: string } =>
         entry?.energy === '0.1-0.8nm' &&
         typeof entry.flux === 'number' &&
         Number.isFinite(entry.flux) &&

@@ -1,12 +1,12 @@
 /** @jest-environment node */
 
-jest.mock('@/lib/services/swpc-proxy', () => ({ fetchSwpc: jest.fn() }))
+jest.mock('@/lib/services/swpc-proxy', () => ({ fetchSwpcJson: jest.fn() }))
 
 import { NextRequest } from 'next/server'
 import { GET } from '@/app/api/space-weather/xray-flux/route'
-import { fetchSwpc } from '@/lib/services/swpc-proxy'
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 
-const fetchMock = jest.mocked(fetchSwpc)
+const fetchMock = jest.mocked(fetchSwpcJson)
 
 describe('GOES X-ray flux route', () => {
   afterEach(() => jest.clearAllMocks())
@@ -21,7 +21,7 @@ describe('GOES X-ray flux route', () => {
       { time_tag: '2026-10-10T15:02:00Z', flux: 2e-6, energy: '0.1-0.8nm' },
       { time_tag: '2026-10-10T15:02:00Z', flux: 9e-4, energy: '0.05-0.4nm' },
     ]
-    fetchMock.mockResolvedValue(new Response(JSON.stringify(payload)))
+    fetchMock.mockResolvedValue(payload as never)
 
     const response = await GET(new NextRequest('http://localhost/api/space-weather/xray-flux'))
     const body = await response.json()

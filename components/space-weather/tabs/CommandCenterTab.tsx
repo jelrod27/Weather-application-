@@ -58,6 +58,7 @@ const CompactScales = dynamic(() => import('../CompactScales'), {
 interface CommandCenterTabProps {
   scales: SpaceWeatherScalesData | null;
   alerts: SpaceWeatherAlert[];
+  alertsAvailable: boolean;
   kpIndex: KpIndexData | null;
   solarWind: SolarWindData | null;
   sunspots: SunspotData | null;
@@ -69,6 +70,7 @@ interface CommandCenterTabProps {
 export default function CommandCenterTab({
   scales,
   alerts,
+  alertsAvailable,
   kpIndex,
   solarWind,
   sunspots,
@@ -162,7 +164,7 @@ export default function CommandCenterTab({
       {alerts.length > 0 && (
         <Card className={cn('container-primary', themeClasses.background)}>
           <CardContent className="p-0">
-            <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} />
+            <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} unavailable={!alertsAvailable} />
           </CardContent>
         </Card>
       )}

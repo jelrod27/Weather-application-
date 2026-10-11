@@ -29,6 +29,7 @@ export interface SpaceWeatherAlert {
 interface SpaceWeatherAlertTickerProps {
   alerts: SpaceWeatherAlert[];
   isLoading?: boolean;
+  unavailable?: boolean;
 }
 
 // Get icon based on alert type
@@ -64,7 +65,7 @@ function getSeverityColors(severity: SpaceWeatherAlert['severity']): string {
   }
 }
 
-export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: SpaceWeatherAlertTickerProps) {
+export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, unavailable = false }: SpaceWeatherAlertTickerProps) {
   const themeClasses = themeTokens.weather;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
@@ -152,13 +153,15 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false }: S
             <Radio className="w-5 h-5 text-muted-foreground" />
             RECENT NOAA MESSAGES
             <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">
-              NO MESSAGES
+              {unavailable ? 'UNAVAILABLE' : 'NO MESSAGES'}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className={cn('text-center font-mono text-sm', themeClasses.text)}>
-            No recent messages available. This does not establish current alert status.
+            {unavailable
+              ? 'NOAA messages are temporarily unavailable. Check the official bulletin for current alert status.'
+              : 'No recent messages available. This does not establish current alert status.'}
           </div>
         </CardContent>
       </Card>

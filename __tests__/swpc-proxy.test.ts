@@ -33,6 +33,34 @@ describe('swpc-proxy', () => {
     await expect(fetchSwpcJson('https://services.swpc.noaa.gov/missing.json')).rejects.toThrow('404');
   });
 
+  it('retries malformed cached JSON once without the persistent cache', async () => {
+    const mockFetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected end of JSON input'); } })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ healthy: true }) });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    await expect(fetchSwpcJson<{ healthy: boolean }>('https://services.swpc.noaa.gov/x.json', {
+      next: { revalidate: 300 },
+    })).resolves.toEqual({ healthy: true });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[0][1]).toEqual(expect.objectContaining({ next: { revalidate: 300 } }));
+    expect(mockFetch.mock.calls[1][1]).toEqual(expect.objectContaining({ cache: 'no-store' }));
+    expect(mockFetch.mock.calls[1][1]).not.toHaveProperty('next');
+  });
+
+  it('does not retry a second malformed response', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => { throw new SyntaxError('Unexpected end of JSON input'); },
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    await expect(fetchSwpcJson('https://services.swpc.noaa.gov/x.json')).rejects.toThrow();
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
   it('fetchSwpc returns the Response without throwing on a non-OK status', async () => {
     const res = { ok: false, status: 500, text: async () => 'oops' };
     global.fetch = jest.fn().mockResolvedValue(res) as unknown as typeof fetch;

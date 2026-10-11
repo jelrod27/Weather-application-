@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const [kpResponse, forecastResponse] = await Promise.allSettled([
-      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
+      fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 300 },
-      } as RequestInit),
-      fetchSwpc('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
+      }),
+      fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 900 },
-      } as RequestInit),
+      }),
     ]);
 
     let currentKp = 0;
@@ -51,9 +51,8 @@ export async function GET(request: NextRequest) {
     let recentKp: Array<{ timeTag: string; kp: number }> = [];
     let upstreamOk = false;
 
-    if (kpResponse.status === 'fulfilled' && kpResponse.value.ok) {
-      const kpData = await kpResponse.value.json();
-      const parsed = parsePlanetaryKpIndex(kpData);
+    if (kpResponse.status === 'fulfilled') {
+      const parsed = parsePlanetaryKpIndex(kpResponse.value);
       if (parsed.current) {
         upstreamOk = true;
         currentKp = parsed.current.kp;
@@ -63,10 +62,9 @@ export async function GET(request: NextRequest) {
     }
 
     let forecast: KpIndexData['forecast'] = null;
-    if (forecastResponse.status === 'fulfilled' && forecastResponse.value.ok) {
+    if (forecastResponse.status === 'fulfilled') {
       try {
-        const forecastData = await forecastResponse.value.json();
-        forecast = parseKpForecast(forecastData);
+        forecast = parseKpForecast(forecastResponse.value);
       } catch (e) {
         logRouteError('kp-index', e);
       }
