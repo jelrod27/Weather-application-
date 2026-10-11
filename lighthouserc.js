@@ -27,7 +27,7 @@ module.exports = {
     upload: {
       // Store results locally
       target: 'filesystem',
-      outputDir: './.lighthouseci',
+      outputDir: './lighthouseci-reports/desktop',
     },
   },
 };

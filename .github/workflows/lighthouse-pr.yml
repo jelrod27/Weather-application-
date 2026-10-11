@@ -16,7 +16,7 @@ jobs:
   lighthouse:
     name: Lighthouse Performance Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
@@ -43,10 +43,13 @@ jobs:
       - name: Run Lighthouse CI
         run: npm run lighthouse
 
+      - name: Run Lighthouse CI on mobile forecast, radar, and sky reading
+        run: npm run lighthouse:mobile
+
       - name: Upload Lighthouse artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: lighthouseci-${{ github.run_id }}
-          path: .lighthouseci/
+          path: lighthouseci-reports/
           retention-days: 14
