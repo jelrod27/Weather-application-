@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -110,16 +110,10 @@ function extractSummary(message: string): string {
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const response = await fetchSwpc('https://services.swpc.noaa.gov/products/alerts.json', {
+    const data = await fetchSwpcJson<NOAAAlert[]>('https://services.swpc.noaa.gov/products/alerts.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 300 }, // Cache for 5 minutes
     });
-
-    if (!response.ok) {
-      throw new Error(`NOAA SWPC API error: ${response.status}`);
-    }
-
-    const data: NOAAAlert[] = await response.json();
 
     if (!Array.isArray(data)) {
       throw new Error('Invalid response format');

@@ -61,6 +61,7 @@ import type { SpaceWeatherScalesData } from './SpaceWeatherScales';
 interface SolarCommandTerminalProps {
   scales: SpaceWeatherScalesData | null;
   alerts: SpaceWeatherAlert[];
+  alertsAvailable: boolean;
   kpIndex: KpIndexData | null;
   solarWind: SolarWindData | null;
   sunspots: SunspotData | null;
@@ -72,6 +73,7 @@ interface SolarCommandTerminalProps {
 export default function SolarCommandTerminal({
   scales,
   alerts,
+  alertsAvailable,
   kpIndex,
   solarWind,
   sunspots,
@@ -145,7 +147,7 @@ export default function SolarCommandTerminal({
             <StatusCell label="Kp Index" value={kpIndex?.current?.value?.toFixed(0) ?? '—'} color={themeClasses.accentText} />
             <StatusCell label="Sunspots" value={sunspots?.current?.sunspotNumber?.toString() ?? '—'} color="text-yellow-500" />
             <StatusCell label="Wind km/s" value={solarWind?.current?.speed?.toString() ?? '—'} color="text-cyan-500" />
-            <StatusCell label="Messages" value={alerts.length.toString()} color="text-muted-foreground" />
+            <StatusCell label="Messages" value={alertsAvailable ? alerts.length.toString() : '—'} color="text-muted-foreground" />
             <StatusCell label="R Scale" value={scales?.R?.scale?.toString() ?? '—'} color={scaleColor(scales?.R?.scale ?? 0)} />
             <StatusCell label="S Scale" value={scales?.S?.scale?.toString() ?? '—'} color={scaleColor(scales?.S?.scale ?? 0)} />
             <StatusCell label="G Scale" value={scales?.G?.scale?.toString() ?? '—'} color={scaleColor(scales?.G?.scale ?? 0)} />
@@ -163,6 +165,7 @@ export default function SolarCommandTerminal({
             <CommandCenterTab
               scales={scales}
               alerts={alerts}
+              alertsAvailable={alertsAvailable}
               kpIndex={kpIndex}
               solarWind={solarWind}
               sunspots={sunspots}
@@ -203,6 +206,7 @@ export default function SolarCommandTerminal({
             <AlertsForecastTab
               scales={scales}
               alerts={alerts}
+              alertsAvailable={alertsAvailable}
               kpIndex={kpIndex}
               isLoading={isLoading}
             />

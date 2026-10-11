@@ -4,7 +4,7 @@
  * `json/rtsw/rtsw_wind_1m.json` and `json/rtsw/rtsw_mag_1m.json`.
  */
 
-import { fetchSwpc } from '@/lib/services/swpc-proxy'
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import type { FetchWithTimeoutOptions } from '@/lib/fetch-with-timeout'
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 
@@ -23,8 +23,8 @@ export async function fetchRtswFeeds(
   options: FetchWithTimeoutOptions = {},
 ): Promise<RtswFeedPair> {
   const [plasmaResponse, magResponse] = await Promise.allSettled([
-    fetchSwpc(RTSW_WIND_URL, options),
-    fetchSwpc(RTSW_MAG_URL, options),
+    fetchSwpcJson(RTSW_WIND_URL, options),
+    fetchSwpcJson(RTSW_MAG_URL, options),
   ])
 
   let windJson: unknown | null = null
@@ -32,13 +32,13 @@ export async function fetchRtswFeeds(
   let windOk = false
   let magOk = false
 
-  if (plasmaResponse.status === 'fulfilled' && plasmaResponse.value.ok) {
+  if (plasmaResponse.status === 'fulfilled') {
     windOk = true
-    windJson = await plasmaResponse.value.json()
+    windJson = plasmaResponse.value
   }
-  if (magResponse.status === 'fulfilled' && magResponse.value.ok) {
+  if (magResponse.status === 'fulfilled') {
     magOk = true
-    magJson = await magResponse.value.json()
+    magJson = magResponse.value
   }
 
   return { windJson, magJson, windOk, magOk }

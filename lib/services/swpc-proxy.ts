@@ -30,9 +30,9 @@ export async function fetchSwpc(
 }
 
 /**
- * Fetch and parse JSON from a NOAA SWPC endpoint. Adds Accept + User-Agent and
- * throws on a non-OK status so the caller's catch can degrade to a 500 / empty
- * payload, matching the existing route behavior.
+ * Fetch and parse JSON from a NOAA SWPC endpoint. If a cached response body is
+ * malformed, retry once without Next's persistent cache so a truncated body is
+ * not served repeatedly for the full revalidation window.
  */
 export async function fetchSwpcJson<T = unknown>(
   url: string,
@@ -41,9 +41,19 @@ export async function fetchSwpcJson<T = unknown>(
   const headers = new Headers(options.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
 
-  const response = await fetchSwpc(url, { ...options, headers });
-  if (!response.ok) {
-    throw new Error(`NOAA SWPC request failed: ${response.status}`);
+  const requestOptions = { ...options, headers };
+  const response = await fetchSwpc(url, requestOptions);
+  if (!response.ok) throw new Error(`NOAA SWPC request failed: ${response.status}`);
+
+  try {
+    return await response.json() as T;
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+
+    const retryOptions: FetchWithTimeoutOptions = { ...requestOptions, cache: 'no-store' };
+    delete retryOptions.next;
+    const retry = await fetchSwpc(url, retryOptions);
+    if (!retry.ok) throw new Error(`NOAA SWPC retry failed: ${retry.status}`);
+    return await retry.json() as T;
   }
-  return response.json() as Promise<T>;
 }

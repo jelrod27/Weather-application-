@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -30,6 +30,12 @@ export interface XRayFluxData {
     flareClass: string;
     timeTag: string;
   } | null;
+}
+
+interface XRayReading {
+  energy?: unknown;
+  flux?: unknown;
+  time_tag?: unknown;
 }
 
 // Convert flux value to flare classification
@@ -57,54 +63,43 @@ function getFlareClass(flux: number): { class: string; fullClass: string } {
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const response = await fetchSwpc('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
+    const data = await fetchSwpcJson<XRayReading[]>('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 60 }, // Cache for 1 minute
     });
-
-    if (!response.ok) {
-      throw new Error(`NOAA SWPC API error: ${response.status}`);
-    }
-
-    const data = await response.json();
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No X-ray flux data available');
     }
 
-    // Parse data - entries have: time_tag, satellite, flux, observed_flux, etc.
+    // SWPC returns both 0.05–0.4 nm and 0.1–0.8 nm values interleaved by
+    // timestamp. NOAA's flare classes use the 0.1–0.8 nm band. Keep the
+    // short-wavelength channel out of both the chart and flare summaries.
+    const longWavelengthReadings = data.filter(
+      (entry): entry is XRayReading & { flux: number; time_tag: string } =>
+        entry?.energy === '0.1-0.8nm' &&
+        typeof entry.flux === 'number' &&
+        Number.isFinite(entry.flux) &&
+        entry.flux > 0 &&
+        typeof entry.time_tag === 'string' &&
+        Number.isFinite(Date.parse(entry.time_tag)),
+    );
+
     const recentData: XRayFluxData['recent'] = [];
-    let currentFlux = 0;
-    let currentTimeTag = '';
-    let peakFlux = 0;
-    let peakTimeTag = '';
-
-    // Sample data every 15 entries (roughly every 15 minutes)
-    for (let i = 0; i < data.length; i += 15) {
-      const entry = data[i];
-      if (entry && typeof entry.flux === 'number' && entry.flux > 0) {
-        const { class: flareClass } = getFlareClass(entry.flux);
-        recentData.push({
-          timeTag: entry.time_tag || '',
-          flux: entry.flux,
-          flareClass,
-        });
-
-        // Track peak
-        if (entry.flux > peakFlux) {
-          peakFlux = entry.flux;
-          peakTimeTag = entry.time_tag || '';
-        }
-      }
+    for (let i = 0; i < longWavelengthReadings.length; i += 15) {
+      const entry = longWavelengthReadings[i];
+      const { class: flareClass } = getFlareClass(entry.flux);
+      recentData.push({ timeTag: entry.time_tag, flux: entry.flux, flareClass });
     }
 
-    // Get most recent valid entry for current
-    for (let i = data.length - 1; i >= 0; i--) {
-      const entry = data[i];
-      if (entry && typeof entry.flux === 'number' && entry.flux > 0) {
-        currentFlux = entry.flux;
-        currentTimeTag = entry.time_tag || '';
-        break;
+    const current = longWavelengthReadings.at(-1);
+    const currentFlux = current?.flux ?? 0;
+    let peakFlux = 0;
+    let peakTimeTag = '';
+    for (const entry of longWavelengthReadings) {
+      if (entry.flux > peakFlux) {
+        peakFlux = entry.flux;
+        peakTimeTag = entry.time_tag;
       }
     }
 

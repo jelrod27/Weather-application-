@@ -76,10 +76,12 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'smithsonian-volcanoes',
     name: 'Smithsonian Global Volcanism',
+    // Temporarily disabled after repeated HTTP 403 responses in October 2026.
+    // Keep the source configured so global coverage can be restored if access returns.
     url: 'https://volcano.si.edu/news/WeeklyVolcanoRSS.xml',
     category: 'volcanoes',
     priority: 'medium',
-    enabled: true,
+    enabled: false,
     format: 'rss',
     refreshInterval: 60,
   },

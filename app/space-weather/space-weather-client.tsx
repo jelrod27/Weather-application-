@@ -28,6 +28,7 @@ const SolarCommandTerminal = lazy(() => import('@/components/space-weather/Solar
 interface SpaceWeatherData {
   scales: SpaceWeatherScalesData | null;
   alerts: SpaceWeatherAlert[];
+  alertsAvailable: boolean;
   kpIndex: KpIndexData | null;
   solarWind: SolarWindData | null;
   sunspots: SunspotData | null;
@@ -40,6 +41,7 @@ export default function SpaceWeatherClient() {
   const [data, setData] = useState<SpaceWeatherData>({
     scales: null,
     alerts: [],
+    alertsAvailable: false,
     kpIndex: null,
     solarWind: null,
     sunspots: null,
@@ -94,7 +96,7 @@ export default function SpaceWeatherClient() {
       // Parse and extract inner data from API response wrappers
       // API routes return { data/scales: {...}, source: '...' } wrappers
       const scalesWrapper = await parseResult<{ scales: SpaceWeatherScalesData } | null>(scalesRes, null);
-      const alertsWrapper = await parseResult<{ alerts: SpaceWeatherAlert[] }>(alertsRes, { alerts: [] });
+      const alertsWrapper = await parseResult<{ alerts: SpaceWeatherAlert[] } | null>(alertsRes, null);
       const kpWrapper = await parseResult<{ data: KpIndexData } | null>(kpRes, null);
       const windWrapper = await parseResult<{ data: SolarWindData } | null>(windRes, null);
       const sunspotsWrapper = await parseResult<{ data: SunspotData } | null>(sunspotsRes, null);
@@ -103,7 +105,8 @@ export default function SpaceWeatherClient() {
 
       setData({
         scales: scalesWrapper?.scales ?? null,
-        alerts: alertsWrapper.alerts || [],
+        alerts: alertsWrapper?.alerts || [],
+        alertsAvailable: Array.isArray(alertsWrapper?.alerts),
         kpIndex: kpWrapper?.data ?? null,
         solarWind: windWrapper?.data ?? null,
         sunspots: sunspotsWrapper?.data ?? null,
@@ -187,6 +190,7 @@ export default function SpaceWeatherClient() {
           <SolarCommandTerminal
             scales={data.scales}
             alerts={data.alerts}
+            alertsAvailable={data.alertsAvailable}
             kpIndex={data.kpIndex}
             solarWind={data.solarWind}
             sunspots={data.sunspots}

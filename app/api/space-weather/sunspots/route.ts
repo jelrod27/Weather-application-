@@ -9,7 +9,7 @@
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { fetchSwpc } from '@/lib/services/swpc-proxy';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -29,19 +29,20 @@ export interface SunspotData {
   trend: 'increasing' | 'decreasing' | 'stable';
 }
 
+interface SunspotRecord {
+  'time-tag'?: string;
+  ssn?: number;
+  f107_obs?: number;
+  f107?: number;
+}
+
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const response = await fetchSwpc('https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json', {
+    const data = await fetchSwpcJson<SunspotRecord[]>('https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 3600 }, // Cache for 1 hour (daily data)
     });
-
-    if (!response.ok) {
-      throw new Error(`NOAA SWPC API error: ${response.status}`);
-    }
-
-    const data = await response.json();
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No sunspot data available');
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Calculate smoothed average from recent 13 months
     const smoothedValues = recent
       .slice(-13)
-      .filter(e => typeof e.ssn === 'number')
+      .filter((e): e is SunspotRecord & { ssn: number } => typeof e.ssn === 'number')
       .map(e => e.ssn);
 
     if (smoothedValues.length > 0) {
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
     // Determine trend from last 6 months
     const trendValues = recent
       .slice(-6)
-      .filter(e => typeof e.ssn === 'number')
+      .filter((e): e is SunspotRecord & { ssn: number } => typeof e.ssn === 'number')
       .map(e => e.ssn);
 
     let trend: SunspotData['trend'] = 'stable';

@@ -7,9 +7,11 @@ import { render, screen } from '@testing-library/react';
 
 // Mock next/dynamic to render a simple placeholder
 jest.mock('next/dynamic', () => {
-  return (loader: () => Promise<any>) => {
+  return (_loader: () => Promise<any>) => {
     // Return a component that renders a div with a data-testid
-    const DynamicComponent = (props: any) => <div data-testid="dynamic-component" {...props} />;
+    const DynamicComponent = (props: any) => (
+      <div data-testid="dynamic-component" data-unavailable={props.unavailable === true ? 'true' : undefined} />
+    );
     DynamicComponent.displayName = 'DynamicComponent';
     return DynamicComponent;
   };
@@ -18,6 +20,7 @@ jest.mock('next/dynamic', () => {
 const mockProps = {
   scales: null,
   alerts: [],
+  alertsAvailable: true,
   kpIndex: null,
   solarWind: null,
   sunspots: null,
@@ -44,6 +47,14 @@ describe('CommandCenterTab', () => {
     const alerts = [{ id: '1', message: 'test alert', severity: 'warning', issued: '2025-01-01' }];
     render(<CommandCenterTab {...mockProps} alerts={alerts as any} />);
     expect(screen.getByText('1')).not.toBeNull();
+  });
+
+  it('shows unavailable recent messages when the alerts feed fails', async () => {
+    const CommandCenterTab = (await import('@/components/space-weather/tabs/CommandCenterTab')).default;
+    const { container } = render(<CommandCenterTab {...mockProps} alertsAvailable={false} />);
+
+    expect(screen.getByText('Recent messages').previousElementSibling).toHaveTextContent('—');
+    expect(container.querySelector('[data-unavailable="true"]')).not.toBeNull();
   });
 });
 
