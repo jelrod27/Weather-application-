@@ -72,39 +72,34 @@ export async function GET(request: NextRequest) {
       throw new Error('No X-ray flux data available');
     }
 
-    // Parse data - entries have: time_tag, satellite, flux, observed_flux, etc.
+    // SWPC returns both 0.05–0.4 nm and 0.1–0.8 nm values interleaved by
+    // timestamp. NOAA's flare classes use the 0.1–0.8 nm band. Keep the
+    // short-wavelength channel out of both the chart and flare summaries.
+    const longWavelengthReadings = data.filter(
+      (entry: { energy?: unknown; flux?: unknown; time_tag?: unknown }) =>
+        entry?.energy === '0.1-0.8nm' &&
+        typeof entry.flux === 'number' &&
+        Number.isFinite(entry.flux) &&
+        entry.flux > 0 &&
+        typeof entry.time_tag === 'string' &&
+        Number.isFinite(Date.parse(entry.time_tag)),
+    );
+
     const recentData: XRayFluxData['recent'] = [];
-    let currentFlux = 0;
-    let currentTimeTag = '';
-    let peakFlux = 0;
-    let peakTimeTag = '';
-
-    // Sample data every 15 entries (roughly every 15 minutes)
-    for (let i = 0; i < data.length; i += 15) {
-      const entry = data[i];
-      if (entry && typeof entry.flux === 'number' && entry.flux > 0) {
-        const { class: flareClass } = getFlareClass(entry.flux);
-        recentData.push({
-          timeTag: entry.time_tag || '',
-          flux: entry.flux,
-          flareClass,
-        });
-
-        // Track peak
-        if (entry.flux > peakFlux) {
-          peakFlux = entry.flux;
-          peakTimeTag = entry.time_tag || '';
-        }
-      }
+    for (let i = 0; i < longWavelengthReadings.length; i += 15) {
+      const entry = longWavelengthReadings[i];
+      const { class: flareClass } = getFlareClass(entry.flux);
+      recentData.push({ timeTag: entry.time_tag, flux: entry.flux, flareClass });
     }
 
-    // Get most recent valid entry for current
-    for (let i = data.length - 1; i >= 0; i--) {
-      const entry = data[i];
-      if (entry && typeof entry.flux === 'number' && entry.flux > 0) {
-        currentFlux = entry.flux;
-        currentTimeTag = entry.time_tag || '';
-        break;
+    const current = longWavelengthReadings.at(-1);
+    const currentFlux = current?.flux ?? 0;
+    let peakFlux = 0;
+    let peakTimeTag = '';
+    for (const entry of longWavelengthReadings) {
+      if (entry.flux > peakFlux) {
+        peakFlux = entry.flux;
+        peakTimeTag = entry.time_tag;
       }
     }
 
