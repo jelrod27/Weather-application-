@@ -20,8 +20,9 @@ Severe/tropical headline-hash image pools are removed. NHC products whose image
 identity and issuance cannot be established use a tropical illustration.
 The SPC RSS feed contains moving latest-image URLs; a validated Day 1–3 product,
 issue date/time and valid interval instead select its dated archive map. A
-missing or broken archive map falls back to a neutral illustration. The source
-link opens the same archived issuance. Earthquake ShakeMaps require matching
+missing or broken archive map falls back to a neutral illustration while keeping
+its verified validity interval and archive link. The source link opens the same
+archived issuance. Earthquake ShakeMaps require matching
 USGS event identity; named-volcano photos are labeled reference views rather
 than current eruption imagery. Editorial images retain provider credits where
 supplied; otherwise “Via [publisher]” identifies the source without inventing a
@@ -40,15 +41,39 @@ for the containing article. A failed image URL does not suppress a replacement.
   and [NHC Atlantic feed](https://www.nhc.noaa.gov/index-at.xml).
 - Dated public NOAA fixtures in `__tests__/fixtures/news/`, with retrieval
   provenance, reproduce High Wind / Freeze / Flash Flood and Day 2 outlooks.
-- Jest: 289 suites, 2,317 tests passed (`npm test -- --runInBand news rss`).
+- Initial Jest run: 289 suites, 2,317 tests passed (`npm test -- --runInBand news rss`).
   The path pattern also matches this worktree's name, so the full suite ran.
+- After review fixes: all seven targeted RSS/image/card suites passed, 94 tests.
+  Regression coverage includes nested publisher attribution, quoted illustration
+  descriptions, scientific reference-map containment and retained product facts
+  after image failure.
 - Both TypeScript projects passed. Production build passed with the same
   placeholder public environment values as CI. Existing framework deprecation
   and live-data/static-generation diagnostics remain outside this phase.
 - Repository lint passed with existing warnings; changed files are checked
-  separately before commit.
+  separately before commit. Knip passed with existing configuration hints.
+- Standalone Chromium rendering of the actual card/hero components with compiled
+  CSS passed at 1440px and 390px: distinct warning illustrations, legible facts,
+  and no horizontal overflow. This static gallery does not exercise page hydration,
+  network loading or navigation and does not replace full-page E2E evidence.
 - Added desktop/mobile Playwright imagery tests with a deliberately synthetic
   map to test bounds, legends, attribution and actual failed image loads.
+
+## Standards
+
+The independent Matt Pocock code-review standards review found two documented
+convention issues: inline object parameter shapes and import ordering. Both were
+fixed, and follow-up review through `0a2b43b` found no remaining documented
+violations or material baseline smells. Standards: 2 findings resolved, 0 open.
+
+## Spec
+
+The independent phase-1 spec review found scientific reference-map cropping,
+lost nested publisher metadata, missing product facts after image failure, and
+quote handling that truncated some illustrative captions. All four were fixed
+with regression coverage. Full-page browser verification remains a separate
+evidence limitation below. Follow-up review through `0a2b43b` found no remaining
+actionable phase-1 gaps or scope creep. Spec: 4 findings resolved, 0 open.
 
 ## Pending verification
 
