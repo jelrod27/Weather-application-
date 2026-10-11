@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:cap="urn:oasis:names:tc:emergency:cap:1.2">
+  <id>https://api.weather.gov/alerts.atom?severity%5B0%5D=Severe&amp;severity%5B1%5D=Extreme&amp;urgency%5B0%5D=Immediate&amp;urgency%5B1%5D=Expected&amp;active=1</id>
+  <generator>NWS CAP Server</generator>
+  <updated>2026-10-11T20:03:37+00:00</updated>
+  <author>
+    <name>w-nws.webmaster@noaa.gov</name>
+  </author>
+  <title>Current watches, warnings, and advisories</title>
+  <link rel="self" href="https://api.weather.gov/alerts.atom?severity%5B0%5D=Severe&amp;severity%5B1%5D=Extreme&amp;urgency%5B0%5D=Immediate&amp;urgency%5B1%5D=Expected&amp;active=1"></link>
+  <entry>
+    <id>https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.1716a7bacde51e6d47f9e81b7bd4e18719fca8d0.001.1</id>
+    <link rel="alternate" href="https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.1716a7bacde51e6d47f9e81b7bd4e18719fca8d0.001.1.cap"></link>
+    <updated>2026-10-11T12:18:00-07:00</updated>
+    <published>2026-10-11T12:18:00-07:00</published>
+    <author>
+      <name>NWS</name>
+    </author>
+    <title>High Wind Warning issued October 11 at 12:18PM PDT until October 11 at 8:00PM PDT by NWS Las Vegas NV</title>
+    <summary>* WHAT...South winds 35 to 45 mph with gusts of 60 to 70 mph
+expected.
+
+* WHERE...The Colorado River Valley including Lake Mead, Lake Mohave,
+Lake Havasu, Needles, Laughlin, and Bullhead City. Mohave County,
+southern and northeastern Clark County, the Spring Mountains, and
+the Sheep Range.
+
+* WHEN...Until 8 PM PDT / MST this evening.
+
+* IMPACTS...Damaging winds will blow down trees and power lines.
+Widespread power outages are expected. Travel will be difficult,
+especially for high profile vehicles. Expect dangerous boating
+conditions for all water craft on area lakes.</summary>
+    <cap:event>High Wind Warning</cap:event>
+    <cap:sent>2026-10-11T12:18:00-07:00</cap:sent>
+    <cap:effective>2026-10-11T12:18:00-07:00</cap:effective>
+    <cap:onset>2026-10-11T12:18:00-07:00</cap:onset>
+    <cap:expires>2026-10-11T20:00:00-07:00</cap:expires>
+    <cap:status>Actual</cap:status>
+    <cap:msgType>Update</cap:msgType>
+    <cap:category>Met</cap:category>
+    <cap:urgency>Expected</cap:urgency>
+    <cap:severity>Severe</cap:severity>
+    <cap:certainty>Likely</cap:certainty>
+    <cap:areaDesc>Northwest Plateau; Lake Havasu and Fort Mohave; Lake Mead - AZ side; Lake Mohave - AZ side; Hualapai Mountains; Northwest Deserts; San Bernardino County-Upper Colorado River Valley; Northeast Clark County; Sheep Range; Spring Mountains-Red Rock Canyon; Southern Clark County; Lake Mead - NV side; Lake Mohave - NV side</cap:areaDesc>
+    <cap:polygon></cap:polygon>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>4015</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>6071</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>32003</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>32017</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>32023</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ001</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ002</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ570</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ571</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ575</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZZ576</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>CAZ527</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ016</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ018</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ019</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ022</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ025</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVZ026</value>
+    </cap:geocode>
+    <cap:parameter>
+      <valueName>AWIPSidentifier</valueName>
+      <value>NPWVEF</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>WMOidentifier</valueName>
+      <value>WWUS75 KVEF 111918</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>NWSheadline</valueName>
+      <value>HIGH WIND WARNING REMAINS IN EFFECT UNTIL 8 PM PDT / MST THIS EVENING</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>EAS</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>NWEM</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>CMAS</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>EAS-ORG</valueName>
+      <value>WXR</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>VTEC</valueName>
+      <value>/O.CON.KVEF.HW.W.0003.000000T0000Z-261012T0300Z/</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>eventEndingTime</valueName>
+      <value>2026-10-11T20:00:00-07:00</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>expiredReferences</valueName>
+      <value>w-nws.webmaster@noaa.gov,urn:oid:2.49.0.1.840.0.b291e89ab189009a74e5d7a7cbda4a669c220bef.002.1,2026-10-10T12:58:00-07:00 w-nws.webmaster@noaa.gov,urn:oid:2.49.0.1.840.0.f5bcbdb4b8cdcda291c9be6f2a2875556c00f510.003.2,2026-10-10T12:36:00-07:00</value>
+    </cap:parameter>
+    <cap:scope>Public</cap:scope>
+    <cap:code>IPAWSv1.0</cap:code>
+    <cap:language>en-US</cap:language>
+    <cap:web>http://www.weather.gov</cap:web>
+    <cap:eventCode>
+      <valueName>SAME</valueName>
+      <value>HWW</value>
+    </cap:eventCode>
+    <cap:eventCode>
+      <valueName>NationalWeatherService</valueName>
+      <value>HWW</value>
+    </cap:eventCode>
+  </entry>
+  <entry>
+    <id>https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.bf5f2b250f1025167fa504435758dc101aae1b2e.001.2</id>
+    <link rel="alternate" href="https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.bf5f2b250f1025167fa504435758dc101aae1b2e.001.2.cap"></link>
+    <updated>2026-10-11T11:29:00-07:00</updated>
+    <published>2026-10-11T11:29:00-07:00</published>
+    <author>
+      <name>NWS</name>
+    </author>
+    <title>Freeze Warning issued October 11 at 11:29AM PDT until October 12 at 9:00AM PDT by NWS Pendleton OR</title>
+    <summary>* WHAT...Sub-freezing temperatures as low as 28 expected.
+
+* WHERE...Kittitas Valley.
+
+* WHEN...From 11 PM this evening to 9 AM PDT Monday.
+
+* IMPACTS...Frost and freeze conditions could kill crops, other
+sensitive vegetation and possibly damage unprotected outdoor
+plumbing.</summary>
+    <cap:event>Freeze Warning</cap:event>
+    <cap:sent>2026-10-11T11:29:00-07:00</cap:sent>
+    <cap:effective>2026-10-11T11:29:00-07:00</cap:effective>
+    <cap:onset>2026-10-11T23:00:00-07:00</cap:onset>
+    <cap:expires>2026-10-12T03:30:00-07:00</cap:expires>
+    <cap:status>Actual</cap:status>
+    <cap:msgType>Alert</cap:msgType>
+    <cap:category>Met</cap:category>
+    <cap:urgency>Expected</cap:urgency>
+    <cap:severity>Severe</cap:severity>
+    <cap:certainty>Likely</cap:certainty>
+    <cap:areaDesc>Kittitas Valley</cap:areaDesc>
+    <cap:polygon></cap:polygon>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>53037</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>53077</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>WAZ026</value>
+    </cap:geocode>
+    <cap:parameter>
+      <valueName>AWIPSidentifier</valueName>
+      <value>NPWPDT</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>WMOidentifier</valueName>
+      <value>WWUS76 KPDT 111829</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>NWSheadline</valueName>
+      <value>FREEZE WARNING IN EFFECT FROM 11 PM THIS EVENING TO 9 AM PDT MONDAY</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>EAS</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>NWEM</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>CMAS</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>VTEC</valueName>
+      <value>/O.NEW.KPDT.FZ.W.0008.261012T0600Z-261012T1600Z/</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>eventEndingTime</valueName>
+      <value>2026-10-12T09:00:00-07:00</value>
+    </cap:parameter>
+    <cap:scope>Public</cap:scope>
+    <cap:code>IPAWSv1.0</cap:code>
+    <cap:language>en-US</cap:language>
+    <cap:web>http://www.weather.gov</cap:web>
+    <cap:eventCode>
+      <valueName>SAME</valueName>
+      <value>NWS</value>
+    </cap:eventCode>
+    <cap:eventCode>
+      <valueName>NationalWeatherService</valueName>
+      <value>FZW</value>
+    </cap:eventCode>
+  </entry>
+  <entry>
+    <id>https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.f84a9ba4c3f34f501254c023e0a40467c84c745b.001.1</id>
+    <link rel="alternate" href="https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.f84a9ba4c3f34f501254c023e0a40467c84c745b.001.1.cap"></link>
+    <updated>2026-10-11T13:01:00-07:00</updated>
+    <published>2026-10-11T13:01:00-07:00</published>
+    <author>
+      <name>NWS</name>
+    </author>
+    <title>Flash Flood Warning issued October 11 at 1:01PM PDT until October 11 at 4:00PM PDT by NWS Las Vegas NV</title>
+    <summary>FFWVEF
+
+The National Weather Service in Las Vegas has issued a
+
+* Flash Flood Warning for...
+West Central Mohave County in northwestern Arizona...
+Southeastern Clark County in southern Nevada...
+
+* Until 400 PM PDT /400 PM MST/.
+
+* At 101 PM PDT /101 PM MST/, Doppler radar indicated thunderstorms
+producing heavy rain across the warned area. Between 0.5 and 1 inch
+of rain has fallen. Flash flooding is ongoing or expected to begin
+shortly.
+
+HAZARD...Life threatening flash flooding. Thunderstorms producing
+flash flooding.
+
+SOURCE...Radar indicated.
+
+IMPACT...Life threatening flash flooding of creeks and streams,
+urban areas, highways, streets and underpasses.
+
+* Some locations that will experience flash flooding include...
+Searchlight, Cottonwood Cove Campground, Cottonwood Cove, Hoover
+Dam, Cal-Nev-Ari, Temple Bar Campground, Willow Beach and Temple
+Bar.</summary>
+    <cap:event>Flash Flood Warning</cap:event>
+    <cap:sent>2026-10-11T13:01:00-07:00</cap:sent>
+    <cap:effective>2026-10-11T13:01:00-07:00</cap:effective>
+    <cap:onset>2026-10-11T13:01:00-07:00</cap:onset>
+    <cap:expires>2026-10-11T16:00:00-07:00</cap:expires>
+    <cap:status>Actual</cap:status>
+    <cap:msgType>Alert</cap:msgType>
+    <cap:category>Met</cap:category>
+    <cap:urgency>Immediate</cap:urgency>
+    <cap:severity>Severe</cap:severity>
+    <cap:certainty>Likely</cap:certainty>
+    <cap:areaDesc>Mohave, AZ; Clark, NV</cap:areaDesc>
+    <cap:polygon>36.04,-114.73 36.10,-114.56 36.14,-114.33 36.03,-114.18 35.55,-114.39 35.11,-114.76 35.25,-114.95 35.78,-115.02 35.99,-114.86 36.04,-114.73</cap:polygon>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>4015</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>SAME</valueName>
+      <value>32003</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>AZC015</value>
+    </cap:geocode>
+    <cap:geocode>
+      <valueName>UGC</valueName>
+      <value>NVC003</value>
+    </cap:geocode>
+    <cap:parameter>
+      <valueName>AWIPSidentifier</valueName>
+      <value>FFWVEF</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>WMOidentifier</valueName>
+      <value>WGUS55 KVEF 112001</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>flashFloodDetection</valueName>
+      <value>RADAR INDICATED</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>flashFloodDamageThreat</valueName>
+      <value>CONSIDERABLE</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>EAS</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>BLOCKCHANNEL</valueName>
+      <value>NWEM</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>EAS-ORG</valueName>
+      <value>WXR</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>VTEC</valueName>
+      <value>/O.NEW.KVEF.FF.W.0057.261011T2001Z-261011T2300Z/</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>eventEndingTime</valueName>
+      <value>2026-10-11T16:00:00-07:00</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>WEAHandling</valueName>
+      <value>Imminent Threat</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>CMAMtext</valueName>
+      <value>NWS: FLASH FLOOD WARNING this area til 4:00 PM PDT. Avoid flooded areas.</value>
+    </cap:parameter>
+    <cap:parameter>
+      <valueName>CMAMlongtext</valueName>
+      <value>National Weather Service: A FLASH FLOOD WARNING is in effect for this area until 4:00 PM PDT. This is a dangerous and life-threatening situation. Do not attempt to travel unless you are fleeing an area subject to flooding or under an evacuation order.</value>
+    </cap:parameter>
+    <cap:scope>Public</cap:scope>
+    <cap:code>IPAWSv1.0</cap:code>
+    <cap:language>en-US</cap:language>
+    <cap:web>http://www.weather.gov</cap:web>
+    <cap:eventCode>
+      <valueName>SAME</valueName>
+      <value>FFW</value>
+    </cap:eventCode>
+    <cap:eventCode>
+      <valueName>NationalWeatherService</valueName>
+      <value>FFW</value>
+    </cap:eventCode>
+  </entry>
+</feed>

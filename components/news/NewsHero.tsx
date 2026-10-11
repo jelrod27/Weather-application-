@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ExternalLink, Clock, MapPin, Activity } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import CategoryBadge from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
+import NewsVisual, { NewsHazardFacts } from './NewsVisual';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { safeExternalUrl } from '@/lib/safe-url';
 
@@ -23,9 +24,8 @@ interface NewsHeroProps {
   className?: string;
 }
 
-export default function NewsHero({ item, className }: NewsHeroProps) {
+export default function NewsHero({ item, className }: NewsHeroProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
-  const [imageError, setImageError] = useState(false);
   const safeUrl = safeExternalUrl(item.url);
 
   const openSafeUrl = () => {
@@ -37,6 +37,7 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       openSafeUrl();
@@ -61,53 +62,14 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
       aria-label={`${item.title} from ${item.source}, ${timeAgo}. Opens in new tab`}
     >
       <div className="flex flex-col lg:flex-row">
-        {/* Image */}
-        {item.imageUrl && !imageError ? (
-          <div className="relative w-full lg:w-1/2 h-64 lg:h-80 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.imageUrl}
-              alt={item.title}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              onError={() => setImageError(true)}
-            />
-            <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
-              <PriorityIndicator priority={item.priority} showLabel size="md" />
-            </div>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              'w-full lg:w-1/2 h-64 lg:h-80 flex items-center justify-center border-b border-subtle lg:border-b-0 lg:border-r',
-              // bg-muted (a real theme surface), not themeClasses.background which
-              // matches the card and left this placeholder panel invisible.
-              'bg-muted'
-            )}
-          >
-            <div className="text-center p-8">
-              <CategoryBadge category={item.category} className="text-lg px-4 py-2" />
-              {item.magnitude && (
-                <div className="mt-4">
-                  <span className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 text-2xl font-bold rounded font-mono',
-                    item.magnitude >= 6 ? 'bg-red-600 text-white' :
-                    item.magnitude >= 5 ? 'bg-orange-500 text-white' :
-                    'bg-yellow-500 text-black'
-                  )}>
-                    <Activity className="w-6 h-6" />
-                    M{item.magnitude.toFixed(1)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <NewsVisual item={item} variant="hero" className="w-full lg:w-1/2 shrink-0" />
 
         {/* Content */}
         <CardContent className="flex-1 p-6 lg:p-8 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <CategoryBadge category={item.category} />
+              <PriorityIndicator priority={item.priority} showLabel size="md" />
               {item.magnitude && (
                 <span className={cn(
                   'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded font-mono',
@@ -128,6 +90,7 @@ export default function NewsHero({ item, className }: NewsHeroProps) {
             >
               {item.title}
             </h2>
+            <NewsHazardFacts item={item} />
             {item.description && (
               <p className={cn('text-sm sm:text-base lg:text-lg mb-4', themeClasses.text)}>
                 {item.description}
