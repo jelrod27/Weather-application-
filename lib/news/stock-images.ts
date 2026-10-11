@@ -130,4 +130,3 @@ export function pickCategoryStockImage(
   if (category === 'hurricanes' || category === 'severe') return undefined;
   return CATEGORY_STOCK_IMAGES[category];
 }
-

@@ -36,7 +36,12 @@ const HAZARD_FAMILIES: Array<[RegExp, HazardFamily]> = [
   [/hurricane|tropical/i, 'tropical'],
 ];
 
-export function hazardFamily(item: { category: FeedCategory; hazard?: NewsHazard }): HazardFamily | undefined {
+interface HazardSource {
+  category: FeedCategory;
+  hazard?: NewsHazard;
+}
+
+export function hazardFamily(item: HazardSource): HazardFamily | undefined {
   if (item.hazard) {
     const event = item.hazard.event;
     return HAZARD_FAMILIES.find(([pattern]) => pattern.test(event))?.[1] ?? 'other';

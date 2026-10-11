@@ -5,10 +5,10 @@
 import { createTtlCache } from '@/lib/cache/ttl-cache';
 import { pickCategoryStockImage } from '@/lib/news/stock-images';
 import { isoTimestamp } from '@/lib/news/visuals';
+import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
+import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
 import type { NewsImage } from '@/lib/news/visuals';
 import type { RSSItem } from './parse-feed';
-import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
-import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
 const USGS_EVENT_ID = /earthquakes\/eventpage\/([a-z0-9]+)/i;
 const USGS_DETAIL_CACHE = createTtlCache<NewsImage | null>({ ttlMs: 30 * 60 * 1000 });

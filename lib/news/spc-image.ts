@@ -1,5 +1,13 @@
-import { isoTimestamp } from './visuals';
 import type { NewsImage } from './visuals';
+
+interface SpcOutlookInput {
+  sourceId: string;
+  url: string;
+  title: string;
+  body?: string;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Resolve DDHHMMZ relative to the issue date, including month/year rollover. */
 function validTime(token: string, issue: Date): number | undefined {
@@ -19,19 +27,23 @@ function validTime(token: string, issue: Date): number | undefined {
  * instead: a cached Day 2 story must not acquire tomorrow's Day 2 map.
  * Contract checked against SPC RSS and archive pages on 2026-10-11.
  */
-export function spcOutlookImage(input: {
-  sourceId: string; url: string; title: string; body?: string;
-}): NewsImage | undefined {
+export function spcOutlookImage(input: SpcOutlookInput): NewsImage | undefined {
   if (input.sourceId !== 'spc-outlooks') return undefined;
-  const url = new URL(input.url);
+  let url: URL;
+  try { url = new URL(input.url); } catch { return undefined; }
   if (url.hostname !== 'www.spc.noaa.gov') return undefined;
   const product = url.pathname.match(/^\/products\/outlook\/day([123])otlk_(\d{4})\.html$/);
   const issuance = input.title.match(/^SPC ([A-Za-z]{3} \d{1,2}, \d{4}) (\d{4}) UTC Day ([123]) /);
   const validity = input.body?.match(/Valid\s+(\d{6})Z\s*-\s*(\d{6})Z/);
   if (!product || !issuance || !validity || product[1] !== issuance[3] || product[2] !== issuance[2]) return undefined;
-  const issuedAt = isoTimestamp(`${issuance[1]} ${issuance[2].slice(0, 2)}:${issuance[2].slice(2)}:00 UTC`);
-  if (!issuedAt) return undefined;
-  const issue = new Date(issuedAt);
+  const [monthName, dayText, yearText] = issuance[1].replace(',', '').split(' ');
+  const month = MONTHS.indexOf(monthName);
+  const hour = Number(issuance[2].slice(0, 2));
+  const minute = Number(issuance[2].slice(2));
+  const issue = new Date(Date.UTC(Number(yearText), month, Number(dayText), hour, minute));
+  if (month < 0 || hour > 23 || minute > 59 || issue.getUTCDate() !== Number(dayText) ||
+    issue.getUTCMonth() !== month || issue.getUTCFullYear() !== Number(yearText)) return undefined;
+  const issuedAt = issue.toISOString();
   const start = validTime(validity[1], issue);
   const end = validTime(validity[2], issue);
   if (start === undefined || end === undefined || end <= start ||

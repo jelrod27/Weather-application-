@@ -41,5 +41,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await expect(page.getByRole('img', { name: /Weather report illustration/ }).first()).toBeVisible();
     await expect(page.getByRole('img', { name: /SPC Day 2/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'NOAA / Storm Prediction Center', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Product source: NOAA / Storm Prediction Center', exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/^Valid Oct 12/).first()).toBeVisible();
   });
 }

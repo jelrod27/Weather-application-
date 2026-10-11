@@ -71,6 +71,8 @@ describe('hazard imagery provenance', () => {
     expect(spcOutlookImage({ ...input, url: day2.url.replace('day2', 'day1') })).toBeUndefined();
     expect(spcOutlookImage({ ...input, body: '' })).toBeUndefined();
     expect(spcOutlookImage({ ...input, body: 'Valid 321200Z - 331200Z' })).toBeUndefined();
+    expect(spcOutlookImage({ ...input, url: '/relative-link' })).toBeUndefined();
+    expect(spcOutlookImage({ ...input, title: 'SPC Feb 30, 2026 1730 UTC Day 2 Convective Outlook' })).toBeUndefined();
   });
 
   it('handles a synthetic outlook crossing the year boundary', () => {
@@ -85,6 +87,22 @@ describe('hazard imagery provenance', () => {
       '<media:credit>NASA / Jane Researcher</media:credit><enclosure url="https://www.nasa.gov/image.jpg" type="image/jpeg" />' +
       '</item></channel></rss>', source('nasa-breaking'));
     expect(item.image?.credit).toBe('NASA / Jane Researcher');
+  });
+
+  it('keeps the selected media image caption and credit together', () => {
+    const [item] = parseRSSFeed('<rss><channel><item><title>Research</title><link>https://www.nasa.gov/research</link>' +
+      '<media:content url="https://www.nasa.gov/video.mp4" medium="video"><media:credit>Video author</media:credit></media:content>' +
+      '<media:content url="https://www.nasa.gov/image.jpg" medium="image"><media:credit>NASA / Photographer</media:credit>' +
+      '<media:description>Archive observation from 2025</media:description></media:content>' +
+      '</item></channel></rss>', source('nasa-breaking'));
+    expect(item.image).toMatchObject({ credit: 'NASA / Photographer', caption: 'Archive observation from 2025', alt: 'Archive observation from 2025' });
+  });
+
+  it('retains the selected inline image description instead of replacing it with a headline', () => {
+    const [item] = parseRSSFeed('<rss><channel><item><title>Research</title><link>https://www.nasa.gov/research</link>' +
+      '<description><![CDATA[<img src="https://www.nasa.gov/image.jpg" alt="Computer simulation, not an observation" />]]></description>' +
+      '</item></channel></rss>', source('nasa-breaking'));
+    expect(item.image).toMatchObject({ caption: 'Computer simulation, not an observation', alt: 'Computer simulation, not an observation' });
   });
 
   it('preserves named-volcano reference context and rejects unknown peaks', async () => {
@@ -118,7 +136,14 @@ describe.each(['default', 'compact', 'featured', 'hero'] as const)('%s visual su
     fireEvent.error(image);
     expect(screen.queryByRole('img', { name: /SPC Day 2/ })).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Weather report illustration/ })).toBeInTheDocument();
-    expect(screen.queryByText('NOAA / Storm Prediction Center')).not.toBeInTheDocument();
+    expect(screen.getByText(/^Map unavailable/)).toBeInTheDocument();
+    expect(screen.getByText(/^Valid/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Product source: NOAA / Storm Prediction Center' })).toHaveAttribute('href', day2.image!.sourceUrl);
+  });
+
+  it('does not crop scientific reference images either', () => {
+    render(surface({ ...day2, image: { ...day2.image!, kind: 'reference', alt: 'Illustrative climate map' } }));
+    expect(screen.getByRole('img', { name: 'Illustrative climate map' })).toHaveClass('object-contain');
   });
 
   it('tries a new image after a failed image is replaced', () => {
