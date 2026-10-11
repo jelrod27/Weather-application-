@@ -16,6 +16,7 @@ export async function fetchNwsNews(source: FeedSource): Promise<ParsedFeed> {
     }
   }
   const items: RSSItem[] = snapshot.alerts.map(alert => {
+    const verified = !snapshot.truncated && !snapshot.rejected && !snapshot.issues.length;
     const areas = [...new Set(alert.ugc.length ? alert.ugc : alert.affectedZones)].sort();
     const authoritative = !alert.warningEventId.startsWith('provisional:') && areas.length > 0;
     const warning = /\bwarning\b/i.test(alert.event);
@@ -29,7 +30,7 @@ export async function fetchNwsNews(source: FeedSource): Promise<ParsedFeed> {
       source: source.name, sourceId: source.id, category: source.category,
       priority: ['Extreme', 'Severe'].includes(alert.severity) ? 'high' : 'medium',
       timestamp: new Date(alert.sent), kind: 'hazard',
-      lifecycle: warning && active.has(`${alert.id}:${alert.warningEventId}`) ? 'active' : 'inactive',
+      lifecycle: !verified ? 'unverified' : warning && active.has(`${alert.id}:${alert.warningEventId}`) ? 'active' : 'inactive',
       identity: { authority: 'nws', eventId, productId: alert.id, areaKey: authoritative ? areas.join('|') : alert.id },
       location: alert.areaDesc,
       hazard: { messageId: alert.id, event: alert.event, effective: alert.effective, expires: alert.expires },
@@ -37,7 +38,7 @@ export async function fetchNwsNews(source: FeedSource): Promise<ParsedFeed> {
         office: authoritative ? eventId.split('.')[0] : alert.senderName || alert.sender,
         severity: alert.severity, urgency: alert.urgency, certainty: alert.certainty,
         messageType: alert.messageType, action: alert.vtecAction, sent: alert.sent,
-        effective: alert.effective, expires: alert.expires, ends: alert.ends, areas,
+        effective: alert.effective, expires: alert.expires, ends: alert.ends, areas, references: alert.referenceIds,
       },
     };
   });

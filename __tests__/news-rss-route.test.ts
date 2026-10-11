@@ -74,10 +74,10 @@ describe('GET /api/news/rss', () => {
     expect(mockedRateLimit).toHaveBeenCalledWith(expect.anything(), 'content')
     expect(mockedAggregate).toHaveBeenCalled()
   })
-})
 
-it('returns source health and no-store for the featured response too', async () => {
+  it('returns source health and no-store for the featured response too', async () => {
   const res = await GET(new NextRequest('http://localhost/api/news/rss?featured=true'));
   expect(await res.json()).toMatchObject({ sources: [{ id: 'nws-alerts', state: 'unavailable' }], featured: null });
   expect(res.headers).toMatchObject({ 'Cache-Control': 'no-store' });
 });
+})

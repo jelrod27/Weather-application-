@@ -268,23 +268,23 @@ describe('parseItemTimestamp', () => {
 });
 
 describe('cacheControlForCategories (uncached lifecycle responses)', () => {
-  it('uses the Fast tier for severe', () => {
+  it('disables response caching for severe weather', () => {
     expect(cacheControlForCategories(['severe'])).toBe('no-store');
   });
 
-  it('uses the Slow tier for science', () => {
+  it('disables response caching for science', () => {
     expect(cacheControlForCategories(['science'])).toBe('no-store');
   });
 
-  it('uses the Medium tier for earthquakes', () => {
+  it('disables response caching for earthquakes', () => {
     expect(cacheControlForCategories(['earthquakes'])).toBe('no-store');
   });
 
-  it('defaults the "all" request (no categories) to the Fast tier', () => {
+  it('disables response caching for all sources', () => {
     expect(cacheControlForCategories()).toBe('no-store');
   });
 
-  it('picks the fastest tier present in a mixed request', () => {
+  it('disables response caching for mixed categories', () => {
     expect(cacheControlForCategories(['science', 'severe'])).toBe('no-store');
     expect(cacheControlForCategories(['science', 'earthquakes'])).toBe('no-store');
   });

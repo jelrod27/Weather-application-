@@ -58,6 +58,7 @@ export interface NWSAlertDetail extends NWSAlert {
   status?: string
   senderName?: string
   productUrl?: string
+  referenceIds?: string[]
   sent: string
   effective: string
   ends: string
@@ -152,6 +153,8 @@ export function mapNwsFeatureToDetail(feature: {
 
   return {
     status: asString(p.status),
+    referenceIds: Array.isArray(p.references) ? p.references.map(reference =>
+      reference && typeof reference === 'object' ? asString(reference.identifier) : '').filter(Boolean) : [],
     senderName: asString(p.senderName),
     productUrl: awips ? `https://forecast.weather.gov/product.php?${new URLSearchParams({
       site: 'NWS', issuedby: awips[2].toUpperCase(), product: awips[1].toUpperCase(), format: 'CI', version: '1', glossary: '0',
@@ -325,7 +328,8 @@ export async function fetchNwsAlertSnapshot(startUrl: string, maxPages = 8): Pro
         if (!feature || typeof feature !== 'object' || !feature.properties) { result.rejected++; continue }
         const alert = mapNwsFeatureToDetail(feature)
         const terminal = alert.messageType === 'Cancel' || ['CAN', 'EXP', 'UPG'].includes(alert.vtecAction ?? '')
-        if (!alert.id || !alert.event || !alert.areaDesc || alert.status !== 'Actual' ||
+        if (!['Alert', 'Update', 'Cancel'].includes(asString(feature.properties.messageType)) ||
+            !alert.id || !alert.event || !alert.areaDesc || alert.status !== 'Actual' ||
             !Number.isFinite(Date.parse(alert.sent)) || Date.parse(alert.sent) > Date.now() + 60_000 ||
             (alert.ends && !Number.isFinite(Date.parse(alert.ends))) ||
             !['Alert', 'Update', 'Cancel'].includes(alert.messageType) ||
@@ -338,6 +342,13 @@ export async function fetchNwsAlertSnapshot(startUrl: string, maxPages = 8): Pro
           continue
         }
         messages.set(alert.id, signature)
+        // Without VTEC, the existing geographic lifecycle selector cannot prove
+        // which areas a CAP revision replaces. References remain available, but
+        // this snapshot must not certify the old message as still active.
+        if (alert.warningEventId.startsWith('provisional:') &&
+            (alert.messageType !== 'Alert' || alert.referenceIds?.length)) {
+          result.issues.push('NWS revision has no validated warning-event identity')
+        }
         const vtecs = parseVtecFromParameters({ VTEC: alert.vtecRaw }, alert.description, alert.sent)
         result.alerts.push(...(vtecs.length ? vtecs.map(vtec => ({ ...alert, warningEventId: vtec.eventId, vtecAction: vtec.action })) : [alert]))
       }

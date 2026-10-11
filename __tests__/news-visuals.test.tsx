@@ -175,3 +175,16 @@ describe.each(['default', 'compact', 'featured', 'hero'] as const)('%s visual su
     open.mockRestore();
   });
 });
+
+describe('grouped provider status', () => {
+  it('keeps a final advisory visible when a later discussion is the group headline', () => {
+    render(<NewsCard item={{ ...freeze, sourceId: 'nhc-atlantic', category: 'hurricanes', kind: 'event', lifecycle: 'unverified',
+      tropicalStatus: 'unverified', hazard: undefined, updates: [
+        { id: 'discussion', title: 'Later discussion', url: 'https://www.nhc.noaa.gov/discussion', issuedAt: '2026-10-11T15:00:00Z', tropicalStatus: 'unverified' },
+        { id: 'final', title: 'Final advisory', url: 'https://www.nhc.noaa.gov/advisory', issuedAt: '2026-10-11T14:59:00Z', tropicalStatus: 'final' },
+      ] }} />);
+    expect(screen.getByText('Final advisory reported · active status unverified')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Official updates (2)'));
+    expect(screen.getByRole('link', { name: /Final advisory ·/ })).toHaveAttribute('href', 'https://www.nhc.noaa.gov/advisory');
+  });
+});

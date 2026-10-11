@@ -109,7 +109,7 @@ async function refresh(source: FeedSource, key: string): Promise<void> {
           truncated: parsed.truncated, pages: parsed.pages,
           oldestItemAt: times.length ? new Date(Math.min(...times)).toISOString() : null,
           newestItemAt: times.length ? new Date(Math.max(...times)).toISOString() : null,
-          issues: [...parsed.issues, ...(parsed.truncated ? ['Feed results were truncated'] : [])],
+          issues: [...new Set([...parsed.issues, ...(parsed.truncated ? ['Feed results were truncated'] : [])])],
         },
       },
     });

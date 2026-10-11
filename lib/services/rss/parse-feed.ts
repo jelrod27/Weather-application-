@@ -53,6 +53,7 @@ export interface NewsWarning {
   expires: string;
   ends: string;
   areas: string[];
+  references?: string[];
 }
 
 /** Sentinel for items without a parseable publication date — sorts last, excluded from Happening Now. */
@@ -393,6 +394,7 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
         } else if (/advisory|discussion|summary|graphics/i.test(title)) built.kind = 'event';
         built.tropicalStatus = /final advisory|last (?:forecast\/)?advisory/i.test(text) ? 'final'
           : /responsibility.*(?:transfer|assum)|(?:transfer|assum).*responsibility/i.test(text) ? 'handoff' : 'unverified';
+        built.updates[0].tropicalStatus = built.tropicalStatus;
         built.lifecycle = 'unverified';
       }
       items.push(built);

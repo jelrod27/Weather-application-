@@ -17,6 +17,7 @@ export interface NewsUpdate {
   title: string;
   url: string;
   issuedAt: string;
+  tropicalStatus?: 'final' | 'handoff' | 'unverified';
 }
 
 export interface NewsSourceHealth {

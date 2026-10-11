@@ -72,10 +72,12 @@ interface NewsHazardFactsProps {
 
 export function NewsHazardFacts({ item }: NewsHazardFactsProps): ReactElement | null {
   const delayed = item.sourceState === 'delayed' || item.sourceState === 'unavailable';
+  const reportedTropicalStatus = item.tropicalStatus && item.tropicalStatus !== 'unverified' ? item.tropicalStatus
+    : item.updates?.find(update => update.tropicalStatus === 'final' || update.tropicalStatus === 'handoff')?.tropicalStatus;
   const label = delayed ? 'Delayed report · current status unverified'
     : item.sourceState === 'partial' ? 'Partial source coverage · current status unverified'
-    : item.tropicalStatus === 'final' ? 'Final advisory · active status unverified'
-    : item.tropicalStatus === 'handoff' ? 'Responsibility handoff · active status unverified'
+    : reportedTropicalStatus === 'final' ? 'Final advisory reported · active status unverified'
+    : reportedTropicalStatus === 'handoff' ? 'Responsibility handoff reported · active status unverified'
     : isVerifiedActiveWarning(item) ? 'Verified active NWS warning'
     : item.kind === 'hazard' ? 'Hazard report · active status unverified'
     : item.kind === 'outlook' ? 'Outlook'
