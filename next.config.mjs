@@ -12,6 +12,10 @@ if (process.env.ANALYZE === 'true') {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Public blog loaders verify content-bound audits at runtime as well as build time.
+  outputFileTracingIncludes: {
+    '/*': ['./content/newsletter-audits/*.json'],
+  },
   // Allow 127.0.0.1 in dev mode (Playwright E2E tests connect via this origin)
   allowedDevOrigins: ['http://127.0.0.1:3000', '127.0.0.1'],
 

@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+import { publicationErrors } from '@/lib/newsletter/publication'
 import { BLOG_CATEGORIES, getPostCategoryIds, type BlogCategory } from './categories'
 
 // Re-export the category layer so server code can import everything from
@@ -62,6 +63,7 @@ export function getAllPosts(): BlogPost[] {
   const posts = files.map(filename => {
     const filePath = path.join(BLOG_DIR, filename)
     const fileContents = fs.readFileSync(filePath, 'utf8')
+    if (publicationErrors(fileContents, filename).length) return null
     const { data, content } = matter(fileContents)
     
     // gray-matter (js-yaml) auto-coerces YAML timestamp scalars to Date
@@ -114,7 +116,7 @@ export function getAllPosts(): BlogPost[] {
     } as BlogPost
   })
   
-  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return posts.filter((post): post is BlogPost => post !== null).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {

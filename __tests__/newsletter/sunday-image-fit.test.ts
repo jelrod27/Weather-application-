@@ -128,7 +128,7 @@ function makeOpts(
       reports: [],
       daysCovered: 7,
     },
-    spaceSummary: { recentKp: [], maxKpPastWeek: 0, recentXrayClass: null, notableFlares: [] },
+    spaceSummary: { recentKp: [], peakKpObserved: 0, recentXrayClass: null, notableFlares: [] },
     quakeSummary: { significantCount: 1, m45PlusCount: 1, largest: { mag: 7.5 }, significant: [] },
     // The summaries above only need the fields the lane scorers read; cast past
     // the full fetcher return types, which carry extra fields irrelevant here.

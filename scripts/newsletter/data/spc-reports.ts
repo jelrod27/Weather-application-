@@ -1,38 +1,21 @@
-/**
- * NOAA Storm Prediction Center daily storm reports.
- * Free, no API key. CSV format, one file per day.
- *
- * URLs follow the pattern:
- *   https://www.spc.noaa.gov/climo/reports/YYMMDD_rpts.csv
- *
- * The file contains three sections (Tornado, Hail, Wind) each with a
- * header row. We parse all three and tag each row with its category.
- *
- * Note: SPC sometimes refuses our default User-Agent. The fetcher uses
- * a browser-like UA which has historically been accepted.
- */
-
-const SPC_BASE = 'https://www.spc.noaa.gov/climo/reports';
-const FETCH_TIMEOUT_MS = 15_000;
-// SPC blocks generic bot UAs; this UA has been historically accepted by
-// the SPC server for non-abusive traffic patterns.
-const SPC_UA = 'Mozilla/5.0 (compatible; 16bitweather-newsletter/1.0; +https://16bitweather.co)';
+/** SPC preliminary reports use noon-to-noon UTC days; a 404 is unknown, never zero. */
+import { DAY_MS, reportingWindow } from '@/lib/newsletter/coverage';
+import { collectSource } from './source';
+import type { Collected } from './source';
 
 export type SpcReportCategory = 'tornado' | 'hail' | 'wind';
-
 export interface SpcReport {
   category: SpcReportCategory;
-  time: string; // HHMM in CST/UTC depending on file
-  size: string; // F-scale, hail size in inches, wind in mph
+  time: string; // UTC ISO timestamp, resolved against the SPC report day
+  size: string; // F-scale, hail hundredths of an inch, or wind knots (UNK allowed)
   location: string;
   county: string;
   state: string;
   lat: number | null;
   lon: number | null;
   comments: string;
-  date: string; // YYYY-MM-DD
+  date: string;
 }
-
 export interface SpcWeekSummary {
   total: number;
   byCategory: Record<SpcReportCategory, number>;
@@ -41,114 +24,74 @@ export interface SpcWeekSummary {
   daysCovered: number;
 }
 
-/**
- * Fetches the past N days of SPC reports and returns a summary.
- * Days where the file is missing (404) are skipped silently — SPC
- * doesn't publish a report file on days with zero events.
- *
- * Returns total=0 with empty reports[] when truly no severe events
- * happened in the window. Caller decides whether to treat that as
- * notable or a normal quiet week.
- */
-export async function fetchPastWeekReports(days = 7, now = new Date()): Promise<SpcWeekSummary> {
-  const reports: SpcReport[] = [];
-  for (let dayOffset = 1; dayOffset <= days; dayOffset++) {
-    const date = new Date(now.getTime() - dayOffset * 24 * 60 * 60 * 1000);
-    const yymmdd = formatYYMMDD(date);
-    const isoDate = date.toISOString().slice(0, 10);
-    const url = `${SPC_BASE}/${yymmdd}_rpts.csv`;
-    try {
-      const text = await fetchText(url);
-      reports.push(...parseCsv(text, isoDate));
-    } catch (err) {
-      const msg = (err as Error).message;
-      if (msg.includes('404')) continue;
-      // Other errors (e.g. 5xx, network) — log but keep going so a
-      // single bad day doesn't kill the recap.
-      console.warn(`[spc] ${yymmdd}: ${msg}`);
-    }
+export async function fetchPastWeekReports(days = 7, now = new Date()): Promise<Collected<SpcWeekSummary>> {
+  const window = reportingWindow(now, days);
+  const results = [];
+  for (let day = 0; day < days; day++) {
+    const start = new Date(Date.parse(window.start) + day * DAY_MS);
+    const date = start.toISOString().slice(0, 10);
+    const requested = { start: start.toISOString(), end: new Date(start.getTime() + DAY_MS).toISOString() };
+    results.push(await collectSource({
+      id: `spc-${date}`, label: `SPC preliminary reports ${date}`, requested, unit: 'complete report days',
+      url: `https://www.spc.noaa.gov/climo/reports/${date.replaceAll('-', '').slice(2)}_rpts.csv`,
+    }, raw => {
+      if (typeof raw !== 'string') throw new SyntaxError('Expected CSV');
+      const parsed = parseCsv(raw, date);
+      return {
+        data: parsed.reports.length || !parsed.rejected ? parsed.reports : null,
+        records: parsed.reports.length, times: parsed.reports.map(r => r.time),
+        covered: parsed.rejected ? [] : [requested],
+        expectedUnits: 1, observedUnits: parsed.rejected ? 0 : 1,
+        reasons: parsed.rejected ? [`${parsed.rejected} invalid rows; counts are lower bounds for validated reports`] : [],
+        status: parsed.rejected ? 'partial' : 'complete',
+      };
+    }, true));
   }
-  return summarize(reports, days);
-}
-
-function summarize(reports: SpcReport[], days: number): SpcWeekSummary {
+  const reports = results.flatMap(result => result.data ?? []);
   const byCategory: Record<SpcReportCategory, number> = { tornado: 0, hail: 0, wind: 0 };
   const byState: Record<string, number> = {};
-  for (const r of reports) {
-    byCategory[r.category] += 1;
-    if (r.state) byState[r.state] = (byState[r.state] ?? 0) + 1;
+  for (const report of reports) {
+    byCategory[report.category]++;
+    byState[report.state] = (byState[report.state] ?? 0) + 1;
   }
-  return { total: reports.length, byCategory, byState, reports, daysCovered: days };
+  return {
+    data: results.some(result => result.data !== null) ? {
+      total: reports.length, byCategory, byState, reports,
+      daysCovered: results.filter(result => result.audit.status === 'complete').length,
+    } : null,
+    sources: results.map(result => result.audit),
+  };
 }
 
-function parseCsv(text: string, isoDate: string): SpcReport[] {
-  const lines = text.split(/\r?\n/);
+function parseCsv(text: string, date: string): { reports: SpcReport[]; rejected: number } {
+  const reports: SpcReport[] = [];
+  const headers = new Set<SpcReportCategory>();
   let category: SpcReportCategory | null = null;
-  const out: SpcReport[] = [];
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const lower = line.toLowerCase();
-    // SPC daily report CSVs split into three sections, each preceded by a
-    // header row of the form "Time,F_Scale,..." (tornado), "Time,Size,..."
-    // (hail), or "Time,Speed,..." (wind). Match by column structure, NOT by
-    // free-text keyword: phrases like "brief tornado touchdown" or "60 mph
-    // winds" appear inside data rows' comments and would otherwise flip the
-    // category mid-section, dropping reports.
-    if (lower.startsWith('time,f_scale')) {
-      category = 'tornado';
+  let rejected = 0;
+  for (const line of text.split(/\r?\n/).filter(line => line.trim())) {
+    const header = /^Time,(F_Scale|Size|Speed),Location,County,State,Lat,Lon,Comments\s*$/i.exec(line);
+    if (header) {
+      category = ({ f_scale: 'tornado', size: 'hail', speed: 'wind' } as const)[header[1].toLowerCase() as 'f_scale' | 'size' | 'speed'];
+      headers.add(category);
       continue;
     }
-    if (lower.startsWith('time,size')) {
-      category = 'hail';
+    const [time, size, location, county, state, lat, lon, ...comments] = line.split(',');
+    if (!category || !/^([01]\d|2[0-3])[0-5]\d$/.test(time) || !size || !location || !county || !/^[A-Z]{2}$/.test(state) || !comments.length) {
+      rejected++;
       continue;
     }
-    if (lower.startsWith('time,speed')) {
-      category = 'wind';
-      continue;
-    }
-    if (!category) continue;
-    const cols = splitCsv(line);
-    if (cols.length < 8) continue;
-    const [time, size, location, county, state, lat, lon, ...rest] = cols;
-    out.push({
-      category,
-      time: time?.trim() ?? '',
-      size: size?.trim() ?? '',
-      location: location?.trim() ?? '',
-      county: county?.trim() ?? '',
-      state: state?.trim() ?? '',
-      lat: parseFloat(lat ?? '') || null,
-      lon: parseFloat(lon ?? '') || null,
-      comments: rest.join(',').trim(),
-      date: isoDate,
-    });
+    const timestamp = new Date(`${date}T${time.slice(0, 2)}:${time.slice(2)}:00.000Z`);
+    if (Number(time.slice(0, 2)) < 12) timestamp.setUTCDate(timestamp.getUTCDate() + 1);
+    const latitude = coordinate(lat, 90);
+    const longitude = coordinate(lon, 180);
+    reports.push({ category, time: timestamp.toISOString(), size, location, county, state, lat: latitude, lon: longitude, comments: comments.join(','), date });
   }
-  return out;
+  // A validated, header-only three-section file is an observed zero-report day.
+  if (headers.size !== 3) throw new SyntaxError('Missing SPC section headers');
+  return { reports, rejected };
 }
 
-function splitCsv(line: string): string[] {
-  // Naive split — SPC reports rarely contain quoted fields with commas,
-  // but if they do, the trailing comments field absorbs them via .join.
-  return line.split(',');
-}
-
-function formatYYMMDD(date: Date): string {
-  const yy = String(date.getUTCFullYear() % 100).padStart(2, '0');
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
-  return `${yy}${mm}${dd}`;
-}
-
-async function fetchText(url: string): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': SPC_UA } });
-    if (!res.ok) {
-      throw new Error(`SPC ${res.status} for ${url}`);
-    }
-    return await res.text();
-  } finally {
-    clearTimeout(timer);
-  }
+function coordinate(raw: string, limit: number): number | null {
+  const value = raw?.trim() ? Number(raw) : NaN;
+  return Number.isFinite(value) && Math.abs(value) <= limit ? value : null;
 }

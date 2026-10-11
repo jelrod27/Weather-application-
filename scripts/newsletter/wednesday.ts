@@ -3,6 +3,8 @@
  * See planning/prds/PRD-newsletter-redesign.md §4.2 for the spec.
  */
 
+import { coverageAuditSchema } from '@/lib/newsletter/coverage';
+
 import { getSpotlight } from '../blog-spotlight';
 import { pickCloser, type CloserChoice } from './closers';
 import { embedImagesInDraft, filterPlacementsByNarrativeFit, pickImagesForContent, type ImagePlacement } from './content-match';
@@ -27,6 +29,7 @@ import {
 } from './state';
 import { selectTopic, type Topic } from './topics';
 import { buildVoiceCorrectionInstruction, sweepVoice, VOICE_SYSTEM_PROMPT } from './voice';
+import type { CoverageAudit } from '@/lib/newsletter/coverage';
 
 const SIMILARITY_THRESHOLD = 0.85;
 const MAX_RETRIES = 2;
@@ -34,6 +37,7 @@ const TARGET_WORDS_MIN = 600;
 const TARGET_WORDS_MAX = 900;
 
 export interface WednesdayResult {
+  coverage: CoverageAudit;
   topic: Topic;
   newsAngle: NewsAngle | null;
   spotlight: string | null;
@@ -48,16 +52,27 @@ export interface WednesdayResult {
   closer: CloserChoice;
 }
 
-export async function runWednesday(): Promise<WednesdayResult> {
+export async function runWednesday(onAudit: (audit: CoverageAudit) => void = () => {}): Promise<WednesdayResult> {
   const history = loadHistory();
   const topicWeeks = getTopicWeeksSinceLastUsed(history);
   const topicResult = selectTopic(topicWeeks);
   const topic = topicResult.topic;
   console.log(`[wednesday] ${topicResult.rationale}`);
 
+  const now = new Date();
+  const window = { start: new Date(now.getTime() - 72 * 3_600_000).toISOString(), end: now.toISOString() };
+  const coverage = coverageAuditSchema.parse({
+    version: 1, cadence: 'wednesday_topic', generatedAt: now.toISOString(), window,
+    sources: [{
+      id: 'editorial-topic', label: `Curated educational topic outline: ${topic.title} (not current observations)`,
+      url: 'https://github.com/jelrod27/Weather-application-/blob/main/scripts/newsletter/topics.ts',
+      retrievedAt: now.toISOString(), requested: window, covered: [window], status: 'complete', usable: true,
+      records: 1, observationStart: null, observationEnd: null, unit: 'curated topic outlines', reasons: [],
+    }],
+  });
   let newsAngle: NewsAngle | null = null;
   try {
-    const headlines = await fetchHeadlines();
+    const headlines = await fetchHeadlines(audit => { coverage.sources.push(audit); onAudit(coverage); }, now);
     newsAngle = await findAngleForTopic(topic, headlines);
     if (newsAngle) console.log(`[wednesday] news angle: ${newsAngle.angle.slice(0, 120)}`);
     else console.log('[wednesday] no fitting news angle — leaning evergreen');
@@ -196,6 +211,7 @@ export async function runWednesday(): Promise<WednesdayResult> {
   const imageAudit = buildWednesdayImageAudit(finalPlacements, topic.slug);
 
   return {
+    coverage,
     topic,
     newsAngle,
     spotlight,

@@ -1,106 +1,99 @@
-/**
- * NOAA Space Weather Prediction Center — past week + recent activity.
- * Free, no API key, all JSON endpoints.
- */
-
-const FETCH_TIMEOUT_MS = 15_000;
-const UA = '16bitweather-newsletter/1.0 (https://16bitweather.co)';
+/** NOAA observations. Kp and GOES X-ray availability are independent. */
+import { DAY_MS, reportingWindow } from '@/lib/newsletter/coverage';
+import { parsePlanetaryKpSeries } from '@/lib/services/swpc-kp';
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
+import { inWindow, collectSource, finiteNumber, objectRecord } from './source';
+import type { ReportingWindow } from '@/lib/newsletter/coverage';
+import type { Collected } from './source';
+import type { ParsedSource } from './source';
 
 export interface SpaceWeatherSummary {
   recentKp: Array<{ time: string; kp: number }>;
-  maxKpPastWeek: number;
+  peakKpObserved: number | null;
   recentXrayClass: string | null;
   notableFlares: Array<{ time: string; class: string; region?: string }>;
 }
 
-interface KpRow {
-  time_tag: string;
-  kp_index: number | string;
-}
+interface Observation { time: string; value: number }
 
-interface XrayRow {
-  time_tag: string;
-  flux: number;
-  energy: '0.05-0.4nm' | '0.1-0.8nm';
-  observed_flux?: number;
-}
-
-export async function fetchSpaceWeatherSummary(): Promise<SpaceWeatherSummary> {
-  const [kpRows, xrayRows] = await Promise.all([
-    fetchJson<KpRow[]>('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
-    fetchJson<XrayRow[]>('https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json'),
-  ]);
-
-  const kpRecent = parseKp(kpRows).slice(-56); // 7 days × 8 readings/day
-  const maxKp = kpRecent.reduce((m, r) => Math.max(m, r.kp), 0);
-
-  const peakXray = parseXrayPeak(xrayRows);
-  const flareClass = peakXray ? classifyFlare(peakXray.flux) : null;
-
+/** Require every expected cadence slot; endpoints alone do not prove continuity. */
+function assessSeries(rows: Observation[], rejected: number, window: ReportingWindow, cadenceMs: number): ParsedSource<Observation[]> {
+  const start = Date.parse(window.start);
+  const aligned = rows.filter(row => Date.parse(row.time) % cadenceMs === 0);
+  rejected += rows.length - aligned.length;
+  const filtered = aligned.filter(row => inWindow(Date.parse(row.time), window));
+  const expectedUnits = Math.ceil((Date.parse(window.end) - start) / cadenceMs);
+  const slots = new Set(filtered.map(row => Math.floor((Date.parse(row.time) - start) / cadenceMs)));
+  const reasons: string[] = [];
+  if (slots.size < expectedUnits) reasons.push(`Missing ${expectedUnits - slots.size} of ${expectedUnits} expected intervals; peak is only for observed coverage`);
+  if (rejected) reasons.push(`${rejected} invalid or conflicting rows rejected`);
   return {
-    recentKp: kpRecent.slice(-16), // last 2 days for the recap
-    maxKpPastWeek: maxKp,
-    recentXrayClass: flareClass,
-    notableFlares: peakXray && flareClass && isOperationallyNotableFlare(flareClass)
-      ? [{ time: peakXray.time, class: flareClass }]
-      : [],
+    data: filtered.length ? filtered : null,
+    records: filtered.length, times: filtered.map(row => row.time),
+    covered: [...slots].sort((a, b) => a - b).map(slot => ({
+      start: new Date(start + slot * cadenceMs).toISOString(),
+      end: new Date(Math.min(start + (slot + 1) * cadenceMs, Date.parse(window.end))).toISOString(),
+    })),
+    expectedUnits, observedUnits: slots.size, reasons,
+    status: filtered.length ? (reasons.length ? 'partial' : 'complete') : rejected ? 'malformed' : rows.length ? 'stale' : 'unavailable',
   };
 }
 
-function isOperationallyNotableFlare(flareClass: string): boolean {
-  // C-class peaks are worth a text mention as the week's strongest flare,
-  // but they should not activate solar imagery when geomagnetic activity is
-  // otherwise quiet. Reserve the image lane for M/X flares or Kp-driven storms.
-  return flareClass.startsWith('M') || flareClass.startsWith('X');
+export async function fetchSpaceWeatherSummary(window = reportingWindow()): Promise<Collected<SpaceWeatherSummary>> {
+  const [kp, xray] = await Promise.all([
+    collectSource({
+      id: 'swpc-kp', label: 'NOAA SWPC planetary Kp',
+      url: 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+      requested: window, unit: 'three-hour blocks',
+    }, raw => {
+      const parsed = parsePlanetaryKpSeries(raw);
+      const result = assessSeries(parsed.samples.map(row => ({ time: row.timeTag, value: row.kp })), parsed.rejectedRows, window, DAY_MS / 8);
+      if (!parsed.supported) { result.status = 'unsupported'; result.reasons = ['Unsupported Kp payload schema']; }
+      return result;
+    }),
+    collectSource({
+      id: 'swpc-xray', label: 'NOAA GOES primary 0.1–0.8 nm X-ray flux',
+      url: 'https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json',
+      requested: window, unit: 'one-minute samples',
+    }, raw => {
+      if (!Array.isArray(raw)) throw new SyntaxError('Expected X-ray series');
+      const rows = new Map<string, Observation>();
+      let rejected = 0;
+      for (const entry of raw) {
+        try {
+          const row = objectRecord(entry);
+          if (row.energy !== '0.1-0.8nm') {
+            if (row.energy !== '0.05-0.4nm') rejected++;
+            continue;
+          }
+          const time = typeof row.time_tag === 'string' ? swpcTimeTagMs(row.time_tag) : NaN;
+          const flux = finiteNumber(row.flux);
+          if (!Number.isFinite(time) || flux === null || flux < 0) { rejected++; continue; }
+          const tag = new Date(time).toISOString();
+          if (rows.has(tag) && rows.get(tag)!.value !== flux) rejected++;
+          rows.set(tag, { time: tag, value: flux });
+        } catch { rejected++; }
+      }
+      return assessSeries([...rows.values()], rejected, window, 60_000);
+    }),
+  ]);
+  const peak = xray.data?.reduce<Observation | null>((best, row) => !best || row.value > best.value ? row : best, null);
+  const flareClass = peak ? classifyFlare(peak.value) : null;
+  return {
+    data: kp.data || xray.data ? {
+      recentKp: kp.data?.slice(-16).map(row => ({ time: row.time, kp: row.value })) ?? [],
+      peakKpObserved: kp.data ? Math.max(...kp.data.map(row => row.value)) : null,
+      recentXrayClass: flareClass,
+      notableFlares: peak && flareClass && /^[MX]/.test(flareClass) ? [{ time: peak.time, class: flareClass }] : [],
+    } : null,
+    sources: [kp.audit, xray.audit],
+  };
 }
 
-function parseKp(raw: KpRow[] | unknown): Array<{ time: string; kp: number }> {
-  // SWPC quirk: first row is a header array on the unstructured endpoint;
-  // products/noaa-planetary-k-index.json returns array-of-arrays.
-  if (Array.isArray(raw) && raw.length > 0 && Array.isArray(raw[0])) {
-    const rows = raw as unknown as Array<[string, string | number, string?]>;
-    return rows
-      .slice(1)
-      .map((r) => ({ time: r[0], kp: typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) }))
-      .filter((r) => !Number.isNaN(r.kp));
-  }
-  if (Array.isArray(raw)) {
-    return (raw as KpRow[])
-      .map((r) => ({ time: r.time_tag, kp: typeof r.kp_index === 'number' ? r.kp_index : parseFloat(String(r.kp_index)) }))
-      .filter((r) => !Number.isNaN(r.kp));
-  }
-  return [];
-}
-
-function parseXrayPeak(rows: XrayRow[] | unknown): { time: string; flux: number } | null {
-  if (!Array.isArray(rows)) return null;
-  const filtered = (rows as XrayRow[]).filter((r) => r.energy === '0.1-0.8nm');
-  if (filtered.length === 0) return null;
-  let peak = filtered[0];
-  for (const r of filtered) {
-    if (r.flux > peak.flux) peak = r;
-  }
-  return { time: peak.time_tag, flux: peak.flux };
-}
-
-function classifyFlare(flux: number): string | null {
+function classifyFlare(flux: number): string {
   if (flux >= 1e-4) return `X${(flux / 1e-4).toFixed(1)}`;
   if (flux >= 1e-5) return `M${(flux / 1e-5).toFixed(1)}`;
   if (flux >= 1e-6) return `C${(flux / 1e-6).toFixed(1)}`;
   if (flux >= 1e-7) return `B${(flux / 1e-7).toFixed(1)}`;
-  // Below B-class is quiescent background — not a meaningful "peak class".
-  // Returning null lets callers report "quiet" rather than misleading "A0.1".
-  return null;
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': UA } });
-    if (!res.ok) throw new Error(`SWPC ${res.status} for ${url}`);
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(timer);
-  }
+  return `below B-class (observed flux ${flux} W/m²)`;
 }

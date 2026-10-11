@@ -1,0 +1,339 @@
+{
+  "schema": {
+    "fields": [
+      {
+        "name": "index",
+        "type": "integer"
+      },
+      {
+        "name": "ugclist",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "locations",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "utc_issue",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "utc_expire",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "utc_polygon_begin",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "utc_polygon_end",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "ph_sig",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "wfo",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "eventid",
+        "type": "integer"
+      },
+      {
+        "name": "phenomena",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "significance",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "nws_color",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "event_label",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "product_id",
+        "type": "string",
+        "extDtype": "str"
+      },
+      {
+        "name": "year",
+        "type": "integer"
+      },
+      {
+        "name": "fcster",
+        "type": "string",
+        "extDtype": "str"
+      }
+    ],
+    "primaryKey": [
+      "index"
+    ],
+    "pandas_version": "1.4.0"
+  },
+  "data": [
+    {
+      "index": 0,
+      "ugclist": "GMZ655",
+      "locations": "Coastal waters from Okaloosa-Walton County Line to Pensacola FL out 20 NM []",
+      "utc_issue": "2026-10-04T12:30:00Z",
+      "utc_expire": "2026-10-04T14:00:00Z",
+      "utc_polygon_begin": "2026-10-04T12:30:00Z",
+      "utc_polygon_end": "2026-10-04T14:00:00Z",
+      "ph_sig": "MA.W",
+      "wfo": "MOB",
+      "eventid": 225,
+      "phenomena": "MA",
+      "significance": "W",
+      "nws_color": "#FFA500",
+      "event_label": "Marine Warning",
+      "status": "NEW",
+      "product_id": "202610041230-KMOB-WHUS54-SMWMOB",
+      "year": 2026,
+      "fcster": null
+    },
+    {
+      "index": 1,
+      "ugclist": "FLC005, FLC131",
+      "locations": "Bay [FL], Walton [FL]",
+      "utc_issue": "2026-10-04T12:38:00Z",
+      "utc_expire": "2026-10-04T15:45:00Z",
+      "utc_polygon_begin": "2026-10-04T12:38:00Z",
+      "utc_polygon_end": "2026-10-04T15:41:00Z",
+      "ph_sig": "FF.W",
+      "wfo": "TAE",
+      "eventid": 27,
+      "phenomena": "FF",
+      "significance": "W",
+      "nws_color": "#8B0000",
+      "event_label": "Flash Flood Warning",
+      "status": "NEW",
+      "product_id": "202610041238-KTAE-WGUS52-FFWTAE",
+      "year": 2026,
+      "fcster": "CHANEY"
+    },
+    {
+      "index": 2,
+      "ugclist": "GMZ751",
+      "locations": "Coastal waters from Okaloosa-Walton County Line to Mexico Beach out 20 NM []",
+      "utc_issue": "2026-10-04T12:42:00Z",
+      "utc_expire": "2026-10-04T13:45:00Z",
+      "utc_polygon_begin": "2026-10-04T12:42:00Z",
+      "utc_polygon_end": "2026-10-04T13:45:00Z",
+      "ph_sig": "MA.W",
+      "wfo": "TAE",
+      "eventid": 419,
+      "phenomena": "MA",
+      "significance": "W",
+      "nws_color": "#FFA500",
+      "event_label": "Marine Warning",
+      "status": "NEW",
+      "product_id": "202610041242-KTAE-WHUS52-SMWTAE",
+      "year": 2026,
+      "fcster": "KC"
+    },
+    {
+      "index": 3,
+      "ugclist": "FLC037, FLC065, FLC073, FLC077, FLC123, FLC129",
+      "locations": "Franklin [FL], Jefferson [FL], Leon [FL], Liberty [FL], Taylor [FL], Wakulla [FL]",
+      "utc_issue": "2026-10-04T12:42:00Z",
+      "utc_expire": "2026-10-04T14:30:00Z",
+      "utc_polygon_begin": "2026-10-04T12:42:00Z",
+      "utc_polygon_end": "2026-10-04T14:30:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "TAE",
+      "eventid": 173,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041242-KTAE-WGUS82-FLSTAE",
+      "year": 2026,
+      "fcster": "ENYEDI"
+    },
+    {
+      "index": 4,
+      "ugclist": "GMZ730, GMZ755, GMZ765, GMZ775",
+      "locations": "Apalachee Bay or Coastal Waters From Keaton Beach to Ochlockonee River Fl out to 20 Nm [], Coastal Waters From  Ochlockonee River to Apalachicola FL out to 20 Nm [], Coastal waters from  Suwannee River to Keaton Beach out 20 NM [], Waters from Suwannee River to Apalachicola FL from 20 to 60 NM []",
+      "utc_issue": "2026-10-04T12:46:00Z",
+      "utc_expire": "2026-10-04T14:15:00Z",
+      "utc_polygon_begin": "2026-10-04T12:46:00Z",
+      "utc_polygon_end": "2026-10-04T14:15:00Z",
+      "ph_sig": "MA.W",
+      "wfo": "TAE",
+      "eventid": 420,
+      "phenomena": "MA",
+      "significance": "W",
+      "nws_color": "#FFA500",
+      "event_label": "Marine Warning",
+      "status": "NEW",
+      "product_id": "202610041246-KTAE-WHUS52-SMWTAE",
+      "year": 2026,
+      "fcster": "ABE"
+    },
+    {
+      "index": 5,
+      "ugclist": "ALC061, ALC067, ALC069, GAC099, GAC201, GAC253",
+      "locations": "Geneva [AL], Henry [AL], Houston [AL], Early [GA], Miller [GA], Seminole [GA]",
+      "utc_issue": "2026-10-04T13:07:00Z",
+      "utc_expire": "2026-10-04T15:00:00Z",
+      "utc_polygon_begin": "2026-10-04T13:07:00Z",
+      "utc_polygon_end": "2026-10-04T15:00:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "TAE",
+      "eventid": 174,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041307-KTAE-WGUS82-FLSTAE",
+      "year": 2026,
+      "fcster": "ABE"
+    },
+    {
+      "index": 6,
+      "ugclist": "GAC109, GAC267",
+      "locations": "Evans [GA], Tattnall [GA]",
+      "utc_issue": "2026-10-04T13:13:00Z",
+      "utc_expire": "2026-10-04T16:15:00Z",
+      "utc_polygon_begin": "2026-10-04T13:13:00Z",
+      "utc_polygon_end": "2026-10-04T14:43:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "CHS",
+      "eventid": 76,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041313-KCHS-WGUS82-FLSCHS",
+      "year": 2026,
+      "fcster": "BSH"
+    },
+    {
+      "index": 7,
+      "ugclist": "FLC073",
+      "locations": "Leon [FL]",
+      "utc_issue": "2026-10-04T13:15:00Z",
+      "utc_expire": "2026-10-04T15:15:00Z",
+      "utc_polygon_begin": "2026-10-04T13:15:00Z",
+      "utc_polygon_end": "2026-10-04T15:15:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "TAE",
+      "eventid": 175,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041315-KTAE-WGUS82-FLSTAE",
+      "year": 2026,
+      "fcster": "ABE"
+    },
+    {
+      "index": 8,
+      "ugclist": "LAC013, LAC015, LAC017, LAC031, LAC081, LAC119",
+      "locations": "Bienville [LA], Bossier [LA], Caddo [LA], De Soto [LA], Red River [LA], Webster [LA]",
+      "utc_issue": "2026-10-04T13:20:00Z",
+      "utc_expire": "2026-10-04T17:15:00Z",
+      "utc_polygon_begin": "2026-10-04T13:20:00Z",
+      "utc_polygon_end": "2026-10-04T17:15:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "SHV",
+      "eventid": 56,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041320-KSHV-WGUS84-FLSSHV",
+      "year": 2026,
+      "fcster": "15"
+    },
+    {
+      "index": 9,
+      "ugclist": "LAC013, LAC015, LAC017, LAC031, LAC081, LAC119",
+      "locations": "Bienville [LA], Bossier [LA], Caddo [LA], De Soto [LA], Red River [LA], Webster [LA]",
+      "utc_issue": "2026-10-04T13:42:00Z",
+      "utc_expire": "2026-10-04T17:45:00Z",
+      "utc_polygon_begin": "2026-10-04T13:42:00Z",
+      "utc_polygon_end": "2026-10-04T17:45:00Z",
+      "ph_sig": "FF.W",
+      "wfo": "SHV",
+      "eventid": 76,
+      "phenomena": "FF",
+      "significance": "W",
+      "nws_color": "#8B0000",
+      "event_label": "Flash Flood Warning",
+      "status": "NEW",
+      "product_id": "202610041342-KSHV-WGUS54-FFWSHV",
+      "year": 2026,
+      "fcster": "24"
+    },
+    {
+      "index": 10,
+      "ugclist": "TXC061, TXC489",
+      "locations": "Cameron [TX], Willacy [TX]",
+      "utc_issue": "2026-10-04T14:07:00Z",
+      "utc_expire": "2026-10-04T16:00:00Z",
+      "utc_polygon_begin": "2026-10-04T14:07:00Z",
+      "utc_polygon_end": "2026-10-04T15:54:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "BRO",
+      "eventid": 55,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041407-KBRO-WGUS84-FLSBRO",
+      "year": 2026,
+      "fcster": "Garcia"
+    },
+    {
+      "index": 11,
+      "ugclist": "TXC251",
+      "locations": "Johnson [TX]",
+      "utc_issue": "2026-10-04T14:13:00Z",
+      "utc_expire": "2026-10-04T16:15:00Z",
+      "utc_polygon_begin": "2026-10-04T14:13:00Z",
+      "utc_polygon_end": "2026-10-04T16:15:00Z",
+      "ph_sig": "FA.Y",
+      "wfo": "FWD",
+      "eventid": 145,
+      "phenomena": "FA",
+      "significance": "Y",
+      "nws_color": "#00FF7F",
+      "event_label": "Flood Advisory",
+      "status": "NEW",
+      "product_id": "202610041413-KFWD-WGUS84-FLSFWD",
+      "year": 2026,
+      "fcster": "12"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "file": "noaa-kp.json",
+    "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+    "retrievedAt": "2026-10-11T22:01:37.763Z",
+    "selection": "Full response; JSON whitespace normalized only."
+  },
+  {
+    "file": "noaa-xray-excerpt.json",
+    "url": "https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json",
+    "retrievedAt": "2026-10-11T22:01:37.869Z",
+    "selection": "First four and last four rows only; deliberately incomplete time coverage."
+  },
+  {
+    "file": "iem-warnings-excerpt.json",
+    "url": "https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-10-04T12%3A00%3A00Z&endts=2026-10-11T12%3A00%3A00Z",
+    "retrievedAt": "2026-10-11T22:01:39.059Z",
+    "selection": "First 12 rows only; parser/schema fixture, not a complete weekly event total."
+  },
+  {
+    "file": "usgs-significant.json",
+    "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-04T12%3A00%3A00.000Z&endtime=2026-10-11T11%3A59%3A59.999Z&orderby=time&limit=20000&minsig=601",
+    "retrievedAt": "2026-10-11T22:01:39.535Z",
+    "selection": "Full response; JSON whitespace normalized only."
+  },
+  {
+    "file": "spc-reports.csv",
+    "url": "https://www.spc.noaa.gov/climo/reports/261008_rpts.csv",
+    "retrievedAt": "2026-10-11T22:01:39.935Z",
+    "selection": "Full CSV response."
+  },
+  {
+    "file": "open-meteo-nyc.json",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-11&end_date=2026-10-17",
+    "retrievedAt": "2026-10-11T22:01:40.683Z",
+    "selection": "Full response; JSON whitespace normalized only."
+  }
+]

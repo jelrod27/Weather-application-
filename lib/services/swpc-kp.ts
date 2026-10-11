@@ -6,13 +6,19 @@
 
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
 
-export type KpSample = { timeTag: string; kp: number };
+export interface KpSample { timeTag: string; kp: number }
+
+function kpNumber(raw: unknown): number | null {
+  if (typeof raw !== 'number' && (typeof raw !== 'string' || !raw.trim())) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 && value <= 9 ? value : null;
+}
 
 function readKpFromRow(row: unknown): KpSample | null {
   if (Array.isArray(row) && row.length >= 2) {
     const timeTag = String(row[0] ?? '');
-    const kp = parseFloat(String(row[1]));
-    if (!timeTag || Number.isNaN(kp)) return null;
+    const kp = kpNumber(row[1]);
+    if (!timeTag || kp === null) return null;
     return { timeTag, kp };
   }
 
@@ -20,8 +26,8 @@ function readKpFromRow(row: unknown): KpSample | null {
     const obj = row as Record<string, unknown>;
     const timeTag = String(obj.time_tag ?? obj.timeTag ?? '');
     const raw = obj.Kp ?? obj.kp ?? obj.kp_index;
-    const kp = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''));
-    if (!timeTag || Number.isNaN(kp)) return null;
+    const kp = kpNumber(raw);
+    if (!timeTag || kp === null) return null;
     return { timeTag, kp };
   }
 
@@ -39,8 +45,33 @@ function dataRows(payload: unknown[]): unknown[] {
   if (first && typeof first === 'object' && !Array.isArray(first) && 'time_tag' in (first as object)) {
     return payload;
   }
-  if (Array.isArray(first)) return payload.slice(1);
   return payload;
+}
+
+export interface KpSeries {
+  samples: KpSample[];
+  rejectedRows: number;
+  supported: boolean;
+}
+
+/** Full, strictly dated observations. The dashboard's latest-eight API stays separate. */
+export function parsePlanetaryKpSeries(payload: unknown): KpSeries {
+  if (!Array.isArray(payload)) return { samples: [], rejectedRows: 0, supported: false };
+  const rows = dataRows(payload);
+  const samples = new Map<number, KpSample>();
+  let rejectedRows = 0;
+  for (const row of rows) {
+    const sample = readKpFromRow(row);
+    const time = sample ? swpcTimeTagMs(sample.timeTag) : NaN;
+    if (!sample || !Number.isFinite(time)) {
+      rejectedRows++;
+      continue;
+    }
+    // Conflicting duplicates cannot be used to establish complete coverage.
+    if (samples.has(time) && samples.get(time)!.kp !== sample.kp) rejectedRows++;
+    samples.set(time, { timeTag: new Date(time).toISOString(), kp: sample.kp });
+  }
+  return { samples: [...samples.values()].sort((a, b) => a.timeTag.localeCompare(b.timeTag)), rejectedRows, supported: true };
 }
 
 /**
