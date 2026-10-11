@@ -134,7 +134,6 @@ export async function publishPost(input: PublishInput, opts: PublishOptions): Pr
     return result;
   }
 
-  if (fs.existsSync(filePath)) throw new Error('Post already exists; refusing to overwrite it');
   fs.mkdirSync(directory, { recursive: true });
   fs.mkdirSync(path.dirname(auditPath), { recursive: true });
   const auditRaw = JSON.stringify(coverage, null, 2) + '\n';
@@ -143,7 +142,7 @@ export async function publishPost(input: PublishInput, opts: PublishOptions): Pr
     const receipt = buildReceipt(fileBody, auditRaw, { decision: 'complete', reviewer: 'coverage-validation', gapDispositions: {} });
     fs.writeFileSync(auditPath.replace(/\.json$/, '.review.json'), JSON.stringify(receipt, null, 2) + '\n');
   }
-  fs.writeFileSync(filePath, fileBody, 'utf8');
+  fs.writeFileSync(filePath, fileBody, { encoding: 'utf8', flag: 'wx' });
   console.log(`[publish] wrote ${filePath} (${fileBody.length} bytes)`);
   return result;
 }

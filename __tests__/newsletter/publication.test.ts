@@ -101,6 +101,7 @@ describe('newsletter publication boundary', () => {
     expect(raw).toContain(coverageDisclosure(audit()));
     expect(readPublicationBundle(raw, root).audit.sources[1].status).toBe('unavailable');
     expect(() => promoteDraft(candidate.filePath, root)).toThrow(/already exists/);
+    expect(fs.readFileSync(publicFile, 'utf8')).toBe(raw);
     await jest.isolateModulesAsync(async () => {
       const { getPostBySlug } = await import('@/lib/blog');
       expect(getPostBySlug(candidate.slug)?.slug).toBe(candidate.slug);
@@ -135,6 +136,15 @@ describe('newsletter publication boundary', () => {
 
   it('rejects an empty reviewer identity', () => {
     expect(() => buildReceipt('post', '{}', { decision: 'reviewed-partial', reviewer: ' ', gapDispositions: {} })).toThrow();
+  });
+
+  it('refuses to overwrite a complete public post when the same edition is generated again', async () => {
+    const candidate = await publishPost(INPUT, { coverage: audit(false), root });
+    const original = fs.readFileSync(candidate.filePath, 'utf8');
+    await expect(publishPost({ ...INPUT, body: 'A different generated edition.' }, { coverage: audit(false), root }))
+      .rejects.toMatchObject({ code: 'EEXIST' });
+    expect(fs.readFileSync(candidate.filePath, 'utf8')).toBe(original);
+    expect(validateGeneratedPost(candidate.filePath, { publication: true, root }).ok).toBe(true);
   });
 
   it('writes no candidate when no usable evidence exists', async () => {

@@ -46,7 +46,6 @@ export function promoteDraft(file: string, root = process.cwd()): string {
   const images = validateGeneratedPost(file);
   if (errors.length || !images.ok) throw new Error([...errors, ...images.errors].join('\n'));
   const target = path.join(root, 'content/blog', path.basename(file));
-  if (fs.existsSync(target)) throw new Error('A public post already exists at the destination');
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, raw, { flag: 'wx' });
   return target;
