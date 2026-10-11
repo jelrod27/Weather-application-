@@ -53,27 +53,27 @@ async function main() {
   });
   await step('Iowa Mesonet warnings', async () => {
     const w = await fetchPastWeekWarnings();
-    console.log(`     ${w.totalWarnings} warnings, ${w.notable.length} notable`);
+    console.log(JSON.stringify(w.sources, null, 2));
     return w;
   });
   await step('SPC reports', async () => {
     const s = await fetchPastWeekReports();
-    console.log(`     tornado=${s.byCategory.tornado} hail=${s.byCategory.hail} wind=${s.byCategory.wind}`);
+    console.log(JSON.stringify(s.sources, null, 2));
     return s;
   });
   await step('SWPC space weather', async () => {
     const s = await fetchSpaceWeatherSummary();
-    console.log(`     maxKp=${s.maxKpPastWeek} xray=${s.recentXrayClass}`);
+    console.log(JSON.stringify(s.sources, null, 2));
     return s;
   });
   await step('USGS earthquakes', async () => {
     const q = await fetchPastWeekQuakes();
-    console.log(`     significant=${q.significantCount} m45+=${q.m45PlusCount}`);
+    console.log(JSON.stringify(q.sources, null, 2));
     return q;
   });
   await step('Open-Meteo forecast outlook', async () => {
     const f = await fetchForecastOutlook();
-    console.log(`     CONUS=${f.conusQuadrants.length} intl=${f.international.length}`);
+    console.log(JSON.stringify(f.sources, null, 2));
     return f;
   });
 

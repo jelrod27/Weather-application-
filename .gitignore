@@ -159,3 +159,6 @@ fact-check.md
 
 # Supabase CLI scratch state
 supabase/.temp/
+
+# Newsletter run reports and failed-generation diagnostics (uploaded as workflow artifacts)
+/newsletter-output/

@@ -2,10 +2,10 @@
  * Sunday cadence — Rearview + Roadmap pipeline.
  * See planning/prds/PRD-newsletter-redesign.md §4.3 for the spec.
  *
- * Hard rule: if Iowa Mesonet returns nothing for the past week, we fail
- * the run rather than fabricate Rearview content.
+ * Failed sources stay unknown. Partial evidence creates a reviewable draft.
  */
 
+import { coverageOutcome } from '@/lib/newsletter/coverage';
 import { getSpotlight } from '../blog-spotlight';
 import {
   embedImagesInDraft,
@@ -13,14 +13,8 @@ import {
   type ImagePlacement,
 } from './content-match';
 import { imageGateFor, type DraftImageGate } from './image-selection';
-import { fetchPastWeekQuakes } from './data/earthquakes';
-import { fetchForecastOutlook } from './data/forecast';
-import { fetchPastWeekWarnings, MesonetEmptyError } from './data/mesonet';
-import { fetchSpaceWeatherSummary } from './data/space-weather';
-import { fetchPastWeekReports } from './data/spc-reports';
 import { pickCloser, type CloserChoice } from './closers';
 import { IMAGES, getActiveTopics, selectImages, type ImageAuditEntry, type ImageEntry } from './images';
-import type { TopicSlug } from './topics';
 import {
   callAnthropic,
   checkOpenerCollision,
@@ -38,12 +32,16 @@ import {
   loadHistory,
 } from './state';
 import { buildVoiceCorrectionInstruction, sweepVoice, VOICE_SYSTEM_PROMPT } from './voice';
-import { sanitizeForPrompt } from './util/sanitize';
+import { collectSundayEvidence, formatSundayEvidence } from './data/sunday-evidence';
+import type { TopicSlug } from './topics';
+import type { SundayEvidence } from './data/sunday-evidence';
+import type { CoverageAudit } from '@/lib/newsletter/coverage';
 
 const SIMILARITY_THRESHOLD = 0.85;
 const MAX_RETRIES = 2;
 
 export interface SundayResult {
+  coverage: CoverageAudit;
   spotlight: string | null;
   draft: string;
   similarity: SimilarityVerdict;
@@ -57,7 +55,7 @@ export interface SundayResult {
   closer: CloserChoice;
 }
 
-export async function runSunday(): Promise<SundayResult> {
+export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => {}): Promise<SundayResult> {
   const history = loadHistory();
   const recentOpenerHashes = getOpenerHashes(history, 'sunday_rearview');
   const denyPhrases = getKeyPhraseDenyList(history, 'sunday_rearview');
@@ -65,39 +63,21 @@ export async function runSunday(): Promise<SundayResult> {
   const priorPosts = getRecentByCadence(history, 'sunday_rearview');
 
   console.log('[sunday] fetching past-week data');
-  // Iowa Mesonet is the load-bearing source for Rearview. Fetch first
-  // and fail loudly if empty — do not paper over with fabricated content.
-  const warnings = await fetchPastWeekWarnings();
-  console.log(`[sunday] mesonet: ${warnings.totalWarnings} warnings, ${warnings.notable.length} notable`);
-
-  const [spcSummary, spaceSummary, quakeSummary, forecast] = await Promise.all([
-    fetchPastWeekReports().catch((err) => {
-      console.warn(`[sunday] SPC reports failed: ${(err as Error).message}`);
-      return { total: 0, byCategory: { tornado: 0, hail: 0, wind: 0 }, byState: {}, reports: [], daysCovered: 7 };
-    }),
-    fetchSpaceWeatherSummary().catch((err) => {
-      console.warn(`[sunday] SWPC failed: ${(err as Error).message}`);
-      return { recentKp: [], maxKpPastWeek: 0, recentXrayClass: null, notableFlares: [] };
-    }),
-    fetchPastWeekQuakes().catch((err) => {
-      console.warn(`[sunday] USGS failed: ${(err as Error).message}`);
-      return { significantCount: 0, m45PlusCount: 0, largest: null, significant: [] };
-    }),
-    fetchForecastOutlook().catch((err) => {
-      console.warn(`[sunday] forecast outlook failed: ${(err as Error).message}`);
-      return { conusQuadrants: [], international: [], fetchedAt: new Date().toISOString() };
-    }),
-  ]);
-  console.log(`[sunday] SPC: ${spcSummary.total} reports, max Kp: ${spaceSummary.maxKpPastWeek}, quakes: ${quakeSummary.significantCount} significant`);
+  const evidence = await collectSundayEvidence();
+  const { warnings, spcSummary, spaceSummary, quakeSummary, forecast, coverage } = evidence;
+  onAudit(coverage);
+  const outcome = coverageOutcome(coverage);
+  console.log(`[sunday] source coverage: ${outcome}`);
+  if (outcome === 'fatal') throw new Error('No usable observations; saved failure audit without generating prose');
 
   // Active topics remain useful for audit/debugging, but Sunday image slots
   // are selected deterministically by story lane below. This prevents a broad
   // candidate pool from letting weak side topics outrank the lead story.
   const activeTopics = getActiveTopics({
-    severeReportCount: spcSummary.total,
-    maxKpPastWeek: spaceSummary.maxKpPastWeek,
-    notableFlareCount: spaceSummary.notableFlares.length,
-    significantQuakeCount: quakeSummary.significantCount,
+    severeReportCount: spcSummary?.total ?? 0,
+    maxKpPastWeek: spaceSummary?.peakKpObserved ?? 0,
+    notableFlareCount: spaceSummary?.notableFlares.length ?? 0,
+    significantQuakeCount: quakeSummary?.significantCount ?? 0,
   });
   console.log(
     `[sunday] active image topics: ${[...activeTopics].join(',')}`,
@@ -116,6 +96,7 @@ export async function runSunday(): Promise<SundayResult> {
     spaceSummary,
     quakeSummary,
     forecast,
+    coverage,
     spotlight,
     denyPhrases,
     correction: null,
@@ -128,7 +109,7 @@ export async function runSunday(): Promise<SundayResult> {
 
   while (retries < MAX_RETRIES) {
     const collides = checkOpenerCollision(openerHash, recentOpenerHashes);
-    const tooShort = wordCount(draft) < 500;
+    const tooShort = outcome === 'complete' && wordCount(draft) < 500;
     const missingHeaders = !/##\s*Rearview/i.test(draft) || !/##\s*Roadmap/i.test(draft);
     if (!collides && voiceViolations.length === 0 && !tooShort && !missingHeaders) break;
 
@@ -146,6 +127,7 @@ export async function runSunday(): Promise<SundayResult> {
       spaceSummary,
       quakeSummary,
       forecast,
+    coverage,
       spotlight,
       denyPhrases,
       correction: corrections.join('\n\n'),
@@ -172,6 +154,7 @@ export async function runSunday(): Promise<SundayResult> {
       spaceSummary,
       quakeSummary,
       forecast,
+    coverage,
       spotlight,
       denyPhrases: [...denyPhrases, ...similarity.triggerPhrases],
       correction,
@@ -201,6 +184,7 @@ export async function runSunday(): Promise<SundayResult> {
   const keyPhrases = await extractKeyPhrases(finalDraft).catch(() => [] as string[]);
 
   return {
+    coverage,
     spotlight,
     draft: finalDraft,
     similarity,
@@ -227,9 +211,9 @@ interface SundayImagePlan {
 export interface SundayImagePlanOpts {
   draft: string;
   recentImageIds: Set<string>;
-  spcSummary: Awaited<ReturnType<typeof fetchPastWeekReports>>;
-  spaceSummary: Awaited<ReturnType<typeof fetchSpaceWeatherSummary>>;
-  quakeSummary: Awaited<ReturnType<typeof fetchPastWeekQuakes>>;
+  spcSummary: SundayEvidence['spcSummary'];
+  spaceSummary: SundayEvidence['spaceSummary'];
+  quakeSummary: SundayEvidence['quakeSummary'];
   /** Test seam: stub the content-aware judge so the plan is exercisable offline. */
   judge?: typeof pickImagesForContent;
 }
@@ -379,13 +363,13 @@ function laneForImage(
 }
 
 function choosePrimaryLane(opts: SundayImagePlanOpts): SundayStoryLane {
-  const tornadoReports = opts.spcSummary.byCategory.tornado;
-  const severeScore = tornadoReports * 20 + Math.min(opts.spcSummary.total, 1000) / 10;
-  const largestMag = opts.quakeSummary.largest?.mag ?? 0;
-  const quakeScore = opts.quakeSummary.significantCount * 35 + (largestMag >= 6 ? 35 : 0) + (largestMag >= 7 ? 35 : 0);
-  const spaceScore = opts.spaceSummary.maxKpPastWeek >= 4
-    ? opts.spaceSummary.maxKpPastWeek * 20
-    : opts.spaceSummary.notableFlares.length * 30;
+  const tornadoReports = (opts.spcSummary?.byCategory.tornado ?? 0);
+  const severeScore = tornadoReports * 20 + Math.min((opts.spcSummary?.total ?? 0), 1000) / 10;
+  const largestMag = opts.quakeSummary?.largest?.mag ?? 0;
+  const quakeScore = (opts.quakeSummary?.significantCount ?? 0) * 35 + (largestMag >= 6 ? 35 : 0) + (largestMag >= 7 ? 35 : 0);
+  const spaceScore = (opts.spaceSummary?.peakKpObserved ?? 0) >= 4
+    ? (opts.spaceSummary?.peakKpObserved ?? 0) * 20
+    : (opts.spaceSummary?.notableFlares.length ?? 0) * 30;
 
   if (severeScore >= quakeScore && severeScore >= spaceScore && severeScore > 0) return 'severe';
   if (quakeScore >= spaceScore && quakeScore > 0) return 'earthquake';
@@ -396,21 +380,21 @@ function choosePrimaryLane(opts: SundayImagePlanOpts): SundayStoryLane {
 function chooseSecondaryLane(opts: SundayImagePlanOpts, primaryLane: SundayStoryLane): SundayStoryLane | null {
   if (
     primaryLane !== 'earthquake' &&
-    opts.quakeSummary.significantCount > 0 &&
+    (opts.quakeSummary?.significantCount ?? 0) > 0 &&
     draftMentionsLane(opts.draft, 'earthquake')
   ) {
     return 'earthquake';
   }
   if (
     primaryLane !== 'severe' &&
-    opts.spcSummary.byCategory.tornado > 0 &&
+    (opts.spcSummary?.byCategory.tornado ?? 0) > 0 &&
     draftMentionsLane(opts.draft, 'severe')
   ) {
     return 'severe';
   }
   if (
     primaryLane !== 'space' &&
-    (opts.spaceSummary.maxKpPastWeek >= 4 || opts.spaceSummary.notableFlares.length > 0) &&
+    ((opts.spaceSummary?.peakKpObserved ?? 0) >= 4 || (opts.spaceSummary?.notableFlares.length ?? 0) > 0) &&
     draftMentionsLane(opts.draft, 'space')
   ) {
     return 'space';
@@ -528,12 +512,13 @@ function draftMentionsLane(draft: string, lane: SundayStoryLane): boolean {
 }
 
 interface GenerateOpts {
+  coverage: CoverageAudit;
   closer: CloserChoice;
-  warnings: Awaited<ReturnType<typeof fetchPastWeekWarnings>>;
-  spcSummary: Awaited<ReturnType<typeof fetchPastWeekReports>>;
-  spaceSummary: Awaited<ReturnType<typeof fetchSpaceWeatherSummary>>;
-  quakeSummary: Awaited<ReturnType<typeof fetchPastWeekQuakes>>;
-  forecast: Awaited<ReturnType<typeof fetchForecastOutlook>>;
+  warnings: SundayEvidence['warnings'];
+  spcSummary: SundayEvidence['spcSummary'];
+  spaceSummary: SundayEvidence['spaceSummary'];
+  quakeSummary: SundayEvidence['quakeSummary'];
+  forecast: SundayEvidence['forecast'];
   spotlight: string | null;
   denyPhrases: string[];
   correction: string | null;
@@ -546,6 +531,7 @@ async function generate(opts: GenerateOpts): Promise<string> {
     spaceSummary,
     quakeSummary,
     forecast,
+    coverage,
     spotlight,
     denyPhrases,
     correction,
@@ -556,11 +542,11 @@ async function generate(opts: GenerateOpts): Promise<string> {
     { type: 'text' as const, text: VOICE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } },
     {
       type: 'text' as const,
-      text: `SUNDAY CADENCE — REARVIEW + ROADMAP\n\nWrite two clearly-labeled sections: ## Rearview (250-350 words on the past 7 days) and ## Roadmap (350-500 words on the week ahead).\n\nRearview cites real events from the supplied data. Roadmap describes the pattern shaping the next 7 days, with regional cuts.`,
+      text: `SUNDAY CADENCE — REARVIEW + ROADMAP\n\nUse ## Rearview and ## Roadmap. Aim for 250-350 and 350-500 words only when evidence supports that detail. Short partial drafts are correct when sources are missing.\n\nRearview cites real events from the supplied data. Roadmap describes only validated forecast dates for the named city points. If a section has no data, explicitly say it is unavailable.`,
     },
   ];
 
-  const dataBlock = formatDataBlock({ warnings, spcSummary, spaceSummary, quakeSummary, forecast });
+  const dataBlock = formatSundayEvidence({ warnings, spcSummary, spaceSummary, quakeSummary, forecast, coverage });
 
   const sections: string[] = [];
   sections.push(dataBlock);
@@ -580,8 +566,8 @@ async function generate(opts: GenerateOpts): Promise<string> {
 
   sections.push(`STRUCTURE:
 - Open with a concrete specific hook from the past week's data — a named storm, a record, a count.
-- ## Rearview: 3-5 specific events. Cite states, magnitudes, dates. No generalities. Do NOT include any images or image markdown.
-- ## Roadmap: pattern overview, then 2-3 regional cuts (CONUS quadrants + a notable international callout). Tie to mechanism (jet stream position, ridge, trough, MJO phase, etc.) where you can. Do NOT include any images or image markdown.
+- ## Rearview: discuss only supported events, even if fewer than three. Distinguish warnings, preliminary storm reports, and confirmed observations. Qualify counts and rankings with their actual coverage. Do NOT include any images or image markdown.
+- ## Roadmap: available city point forecasts with dates; mention missing cities. Do not invent synoptic mechanisms or extrapolate to entire regions. Do NOT include any images or image markdown.
 - ${closer.instruction}
 
 TIME PRECISION:
@@ -603,80 +589,6 @@ TIME PRECISION:
   });
 }
 
-function formatDataBlock(opts: {
-  warnings: Awaited<ReturnType<typeof fetchPastWeekWarnings>>;
-  spcSummary: Awaited<ReturnType<typeof fetchPastWeekReports>>;
-  spaceSummary: Awaited<ReturnType<typeof fetchSpaceWeatherSummary>>;
-  quakeSummary: Awaited<ReturnType<typeof fetchPastWeekQuakes>>;
-  forecast: Awaited<ReturnType<typeof fetchForecastOutlook>>;
-}): string {
-  const { warnings, spcSummary, spaceSummary, quakeSummary, forecast } = opts;
-  const lines: string[] = ['PAST 7 DAYS — REAL DATA (cite specifics, do not generalize):'];
-
-  lines.push(`\n## NWS warnings (Iowa State Mesonet)`);
-  lines.push(`Total: ${warnings.totalWarnings}`);
-  lines.push(`By type: ${Object.entries(warnings.byType).slice(0, 10).map(([k, v]) => `${k}=${v}`).join(', ')}`);
-  if (warnings.notable.length > 0) {
-    lines.push('Notable events:');
-    for (const w of warnings.notable.slice(0, 6)) {
-      // Sanitize each field even though Mesonet/NWS are trusted upstreams.
-      // Phase 2 C-Link5-Med: an unexpected control char or backtick in any
-      // of these fields would corrupt the model's downstream JSON parsing.
-      const phenomena = sanitizeForPrompt(w.phenomena);
-      const significance = sanitizeForPrompt(w.significance);
-      const areaDesc = sanitizeForPrompt(w.area_desc);
-      const wfo = sanitizeForPrompt(w.wfo);
-      lines.push(`- ${phenomena}.${significance} ${areaDesc} (${wfo}) ${w.issued}`);
-    }
-  }
-
-  lines.push(`\n## SPC storm reports`);
-  lines.push(`Tornado: ${spcSummary.byCategory.tornado}, Hail: ${spcSummary.byCategory.hail}, Wind: ${spcSummary.byCategory.wind}`);
-  const topStates = Object.entries(spcSummary.byState).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  if (topStates.length > 0) {
-    lines.push(`Top states: ${topStates.map(([s, n]) => `${s}=${n}`).join(', ')}`);
-  }
-
-  lines.push(`\n## Space weather (NOAA SWPC)`);
-  lines.push(`Max Kp past week: ${spaceSummary.maxKpPastWeek}`);
-  lines.push(`Recent X-ray peak class: ${spaceSummary.recentXrayClass ?? 'quiet'}`);
-  if (spaceSummary.notableFlares.length > 0) {
-    lines.push('Notable flares:');
-    for (const f of spaceSummary.notableFlares) {
-      lines.push(`- ${f.class} at ${f.time}`);
-    }
-  }
-
-  lines.push(`\n## Significant earthquakes (USGS)`);
-  lines.push(`Significant count: ${quakeSummary.significantCount}, M4.5+: ${quakeSummary.m45PlusCount}`);
-  if (quakeSummary.largest) {
-    lines.push(`Largest: M${quakeSummary.largest.mag.toFixed(1)} ${quakeSummary.largest.place} ${quakeSummary.largest.time}`);
-  }
-  for (const q of quakeSummary.significant.slice(0, 4)) {
-    lines.push(`- M${q.mag.toFixed(1)} ${q.place}${q.tsunami ? ' (tsunami flag)' : ''}`);
-  }
-
-  lines.push(`\nNEXT 7 DAYS — FORECAST OUTLOOK (Open-Meteo / ERA5):`);
-  for (const r of forecast.conusQuadrants) {
-    if (r.daily.length === 0) continue;
-    const week = r.daily.slice(0, 7);
-    const avgMax = week.reduce((s, d) => s + d.tMaxF, 0) / week.length;
-    const totalPrecip = week.reduce((s, d) => s + d.precipIn, 0);
-    const peakPrecipDay = week.reduce((p, d) => (d.precipProb > p.precipProb ? d : p), week[0]);
-    lines.push(`- ${r.region}: avg high ${avgMax.toFixed(0)}°F, week precip ${totalPrecip.toFixed(2)}", peak precip prob ${peakPrecipDay.precipProb}% on ${peakPrecipDay.date}`);
-  }
-  for (const r of forecast.international.slice(0, 1)) {
-    if (r.daily.length === 0) continue;
-    const week = r.daily.slice(0, 7);
-    const avgMax = week.reduce((s, d) => s + d.tMaxF, 0) / week.length;
-    lines.push(`- International: ${r.region}: avg high ${avgMax.toFixed(0)}°F over the week`);
-  }
-
-  return lines.join('\n');
-}
-
 function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
-
-export { MesonetEmptyError };
