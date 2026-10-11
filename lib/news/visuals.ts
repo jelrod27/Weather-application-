@@ -30,7 +30,7 @@ const HAZARD_FAMILIES: Array<[RegExp, HazardFamily]> = [
   [/flood/i, 'flood'],
   [/freeze|frost/i, 'freeze'],
   [/red flag|fire weather/i, 'fire'],
-  [/marine|gale|storm force|hazardous seas/i, 'marine'],
+  [/marine|gale|storm force|hurricane force|^storm (warning|watch)$|hazardous seas/i, 'marine'],
   [/blizzard|winter|ice storm|snow|sleet/i, 'winter'],
   [/high wind|wind advisory|extreme wind/i, 'wind'],
   [/hurricane|tropical/i, 'tropical'],

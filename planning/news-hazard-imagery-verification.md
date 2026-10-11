@@ -71,18 +71,32 @@ violations or material baseline smells. Standards: 2 findings resolved, 0 open.
 The independent phase-1 spec review found scientific reference-map cropping,
 lost nested publisher metadata, missing product facts after image failure, and
 quote handling that truncated some illustrative captions. All four were fixed
-with regression coverage. Full-page browser verification remains a separate
-evidence limitation below. Follow-up review through `0a2b43b` found no remaining
+with regression coverage. Full-page browser verification is recorded below.
+Follow-up review through `0a2b43b` found no remaining
 actionable phase-1 gaps or scope creep. Spec: 4 findings resolved, 0 open.
 
-## Pending verification
+## Deployed and CI verification
 
 Automatic approval review rejected both local production-server launch attempts,
 including a hidden background launch, with only “blocked by policy” as the
-reason. Local full-page browser journeys and Lighthouse therefore remain
-unverified. The PR's deployed preview, Playwright and Lighthouse checks must
-provide that evidence before merge. No automatic publication or merge is part
-of this work.
+reason. At `e24fbed`, all five focused Chromium news tests passed against the
+authenticated Vercel preview, including desktop/mobile imagery, map bounds and
+broken-image fallbacks. Screenshots were inspected. The full CI E2E suite,
+Lighthouse, build, unit tests, type checks, lint and security gates also passed.
+
+## CodeRabbit follow-up
+
+Two additional findings were reproduced and fixed before merge:
+
+- Marine Storm Warnings/Watches and Hurricane Force Wind Warnings now select
+  marine illustrations; Tropical Storm and Hurricane Warnings remain tropical.
+- Invalid or relative earthquake links return missing imagery without rejecting
+  the batch. Other earthquake items still receive their matching ShakeMaps;
+  valid URLs on unrelated hosts remain rejected without a fetch.
+
+The added regressions produced five failures before the fixes. After the fixes,
+all seven targeted suites passed (102 tests), and changed-file lint passed.
+The updated commit must pass the same required CI gates before merge.
 
 ## Limits
 

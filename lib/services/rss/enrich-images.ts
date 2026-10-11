@@ -87,7 +87,13 @@ async function resolveStoryImage(item: RSSItem): Promise<NewsImage | undefined> 
 }
 
 async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<NewsImage | undefined> {
-  if (new URL(eventPageUrl).hostname !== 'earthquake.usgs.gov') return undefined;
+  let hostname: string;
+  try {
+    hostname = new URL(eventPageUrl).hostname;
+  } catch {
+    return undefined;
+  }
+  if (hostname !== 'earthquake.usgs.gov') return undefined;
   const match = eventPageUrl.match(USGS_EVENT_ID);
   if (!match?.[1]) return undefined;
 

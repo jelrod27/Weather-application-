@@ -38,6 +38,8 @@ describe('hazard imagery provenance', () => {
     ['High Wind Warning', 'wind'], ['Freeze Warning', 'freeze'], ['Frost Advisory', 'freeze'],
     ['Flash Flood Warning', 'flash-flood'], ['Flood Warning', 'flood'], ['Red Flag Warning', 'fire'],
     ['Special Marine Warning', 'marine'], ['Winter Storm Warning', 'winter'], ['New Unknown Event', 'other'],
+    ['Storm Warning', 'marine'], ['Storm Watch', 'marine'], ['Hurricane Force Wind Warning', 'marine'],
+    ['Tropical Storm Warning', 'tropical'], ['Hurricane Warning', 'tropical'],
   ])('uses the structured %s type regardless of headline edits', (event, expected) => {
     expect(hazardFamily({ ...freeze, hazard: { event }, title: 'Convective outlook in a renamed town' })).toBe(expected);
   });
