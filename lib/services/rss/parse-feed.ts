@@ -4,7 +4,10 @@
 
 import { XMLParser } from 'fast-xml-parser';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
+import { spcOutlookImage } from '@/lib/news/spc-image';
+import { isoTimestamp } from '@/lib/news/visuals';
 import { decodeHtmlEntities } from './html-utils';
+import type { NewsHazard, NewsImage } from '@/lib/news/visuals';
 import type { FeedCategory, FeedSource } from './feedSources';
 
 export interface RSSItem {
@@ -18,6 +21,8 @@ export interface RSSItem {
   priority: 'high' | 'medium' | 'low';
   timestamp: Date;
   imageUrl?: string;
+  image?: NewsImage;
+  hazard?: NewsHazard;
   author?: string;
   location?: string;
   magnitude?: number; // For earthquakes
@@ -198,6 +203,32 @@ function extractImageFromItem(node: XmlNode): string | undefined {
   return extractImage(node, itemHtmlForImages(node));
 }
 
+interface FeedImageFields {
+  rawImage?: string;
+  imageCredit?: string;
+  imageCaption?: string;
+  imageAlt?: string;
+}
+
+/** Keep media-specific credits/descriptions attached to the selected image. */
+function imageFields(node: XmlNode): FeedImageFields {
+  const rawImage = extractImageFromItem(node);
+  const media = [...asArray(node['media:thumbnail']), ...asArray(node['media:content'])]
+    .find((candidate) => firstText(candidate, ['@_url', 'url']) === rawImage);
+  const htmlImage = Array.from(itemHtmlForImages(node).matchAll(/<img\b[^>]*>/gi)).find(([tag]) => {
+    const src = tag.match(/\ssrc\s*=\s*(["'])(.*?)\1/i)?.[2];
+    return src && decodeHtmlEntities(src.trim()) === rawImage;
+  });
+  const htmlAlt = htmlImage?.[0].match(/\salt\s*=\s*(["'])(.*?)\1/i)?.[2];
+  const caption = (media && firstText(media, ['media:description', 'media:title'])) ?? firstText(node, ['media:description']);
+  return {
+    rawImage,
+    imageCredit: (media && firstText(media, ['media:credit', 'credit'])) ?? firstText(node, ['media:credit', 'copyright', 'rights']),
+    imageCaption: caption ?? htmlAlt,
+    imageAlt: htmlAlt ?? caption,
+  };
+}
+
 /** Best-effort image extraction: media:*, enclosure, then inline <img> in body. */
 function extractImage(node: XmlNode, body: string | undefined): string | undefined {
   const mediaThumb = node['media:thumbnail'] ?? node.thumbnail;
@@ -248,6 +279,10 @@ function buildItem(
     location?: string;
     magnitude?: number;
     depth?: number;
+    hazard?: NewsHazard;
+    imageCredit?: string;
+    imageCaption?: string;
+    imageAlt?: string;
   }
 ): RSSItem {
   // Upgrade http -> https before the scheme guard: CSP img-src only allows
@@ -265,6 +300,13 @@ function buildItem(
     priority: fields.priority ?? source.priority,
     timestamp,
     imageUrl: safeImage || undefined,
+    image: spcOutlookImage({ sourceId: source.id, url: fields.safeLink, title: fields.title, body: fields.body })
+      ?? (safeImage ? {
+        url: safeImage, kind: 'editorial', alt: fields.imageAlt ? cleanHtml(fields.imageAlt) : `Image supplied with ${cleanHtml(fields.title)}`,
+        credit: fields.imageCredit ? cleanHtml(fields.imageCredit) : `Via ${source.name}`,
+        sourceUrl: fields.safeLink, caption: fields.imageCaption ? cleanHtml(fields.imageCaption) : 'Publisher-supplied image',
+      } : undefined),
+    hazard: fields.hazard,
     author: fields.author ? cleanHtml(fields.author) : undefined,
     location: fields.location,
     magnitude: fields.magnitude,
@@ -307,7 +349,7 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
           body,
           pubDate: firstText(item, ['pubDate', 'pubdate', 'dc:date', 'date']),
           author: firstText(item, ['author', 'dc:creator']),
-          rawImage: extractImageFromItem(item),
+          ...imageFields(item),
         })
       );
     } catch {
@@ -351,6 +393,14 @@ export function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
       let magnitude: number | undefined;
       let depth: number | undefined;
       let location: string | undefined;
+      const event = source.id === 'nws-alerts' ? firstText(entry, ['cap:event']) : undefined;
+      const hazard: NewsHazard | undefined = event ? {
+        messageId: firstText(entry, ['id']),
+        event: cleanHtml(event),
+        effective: isoTimestamp(firstText(entry, ['cap:effective'])),
+        expires: isoTimestamp(firstText(entry, ['cap:expires'])),
+      } : undefined;
+      if (source.id === 'nws-alerts') location = firstText(entry, ['cap:areaDesc']);
       if (source.category === 'earthquakes' && title) {
         const magMatch = title.match(/^M\s*([\d.]+)/);
         if (magMatch) magnitude = parseFloat(magMatch[1]);
@@ -370,7 +420,8 @@ export function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
           body: summary,
           pubDate: firstText(entry, ['updated', 'published']),
           author,
-          rawImage: extractImageFromItem(entry),
+          ...imageFields(entry),
+          hazard,
           priority: determinePriority(source, magnitude),
           location,
           magnitude,

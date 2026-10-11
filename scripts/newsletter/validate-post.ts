@@ -11,6 +11,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts';
+import { publicationErrors } from '@/lib/newsletter/publication';
 import { imageGateFor } from './image-selection';
 import { extractMarkdownImages } from './markdown-images';
 import { IMAGES, type ImageEntry } from './images';
@@ -29,10 +30,20 @@ export interface ValidationResult {
   auditMarkdown: string;
 }
 
-export function validateGeneratedPost(filePath: string): ValidationResult {
+interface PostValidationOptions { publication?: boolean; draft?: boolean; root?: string }
+
+export function validateGeneratedPost(filePath: string, opts: PostValidationOptions = {}): ValidationResult {
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const errors: string[] = [];
+  if (opts.publication) {
+    const root = opts.root ?? process.cwd();
+    const draftRoot = path.resolve(root, 'content/newsletter-drafts') + path.sep;
+    if (opts.draft && !path.resolve(filePath).startsWith(draftRoot)) {
+      errors.push('Draft validation is only allowed inside content/newsletter-drafts');
+    }
+    errors.push(...publicationErrors(raw, filePath, { root, requireAudit: true, allowDraft: opts.draft }));
+  }
   // Same gate the selection path picks through — if selection went through it,
   // these calls cannot produce an error.
   const gate = imageGateFor(content);
@@ -178,7 +189,7 @@ async function main(): Promise<void> {
   const auditOnly = args.includes('--audit');
   if (!fileArg) throw new Error('Usage: tsx scripts/newsletter/validate-post.ts <post.md> [--audit]');
 
-  const result = validateGeneratedPost(path.resolve(fileArg));
+  const result = validateGeneratedPost(path.resolve(fileArg), { publication: true, draft: args.includes('--draft') });
   if (auditOnly && result.auditMarkdown) {
     console.log(result.auditMarkdown);
   }

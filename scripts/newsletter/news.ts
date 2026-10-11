@@ -10,10 +10,13 @@
  * fail the entire run because the news API hiccupped.
  */
 
+import { inWindow, collectSource, objectRecord } from './data/source';
+
 import { callAnthropic, DEFAULT_MODEL } from './repetition';
 import { parseModelJsonObject } from './model-json';
-import type { Topic } from './topics';
 import { sanitizeForPrompt } from './util/sanitize';
+import type { SourceAudit } from './data/source';
+import type { Topic } from './topics';
 
 const ALLOWED_NEWS_HOSTS: ReadonlySet<string> = new Set([
   'www.16bitweather.co',
@@ -28,6 +31,7 @@ function resolveNewsRssUrl(): string {
   if (!override) return fallback;
   try {
     const parsed = new URL(override);
+    if (parsed.username || parsed.password) return fallback;
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       console.warn(`[news] NEWSLETTER_NEWS_URL has unsupported scheme ${parsed.protocol}; using default`);
       return fallback;
@@ -44,7 +48,6 @@ function resolveNewsRssUrl(): string {
 }
 
 const NEWS_RSS_URL = resolveNewsRssUrl();
-const FETCH_TIMEOUT_MS = 12_000;
 
 export interface NewsHeadline {
   title: string;
@@ -59,39 +62,44 @@ export interface NewsAngle {
   sources: string[];
 }
 
-export async function fetchHeadlines(): Promise<NewsHeadline[]> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(NEWS_RSS_URL, { signal: controller.signal });
-    if (!res.ok) {
-      console.warn(`[news] rss ${res.status}; continuing without news`);
-      return [];
-    }
-    const data = (await res.json()) as { items?: unknown };
-    const list = Array.isArray(data?.items) ? data.items : [];
-    return list.map((entry) => {
-      const item = entry as {
-        title?: string;
-        source?: string;
-        timestamp?: string;
-        url?: string;
-        description?: string;
-      };
-      return {
-        title: item.title ?? '',
-        source: item.source ?? 'Unknown',
-        publishedAt: item.timestamp,
-        url: item.url,
-        description: item.description,
-      };
-    }).filter((headline) => headline.title.length > 0);
-  } catch (err) {
-    console.warn(`[news] fetch failed: ${(err as Error).message}; continuing without news`);
-    return [];
-  } finally {
-    clearTimeout(timer);
+export function formatWednesdayNewsContext(angle: NewsAngle | null): string {
+  if (!angle || !angle.sources.length) {
+    return 'No current-event hook was verified from the available headline evidence. Write an evergreen educational article. Say current-event coverage is unavailable; do not claim a quiet week, no events, or that nothing major happened.';
   }
+  return [
+    `CURRENT ANGLE (editorial interpretation, not independently verified): ${sanitizeForPrompt(angle.angle)}`,
+    'These sampled headlines are the only supplied current-event evidence. Restrict claims to what they support; include source links and dates. Do not infer complete coverage or invent additional details.',
+    ...angle.sources.map(source => `- ${sanitizeForPrompt(source)}`),
+  ].join('\n');
+}
+
+export async function fetchHeadlines(onAudit: (audit: SourceAudit) => void = () => {}, now = new Date()): Promise<NewsHeadline[]> {
+  const requested = { start: new Date(now.getTime() - 72 * 3_600_000).toISOString(), end: now.toISOString() };
+  const result = await collectSource({
+    id: 'news-headlines', label: 'Recent headline sample (up to 40; original stories require review)',
+    url: NEWS_RSS_URL, requested, unit: 'sampled headlines',
+  }, raw => {
+    const payload = objectRecord(raw);
+    if (payload.status !== 'ok' || !Array.isArray(payload.items)) throw new SyntaxError('Missing headlines');
+    const headlines: NewsHeadline[] = [];
+    for (const entry of payload.items.slice(0, 40)) {
+      try {
+        const row = objectRecord(entry);
+        if (typeof row.title !== 'string' || !row.title.trim() || typeof row.source !== 'string' ||
+            typeof row.timestamp !== 'string' || !inWindow(Date.parse(row.timestamp), requested) ||
+            typeof row.url !== 'string' || !/^https?:\/\//.test(row.url)) continue;
+        headlines.push({ title: row.title, source: row.source, publishedAt: new Date(row.timestamp).toISOString(), url: row.url,
+          description: typeof row.description === 'string' ? row.description : undefined });
+      } catch { /* Invalid headlines do not become current-event evidence. */ }
+    }
+    return {
+      data: headlines.length ? headlines : null, records: headlines.length,
+      times: headlines.flatMap(h => h.publishedAt ? [h.publishedAt] : []), covered: [],
+      status: 'partial', reasons: ['Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals'],
+    };
+  });
+  onAudit(result.audit);
+  return result.data ?? [];
 }
 
 /**
@@ -158,8 +166,9 @@ function parseAngle(raw: string, headlines: NewsHeadline[]): NewsAngle | null {
   if (!angle) return null;
   const indices = Array.isArray(parsed.source_indices) ? (parsed.source_indices as unknown[]) : [];
   const sources = indices
-    .map((i) => (typeof i === 'number' ? headlines[i - 1]?.title : undefined))
+    .map((i) => (typeof i === 'number' && Number.isInteger(i) && i >= 1 && i <= 30 && headlines[i - 1]
+      ? `${headlines[i - 1].title} (${headlines[i - 1].url}; ${headlines[i - 1].publishedAt})` : undefined))
     .filter((s): s is string => Boolean(s))
     .slice(0, 5);
-  return { angle, sources };
+  return sources.length ? { angle, sources } : null;
 }

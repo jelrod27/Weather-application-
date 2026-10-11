@@ -6,12 +6,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { blogHeroImage } from '@/lib/blog/hero';
-import type { ImageAuditEntry, ImageEntry } from './images';
+import { coverageAuditSchema, coverageDisclosure, coverageOutcome } from '@/lib/newsletter/coverage';
+import { buildReceipt } from '@/lib/newsletter/publication';
 import { buildPostSummary, buildPostTitle } from './post-header';
+import type { CoverageAudit, CoverageOutcome } from '@/lib/newsletter/coverage';
+import type { ImageAuditEntry, ImageEntry } from './images';
 import type { TopicSlug } from './topics';
-
-const BLOG_DIR = path.join(process.cwd(), 'content/blog');
 
 export interface PublishWednesdayInput {
   cadence: 'wednesday_topic';
@@ -54,16 +56,27 @@ export type PublishInput = PublishWednesdayInput | PublishSundayInput;
 
 export interface PublishResult {
   filePath: string;
+  auditPath: string;
+  outcome: CoverageOutcome;
   slug: string;
   title: string;
 }
 
-export async function publishPost(input: PublishInput, opts: { dryRun?: boolean } = {}): Promise<PublishResult> {
+interface PublishOptions { coverage: CoverageAudit; dryRun?: boolean; root?: string }
+
+export async function publishPost(input: PublishInput, opts: PublishOptions): Promise<PublishResult> {
+  const coverage = coverageAuditSchema.parse(opts.coverage);
+  const outcome = coverageOutcome(coverage);
+  if (outcome === 'fatal') throw new Error('Cannot write a narrative without usable evidence');
+  if (coverage.cadence !== input.cadence) throw new Error('Coverage cadence mismatch');
+  const root = opts.root ?? process.cwd();
   const date = new Date();
   const isoDate = date.toISOString();
   const datePrefix = isoDate.slice(0, 10);
 
   const { title, summary, slug } = buildHeader(input, datePrefix);
+  const publicationId = `${datePrefix}-${input.cadence.replaceAll('_', '-')}-${randomUUID()}`;
+  const auditPath = path.join(root, 'content/newsletter-audits', `${publicationId}.json`);
   const tags = buildTags(input);
   // Hero is the page banner — should never be archival imagery presented
   // without context. Prefer live > reference > archival, then first image.
@@ -78,6 +91,9 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
     blogHeroImage({ title, heroImage: '', tags });
 
   const frontmatterFields: Record<string, unknown> = {
+    publication_version: 1,
+    publication_id: publicationId,
+    coverage_status: outcome,
     slug,
     title,
     date: isoDate,
@@ -107,19 +123,28 @@ export async function publishPost(input: PublishInput, opts: { dryRun?: boolean 
   }
 
   const yaml = serializeFrontmatter(frontmatterFields);
-  const fileBody = `---\n${yaml}---\n\n${input.body.trim()}\n`;
+  const fileBody = `---\n${yaml}---\n\n${input.body.trim()}\n\n${coverageDisclosure(coverage)}\n`;
   const fileName = `${datePrefix}-${slug}.md`;
-  const filePath = path.join(BLOG_DIR, fileName);
+  const directory = outcome === 'complete' ? path.join(root, 'content/blog') : path.join(root, 'content/newsletter-drafts', publicationId);
+  const filePath = path.join(directory, fileName);
+  const result = { filePath, auditPath, outcome, slug, title };
 
   if (opts.dryRun) {
     console.log(`[publish] DRY-RUN — would write ${filePath} (${fileBody.length} bytes)`);
-    return { filePath, slug, title };
+    return result;
   }
 
-  fs.mkdirSync(BLOG_DIR, { recursive: true });
-  fs.writeFileSync(filePath, fileBody, 'utf8');
+  fs.mkdirSync(directory, { recursive: true });
+  fs.mkdirSync(path.dirname(auditPath), { recursive: true });
+  const auditRaw = JSON.stringify(coverage, null, 2) + '\n';
+  fs.writeFileSync(auditPath, auditRaw, 'utf8');
+  if (outcome === 'complete') {
+    const receipt = buildReceipt(fileBody, auditRaw, { decision: 'complete', reviewer: 'coverage-validation', gapDispositions: {} });
+    fs.writeFileSync(auditPath.replace(/\.json$/, '.review.json'), JSON.stringify(receipt, null, 2) + '\n');
+  }
+  fs.writeFileSync(filePath, fileBody, { encoding: 'utf8', flag: 'wx' });
   console.log(`[publish] wrote ${filePath} (${fileBody.length} bytes)`);
-  return { filePath, slug, title };
+  return result;
 }
 
 function formatImageAuditEntry(entry: ImageAuditEntry): string {

@@ -7,14 +7,15 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ExternalLink, Clock, MapPin, Activity } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
-import CategoryBadge, { getCategoryConfig } from './CategoryBadge';
+import CategoryBadge from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
+import NewsVisual, { NewsHazardFacts } from './NewsVisual';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { safeExternalUrl } from '@/lib/safe-url';
 
@@ -24,9 +25,8 @@ interface NewsCardProps {
   className?: string;
 }
 
-export default function NewsCard({ item, variant = 'default', className }: NewsCardProps) {
+export default function NewsCard({ item, variant = 'default', className }: NewsCardProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
-  const [imageError, setImageError] = useState(false);
   const safeUrl = safeExternalUrl(item.url);
 
   const openSafeUrl = () => {
@@ -68,6 +68,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       openSafeUrl();
@@ -92,33 +93,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
       >
         <CardContent className="p-4">
           <div className="flex gap-3">
-            {/* Image thumbnail or category icon */}
-            {item.imageUrl && !imageError ? (
-              <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden border-2 rounded">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
-                />
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  'w-16 h-16 flex-shrink-0 border-2 rounded flex items-center justify-center',
-                  'border-border',
-                  item.category === 'earthquakes' && item.magnitude != null && 'bg-orange-600/20'
-                )}
-                data-testid="news-card-compact-data"
-              >
-                {item.category === 'earthquakes' && item.magnitude != null ? (
-                  <span className="font-mono font-bold text-sm">M{item.magnitude.toFixed(1)}</span>
-                ) : (
-                  <CategoryBadge category={item.category} />
-                )}
-              </div>
-            )}
+            <NewsVisual item={item} variant="compact" />
 
             {/* Content */}
             <div className="flex-1 min-w-0">
@@ -146,6 +121,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
               >
                 {truncatedTitle}
               </h3>
+              <NewsHazardFacts item={item} />
               <p className={cn('text-xs mt-1', themeClasses.text)}>
                 {item.source} • {timeAgo}
               </p>
@@ -155,18 +131,6 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
       </Card>
     );
   }
-
-  // Default variant. The whole card is the link (matching NewsHero and the
-  // compact variant); the READ button stops propagation so it doesn't open a
-  // second tab. `showImage` collapses to the text layout when there is no
-  // image or it failed to load, so an errored image never leaves a blank banner
-  // and a missing priority indicator.
-  const showImage = Boolean(item.imageUrl) && !imageError;
-  const categoryConfig = getCategoryConfig(item.category);
-  const CategoryIcon = categoryConfig.icon;
-  const earthquakeMagnitude =
-    item.category === 'earthquakes' ? item.magnitude : undefined;
-  const showEarthquakeData = earthquakeMagnitude != null;
 
   return (
     <Card
@@ -182,64 +146,13 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
       tabIndex={0}
       aria-label={`${item.title} from ${item.source}, ${timeAgo}. Opens in new tab`}
     >
-      {/* Image */}
-      {showImage ? (
-        <div className="relative w-full h-52 sm:h-56 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.imageUrl}
-            alt={item.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImageError(true)}
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent"
-            aria-hidden="true"
-          />
-          <div className="absolute top-2 right-2 flex gap-2">
-            <PriorityIndicator priority={item.priority} size="md" />
-          </div>
-        </div>
-      ) : (
-        // Hazard items without provenance-bound imagery stay imageless on
-        // purpose. Earthquakes get a data-forward magnitude panel; other
-        // categories keep the category icon banner.
-        <div
-          className={cn(
-            'relative w-full border-b-2 flex items-center justify-center',
-            showEarthquakeData ? 'h-28' : 'h-24',
-            categoryConfig.colorClass
-          )}
-          data-testid="news-card-data-banner"
-          // Magnitude/location/depth are real content for SR users; only the
-          // decorative category-icon banner stays hidden.
-          aria-hidden={!showEarthquakeData}
-        >
-          {showEarthquakeData ? (
-            <div className="flex flex-col items-center gap-0.5 px-3 text-center font-mono">
-              <span className="text-3xl sm:text-4xl font-bold leading-none tracking-tight">
-                M{earthquakeMagnitude.toFixed(1)}
-              </span>
-              {item.location ? (
-                <span className="text-xs opacity-90 line-clamp-1 max-w-full">{item.location}</span>
-              ) : null}
-              {typeof item.depth === 'number' ? (
-                <span className="text-[10px] opacity-75">{item.depth.toFixed(1)} km depth</span>
-              ) : null}
-            </div>
-          ) : (
-            <CategoryIcon className="w-10 h-10 opacity-90" aria-hidden="true" />
-          )}
-          <div className="absolute top-2 right-2 flex gap-2">
-            <PriorityIndicator priority={item.priority} size="md" />
-          </div>
-        </div>
-      )}
+      <NewsVisual item={item} />
 
       {/* Header */}
       <CardHeader className="flex-1">
         <div className="flex gap-2 mb-2 flex-wrap">
           <CategoryBadge category={item.category} />
+          <PriorityIndicator priority={item.priority} size="sm" />
           {/* Magnitude badge for earthquakes */}
           {item.magnitude && (
             <span className={cn(
@@ -261,6 +174,7 @@ export default function NewsCard({ item, variant = 'default', className }: NewsC
         >
           {truncatedTitle}
         </CardTitle>
+        <NewsHazardFacts item={item} />
       </CardHeader>
 
       {/* Description */}

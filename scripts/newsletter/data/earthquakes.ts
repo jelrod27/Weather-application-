@@ -1,13 +1,8 @@
-/**
- * USGS earthquake feed — significant earthquakes in the past 7 days.
- * Free, no API key.
- *
- * Endpoint: https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson
- */
-
-const SIGNIFICANT_WEEK = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson';
-const M45_WEEK = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson';
-const FETCH_TIMEOUT_MS = 15_000;
+/** USGS FDSN queries use the recap's exact interval, not a shifting weekly feed. */
+import { reportingWindow } from '@/lib/newsletter/coverage';
+import { inWindow, collectSource, finiteNumber, objectRecord } from './source';
+import type { ReportingWindow } from '@/lib/newsletter/coverage';
+import type { Collected } from './source';
 
 export interface QuakeRecord {
   mag: number;
@@ -17,73 +12,65 @@ export interface QuakeRecord {
   tsunami: boolean;
   depth_km: number | null;
 }
-
 export interface QuakeWeekSummary {
-  significantCount: number;
-  m45PlusCount: number;
+  significantCount: number | null;
+  m45PlusCount: number | null;
   largest: QuakeRecord | null;
   significant: QuakeRecord[];
 }
 
-export async function fetchPastWeekQuakes(): Promise<QuakeWeekSummary> {
-  const [significant, m45plus] = await Promise.all([
-    fetchGeoJson(SIGNIFICANT_WEEK),
-    fetchGeoJson(M45_WEEK),
+export async function fetchPastWeekQuakes(window = reportingWindow()): Promise<Collected<QuakeWeekSummary>> {
+  const [significant, m45] = await Promise.all([
+    collectQuakes('significant', { minsig: '601' }, window),
+    collectQuakes('m45', { minmagnitude: '4.5' }, window),
   ]);
-  const sig = parseQuakes(significant);
-  const m45 = parseQuakes(m45plus);
-
-  let largest: QuakeRecord | null = null;
-  for (const q of m45) {
-    if (!largest || q.mag > largest.mag) largest = q;
-  }
-
   return {
-    significantCount: sig.length,
-    m45PlusCount: m45.length,
-    largest,
-    significant: sig.slice(0, 8),
+    data: significant.data || m45.data ? {
+      significantCount: significant.data?.length ?? null, m45PlusCount: m45.data?.length ?? null,
+      largest: m45.data?.reduce<QuakeRecord | null>((best, q) => !best || q.mag > best.mag ? q : best, null) ?? null,
+      significant: significant.data?.slice(0, 8) ?? [],
+    } : null,
+    sources: [significant.audit, m45.audit],
   };
 }
 
-interface GeoJsonFeature {
-  properties: {
-    mag: number | null;
-    place: string;
-    time: number;
-    url: string;
-    tsunami?: number;
-  };
-  geometry?: {
-    coordinates?: [number, number, number?];
-  };
-}
-
-function parseQuakes(raw: unknown): QuakeRecord[] {
-  const features = (raw as { features?: GeoJsonFeature[] })?.features;
-  if (!Array.isArray(features)) return [];
-  // USGS returns mag: null for preliminary reports where magnitude isn't yet determined.
-  // Skip those — without a magnitude they can't be ranked or formatted.
-  return features
-    .filter((f) => typeof f.properties.mag === 'number' && Number.isFinite(f.properties.mag))
-    .map((f) => ({
-      mag: f.properties.mag as number,
-      place: f.properties.place,
-      time: new Date(f.properties.time).toISOString(),
-      url: f.properties.url,
-      tsunami: f.properties.tsunami === 1,
-      depth_km: f.geometry?.coordinates?.[2] ?? null,
-    }));
-}
-
-async function fetchGeoJson(url: string): Promise<unknown> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`USGS ${res.status} for ${url}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+async function collectQuakes(id: string, filter: Record<string, string>, window: ReportingWindow) {
+  const params = new URLSearchParams({
+    format: 'geojson', starttime: window.start,
+    endtime: new Date(Date.parse(window.end) - 1).toISOString(),
+    orderby: 'time', limit: '20000', ...filter,
+  });
+  return collectSource({
+    id: `usgs-${id}`, label: `USGS ${id === 'significant' ? 'significant (significance > 600)' : 'M4.5+'} earthquakes`,
+    url: `https://earthquake.usgs.gov/fdsnws/event/1/query?${params}`, requested: window, unit: 'catalog queries',
+  }, raw => {
+    const payload = objectRecord(raw);
+    if (payload.type !== 'FeatureCollection' || !Array.isArray(payload.features)) throw new SyntaxError('Missing feature collection');
+    const rows = new Map<string, QuakeRecord>();
+    let rejected = 0;
+    for (const feature of payload.features) {
+      try {
+        const item = objectRecord(feature);
+        const p = objectRecord(item.properties);
+        const mag = finiteNumber(p.mag);
+        const time = finiteNumber(p.time);
+        if (mag === null || mag < -2 || mag > 10 || time === null || !inWindow(time, window) ||
+            typeof p.place !== 'string' || !p.place.trim() || typeof p.url !== 'string' ||
+            !/^https:\/\/earthquake\.usgs\.gov\//.test(p.url) || typeof item.id !== 'string') { rejected++; continue; }
+        if ((id === 'm45' && mag < 4.5) || (id === 'significant' && (finiteNumber(p.sig) === null || Number(p.sig) <= 600))) { rejected++; continue; }
+        const geometry = item.geometry ? objectRecord(item.geometry) : null;
+        const depth = Array.isArray(geometry?.coordinates) ? finiteNumber(geometry.coordinates[2]) : null;
+        rows.set(item.id, { mag, place: p.place, time: new Date(time).toISOString(), url: p.url, tsunami: p.tsunami === 1, depth_km: depth });
+      } catch { rejected++; }
+    }
+    const reasons = rejected ? [`${rejected} unvalidated events; counts and largest event cover validated observations only`] : [];
+    if (payload.features.length >= 20000) reasons.push('Query reached its result limit; interval may be incomplete');
+    const records = [...rows.values()].sort((a, b) => b.time.localeCompare(a.time));
+    return {
+      data: records.length || !reasons.length ? records : null, records: records.length, times: records.map(q => q.time),
+      covered: reasons.length ? [] : [window], reasons,
+      expectedUnits: 1, observedUnits: reasons.length ? 0 : 1,
+      status: reasons.length ? 'partial' : 'complete',
+    };
+  });
 }

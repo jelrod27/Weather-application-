@@ -1,0 +1,74 @@
+[
+  {
+    "time_tag": "2026-10-04T22:01:00Z",
+    "satellite": 18,
+    "flux": 2.1268922179018546e-9,
+    "observed_flux": 2.775407281774278e-8,
+    "electron_correction": 2.562718037779632e-8,
+    "electron_contaminaton": true,
+    "energy": "0.05-0.4nm"
+  },
+  {
+    "time_tag": "2026-10-04T22:01:00Z",
+    "satellite": 18,
+    "flux": 2.1174403741497372e-7,
+    "observed_flux": 2.6879780534727615e-7,
+    "electron_correction": 5.7053764379588756e-8,
+    "electron_contaminaton": false,
+    "energy": "0.1-0.8nm"
+  },
+  {
+    "time_tag": "2026-10-04T22:02:00Z",
+    "satellite": 18,
+    "flux": 9.999999717180685e-10,
+    "observed_flux": 2.5197619990535713e-8,
+    "electron_correction": 2.519271191658845e-8,
+    "electron_contaminaton": true,
+    "energy": "0.05-0.4nm"
+  },
+  {
+    "time_tag": "2026-10-04T22:02:00Z",
+    "satellite": 18,
+    "flux": 2.1294410146310838e-7,
+    "observed_flux": 2.6835331823349406e-7,
+    "electron_correction": 5.54092309812404e-8,
+    "electron_contaminaton": false,
+    "energy": "0.1-0.8nm"
+  },
+  {
+    "time_tag": "2026-10-11T21:57:00Z",
+    "satellite": 18,
+    "flux": 1.0329678445941681e-8,
+    "observed_flux": 1.8811306290444918e-8,
+    "electron_correction": 8.481627844503237e-9,
+    "electron_contaminaton": false,
+    "energy": "0.05-0.4nm"
+  },
+  {
+    "time_tag": "2026-10-11T21:57:00Z",
+    "satellite": 18,
+    "flux": 8.45918805225665e-7,
+    "observed_flux": 8.775223250268027e-7,
+    "electron_correction": 3.160351624842406e-8,
+    "electron_contaminaton": false,
+    "energy": "0.1-0.8nm"
+  },
+  {
+    "time_tag": "2026-10-11T21:58:00Z",
+    "satellite": 18,
+    "flux": 7.873277141356994e-9,
+    "observed_flux": 1.7106135175026793e-8,
+    "electron_correction": 9.2328580336698e-9,
+    "electron_contaminaton": true,
+    "energy": "0.05-0.4nm"
+  },
+  {
+    "time_tag": "2026-10-11T21:58:00Z",
+    "satellite": 18,
+    "flux": 8.366016572836088e-7,
+    "observed_flux": 8.691771427038475e-7,
+    "electron_correction": 3.257549607837973e-8,
+    "electron_contaminaton": false,
+    "energy": "0.1-0.8nm"
+  }
+]

@@ -68,6 +68,24 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(workflow).not.toMatch(/\bHUSKY=0\b/);
     expect(workflow).not.toContain('--no-verify');
   });
+
+  it('preserves failure artifacts and opens partial candidates as draft PRs', () => {
+    expect(workflow).toMatch(/name: Preserve candidate and audit artifacts\s+if: always\(\)/);
+    expect(workflow).toContain('newsletter-output/');
+    expect(workflow).toContain('content/newsletter-drafts/');
+    expect(workflow).toContain('if [ "$OUTCOME" = "partial" ]; then DRAFT_ARGS+=(--draft); fi');
+    expect(workflow).toContain('--body-file newsletter-output/pr-body.md');
+    expect(workflow).toContain('run: npx tsx scripts/newsletter/workflow-result.ts');
+    expect(workflow).not.toContain('git add content/blog/');
+  });
+});
+
+it('runs coverage enforcement in the required Unit Tests job with base history available', () => {
+  const workflow = readWorkflow('.github/workflows/ci.yml');
+  const job = workflow.split('  unit-tests:')[1].split('  dead-code:')[0];
+  expect(job).toContain('fetch-depth: 0');
+  expect(job).toContain('npx tsx scripts/newsletter/validate-changes.ts --base "$NEWSLETTER_BASE_SHA"');
+  expect(job).not.toContain('continue-on-error: true');
 });
 
 it('keeps the newsletter installer blocks identical', () => {

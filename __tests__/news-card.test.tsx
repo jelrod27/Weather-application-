@@ -24,6 +24,11 @@ function makeItem(overrides: Partial<RSSItem> = {}): RSSItem {
     priority: 'medium',
     timestamp: new Date(),
     imageUrl: 'https://cdn.example.com/a.jpg',
+    image: overrides.imageUrl === undefined && 'imageUrl' in overrides ? undefined : {
+      url: 'https://cdn.example.com/a.jpg', kind: 'editorial',
+      alt: 'Severe thunderstorm warning article image', credit: 'Example News',
+      sourceUrl: 'https://example.com/article', caption: 'Publisher-supplied image',
+    },
     ...overrides,
   } as RSSItem;
 }
@@ -42,7 +47,7 @@ describe('NewsCard default variant', () => {
   it('opens the article when the card body is clicked', () => {
     render(<NewsCard item={makeItem()} />);
 
-    fireEvent.click(screen.getByRole('link'));
+    fireEvent.click(screen.getByRole('link', { name: /opens in new tab/i }));
 
     expect(openSpy).toHaveBeenCalledTimes(1);
     expect(openSpy).toHaveBeenCalledWith('https://example.com/article', '_blank', 'noopener,noreferrer');
@@ -59,7 +64,7 @@ describe('NewsCard default variant', () => {
   it('is keyboard activatable as a link', () => {
     render(<NewsCard item={makeItem()} />);
 
-    fireEvent.keyDown(screen.getByRole('link'), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('link', { name: /opens in new tab/i }), { key: 'Enter' });
 
     expect(openSpy).toHaveBeenCalledTimes(1);
   });
@@ -108,7 +113,7 @@ describe('NewsCard default variant', () => {
   });
 
   it('keeps decorative category banners hidden from assistive tech', () => {
-    render(<NewsCard item={makeItem({ imageUrl: undefined, category: 'severe' })} />);
+    render(<NewsCard item={makeItem({ imageUrl: undefined, category: 'science' })} />);
 
     expect(screen.getByTestId('news-card-data-banner')).toHaveAttribute('aria-hidden', 'true');
   });
