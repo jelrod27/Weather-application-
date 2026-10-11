@@ -19,7 +19,7 @@ key_phrases:
   - Four significant earthquakes in a single country within a compressed window
   - a tight geographic cluster that suggests a single organized convective system tracking northeast through the coastal plain
   - fast-moving convective lines rather than discrete supercell activity
-  - "insufficient, in the absence of a well-directed CME, to produce auroral activity at mid-latitudes"
+  - "Geomagnetic activity reached G3 (Strong) storm levels on October 10"
   - "a split pattern: a resilient ridge holding across the Southeast and Pacific Coast, and a more active trough regime across the northern tier and Rockies"
   - the jet stream is running well north of its October climatological position over the eastern Pacific
   - a shortwave trough dropping out of the northern Rockies and triggering afternoon convection over the Front Range before spreading precipitation east onto the Plains
@@ -38,7 +38,7 @@ image_audit:
   - "id=sumatra-moment-tensor-2004; lane=earthquake; anchor=Four significant earthquakes in a single country within a compressed window is a genuine aftershock sequence, not coincidence.; tags=earthquakes,tech_and_models; caption=USGS moment tensor (beachball) solution for the magnitude 9.1 2004 Sumatra-Andaman earthquake."
 spotlight_active: null
 generation_retries: 1
-word_count: 914
+word_count: 921
 closer_used: eyes-on-the-sky
 ---
 
@@ -56,7 +56,7 @@ On the atmospheric side, North Carolina bore the weight of the week's tornado ac
 
 The week's 618 NWS warnings included 106 flash flood warnings and 132 marine warnings — a distribution that reflects both the North Carolina convective event and likely coastal effects. Iowa's 32 storm reports were concentrated in hail and wind, consistent with fast-moving convective lines rather than discrete supercell activity.
 
-Solar activity remained quiet. The week's maximum Kp index reached 0, meaning no geomagnetic disturbance of any consequence. The most notable solar event was an M6.7 flare at 15:48 UTC on October 8 — significant by flare standards but insufficient, in the absence of a well-directed CME, to produce auroral activity at mid-latitudes.
+Geomagnetic activity reached G3 (Strong) storm levels on October 10. NOAA's [3-hour Kp observations](https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json) show a peak of 7 for the interval beginning at 15:00 UTC that day. In its [forecast discussion issued October 11 at 12:30 UTC](https://services.swpc.noaa.gov/text/discussion.txt), NOAA attributed the storm to coronal mass ejections (CMEs) from October 7–8, whose arrival was detected at 14:34 UTC on October 10.
 
 ## Roadmap
 
