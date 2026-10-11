@@ -47,7 +47,7 @@ export interface NWSAlert {
   id: string
   headline: string
   event: string
-  severity: 'Minor' | 'Moderate' | 'Severe' | 'Extreme'
+  severity: 'Minor' | 'Moderate' | 'Severe' | 'Extreme' | 'Unknown'
   urgency: string
   expires: string
   areaDesc: string
@@ -55,6 +55,9 @@ export interface NWSAlert {
 
 /** Full alert for command center, maps, and drill-down. */
 export interface NWSAlertDetail extends NWSAlert {
+  status?: string
+  senderName?: string
+  productUrl?: string
   sent: string
   effective: string
   ends: string
@@ -105,7 +108,7 @@ function normalizeSeverity(raw: string | undefined): NWSAlert['severity'] {
   if (s === 'extreme' || s === 'severe' || s === 'moderate' || s === 'minor') {
     return (raw!.charAt(0).toUpperCase() + raw!.slice(1).toLowerCase()) as NWSAlert['severity']
   }
-  return 'Minor'
+  return 'Unknown'
 }
 
 function asString(v: unknown): string {
@@ -145,8 +148,14 @@ export function mapNwsFeatureToDetail(feature: {
       ? (p.geocode as Record<string, unknown>)
       : null
   const vtecRaw = stringList(rawParameters?.VTEC ?? rawParameters?.vtec)
+  const awips = stringList(rawParameters?.AWIPSidentifier)[0]?.match(/^([A-Z0-9]{3})([A-Z0-9]{3,4})$/i)
 
   return {
+    status: asString(p.status),
+    senderName: asString(p.senderName),
+    productUrl: awips ? `https://forecast.weather.gov/product.php?${new URLSearchParams({
+      site: 'NWS', issuedby: awips[2].toUpperCase(), product: awips[1].toUpperCase(), format: 'CI', version: '1', glossary: '0',
+    })}` : undefined,
     id: nwsId,
     headline: asString(p.headline),
     event,
@@ -232,7 +241,7 @@ async function isNwsPointOutOfBounds(response: Response): Promise<boolean> {
   }
 }
 
-async function fetchNwsFeatureCollection(url: string): Promise<{
+async function fetchNwsFeatureCollection(url: string, timeoutMs = NWS_FETCH_TIMEOUT_MS, noStore = false): Promise<{
   type: 'FeatureCollection'
   features: Array<{
     type?: string
@@ -240,31 +249,32 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
     geometry?: NwsGeometry | null
   }>
   paginationNext: string | null
+  invalidPagination: boolean
+  generatedAt: string
 }> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), NWS_FETCH_TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   let response: Response
   try {
     response = await fetch(url, {
       signal: controller.signal,
       headers: { 'User-Agent': NWS_USER_AGENT, Accept: NWS_ACCEPT },
+      ...(noStore ? { cache: 'no-store' as const } : {}),
     })
-  } finally {
-    clearTimeout(timer)
-  }
   if (!response.ok) {
     if (response.status === 400 && (await isNwsPointOutOfBounds(response))) {
       throw new NwsPointOutOfBoundsError()
     }
     throw new Error(`NWS alerts HTTP ${response.status}`)
   }
+  if (noStore && Number(response.headers?.get('age') ?? 0) > 300) throw new Error('NWS snapshot is stale')
   const data = (await response.json()) as {
     type?: string
     features?: unknown[]
     pagination?: { next?: string }
   }
   if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-    return { type: 'FeatureCollection', features: [], paginationNext: null }
+    throw new Error('Malformed NWS alert collection')
   }
   const next = nwsContinuationUrl(data.pagination?.next)
   return {
@@ -275,7 +285,73 @@ async function fetchNwsFeatureCollection(url: string): Promise<{
       geometry?: NwsGeometry | null
     }>,
     paginationNext: next,
+    invalidPagination: data.pagination?.next != null && !next,
+    generatedAt: new Date(Date.now() - Math.max(0, Number(response.headers?.get('age')) || 0) * 1000).toISOString(),
   }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export interface NwsAlertSnapshot {
+  alerts: NWSAlertDetail[]
+  received: number
+  rejected: number
+  pages: number
+  truncated: boolean
+  issues: string[]
+  generatedAt?: string
+}
+
+/** Bounded national collection for consumers that must report incomplete coverage.
+ * A later-page failure preserves the earlier evidence, but cannot certify active status. */
+export async function fetchNwsAlertSnapshot(startUrl: string, maxPages = 8): Promise<NwsAlertSnapshot> {
+  const result: NwsAlertSnapshot = { alerts: [], received: 0, rejected: 0, pages: 0, truncated: false, issues: [] }
+  const visited = new Set<string>()
+  const messages = new Map<string, string>()
+  const deadline = Date.now() + 20_000
+  let url: string | null = nwsContinuationUrl(startUrl)
+  if (!url) throw new Error('Invalid NWS collection URL')
+  while (url && result.pages < maxPages && Date.now() < deadline) {
+    if (visited.has(url)) { result.issues.push('NWS pagination repeated a page'); break }
+    visited.add(url)
+    try {
+      const fc = await fetchNwsFeatureCollection(url, Math.max(1, deadline - Date.now()), true)
+      result.pages += 1
+      result.generatedAt = result.generatedAt && result.generatedAt < fc.generatedAt ? result.generatedAt : fc.generatedAt
+      result.received += fc.features.length
+      if (fc.features.length > 500) { result.truncated = true; result.issues.push('NWS page exceeded the record limit') }
+      for (const feature of fc.features.slice(0, 500)) {
+        if (!feature || typeof feature !== 'object' || !feature.properties) { result.rejected++; continue }
+        const alert = mapNwsFeatureToDetail(feature)
+        const terminal = alert.messageType === 'Cancel' || ['CAN', 'EXP', 'UPG'].includes(alert.vtecAction ?? '')
+        if (!alert.id || !alert.event || !alert.areaDesc || alert.status !== 'Actual' ||
+            !Number.isFinite(Date.parse(alert.sent)) || Date.parse(alert.sent) > Date.now() + 60_000 ||
+            (alert.ends && !Number.isFinite(Date.parse(alert.ends))) ||
+            !['Alert', 'Update', 'Cancel'].includes(alert.messageType) ||
+            (!terminal && (!Number.isFinite(Date.parse(alert.effective)) || !Number.isFinite(Date.parse(alert.expires))))) {
+          result.rejected++; continue
+        }
+        const signature = JSON.stringify(feature)
+        if (messages.has(alert.id)) {
+          if (messages.get(alert.id) !== signature) result.issues.push('NWS message identifier has conflicting revisions')
+          continue
+        }
+        messages.set(alert.id, signature)
+        const vtecs = parseVtecFromParameters({ VTEC: alert.vtecRaw }, alert.description, alert.sent)
+        result.alerts.push(...(vtecs.length ? vtecs.map(vtec => ({ ...alert, warningEventId: vtec.eventId, vtecAction: vtec.action })) : [alert]))
+      }
+      url = fc.paginationNext
+      if (fc.invalidPagination) { result.issues.push('NWS continuation link is invalid'); result.truncated = true; break }
+    } catch {
+      if (!result.pages) throw new Error('NWS alert collection unavailable or malformed')
+      result.issues.push('NWS pagination stopped before coverage could be verified')
+      break
+    }
+  }
+  if (url) { result.truncated = true; result.issues.push('NWS collection is incomplete') }
+  if (result.rejected) result.issues.push('Some NWS records could not be validated')
+  return result
 }
 
 export async function fetchNwsAlertPages(startUrl: string, maxPages = 8): Promise<NWSAlertDetail[]> {

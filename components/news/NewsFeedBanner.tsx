@@ -10,7 +10,7 @@ interface NewsFeedBannerProps {
   className?: string;
 }
 
-export default function NewsFeedBanner({ errorCount, className }: NewsFeedBannerProps) {
+export default function NewsFeedBanner({ errorCount, className }: NewsFeedBannerProps): React.ReactElement | null {
   const themeClasses = themeTokens.weather;
 
   if (errorCount <= 0) return null;
@@ -25,7 +25,7 @@ export default function NewsFeedBanner({ errorCount, className }: NewsFeedBanner
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" aria-hidden="true" />
       <p className={themeClasses.text}>
-        {errorCount} feed source{errorCount === 1 ? '' : 's'} unavailable — showing partial results.
+        {errorCount} feed source{errorCount === 1 ? '' : 's'} delayed, unavailable, or incomplete — showing partial coverage. Missing reports do not mean conditions are clear.
       </p>
     </div>
   );

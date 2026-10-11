@@ -30,32 +30,32 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'usgs-significant',
     name: 'USGS Significant Earthquakes',
-    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.atom',
+    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson',
     category: 'earthquakes',
     priority: 'high',
     enabled: true,
-    format: 'atom',
-    refreshInterval: 360, // 6 hours = 2x daily
+    format: 'json',
+    refreshInterval: 5,
   },
   {
     id: 'usgs-m45',
     name: 'USGS M4.5+ Earthquakes',
-    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.atom',
+    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
     category: 'earthquakes',
     priority: 'medium',
     enabled: true,
-    format: 'atom',
-    refreshInterval: 360, // 6 hours = 2x daily
+    format: 'json',
+    refreshInterval: 5,
   },
   {
     id: 'usgs-m25',
     name: 'USGS M2.5+ Earthquakes',
-    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.atom',
+    url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',
     category: 'earthquakes',
     priority: 'low',
     enabled: true,
-    format: 'atom',
-    refreshInterval: 360, // 6 hours = 2x daily
+    format: 'json',
+    refreshInterval: 5,
   },
 
   // Volcanoes
@@ -162,17 +162,14 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     id: 'nws-alerts',
     name: 'NWS National Alerts',
-    // alerts.weather.gov/cap/us.php was decommissioned (returns 000), which
-    // silently emptied the `severe` category. Replaced by the api.weather.gov
-    // active-alerts endpoint, requesting Atom through the Accept header. The
-    // /alerts/active.atom path rejects severity/urgency filters (HTTP 400).
-    // Keep Severe/Extreme + Immediate/Expected to exclude minor advisories.
-    url: 'https://api.weather.gov/alerts/active?severity=Severe,Extreme&urgency=Immediate,Expected',
+    // Structured CAP properties and every continuation page are needed to
+    // validate lifecycle and area revisions. Active news includes warnings only.
+    url: 'https://api.weather.gov/alerts/active?status=actual',
     category: 'severe',
     priority: 'high',
     enabled: true,
-    format: 'atom',
-    refreshInterval: 5,
+    format: 'json',
+    refreshInterval: 2,
   },
   {
     id: 'spc-outlooks',

@@ -1,0 +1,22 @@
+[
+  {
+    "file": "nws-2026-10-11.json",
+    "url": "https://api.weather.gov/alerts/active?status=actual",
+    "retrievedAt": "2026-10-11T22:43:33.320Z",
+    "selection": "First 6 of 483 features; excerpt only, not proof of national coverage"
+  },
+  {
+    "file": "nhc-atlantic-2026-10-11.xml",
+    "url": "https://www.nhc.noaa.gov/index-at.xml",
+    "retrievedAt": "2026-10-11T22:43:20.861Z",
+    "selection": "Complete response",
+    "bytes": 7908
+  },
+  {
+    "file": "usgs-2026-10-11.json",
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
+    "retrievedAt": "2026-10-11T22:43:20.880Z",
+    "selection": "Complete response",
+    "bytes": 4904
+  }
+]

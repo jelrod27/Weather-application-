@@ -1,8 +1,7 @@
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
-import { isActiveTropicalHeadline, isDiscoveryHeadline } from '@/lib/news/tropical-headlines';
+import { isActiveTropicalHeadline } from '@/lib/news/tropical-headlines';
 
-export const HAPPENING_NOW_WINDOW_MS = 6 * 60 * 60 * 1000;
 export const HAPPENING_NOW_MAX = 8;
 
 /** Home view section order — hazards first, research last. */
@@ -22,16 +21,22 @@ export function isHurricaneSeason(now = new Date()): boolean {
 }
 
 export function selectHappeningNow(items: RSSItem[], now = Date.now()): RSSItem[] {
-  const cutoff = now - HAPPENING_NOW_WINDOW_MS;
   return items
-    .filter(
-      (item) =>
-        item.priority === 'high' &&
-        item.timestamp.getTime() > 0 &&
-        item.timestamp.getTime() >= cutoff &&
-        isDiscoveryHeadline(item),
-    )
+    .filter(item => isVerifiedActiveWarning(item, now))
     .slice(0, HAPPENING_NOW_MAX);
+}
+
+export function isVerifiedActiveWarning(item: RSSItem, now = Date.now()): boolean {
+  const warning = item.warning;
+  if (item.sourceId !== 'nws-alerts' || item.kind !== 'hazard' || item.lifecycle !== 'active' ||
+      item.sourceState !== 'fresh' || !item.freshUntil || Date.parse(item.freshUntil) <= now || !warning ||
+      !/\bwarning\b/i.test(item.hazard?.event ?? '') || warning.messageType === 'Cancel' ||
+      ['CAN', 'EXP', 'UPG'].includes(warning.action ?? '')) return false;
+  const effective = Date.parse(warning.effective);
+  const expires = Date.parse(warning.expires);
+  const ends = warning.ends ? Date.parse(warning.ends) : expires;
+  return Number.isFinite(Date.parse(item.freshUntil)) && Number.isFinite(effective) && effective <= now &&
+    Number.isFinite(expires) && Number.isFinite(ends) && Math.min(expires, ends) > now;
 }
 
 export function selectFeaturedItem(
@@ -39,6 +44,7 @@ export function selectFeaturedItem(
   happeningNow: RSSItem[],
   now = new Date(),
 ): RSSItem | null {
+  items = items.filter(item => item.sourceState !== 'delayed' && item.sourceState !== 'unavailable');
   if (happeningNow.length > 0) return happeningNow[0];
 
   const includeTropical = isHurricaneSeason(now);

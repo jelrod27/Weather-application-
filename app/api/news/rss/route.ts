@@ -7,7 +7,7 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
-import { aggregateFeeds, getFeaturedItem, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
+import { aggregateFeeds, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
 import { parseFeedCategories } from '@/lib/api/query-params';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -15,8 +15,8 @@ import { withApiRoute } from '@/lib/api/with-api-route'
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  return withApiRoute(request, async ({ rateLimitHeaders }) => {
+export async function GET(request: NextRequest): Promise<Response> {
+  return withApiRoute(request, async () => {
     try {
       const searchParams = request.nextUrl.searchParams;
 
@@ -29,16 +29,6 @@ export async function GET(request: NextRequest) {
       // Parse categories
       const categories = parseFeedCategories(categoriesParam);
 
-      // Return featured item if requested
-      if (featured) {
-        const featuredItem = await getFeaturedItem();
-        return NextResponse.json({
-          status: 'ok',
-          featured: featuredItem,
-          categories: getCategoryConfig(),
-        });
-      }
-
       // Aggregate feeds — single payload includes rails for the page client.
       const result = await aggregateFeeds({
         categories,
@@ -48,16 +38,15 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         status: 'ok',
-        items: result.items,
-        happeningNow: result.happeningNow,
+        ...(!featured ? { items: result.items, happeningNow: result.happeningNow, delayedItems: result.delayedItems } : {}),
         featured: result.featured,
+        sources: result.sources,
         stats: result.stats,
         lastUpdated: result.lastUpdated.toISOString(),
         categories: getCategoryConfig(),
       }, {
         headers: {
-          // Tiered by requested categories (PRD §9): the "all"/mixed request
-          // resolves to the Fast tier so severe alerts stay near real-time.
+          // Source snapshots are cached; lifecycle-bearing responses are not.
           'Cache-Control': cacheControlForCategories(categories),
         },
       });

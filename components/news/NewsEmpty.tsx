@@ -32,8 +32,8 @@ export default function NewsEmpty({
   const configs = {
     'no-alerts': {
       icon: CheckCircle,
-      title: 'No Severe Weather Alerts',
-      description: message || "Great news! There are no severe weather alerts at this time. That's a good sign!",
+      title: 'No Current NWS Warnings in This Feed',
+      description: message || 'The latest verified source check returned no current warnings. Check the Warning Center and official sources for your area.',
       iconColor: 'text-green-500',
     },
     'no-results': {

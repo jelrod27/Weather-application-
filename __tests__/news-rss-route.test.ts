@@ -29,12 +29,13 @@ jest.mock('@/lib/services/rss/rssAggregator', () => ({
     items: [],
     happeningNow: [],
     featured: null,
+    sources: [{ id: 'nws-alerts', state: 'unavailable' }],
+    delayedItems: [],
     stats: {},
     lastUpdated: new Date('2026-07-18T00:00:00.000Z'),
   }),
-  getFeaturedItem: jest.fn().mockResolvedValue(null),
   getCategoryConfig: jest.fn().mockReturnValue([]),
-  cacheControlForCategories: jest.fn().mockReturnValue('public, max-age=60'),
+  cacheControlForCategories: jest.fn().mockReturnValue('no-store'),
 }))
 
 import { GET } from '@/app/api/news/rss/route'
@@ -74,3 +75,9 @@ describe('GET /api/news/rss', () => {
     expect(mockedAggregate).toHaveBeenCalled()
   })
 })
+
+it('returns source health and no-store for the featured response too', async () => {
+  const res = await GET(new NextRequest('http://localhost/api/news/rss?featured=true'));
+  expect(await res.json()).toMatchObject({ sources: [{ id: 'nws-alerts', state: 'unavailable' }], featured: null });
+  expect(res.headers).toMatchObject({ 'Cache-Control': 'no-store' });
+});

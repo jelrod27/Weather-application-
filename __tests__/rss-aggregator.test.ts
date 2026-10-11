@@ -214,7 +214,7 @@ describe('parseJsonFeed (USGS elevated volcanoes)', () => {
     const json = JSON.stringify([
       null,
       'not-an-object',
-      { volcano_name: 'Kilauea', alert_level: 'WARNING', color_code: 'RED', notice_url: 'https://volcanoes.usgs.gov/n/1' },
+      { volcano_name: 'Kilauea', alert_level: 'WARNING', color_code: 'RED', sent_utc: '2026-10-11 20:00:00', notice_url: 'https://volcanoes.usgs.gov/n/1' },
     ]);
     const items = parseJsonFeed(json, volcanoSource());
     expect(items).toHaveLength(1);
@@ -267,25 +267,25 @@ describe('parseItemTimestamp', () => {
   });
 });
 
-describe('cacheControlForCategories (tiered cache, §9)', () => {
+describe('cacheControlForCategories (uncached lifecycle responses)', () => {
   it('uses the Fast tier for severe', () => {
-    expect(cacheControlForCategories(['severe'])).toContain('s-maxage=300');
+    expect(cacheControlForCategories(['severe'])).toBe('no-store');
   });
 
   it('uses the Slow tier for science', () => {
-    expect(cacheControlForCategories(['science'])).toContain('s-maxage=21600');
+    expect(cacheControlForCategories(['science'])).toBe('no-store');
   });
 
   it('uses the Medium tier for earthquakes', () => {
-    expect(cacheControlForCategories(['earthquakes'])).toContain('s-maxage=1800');
+    expect(cacheControlForCategories(['earthquakes'])).toBe('no-store');
   });
 
   it('defaults the "all" request (no categories) to the Fast tier', () => {
-    expect(cacheControlForCategories()).toContain('s-maxage=300');
+    expect(cacheControlForCategories()).toBe('no-store');
   });
 
   it('picks the fastest tier present in a mixed request', () => {
-    expect(cacheControlForCategories(['science', 'severe'])).toContain('s-maxage=300');
-    expect(cacheControlForCategories(['science', 'earthquakes'])).toContain('s-maxage=1800');
+    expect(cacheControlForCategories(['science', 'severe'])).toBe('no-store');
+    expect(cacheControlForCategories(['science', 'earthquakes'])).toBe('no-store');
   });
 });

@@ -9,6 +9,7 @@ import { isoTimestamp } from '@/lib/news/visuals';
 import { decodeHtmlEntities } from './html-utils';
 import type { NewsHazard, NewsImage } from '@/lib/news/visuals';
 import type { FeedCategory, FeedSource } from './feedSources';
+import type { NewsIdentity, NewsKind, NewsSourceState, NewsUpdate } from '@/lib/news/types';
 
 export interface RSSItem {
   id: string;
@@ -27,6 +28,31 @@ export interface RSSItem {
   location?: string;
   magnitude?: number; // For earthquakes
   depth?: number; // For earthquakes (km)
+  kind?: NewsKind;
+  identity?: NewsIdentity;
+  updates?: NewsUpdate[];
+  updatedAt?: string;
+  occurredAt?: string;
+  lifecycle?: 'active' | 'inactive' | 'unverified';
+  tropicalStatus?: 'final' | 'handoff' | 'unverified';
+  sourceState?: NewsSourceState;
+  sourceCheckedAt?: string;
+  freshUntil?: string;
+  warning?: NewsWarning;
+}
+
+export interface NewsWarning {
+  office: string;
+  severity: string;
+  urgency: string;
+  certainty: string;
+  messageType: string;
+  action: string | null;
+  sent: string;
+  effective: string;
+  expires: string;
+  ends: string;
+  areas: string[];
 }
 
 /** Sentinel for items without a parseable publication date — sorts last, excluded from Happening Now. */
@@ -35,7 +61,7 @@ export const MISSING_ITEM_TIMESTAMP = new Date(0);
 export const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
 
 // Per-feed item cap to bound memory/parse cost (PRD §8.1).
-const MAX_ITEMS_PER_FEED = 30;
+export const MAX_ITEMS_PER_FEED = 30;
 
 function parseItemTimestamp(raw: string | undefined): Date {
   if (!raw?.trim()) return MISSING_ITEM_TIMESTAMP;
@@ -299,6 +325,8 @@ function buildItem(
     category: source.category,
     priority: fields.priority ?? source.priority,
     timestamp,
+    kind: source.id === 'spc-outlooks' || source.id.startsWith('nhc-') ? 'outlook'
+      : ['severe', 'hurricanes', 'volcanoes'].includes(source.category) ? 'hazard' : 'story',
     imageUrl: safeImage || undefined,
     image: spcOutlookImage({ sourceId: source.id, url: fields.safeLink, title: fields.title, body: fields.body })
       ?? (safeImage ? {
@@ -342,16 +370,32 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
       const safeLink = safeExternalUrl(link);
       if (!title || !safeLink) continue;
 
-      items.push(
-        buildItem(source, i, {
+      const built = buildItem(source, i, {
           title,
           safeLink,
           body,
           pubDate: firstText(item, ['pubDate', 'pubdate', 'dc:date', 'date']),
           author: firstText(item, ['author', 'dc:creator']),
           ...imageFields(item),
-        })
-      );
+        });
+      if (source.id.startsWith('nhc-')) {
+        const text = cleanHtml(`${title} ${body ?? ''}`);
+        const cyclone = item['nhc:Cyclone'];
+        const declaredId = cyclone && typeof cyclone === 'object' && !Array.isArray(cyclone)
+          ? firstText(cyclone, ['nhc:atcf', 'nhc:ATCF']) : undefined;
+        // Only explicit ATCF identifiers establish an event, never names or wallets.
+        const identifiers = [...new Set([...(text.match(/\b(?:AL|EP|CP)\d{6}\b/gi) ?? []), ...(declaredId ? [declaredId] : [])].map(id => id.toUpperCase()))];
+        const productId = firstText(item, ['guid']) ?? safeLink;
+        built.updates = [{ id: productId, title: built.title, url: safeLink, issuedAt: built.timestamp.toISOString() }];
+        if (identifiers.length === 1 && /^(AL|EP|CP)\d{6}$/.test(identifiers[0])) {
+          built.identity = { authority: 'nhc', eventId: identifiers[0], productId };
+          built.kind = 'event';
+        } else if (/advisory|discussion|summary|graphics/i.test(title)) built.kind = 'event';
+        built.tropicalStatus = /final advisory|last (?:forecast\/)?advisory/i.test(text) ? 'final'
+          : /responsibility.*(?:transfer|assum)|(?:transfer|assum).*responsibility/i.test(text) ? 'handoff' : 'unverified';
+        built.lifecycle = 'unverified';
+      }
+      items.push(built);
     } catch {
       // Skip malformed items
     }
@@ -461,21 +505,27 @@ function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
     const raw = data[i];
     if (!raw || typeof raw !== 'object') continue;
     const notice = raw as UsgsVolcanoNotice;
+    if (typeof notice.volcano_name !== 'string' || typeof notice.notice_url !== 'string' ||
+        typeof notice.alert_level !== 'string' || typeof notice.sent_utc !== 'string' ||
+        (notice.color_code != null && typeof notice.color_code !== 'string') ||
+        (notice.obs_fullname != null && typeof notice.obs_fullname !== 'string')) continue;
     const name = notice.volcano_name?.trim();
     const safeLink = safeExternalUrl(notice.notice_url);
     if (!name || !safeLink) continue;
 
-    const level = (notice.alert_level || 'ADVISORY').trim();
+    const level = notice.alert_level.trim();
+    if (!['NORMAL', 'ADVISORY', 'WATCH', 'WARNING', 'UNASSIGNED'].includes(level.toUpperCase())) continue;
     const color = (notice.color_code || '').trim();
     const observatory = notice.obs_fullname?.trim() || 'USGS';
-    const sentRaw = notice.sent_utc ? notice.sent_utc.replace(' ', 'T') + 'Z' : undefined;
+    const normalizedTime = notice.sent_utc.replace(' ', 'T');
+    const sentRaw = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalizedTime) ? normalizedTime : normalizedTime + 'Z';
     const sent = parseItemTimestamp(sentRaw);
 
     items.push({
       id: `${source.id}-${simpleHash(safeLink + i.toString())}-${i}`,
       title: cleanHtml(color ? `${name} Volcano — ${level} (${color})` : `${name} Volcano — ${level}`),
       description: cleanHtml(
-        `${observatory} has an active ${level} alert${color ? ` (aviation color ${color})` : ''} for ${name}.`
+        `${observatory} reported ${level}${color ? ` (aviation color ${color})` : ''} for ${name}. Current active status is not verified by this news feed.`
       ).slice(0, 300),
       url: safeLink,
       source: source.name,
@@ -484,6 +534,8 @@ function parseUsgsVolcanoesJson(data: unknown, source: FeedSource): RSSItem[] {
       priority: source.priority,
       timestamp: sent,
       location: name,
+      kind: 'hazard',
+      lifecycle: 'unverified',
     });
   }
 
@@ -563,20 +615,45 @@ function prefers(candidate: RSSItem, current: RSSItem): boolean {
 }
 
 /**
- * Cross-source deduplication using fuzzy title matching. n is small (<= a few
- * hundred pre-slice), so the O(n^2) scan is fine and avoids losing near-dupes
- * to an exact-key map.
+ * Official reports group only by authoritative identity and matching areas.
+ * Fuzzy titles are permitted only for editorial reading.
  */
+function prefersOfficialReport(candidate: RSSItem, prior: RSSItem): boolean {
+  const current = (item: RSSItem): boolean => item.sourceState === 'fresh' || item.sourceState === 'partial';
+  if (current(candidate) !== current(prior)) return current(candidate);
+  const candidateTime = Date.parse(candidate.updatedAt ?? candidate.timestamp.toISOString());
+  const priorTime = Date.parse(prior.updatedAt ?? prior.timestamp.toISOString());
+  if (candidateTime !== priorTime) return candidateTime > priorTime;
+  const terminal = (item: RSSItem): boolean => item.warning?.messageType === 'Cancel' ||
+    ['CAN', 'EXP', 'UPG'].includes(item.warning?.action ?? '') || ['final', 'handoff'].includes(item.tropicalStatus ?? '');
+  return terminal(candidate) && !terminal(prior);
+}
+
 export function deduplicateItems(items: RSSItem[]): RSSItem[] {
   const kept: { key: string; item: RSSItem }[] = [];
 
   for (const item of items) {
     const key = normalizeTitle(item.title);
-    const dupIndex = kept.findIndex((k) => isSimilarTitle(k.key, key));
+    const isEditorial = (candidate: RSSItem): boolean => candidate.kind === 'story' || (!candidate.kind && ['science', 'space', 'climate'].includes(candidate.category));
+    const dupIndex = kept.findIndex(({ key: priorKey, item: prior }) => {
+      if (item.identity && prior.identity) {
+        return item.identity.authority === prior.identity.authority && item.identity.eventId === prior.identity.eventId &&
+          item.identity.areaKey === prior.identity.areaKey;
+      }
+      return isEditorial(item) && isEditorial(prior) && isSimilarTitle(priorKey, key);
+    });
     if (dupIndex === -1) {
       kept.push({ key, item });
-    } else if (prefers(item, kept[dupIndex].item)) {
-      kept[dupIndex] = { key, item };
+    } else {
+      const prior = kept[dupIndex].item;
+      const newer = item.identity ? prefersOfficialReport(item, prior) : prefers(item, prior);
+      const selected = newer ? item : prior;
+      const updates = item.identity ? [...new Map([prior, item].flatMap(candidate => candidate.updates ?? [{
+        id: candidate.identity!.productId, title: candidate.title, url: candidate.url,
+        issuedAt: candidate.updatedAt ?? candidate.timestamp.toISOString(),
+      }]).map(update => [`${update.id}:${update.issuedAt}`, update])).values()]
+        .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt)) : undefined;
+      kept[dupIndex] = { key: normalizeTitle(selected.title), item: { ...selected, ...(updates ? { updates } : {}) } };
     }
   }
 
