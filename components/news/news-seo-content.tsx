@@ -5,12 +5,12 @@ export const NEWS_FAQS = [
   {
     question: 'Where do these stories come from?',
     answer:
-      'Official and scientific feeds only: USGS for earthquakes and volcano alerts, the Smithsonian Global Volcanism Program, NASA and NASA Earth Observatory, NOAA Climate.gov, the National Weather Service, the Storm Prediction Center, the National Hurricane Center, and science publishers such as ScienceDaily and Phys.org.',
+      'Official and scientific feeds include USGS, NASA, the National Weather Service, the Storm Prediction Center, the National Hurricane Center, and publishers such as ScienceDaily and Phys.org. Open Source coverage to see which feeds were checked and any unavailable or incomplete results.',
   },
   {
     question: 'How current is the feed?',
     answer:
-      'Items are aggregated server side from each publisher’s RSS feed and capped at about three days old, so the page shows what has happened recently rather than an archive. The header stamps how long ago the feed was refreshed.',
+      'Each source has its own freshness budget. Source coverage shows the last successful check and any limits. The header shows when the response was assembled, which may reuse earlier source checks. Delayed reports cannot verify current conditions; an unavailable source does not mean there are no hazards.',
   },
   {
     question: 'Can I follow only one kind of hazard?',
@@ -20,7 +20,7 @@ export const NEWS_FAQS = [
   {
     question: 'Is this a substitute for official warnings?',
     answer:
-      'No. News items are reports about events, not alerts. For live National Weather Service Warning Events covering a specific place, use the warning desk, and subscribe to Bitwatch if you want to be notified rather than to check.',
+      'No. This is a national and global overview with a bounded selection of reports. Happening Now is limited to verified active NWS warnings. Use the warning desk for coverage of a specific place and follow instructions from the issuing agency.',
   },
 ] as const
 
@@ -62,10 +62,9 @@ export default function NewsSeoContent() {
         the longer explanations.
       </p>
       <p className="mb-4 text-foreground">
-        Happening Now lifts the most time-sensitive items to the top, a top story carries the biggest
-        development of the day, and the rest are grouped by category so an earthquake swarm does not
-        bury a hurricane advisory. Filter by category or search across headlines, sources, and place
-        names to follow one story.
+        Happening Now shows verified active NWS warnings. Outlooks, event reports, and science
+        reading carry separate labels, and delayed reports remain outside the active section.
+        Filter by category or search across headlines, sources, and place names to follow one story.
       </p>
       <p className="mb-6 text-foreground">
         Follow anything you find here into the tools: the{' '}

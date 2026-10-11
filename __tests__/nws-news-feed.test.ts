@@ -142,4 +142,14 @@ describe('NWS news evidence', () => {
     expect(result.items.every(item => item.lifecycle === 'unverified')).toBe(true);
     expect(selectHappeningNow(result.items, NOW)).toEqual([]);
   });
+
+  it('does not certify one CAP label against mixed VTEC hazard types', async () => {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(page([alert('mixed', { parameters: { VTEC: [
+      '/O.NEW.KFWD.TO.W.0001.261011T2249Z-261011T2320Z/',
+      '/O.NEW.KFWD.SV.A.0002.261011T2249Z-261011T2320Z/',
+    ] } })]));
+    const result = await fetchFeed(source);
+    expect(result.health.state).toBe('partial');
+    expect(selectHappeningNow(result.items, NOW)).toEqual([]);
+  });
 });

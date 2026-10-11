@@ -350,6 +350,9 @@ export async function fetchNwsAlertSnapshot(startUrl: string, maxPages = 8): Pro
           result.issues.push('NWS revision has no validated warning-event identity')
         }
         const vtecs = parseVtecFromParameters({ VTEC: alert.vtecRaw }, alert.description, alert.sent)
+        if (new Set(vtecs.map(vtec => `${vtec.phenomenon}.${vtec.significance}`)).size > 1) {
+          result.issues.push('NWS message contains ambiguous hazard identities')
+        }
         result.alerts.push(...(vtecs.length ? vtecs.map(vtec => ({ ...alert, warningEventId: vtec.eventId, vtecAction: vtec.action })) : [alert]))
       }
       url = fc.paginationNext

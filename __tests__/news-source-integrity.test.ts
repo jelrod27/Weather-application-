@@ -92,7 +92,7 @@ describe('news source integrity', () => {
   });
 
   it('keeps independent source failures visible and does not stamp cached checks on reassembly', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async input => String(input).includes('api.weather.gov')
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async input => new URL(String(input)).hostname === 'api.weather.gov'
       ? new Response('down', { status: 503 }) : new Response(rss()));
     const result = await aggregateFeeds({ categories: ['severe'], maxItems: 5 });
     expect(result.sources.find(source => source.id === 'nws-alerts')?.state).toBe('unavailable');
@@ -104,5 +104,12 @@ describe('news source integrity', () => {
     const assembled = await aggregateFeeds({ categories: ['severe'], maxItems: 1 });
     expect(assembled.sources.find(source => source.id === checked.id)?.lastSuccessAt).toBe(checked.lastSuccessAt);
     expect(assembled.lastUpdated.getTime()).toBe(NOW + 10_000);
+  });
+
+  it('keeps a basin outlook separate from final advisories it mentions', () => {
+    const xml = rss().replace('Article 0', 'Atlantic Tropical Weather Outlook').replace('</item>', '<description>The final advisory for AL092026 was issued earlier.</description></item>');
+    const item = parseFeedDocument(xml, nhc, NOW).items[0];
+    expect(item).toMatchObject({ kind: 'outlook', tropicalStatus: 'unverified' });
+    expect(item.identity).toBeUndefined();
   });
 });

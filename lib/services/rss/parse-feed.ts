@@ -381,6 +381,7 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
         });
       if (source.id.startsWith('nhc-')) {
         const text = cleanHtml(`${title} ${body ?? ''}`);
+        const outlook = /\boutlook\b/i.test(title);
         const cyclone = item['nhc:Cyclone'];
         const declaredId = cyclone && typeof cyclone === 'object' && !Array.isArray(cyclone)
           ? firstText(cyclone, ['nhc:atcf', 'nhc:ATCF']) : undefined;
@@ -388,11 +389,12 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
         const identifiers = [...new Set([...(text.match(/\b(?:AL|EP|CP)\d{6}\b/gi) ?? []), ...(declaredId ? [declaredId] : [])].map(id => id.toUpperCase()))];
         const productId = firstText(item, ['guid']) ?? safeLink;
         built.updates = [{ id: productId, title: built.title, url: safeLink, issuedAt: built.timestamp.toISOString() }];
-        if (identifiers.length === 1 && /^(AL|EP|CP)\d{6}$/.test(identifiers[0])) {
+        if (!outlook && identifiers.length === 1 && /^(AL|EP|CP)\d{6}$/.test(identifiers[0])) {
           built.identity = { authority: 'nhc', eventId: identifiers[0], productId };
           built.kind = 'event';
-        } else if (/advisory|discussion|summary|graphics/i.test(title)) built.kind = 'event';
-        built.tropicalStatus = /final advisory|last (?:forecast\/)?advisory/i.test(text) ? 'final'
+        } else if (!outlook && /advisory|discussion|summary|graphics/i.test(title)) built.kind = 'event';
+        // Basin outlooks can mention a different cyclone's final advisory.
+        built.tropicalStatus = outlook ? 'unverified' : /final advisory|last (?:forecast\/)?advisory/i.test(text) ? 'final'
           : /responsibility.*(?:transfer|assum)|(?:transfer|assum).*responsibility/i.test(text) ? 'handoff' : 'unverified';
         built.updates[0].tropicalStatus = built.tropicalStatus;
         built.lifecycle = 'unverified';
