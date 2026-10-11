@@ -10,7 +10,8 @@
     "url": "https://www.nhc.noaa.gov/index-at.xml",
     "retrievedAt": "2026-10-11T22:43:20.861Z",
     "selection": "Complete response",
-    "bytes": 7908
+    "bytes": 7908,
+    "normalization": "Trailing line whitespace removed; content otherwise unchanged"
   },
   {
     "file": "usgs-2026-10-11.json",

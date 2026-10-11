@@ -65,37 +65,37 @@
       <description>Issued at 1500 UTC SUN OCT 11 2026 <![CDATA[<pre>000
 WTNT24 KWNH 111459
 TCMAT4
- 
+
 POST-TROPICAL CYCLONE ISAIAS FORECAST/ADVISORY NUMBER  20
 NWS WEATHER PREDICTION CENTER COLLEGE PARK MD   AL092026
 1500 UTC SUN OCT 11 2026
- 
+
 POST-TROPICAL CYCLONE CENTER LOCATED NEAR 37.5N  84.0W AT 11/1500Z
 POSITION ACCURATE WITHIN  20 NM
- 
+
 PRESENT MOVEMENT TOWARD THE EAST-NORTHEAST OR  65 DEGREES AT  19 KT
- 
+
 ESTIMATED MINIMUM CENTRAL PRESSURE 1010 MB
 MAX SUSTAINED WINDS  20 KT WITH GUSTS TO  30 KT.
 WINDS AND SEAS VARY GREATLY IN EACH QUADRANT.  RADII IN NAUTICAL
 MILES ARE THE LARGEST RADII EXPECTED ANYWHERE IN THAT QUADRANT.
- 
+
 REPEAT...CENTER LOCATED NEAR 37.5N  84.0W AT 11/1500Z
 AT 11/1200Z CENTER WAS LOCATED NEAR 37.3N  84.8W
- 
+
 FORECAST VALID 12/0000Z 38.8N  80.2W...POST-TROP/INLAND
 MAX WIND  20 KT...GUSTS  30 KT.
- 
+
 FORECAST VALID 12/1200Z...DISSIPATED
- 
+
 REQUEST FOR 3 HOURLY SHIP REPORTS WITHIN 300 MILES OF 37.5N  84.0W
- 
+
 THIS IS THE LAST FORECAST/ADVISORY ISSUED BY THE
 NATIONAL HURRICANE CENTER ON THIS SYSTEM
- 
+
 $$
 FORECASTER CHENARD</pre>]]></description>
-          
+
       <pubDate>Sun, 11 Oct 2026 14:59:50 GMT</pubDate>
       <link>https://www.nhc.noaa.gov/text/refresh/MIATCMAT4+shtml/111459.shtml</link>
       <guid>https://www.nhc.noaa.gov/text/refresh/MIATCMAT4+shtml/111459.shtml</guid>
@@ -106,36 +106,36 @@ FORECASTER CHENARD</pre>]]></description>
       <description>Issued at 1100 AM EDT Sun Oct 11 2026 <![CDATA[<pre>000
 WTNT44 KWNH 111500
 TCDAT4
- 
+
 Post-Tropical Cyclone Isaias Discussion Number  20
 NWS Weather Prediction Center College Park MD   AL092026
 1100 AM EDT Sun Oct 11 2026
- 
+
 Key Messages:
- 
-1. Areas of heavy rainfall will continue across portions of the 
-Central Appalachians and Mid-Atlantic today, with localized flash 
-and urban flooding possible. River flooding continues in western 
-North Carolina. 
+
+1. Areas of heavy rainfall will continue across portions of the
+Central Appalachians and Mid-Atlantic today, with localized flash
+and urban flooding possible. River flooding continues in western
+North Carolina.
 
 2. Swells from Isaias will continue to affect much of the Gulf and
-Southeastern Atlantic coasts of the United States today. These 
-swells are likely to cause life-threatening surf and rip current 
+Southeastern Atlantic coasts of the United States today. These
+swells are likely to cause life-threatening surf and rip current
 conditions. Please consult products from your local weather office.
- 
+
 3. A couple of tornadoes are possible today across the Piedmont and
 Coastal Plain of Virginia and North Carolina.
- 
- 
+
+
 FORECAST POSITIONS AND MAX WINDS
- 
+
 INIT  11/1500Z 37.5N  84.0W   20 KT  25 MPH...POST-TROP/INLAND
  12H  12/0000Z 38.8N  80.2W   20 KT  25 MPH...POST-TROP/INLAND
  24H  12/1200Z...DISSIPATED
- 
+
 $$
 Forecaster Chenard</pre>]]></description>
-          
+
       <pubDate>Sun, 11 Oct 2026 15:00:48 GMT</pubDate>
       <link>https://www.nhc.noaa.gov/text/refresh/MIATCDAT4+shtml/111500.shtml</link>
       <guid>https://www.nhc.noaa.gov/text/refresh/MIATCDAT4+shtml/111500.shtml</guid>
@@ -156,4 +156,3 @@ Forecaster Chenard</pre>]]></description>
     </item>
   </channel>
 </rss>
-
