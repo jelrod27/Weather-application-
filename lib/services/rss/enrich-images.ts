@@ -3,13 +3,15 @@
  */
 
 import { createTtlCache } from '@/lib/cache/ttl-cache';
-import { pickCategoryStockImage, resolveNhcOutlookImage, resolveNwsAlertImage } from '@/lib/news/stock-images';
+import { pickCategoryStockImage } from '@/lib/news/stock-images';
+import { isoTimestamp } from '@/lib/news/visuals';
+import type { NewsImage } from '@/lib/news/visuals';
 import type { RSSItem } from './parse-feed';
 import { resolveOgImage, shouldAttemptOgImage } from './resolve-og-image';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 
 const USGS_EVENT_ID = /earthquakes\/eventpage\/([a-z0-9]+)/i;
-const USGS_DETAIL_CACHE = createTtlCache<string | null>({ ttlMs: 30 * 60 * 1000 });
+const USGS_DETAIL_CACHE = createTtlCache<NewsImage | null>({ ttlMs: 30 * 60 * 1000 });
 
 export interface EnrichImagesOptions {
   /** Max items to enrich per aggregation (priority order preserved). */
@@ -24,59 +26,68 @@ const DEFAULTS: Required<EnrichImagesOptions> = {
 };
 
 const USGS_EARTHQUAKE_SOURCES = new Set(['usgs-significant', 'usgs-m45', 'usgs-m25']);
-const NHC_SOURCES = new Set(['nhc-atlantic', 'nhc-pacific']);
-const NWS_ALERT_SOURCES = new Set(['nws-alerts']);
+const HAZARD_CATEGORIES = new Set(['severe', 'hurricanes', 'earthquakes', 'volcanoes']);
 
 export async function enrichItemImages(
   items: RSSItem[],
   options: EnrichImagesOptions = {},
 ): Promise<RSSItem[]> {
   const { maxEnrich, concurrency } = { ...DEFAULTS, ...options };
-  const result = items.map((item) => ({ ...item }));
-  const asyncTargets = result.filter((item) => !item.imageUrl).slice(0, maxEnrich);
-  const resolved = new Map<string, string>();
+  const result = items.map((item) => {
+    // A feed image or OG thumbnail alone cannot establish hazard relevance.
+    const image = item.sourceId === 'spc-outlooks' && item.image?.kind === 'product'
+      ? item.image : HAZARD_CATEGORIES.has(item.category) ? undefined : item.image;
+    return { ...item, image, imageUrl: image?.url };
+  });
+  const asyncTargets = result.filter((item) => !item.image &&
+    (USGS_EARTHQUAKE_SOURCES.has(item.sourceId) || !HAZARD_CATEGORIES.has(item.category))).slice(0, maxEnrich);
+  const resolved = new Map<string, NewsImage>();
 
   await mapWithConcurrency(asyncTargets, concurrency, async (item) => {
-    const imageUrl = await resolveStoryImage(item);
-    if (imageUrl) resolved.set(item.id, imageUrl);
+    const image = await resolveStoryImage(item);
+    if (image) resolved.set(item.id, image);
   });
 
   for (const item of result) {
-    if (item.imageUrl) continue;
+    if (item.image) continue;
     const stockSeed = item.category === 'volcanoes' ? (item.location ?? item.id) : item.title;
-    item.imageUrl = resolved.get(item.id)
-      ?? pickCategoryStockImage(item.category, stockSeed, item.sourceId)?.url;
+    const stock = pickCategoryStockImage(item.category, stockSeed);
+    item.image = resolved.get(item.id) ?? (stock ? {
+      url: stock.url, kind: 'reference', credit: stock.credit, sourceUrl: stock.url,
+      alt: item.category === 'volcanoes' ? `Reference view of ${item.location}` : `${item.category} reference image`,
+      caption: item.category === 'volcanoes'
+        ? `Reference view of ${item.location} · Not a current eruption image`
+        : 'Illustrative reference · Not an image of this event',
+    } : undefined);
+    item.imageUrl = item.image?.url;
   }
 
   return result;
 }
 
-async function resolveStoryImage(item: RSSItem): Promise<string | undefined> {
+async function resolveStoryImage(item: RSSItem): Promise<NewsImage | undefined> {
   if (USGS_EARTHQUAKE_SOURCES.has(item.sourceId)) {
     const shakemap = await resolveUsgsEarthquakeImage(item.url);
     if (shakemap) return shakemap;
   }
 
-  if (NHC_SOURCES.has(item.sourceId)) {
-    const outlook = resolveNhcOutlookImage(item);
-    if (outlook) return outlook;
-  }
-
-  if (NWS_ALERT_SOURCES.has(item.sourceId)) {
-    return resolveNwsAlertImage(item);
-  }
+  if (HAZARD_CATEGORIES.has(item.category)) return undefined;
 
   // USGS elevated-volcano JSON items often share one daily notice URL, so OG
   // would return the same image for every peak. Skip OG and use name-keyed art.
   if (item.sourceId !== 'usgs-volcanoes' && shouldAttemptOgImage(item.url)) {
     const og = await resolveOgImage(item.url);
-    if (og) return og;
+    if (og) return {
+      url: og, kind: 'editorial', credit: `Via ${item.source}`, sourceUrl: item.url,
+      alt: `Image supplied with ${item.title}`, caption: 'Publisher-supplied image',
+    };
   }
 
   return undefined;
 }
 
-async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string | undefined> {
+async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<NewsImage | undefined> {
+  if (new URL(eventPageUrl).hostname !== 'earthquake.usgs.gov') return undefined;
   const match = eventPageUrl.match(USGS_EVENT_ID);
   if (!match?.[1]) return undefined;
 
@@ -89,7 +100,7 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
-  let resolved: string | null = null;
+  let resolved: NewsImage | null = null;
 
   try {
     const response = await fetch(
@@ -106,16 +117,25 @@ async function resolveUsgsEarthquakeImage(eventPageUrl: string): Promise<string 
     }
 
     const data = (await response.json()) as {
-      properties?: { products?: { shakemap?: Array<{ contents?: Record<string, { url?: string }> }> } };
+      id?: string;
+      properties?: { products?: { shakemap?: Array<{ updateTime?: number; contents?: Record<string, { url?: string }> }> } };
     };
-    const contents = data.properties?.products?.shakemap?.[0]?.contents;
+    const product = data.id === eventId ? data.properties?.products?.shakemap?.[0] : undefined;
+    const contents = product?.contents;
     if (contents) {
-      const preferredKeys = ['download/intensity.jpg', 'download/pin-thumbnail.png', 'download/pga.jpg'];
+      const preferredKeys = ['download/intensity.jpg', 'download/pga.jpg'];
       for (const key of preferredKeys) {
         const url = contents[key]?.url;
         const safe = url ? safeExternalUrl(upgradeFeedImageUrl(url)) : null;
         if (safe) {
-          resolved = safe;
+          const meaning = key === 'download/intensity.jpg' ? 'Shaking intensity' : 'Peak ground acceleration';
+          resolved = {
+            url: safe, kind: 'product', credit: 'USGS ShakeMap', sourceUrl: eventPageUrl,
+            alt: `USGS ${meaning.toLowerCase()} map for earthquake ${eventId}`,
+            caption: `${meaning} · Earthquake ${eventId}`,
+            issuedAt: product?.updateTime && Number.isFinite(product.updateTime)
+              ? isoTimestamp(new Date(product.updateTime).toISOString()) : undefined,
+          };
           break;
         }
       }

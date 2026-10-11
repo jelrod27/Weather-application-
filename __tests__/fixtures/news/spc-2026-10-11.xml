@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> 
+  <channel>
+    <title>SPC Convective Outlooks</title>
+    <link>https://www.spc.noaa.gov/</link>
+    <description>Storm Prediction Center</description>
+    <language>en-us</language>
+    <copyright>None</copyright>
+    <managingEditor>spc.feedback@noaa.gov (spc.feedback@noaa.gov)</managingEditor>
+    <webMaster>spc.feedback@noaa.gov (spc.feedback@noaa.gov)</webMaster>
+    <pubDate>Sun, 11 Oct 2026 19:11:01 +0000</pubDate>
+    <lastBuildDate>Sun, 11 Oct 2026 19:11:01 +0000</lastBuildDate>
+    <rating>general</rating>
+    <docs>http://validator.w3.org/feed/rss2.html</docs>
+    <ttl>1</ttl>
+    <atom:link href="https://www.spc.noaa.gov/products/spcacrss.xml" rel="self" type="application/rss+xml" />
+
+    <image>
+      <url>http://weather.gov/images/xml_logo.gif</url>
+      <title>SPC Convective Outlooks</title>
+      <link>https://www.spc.noaa.gov/</link>
+    </image> 
+
+    <item>
+      <link>https://www.spc.noaa.gov/products/outlook/day1otlk_1630.html</link>
+      <title>SPC Oct 11, 2026 1630 UTC Day 1 Convective Outlook</title>
+      <description>SPC 1630Z Day 1 Outlook
+      <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day1otlk.png" border="1" alt="Day 1 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
+Day 1 Convective Outlook  
+NWS Storm Prediction Center Norman OK
+1129 AM CDT Sun Oct 11 2026
+
+Valid 111630Z - 121200Z
+
+...THERE IS A SLIGHT RISK OF SEVERE THUNDERSTORMS ACROSS PARTS OF
+NORTH CAROLINA AND VIRGINIA...
+
+...SUMMARY...
+A few tornadoes are possible across parts of North Carolina and
+Virginia through the late afternoon.  Additional storms with
+isolated severe gusts will be possible in parts of the Desert
+Southwest and Four Corners region.
+
+...NC/VA vicinity...
+Midday water-vapor imagery shows a dry slot/vorticity lobe wrapping
+through the base of the larger-scale remnants/cyclone associated
+with Isaias and progressing eastward across the southern
+Appalachians/Carolinas.  Surface analysis places a triple point over
+northwest NC with a maritime warm frontal zone draped east-northeast
+into the DelMarVa.  Despite considerable cloud cover according to
+visible-satellite imagery, surface temperatures are gradually
+warming into the mid to upper 70s across eastern NC and far
+southeast VA.  This modest heating has led to the development of
+around 1000 J/kg MLCAPE across eastern NC and weaker buoyancy
+farther north near Richmond, VA (a few hundred J/kg).  The forced
+band of broken thunderstorm activity moving east across NC will
+likely be the primary feature for severe weather across this general
+region through the late afternoon.  A few supercells embedded within
+the north-south oriented band will potentially pose a risk for a few
+additional tornadoes and perhaps an isolated risk for strong to
+locally severe gusts (see MCD 2361 for short-term details).  Have
+added a level-1 intensity highlight for the area of greatest
+tornadic supercell potential through mid afternoon.  By late this
+afternoon, it is possible (albeit uncertain) that a narrow corridor
+adequately destabilizes ahead of triple point as it develops
+northeastward into central VA.  If sufficient destabilization occurs
+and sustained/robust storms also develop, a localized tornado/wind
+threat could ensue prior to sunset.
+
+...Desert Southwest/Eastern Great Basin...
+Remnants of tropical cyclone Rachel are currently centered in the
+CA/NV/AZ border vicinity, at the base of a broad upper trough
+covering much of the western CONUS.  These remnants are forecast to
+progress northeastward today, moving quickly through the Great Basin
+and ending the period over central/eastern MT.  Persistent
+large-scale forcing for ascent and the aforementioned moisture will
+support scattered thunderstorms.  Strong low to mid-level
+southwesterly flow will result in occasionally intense bowing
+segments capable of strong gusts, particularly in any areas
+that can experience filtered daytime heating.
+
+..Smith/Barnes.. 10/11/2026
+
+</pre>
+<a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html">Read more</a>
+]]>
+      </description>
+      <pubDate>Sun, 11 Oct 2026 16:32:14 +0000</pubDate>
+      <guid isPermaLink="false">https://www.spc.noaa.gov/products/outlook/day1otlk_1630.html/202610111911</guid>
+    </item>
+    <item>
+      <link>https://www.spc.noaa.gov/products/outlook/day2otlk_1730.html</link>
+      <title>SPC Oct 11, 2026 1730 UTC Day 2 Convective Outlook</title>
+      <description>SPC 1730Z Day 2 Outlook
+      <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day2otlk.png" border="1" alt="Day 2 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
+Day 2 Convective Outlook  
+NWS Storm Prediction Center Norman OK
+1203 PM CDT Sun Oct 11 2026
+
+Valid 121200Z - 131200Z
+
+...NO SEVERE THUNDERSTORM AREAS FORECAST...
+
+...SUMMARY...
+No severe weather is expected Monday through Monday night.
+
+...Upper Midwest/Great Lakes...
+
+An upper shortwave trough will develop northeast from the central
+High Plains to the Great Lakes on Monday. This will bring a belt of
+mildly enhanced westerly mid/upper flow across the region, with an
+increasing southwesterly low-level jet expected by Monday evening
+from the Mid-MS Valley into MI. At the surface, low pressure will
+shift east across MN/WI/MI, with a trailing cold front surging
+east/southeast across the central Plains and Upper Midwest. A warm
+front will be oriented west to east across northern WI to northern
+Lower MI. Elevated thunderstorms may develop by 00z near and north
+of this boundary on the edge of the increasing low-level jet and
+stronger warm advection ahead of the surface low/cold front. Cooling
+aloft will result in a plume of steep midlevel lapse rates
+supporting modest elevated instability. Small hail may occur with
+stronger updrafts within the modestly sheared environment across
+northern WI/the U.P. of MI and portions of northern Lower MI during
+the evening and overnight hours. Overall severe potential is
+expected to remain limited by modest instability and capping across
+the warm sector, precluding severe probabilities.
+
+...Southwest/Great Basin...
+
+Lingering moisture across the Southwest and Great Basin will support
+scattered showers and thunderstorms within enhanced deep-layer
+southwesterly flow ahead of an approaching upper low and attendant
+trough. Meager destabilization will limit severe potential, though
+some gusty winds are possible given stronger synoptic flow.
+
+...Southern High Plains...
+
+A few thunderstorms will be possible along a surface trough/dryline
+across western TX/eastern NM as low-level moisture returns north and
+west across the southern Plains. Modest vertical shear and weak
+instability should limit severe potential, though some locally gusty
+outflow winds are possible given steepened low-level lapse rates due
+to daytime heating into the upper 80s/low 90s.
+
+..Leitman.. 10/11/2026
+
+</pre>
+<a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html">Read more</a>
+]]>
+      </description>
+      <pubDate>Sun, 11 Oct 2026 17:06:05 +0000</pubDate>
+      <guid isPermaLink="false">https://www.spc.noaa.gov/products/outlook/day2otlk_1730.html/202610111911</guid>
+    </item>
+    <item>
+      <link>https://www.spc.noaa.gov/products/outlook/day3otlk_1930.html</link>
+      <title>SPC Oct 11, 2026 1930 UTC Day 3 Severe Thunderstorm Outlook</title>
+      <description>SPC 1930Z Day 3 Outlook
+      <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day3otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day3otlk.png" border="1" alt="Day 3 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
+Day 3 Convective Outlook  
+NWS Storm Prediction Center Norman OK
+0209 PM CDT Sun Oct 11 2026
+
+Valid 131200Z - 141200Z
+
+...THERE IS A SLIGHT RISK OF SEVERE THUNDERSTORMS ACROSS PARTS OF
+THE CENTRAL AND SOUTHERN PLAINS...
+
+...SUMMARY...
+Widely scattered severe storms appear possible over portions of the
+central and southern High Plains Tuesday afternoon into night. More
+isolated severe weather may occur into the mid Mississippi Valley,
+and in parts of the Lower Great Lakes.
+
+...Central/Southern Plains to Mid-MS Valley...
+
+Enhanced mid/upper southwesterly flow will reside across the region
+on Tuesday in advance of an eastward-propagating upper low over the
+Great Basin to central Rockies vicinity. At the surface, weak lee
+low development is forecast across southeast CO/southwest KS, with
+surface troughing extending southward across the southern High
+Plains. Meanwhile, a surface front will extend from the High Plains
+low east/northeast across northern KS toward northern IL during the
+evening. Southerly low-level flow and a strengthening low-level jet
+will support mid 60s to near 70 F dewpoints across the warm sector
+from portions of western TX into OK/KS and the Mid-MS Valley. While
+midlevel lapse rates are not forecast to be particularly strong,
+rich boundary layer moisture will foster 1000-2000 J/kg MLCAPE. 
+
+Where stronger heating occurs in closer proximity to the surface
+trough and triple point from northwest TX into central KS,
+supercells will be possible amid vertically veering wind profiles.
+Damaging winds and a tornado or two appear possible within this zone
+of better instability and shear. Convection is likely to increase
+along the breadth of the surface front into the Lower MO/Mid-MS
+Valley as warm advection increases during the evening and overnight
+hours. This convection may tend to be elevated within isentropic
+ascent atop the surface front, further supported by
+boundary-parallel wind profiles. Midlevel temperatures are forecast
+to be cooler, and MUCAPE could approach 1000-1500 J/kg. Marginal
+hail and gusty winds may accompany this activity into the nighttime
+hours.
+
+...Lower Great Lakes...
+
+Showers and thunderstorms are likely to be ongoing Tuesday morning
+ahead of an approaching midlevel shortwave impulse over the Great
+Lakes. Deep-layer westerlies will increase through the day as this
+disturbance approaches, resulting in a moderately to strongly
+sheared environment. If sufficient heating can occur, surface
+dewpoints near 60 F will aid in modest destabilization, resulting in
+a conditionally favorable environment for localized strong wind
+gusts and perhaps a tornado.
+
+..Leitman.. 10/11/2026
+
+</pre>
+<a href="https://www.spc.noaa.gov/products/outlook/day3otlk.html">Read more</a>
+]]>
+      </description>
+      <pubDate>Sun, 11 Oct 2026 19:10:49 +0000</pubDate>
+      <guid isPermaLink="false">https://www.spc.noaa.gov/products/outlook/day3otlk_1930.html/202610111911</guid>
+    </item>
+  </channel>
+</rss>

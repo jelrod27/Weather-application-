@@ -5,6 +5,9 @@
 import { XMLParser } from 'fast-xml-parser';
 import { safeExternalUrl, upgradeFeedImageUrl } from '@/lib/safe-url';
 import { decodeHtmlEntities } from './html-utils';
+import { spcOutlookImage } from '@/lib/news/spc-image';
+import { isoTimestamp } from '@/lib/news/visuals';
+import type { NewsHazard, NewsImage } from '@/lib/news/visuals';
 import type { FeedCategory, FeedSource } from './feedSources';
 
 export interface RSSItem {
@@ -18,6 +21,8 @@ export interface RSSItem {
   priority: 'high' | 'medium' | 'low';
   timestamp: Date;
   imageUrl?: string;
+  image?: NewsImage;
+  hazard?: NewsHazard;
   author?: string;
   location?: string;
   magnitude?: number; // For earthquakes
@@ -248,6 +253,8 @@ function buildItem(
     location?: string;
     magnitude?: number;
     depth?: number;
+    hazard?: NewsHazard;
+    imageCredit?: string;
   }
 ): RSSItem {
   // Upgrade http -> https before the scheme guard: CSP img-src only allows
@@ -265,6 +272,13 @@ function buildItem(
     priority: fields.priority ?? source.priority,
     timestamp,
     imageUrl: safeImage || undefined,
+    image: spcOutlookImage({ sourceId: source.id, url: fields.safeLink, title: fields.title, body: fields.body })
+      ?? (safeImage ? {
+        url: safeImage, kind: 'editorial', alt: `Image supplied with ${cleanHtml(fields.title)}`,
+        credit: fields.imageCredit ? cleanHtml(fields.imageCredit) : `Via ${source.name}`,
+        sourceUrl: fields.safeLink, caption: 'Publisher-supplied image',
+      } : undefined),
+    hazard: fields.hazard,
     author: fields.author ? cleanHtml(fields.author) : undefined,
     location: fields.location,
     magnitude: fields.magnitude,
@@ -308,6 +322,7 @@ export function parseRSSFeed(xml: string, source: FeedSource): RSSItem[] {
           pubDate: firstText(item, ['pubDate', 'pubdate', 'dc:date', 'date']),
           author: firstText(item, ['author', 'dc:creator']),
           rawImage: extractImageFromItem(item),
+          imageCredit: firstText(item, ['media:credit', 'copyright']),
         })
       );
     } catch {
@@ -351,6 +366,14 @@ export function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
       let magnitude: number | undefined;
       let depth: number | undefined;
       let location: string | undefined;
+      const event = source.id === 'nws-alerts' ? firstText(entry, ['cap:event']) : undefined;
+      const hazard: NewsHazard | undefined = event ? {
+        messageId: firstText(entry, ['id']),
+        event: cleanHtml(event),
+        effective: isoTimestamp(firstText(entry, ['cap:effective'])),
+        expires: isoTimestamp(firstText(entry, ['cap:expires'])),
+      } : undefined;
+      if (source.id === 'nws-alerts') location = firstText(entry, ['cap:areaDesc']);
       if (source.category === 'earthquakes' && title) {
         const magMatch = title.match(/^M\s*([\d.]+)/);
         if (magMatch) magnitude = parseFloat(magMatch[1]);
@@ -371,6 +394,8 @@ export function parseAtomFeed(xml: string, source: FeedSource): RSSItem[] {
           pubDate: firstText(entry, ['updated', 'published']),
           author,
           rawImage: extractImageFromItem(entry),
+          imageCredit: firstText(entry, ['media:credit', 'rights']),
+          hazard,
           priority: determinePriority(source, magnitude),
           location,
           magnitude,
