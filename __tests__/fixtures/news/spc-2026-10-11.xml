@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> 
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>SPC Convective Outlooks</title>
     <link>https://www.spc.noaa.gov/</link>
@@ -19,14 +19,14 @@
       <url>http://weather.gov/images/xml_logo.gif</url>
       <title>SPC Convective Outlooks</title>
       <link>https://www.spc.noaa.gov/</link>
-    </image> 
+    </image>
 
     <item>
       <link>https://www.spc.noaa.gov/products/outlook/day1otlk_1630.html</link>
       <title>SPC Oct 11, 2026 1630 UTC Day 1 Convective Outlook</title>
       <description>SPC 1630Z Day 1 Outlook
       <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day1otlk.png" border="1" alt="Day 1 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
-Day 1 Convective Outlook  
+Day 1 Convective Outlook
 NWS Storm Prediction Center Norman OK
 1129 AM CDT Sun Oct 11 2026
 
@@ -93,7 +93,7 @@ that can experience filtered daytime heating.
       <title>SPC Oct 11, 2026 1730 UTC Day 2 Convective Outlook</title>
       <description>SPC 1730Z Day 2 Outlook
       <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day2otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day2otlk.png" border="1" alt="Day 2 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
-Day 2 Convective Outlook  
+Day 2 Convective Outlook
 NWS Storm Prediction Center Norman OK
 1203 PM CDT Sun Oct 11 2026
 
@@ -156,7 +156,7 @@ to daytime heating into the upper 80s/low 90s.
       <title>SPC Oct 11, 2026 1930 UTC Day 3 Severe Thunderstorm Outlook</title>
       <description>SPC 1930Z Day 3 Outlook
       <![CDATA[<br /><a href="https://www.spc.noaa.gov/products/outlook/day3otlk.html"><img src="https://www.spc.noaa.gov/products/outlook/day3otlk.png" border="1" alt="Day 3 Outlook Image" hspace="1" vspace="1" width="815" height="555" align="center" /></a><pre>
-Day 3 Convective Outlook  
+Day 3 Convective Outlook
 NWS Storm Prediction Center Norman OK
 0209 PM CDT Sun Oct 11 2026
 
@@ -184,7 +184,7 @@ evening. Southerly low-level flow and a strengthening low-level jet
 will support mid 60s to near 70 F dewpoints across the warm sector
 from portions of western TX into OK/KS and the Mid-MS Valley. While
 midlevel lapse rates are not forecast to be particularly strong,
-rich boundary layer moisture will foster 1000-2000 J/kg MLCAPE. 
+rich boundary layer moisture will foster 1000-2000 J/kg MLCAPE.
 
 Where stronger heating occurs in closer proximity to the surface
 trough and triple point from northwest TX into central KS,

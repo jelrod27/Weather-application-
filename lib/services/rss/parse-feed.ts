@@ -216,10 +216,10 @@ function imageFields(node: XmlNode): FeedImageFields {
   const media = [...asArray(node['media:thumbnail']), ...asArray(node['media:content'])]
     .find((candidate) => firstText(candidate, ['@_url', 'url']) === rawImage);
   const htmlImage = Array.from(itemHtmlForImages(node).matchAll(/<img\b[^>]*>/gi)).find(([tag]) => {
-    const src = tag.match(/\ssrc\s*=\s*["']([^"']+)["']/i)?.[1];
+    const src = tag.match(/\ssrc\s*=\s*(["'])(.*?)\1/i)?.[2];
     return src && decodeHtmlEntities(src.trim()) === rawImage;
   });
-  const htmlAlt = htmlImage?.[0].match(/\salt\s*=\s*["']([^"']*)["']/i)?.[1];
+  const htmlAlt = htmlImage?.[0].match(/\salt\s*=\s*(["'])(.*?)\1/i)?.[2];
   const caption = (media && firstText(media, ['media:description', 'media:title'])) ?? firstText(node, ['media:description']);
   return {
     rawImage,

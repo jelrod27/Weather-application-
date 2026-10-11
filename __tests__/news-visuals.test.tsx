@@ -105,6 +105,16 @@ describe('hazard imagery provenance', () => {
     expect(item.image).toMatchObject({ caption: 'Computer simulation, not an observation', alt: 'Computer simulation, not an observation' });
   });
 
+  it.each([
+    ['"', "Artist's impression of a simulated planet, not an observation"],
+    ["'", 'Artist "concept" of a simulated planet, not an observation'],
+  ])('preserves opposite quotes inside a %s-delimited image description', (quote, description) => {
+    const [item] = parseRSSFeed('<rss><channel><item><title>Research</title><link>https://www.nasa.gov/research</link>' +
+      `<description><![CDATA[<img src="https://www.nasa.gov/image.jpg" alt=${quote}${description}${quote} />]]></description>` +
+      '</item></channel></rss>', source('nasa-breaking'));
+    expect(item.image).toMatchObject({ caption: description, alt: description });
+  });
+
   it('preserves named-volcano reference context and rejects unknown peaks', async () => {
     const volcano = { ...freeze, category: 'volcanoes' as const, sourceId: 'usgs-volcanoes', hazard: undefined };
     const items = await enrichItemImages([{ ...volcano, location: 'Kilauea' }, { ...volcano, location: 'Great Sitkin' }]);
