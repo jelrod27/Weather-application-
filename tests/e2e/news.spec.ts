@@ -4,7 +4,7 @@ import { test, expect } from './fixtures';
  * Smoke coverage for /news (Earth & Space News).
  *
  * The page fetches its feed from /api/news/rss on mount. We stub both the
- * main feed and the featured request with a deterministic ok payload (no items)
+ * section feed with a deterministic ok payload (no items)
  * and assert on the static shell (title, heading, category filter, search
  * input) and the freshness indicator.
  */
@@ -15,11 +15,9 @@ test.beforeEach(async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify({
         status: 'ok',
-        items: [],
-        happeningNow: [],
-        featured: null,
-        stats: { byCategory: {}, errors: [], enabledSources: [] },
-        categories: {},
+        sections: [],
+        activeIds: [],
+        sources: [],
         lastUpdated: new Date().toISOString(),
       }),
     })

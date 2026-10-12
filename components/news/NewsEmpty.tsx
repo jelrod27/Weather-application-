@@ -26,7 +26,7 @@ export default function NewsEmpty({
   message,
   onRetry,
   className,
-}: NewsEmptyProps) {
+}: NewsEmptyProps): React.JSX.Element {
   const themeClasses = themeTokens.weather;
 
   const configs = {

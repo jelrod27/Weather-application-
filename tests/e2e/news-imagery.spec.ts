@@ -3,6 +3,7 @@ import path from 'node:path';
 import { test, expect } from './fixtures';
 import { parseAtomFeed, parseRSSFeed } from '../../lib/services/rss/parse-feed';
 import { FEED_SOURCES } from '../../lib/services/rss/feedSources';
+import { selectNewsSections } from '../../lib/news/sections';
 
 const readFixture = (name: string): string => fs.readFileSync(path.join(__dirname, '../../__tests__/fixtures/news', name), 'utf8');
 const nws = FEED_SOURCES.find((source) => source.id === 'nws-alerts')!;
@@ -14,8 +15,8 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
   test(`${viewport.name}: distinct hazards, uncropped map, credits and broken-image fallback`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
     await page.route('**/api/news/rss**', (route) => route.fulfill({ json: {
-      status: 'ok', items: [...warnings, day2], happeningNow: warnings,
-      featured: day2, stats: { byCategory: { severe: 4 }, errors: [], enabledSources: ['NWS', 'SPC'] },
+      status: 'ok', sections: selectNewsSections([...warnings, day2], { section: new URL(route.request().url()).searchParams.has('section') ? 'reports' : undefined }),
+      activeIds: [], sources: [],
       lastUpdated: '2026-10-11T19:00:00Z',
     } }));
     // Synthetic map makes layout/error tests independent of NOAA availability.
@@ -23,6 +24,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="815" height="555"><rect width="815" height="555" fill="white" stroke="black" stroke-width="12"/><text x="30" y="50" fill="black" font-size="26">Synthetic Day 2 map fixture</text><rect x="90" y="140" width="600" height="250" fill="#eff6ff" stroke="#2563eb"/><text x="30" y="525" fill="black" font-size="22">Legend at map boundary</text></svg>',
     }));
     await page.goto('/news', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'View all outlooks & recent reports' }).click();
     for (const family of ['wind', 'freeze', 'flash-flood']) {
       await expect(page.locator(`svg[data-hazard="${family}"]`).first()).toBeVisible();
     }
@@ -38,6 +40,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await page.unroute('**/day2otlk_20261011_1730_prt.png');
     await page.route('**/day2otlk_20261011_1730_prt.png', (route) => route.abort());
     await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'View all outlooks & recent reports' }).click();
     await expect(page.getByRole('img', { name: /Weather report illustration/ }).first()).toBeVisible();
     await expect(page.getByRole('img', { name: /SPC Day 2/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'NOAA / Storm Prediction Center', exact: true })).toHaveCount(0);

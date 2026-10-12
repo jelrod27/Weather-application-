@@ -58,19 +58,22 @@ export default function NewsFilter({
   searchQuery = '',
   isLoading = false,
   className,
-}: NewsFilterProps) {
+}: NewsFilterProps): React.JSX.Element {
   const themeClasses = themeTokens.navigation;
 
   const [localSearch, setLocalSearch] = React.useState(searchQuery);
+  const searchCallback = React.useRef(onSearchChange);
+  React.useEffect(() => { searchCallback.current = onSearchChange; }, [onSearchChange]);
+  React.useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
 
   // Debounce search input
   React.useEffect(() => {
     const timeout = setTimeout(() => {
-      onSearchChange(localSearch);
+      searchCallback.current(localSearch);
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [localSearch, onSearchChange]);
+  }, [localSearch]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -81,6 +84,8 @@ export default function NewsFilter({
           <Input
             type="text"
             placeholder="Search news..."
+            aria-label="Search news"
+            maxLength={200}
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             className={cn(
@@ -91,6 +96,8 @@ export default function NewsFilter({
           />
         </div>
         <Button
+          id="news-refresh"
+          aria-label="Refresh news"
           variant="outline"
           size="icon"
           onClick={onRefresh}
@@ -120,6 +127,7 @@ export default function NewsFilter({
               <TabsTrigger
                 key={cat.id}
                 value={cat.id}
+                aria-label={cat.label}
                 className={cn(
                   'flex items-center gap-1 text-xs sm:text-sm font-bold uppercase tracking-wide data-[state=active]:ring-2 transition-all px-2 sm:px-3 py-1.5 card-inner',
                   cat.id === 'all'
@@ -129,7 +137,7 @@ export default function NewsFilter({
                 )}
               >
                 <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">{cat.label}</span>
+                <span>{cat.label}</span>
               </TabsTrigger>
             );
           })}
