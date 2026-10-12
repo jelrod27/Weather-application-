@@ -45,9 +45,9 @@ export default function NewsPage(): React.JSX.Element {
         onCategoryChange={category => setView(previous => ({ ...previous, category, section: undefined, offset: 0 }))}
         onSearchChange={query => setView(previous => previous.query === query ? previous : { ...previous, query, section: undefined, offset: 0 })}
         onRefresh={feed.refresh} isLoading={feed.loading || feed.refreshing} className="mb-4" />
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded border border-primary/25 p-3 text-sm">
+      <div className="mb-6 flex flex-col items-stretch gap-3 rounded border border-primary/25 p-3 text-sm sm:flex-row sm:flex-wrap sm:items-center">
         <button type="button" disabled={!feed.pending || feed.refreshing} onClick={feed.applyPending}
-          className="shrink-0 border-2 border-primary px-3 py-2 font-mono text-primary disabled:opacity-40">Apply latest feed</button>
+          className="shrink-0 self-start border-2 border-primary px-3 py-2 font-mono text-primary disabled:opacity-40">Apply latest feed</button>
         <p role="status" className="min-w-0 flex-1">
           {feed.refreshing ? 'Checking sources…' : feed.pending ? 'A fresh check is ready. Apply it when you are ready to update these cards.'
             : 'Checks every 2 minutes while visible. New cards wait here so you can keep your place.'}

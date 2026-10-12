@@ -30,6 +30,8 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await expect(page.locator('[data-news-section="active"] [data-news-key]')).toHaveCount(4);
     await expect(page.locator('[data-news-section="reading"] [data-news-key]')).toHaveCount(3);
     await expect(page.locator('[data-news-key="story-000"]')).toHaveCount(1);
+    const refreshStatus = await page.getByRole('status').filter({ hasText: 'Checks every 2 minutes' }).boundingBox();
+    expect(refreshStatus?.width).toBeGreaterThan(250);
     await expect(page.getByRole('link', { name: 'Open the local Warning Center' })).toHaveAttribute('href', '/warnings');
     await page.screenshot({ path: testInfo.outputPath(`${viewport.name}-news-sections.png`), fullPage: true });
 
