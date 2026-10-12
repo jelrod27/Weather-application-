@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { safeExternalUrl } from '@/lib/safe-url';
 import { hazardFamily, visualTime } from '@/lib/news/visuals';
+import { isVerifiedActiveWarning } from '@/lib/news/rails';
 import HazardIllustration from './HazardIllustration';
 import { getCategoryConfig } from './CategoryBadge';
 import type { ReactElement } from 'react';
@@ -70,11 +71,35 @@ interface NewsHazardFactsProps {
 }
 
 export function NewsHazardFacts({ item }: NewsHazardFactsProps): ReactElement | null {
-  if (!item.hazard) return null;
+  const delayed = item.sourceState === 'delayed' || item.sourceState === 'unavailable';
+  const reportedTropicalStatus = item.tropicalStatus && item.tropicalStatus !== 'unverified' ? item.tropicalStatus
+    : item.updates?.find(update => update.tropicalStatus === 'final' || update.tropicalStatus === 'handoff')?.tropicalStatus;
+  const label = delayed ? 'Delayed report · current status unverified'
+    : item.sourceState === 'partial' ? 'Partial source coverage · current status unverified'
+    : reportedTropicalStatus === 'final' ? 'Final advisory reported · active status unverified'
+    : reportedTropicalStatus === 'handoff' ? 'Responsibility handoff reported · active status unverified'
+    : isVerifiedActiveWarning(item) ? 'Verified active NWS warning'
+    : item.kind === 'hazard' ? 'Hazard report · active status unverified'
+    : item.kind === 'outlook' ? 'Outlook'
+    : item.occurredAt ? 'Earthquake occurrence' : item.kind === 'event' ? 'Event report' : null;
+  if (!item.hazard && !label) return null;
   return <div className="my-2 text-xs leading-relaxed text-muted-foreground">
-    <p className="font-mono font-bold text-foreground">{item.hazard.event}</p>
+    {label ? <p className="font-mono font-bold text-foreground">{label}</p> : null}
+    {item.hazard ? <p className="font-mono font-bold text-foreground">{item.hazard.event}</p> : null}
     {item.location ? <p>{item.location}</p> : null}
-    {item.hazard.effective ? <p>Effective <time dateTime={item.hazard.effective}>{visualTime(item.hazard.effective)}</time></p> : null}
-    {item.hazard.expires ? <p>Expires <time dateTime={item.hazard.expires}>{visualTime(item.hazard.expires)}</time></p> : null}
+    {item.occurredAt ? <p>Occurred <time dateTime={item.occurredAt}>{visualTime(item.occurredAt)}</time></p> : null}
+    {item.updatedAt ? <p>Record updated <time dateTime={item.updatedAt}>{visualTime(item.updatedAt)}</time></p> : null}
+    {item.hazard?.effective ? <p>Effective <time dateTime={item.hazard.effective}>{visualTime(item.hazard.effective)}</time></p> : null}
+    {item.hazard?.expires ? <p>Expires <time dateTime={item.hazard.expires}>{visualTime(item.hazard.expires)}</time></p> : null}
+    {item.sourceCheckedAt ? <p>Source checked <time dateTime={item.sourceCheckedAt}>{visualTime(item.sourceCheckedAt)}</time></p> : null}
+    {item.updates && item.updates.length > 1 ? <details className="mt-2" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
+      <summary className="cursor-pointer underline">Official updates ({item.updates.length})</summary>
+      <ul className="mt-1 space-y-1">{item.updates.map(update => {
+        const url = safeExternalUrl(update.url);
+        return url ? <li key={`${update.id}:${update.issuedAt}`}><a href={url} target="_blank" rel="noopener noreferrer" className="underline">
+          {update.title} · {visualTime(update.issuedAt)}
+        </a></li> : null;
+      })}</ul>
+    </details> : null}
   </div>;
 }

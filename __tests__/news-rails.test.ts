@@ -23,13 +23,13 @@ function item(overrides: Partial<RSSItem> = {}): RSSItem {
 }
 
 describe('news rails', () => {
-  it('selects high-priority items within the happening-now window', () => {
+  it('excludes recent articles without verified active warning evidence', () => {
     const recent = item({ id: 'recent', priority: 'high', timestamp: new Date('2026-06-26T11:00:00Z') });
     const old = item({ id: 'old', priority: 'high', timestamp: new Date('2026-06-25T00:00:00Z') });
     const low = item({ id: 'low', priority: 'low', timestamp: new Date('2026-06-26T11:30:00Z') });
 
     const now = new Date('2026-06-26T12:00:00Z').getTime();
-    expect(selectHappeningNow([recent, old, low], now)).toEqual([recent]);
+    expect(selectHappeningNow([recent, old, low], now)).toEqual([]);
   });
 
   it('prefers happening-now for featured selection', () => {

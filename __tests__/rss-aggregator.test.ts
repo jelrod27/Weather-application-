@@ -214,7 +214,7 @@ describe('parseJsonFeed (USGS elevated volcanoes)', () => {
     const json = JSON.stringify([
       null,
       'not-an-object',
-      { volcano_name: 'Kilauea', alert_level: 'WARNING', color_code: 'RED', notice_url: 'https://volcanoes.usgs.gov/n/1' },
+      { volcano_name: 'Kilauea', alert_level: 'WARNING', color_code: 'RED', sent_utc: '2026-10-11 20:00:00', notice_url: 'https://volcanoes.usgs.gov/n/1' },
     ]);
     const items = parseJsonFeed(json, volcanoSource());
     expect(items).toHaveLength(1);
@@ -223,6 +223,21 @@ describe('parseJsonFeed (USGS elevated volcanoes)', () => {
 });
 
 describe('deduplicateItems', () => {
+  it('orders official updates by actual time across UTC offsets and calendar dates', () => {
+    const issuedTimes = ['2026-10-11T21:50:00Z', '2026-10-11T15:42:00-07:00', '2026-10-12T00:00:00+02:00'];
+    const reports = issuedTimes.map((issuedAt, index) => item({
+      id: `report-${index}`, category: 'severe', kind: 'hazard', sourceId: 'nws-alerts',
+      timestamp: new Date(issuedAt), updatedAt: issuedAt,
+      identity: { authority: 'nws', eventId: 'KEKA.GL.W.0032', productId: `report-${index}`, areaKey: 'PZZ455' },
+      updates: [{ id: `report-${index}`, title: 'Gale Warning', url: `https://api.weather.gov/alerts/report-${index}`, issuedAt }],
+    }));
+
+    const [grouped] = deduplicateItems(reports);
+
+    expect(grouped.id).toBe('report-1');
+    expect(grouped.updates?.map(update => update.id)).toEqual(['report-1', 'report-2', 'report-0']);
+  });
+
   it('collapses near-identical titles from different sources to the higher-priority one', () => {
     const items = [
       item({ id: 'a', title: 'Major earthquake strikes northern coast region', priority: 'low', source: 'A' }),
@@ -267,25 +282,25 @@ describe('parseItemTimestamp', () => {
   });
 });
 
-describe('cacheControlForCategories (tiered cache, §9)', () => {
-  it('uses the Fast tier for severe', () => {
-    expect(cacheControlForCategories(['severe'])).toContain('s-maxage=300');
+describe('cacheControlForCategories (uncached lifecycle responses)', () => {
+  it('disables response caching for severe weather', () => {
+    expect(cacheControlForCategories(['severe'])).toBe('no-store');
   });
 
-  it('uses the Slow tier for science', () => {
-    expect(cacheControlForCategories(['science'])).toContain('s-maxage=21600');
+  it('disables response caching for science', () => {
+    expect(cacheControlForCategories(['science'])).toBe('no-store');
   });
 
-  it('uses the Medium tier for earthquakes', () => {
-    expect(cacheControlForCategories(['earthquakes'])).toContain('s-maxage=1800');
+  it('disables response caching for earthquakes', () => {
+    expect(cacheControlForCategories(['earthquakes'])).toBe('no-store');
   });
 
-  it('defaults the "all" request (no categories) to the Fast tier', () => {
-    expect(cacheControlForCategories()).toContain('s-maxage=300');
+  it('disables response caching for all sources', () => {
+    expect(cacheControlForCategories()).toBe('no-store');
   });
 
-  it('picks the fastest tier present in a mixed request', () => {
-    expect(cacheControlForCategories(['science', 'severe'])).toContain('s-maxage=300');
-    expect(cacheControlForCategories(['science', 'earthquakes'])).toContain('s-maxage=1800');
+  it('disables response caching for mixed categories', () => {
+    expect(cacheControlForCategories(['science', 'severe'])).toBe('no-store');
+    expect(cacheControlForCategories(['science', 'earthquakes'])).toBe('no-store');
   });
 });

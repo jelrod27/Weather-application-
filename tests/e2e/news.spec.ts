@@ -20,6 +20,7 @@ test.beforeEach(async ({ page }) => {
         featured: null,
         stats: { byCategory: {}, errors: [], enabledSources: [] },
         categories: {},
+        lastUpdated: new Date().toISOString(),
       }),
     })
   );
@@ -40,5 +41,5 @@ test('exposes category filters', async ({ page }) => {
 });
 
 test('shows the freshness indicator after a successful load', async ({ page }) => {
-  await expect(page.getByText(/Updated/i).first()).toBeVisible({ timeout: 30000 });
+  await expect(page.getByText(/Feed assembled/i).first()).toBeVisible({ timeout: 30000 });
 });

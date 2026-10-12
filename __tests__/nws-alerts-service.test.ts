@@ -207,7 +207,7 @@ describe('Weather Intensity Score (WIS)', () => {
       expect(result[0]).toHaveProperty('areaDesc', 'Oklahoma County, OK');
     });
 
-    it('should default unknown severity values to Minor', async () => {
+    it('should preserve unknown severity as Unknown', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -226,7 +226,7 @@ describe('Weather Intensity Score (WIS)', () => {
 
       const result = await fetchActiveAlerts();
 
-      expect(result[0]).toHaveProperty('severity', 'Minor');
+      expect(result[0]).toHaveProperty('severity', 'Unknown');
     });
   });
 });

@@ -17,7 +17,9 @@ import NewsFeedBanner from '@/components/news/NewsFeedBanner';
 import NewsSourceRow from '@/components/news/NewsSourceRow';
 import NewsCategorySections from '@/components/news/NewsCategorySections';
 import NewsSeoContent from '@/components/news/news-seo-content';
-import { excludeRailIds, groupItemsByCategory } from '@/lib/news/rails';
+import { projectNewsSnapshot } from '@/lib/news/snapshot';
+import { excludeRailIds, groupItemsByCategory, isVerifiedActiveWarning } from '@/lib/news/rails';
+import type { NewsSourceHealth } from '@/lib/news/types';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import type { FeedCategory } from '@/lib/services/rss/feedSources';
 
@@ -46,13 +48,14 @@ function formatUpdatedAgo(date: Date): string {
   return `${Math.floor(diffHours / 24)}d ago`;
 }
 
-export default function NewsPage() {
+export default function NewsPage(): React.JSX.Element {
   const themeClasses = themeTokens.weather;
 
   const [news, setNews] = useState<RSSItem[]>([]);
+  const [delayedNews, setDelayedNews] = useState<RSSItem[]>([]);
+  const [sources, setSources] = useState<NewsSourceHealth[]>([]);
   const [happeningNow, setHappeningNow] = useState<RSSItem[]>([]);
   const [featuredStory, setFeaturedStory] = useState<RSSItem | null>(null);
-  const [filteredNews, setFilteredNews] = useState<RSSItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +64,13 @@ export default function NewsPage() {
   const [stats, setStats] = useState<NewsStats | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const hasLoadedRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const lastItemsRef = useRef<RSSItem[]>([]);
+  const [now, setNow] = useState(() => Date.now());
 
   const fetchNews = useCallback(async (category: FilterCategory, options?: { initial?: boolean }) => {
     const initial = options?.initial ?? false;
+    const requestId = ++requestIdRef.current;
     try {
       if (initial) setIsLoading(true);
       else setIsRefreshing(true);
@@ -76,39 +83,69 @@ export default function NewsPage() {
       if (!response.ok) throw new Error('Failed to fetch news');
 
       const data = await response.json();
+      if (requestId !== requestIdRef.current) return;
       if (data.status !== 'ok' || !Array.isArray(data.items)) {
         throw new Error(data.message || 'No news available');
       }
 
       const items = hydrateItems(data.items);
+      const delayed = Array.isArray(data.delayedItems) ? hydrateItems(data.delayedItems) : [];
+      lastItemsRef.current = [...items, ...delayed];
+      setDelayedNews(delayed);
+      setSources(Array.isArray(data.sources) ? data.sources : []);
+      setNow(Date.now());
       setNews(items);
-      setFilteredNews(items);
       setHappeningNow(Array.isArray(data.happeningNow) ? hydrateItems(data.happeningNow) : []);
       setFeaturedStory(data.featured ? hydrateItems([data.featured])[0] : null);
       setStats(data.stats ?? null);
-      setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : new Date());
+      setLastUpdated(data.lastUpdated ? new Date(data.lastUpdated) : null);
       hasLoadedRef.current = true;
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('[news] Error fetching news:', err);
       setError(err instanceof Error ? err.message : 'Failed to load news');
+      setHappeningNow([]);
+      setFeaturedStory(null);
+      setNews([]);
+      setDelayedNews(lastItemsRef.current.map(item => ({ ...item, sourceState: 'delayed', lifecycle: 'unverified' })));
+      setSources(previous => previous.map(source => ({ ...source, state: 'delayed' })));
       if (initial) {
         setNews([]);
-        setFilteredNews([]);
         setHappeningNow([]);
         setFeaturedStory(null);
       }
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
   }, []);
+
+  // A cached response cannot keep a warning active beyond its evidence deadline.
+  // Periodic network refresh and reading-state preservation belong to phase 4.
+  useEffect(() => {
+    const deadlines = [...sources.flatMap(source => [source.freshUntil, source.retainedUntil]), ...news.flatMap(item => [item.freshUntil, item.warning?.expires, item.warning?.ends])]
+      .map(value => value ? Date.parse(value) : NaN).filter(time => Number.isFinite(time) && time > now);
+    if (!deadlines.length) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, Math.min(...deadlines) - Date.now()));
+    return () => clearTimeout(timer);
+  }, [news, sources, now]);
+
+  const projected = useMemo(() => projectNewsSnapshot([...news, ...delayedNews], sources, now), [news, delayedNews, sources, now]);
+  const activeNow = useMemo(() => projected.items.filter(item => happeningNow.some(active => active.id === item.id) && isVerifiedActiveWarning(item, now)), [projected.items, happeningNow, now]);
+  const currentFeatured = projected.items.find(item => item.id === featuredStory?.id) ?? null;
+  const visibleDelayed = useMemo(() => projected.delayedItems.filter(item =>
+    (currentCategory === 'all' || item.category === currentCategory) &&
+    (!searchQuery.trim() || [item.title, item.description, item.source, item.location].some(value => value?.toLowerCase().includes(searchQuery.trim().toLowerCase())))),
+  [projected.delayedItems, currentCategory, searchQuery]);
 
   useEffect(() => {
     void fetchNews(currentCategory, { initial: !hasLoadedRef.current });
   }, [currentCategory, fetchNews]);
 
-  useEffect(() => {
-    let filtered = [...news];
+  const filteredNews = useMemo(() => {
+    let filtered = [...projected.items];
     if (currentCategory !== 'all') {
       filtered = filtered.filter((item) => item.category === currentCategory);
     }
@@ -122,17 +159,17 @@ export default function NewsPage() {
           item.location?.toLowerCase().includes(query),
       );
     }
-    setFilteredNews(filtered);
-  }, [news, currentCategory, searchQuery]);
+    return filtered;
+  }, [projected.items, currentCategory, searchQuery]);
 
   const isHomeView = currentCategory === 'all' && !searchQuery;
   const showInitialSkeleton = isLoading && news.length === 0;
 
   const railItems = useMemo(() => {
-    const rails: RSSItem[] = [...happeningNow];
-    if (featuredStory && isHomeView) rails.push(featuredStory);
+    const rails: RSSItem[] = [...activeNow];
+    if (currentFeatured && isHomeView) rails.push(currentFeatured);
     return rails;
-  }, [happeningNow, featuredStory, isHomeView]);
+  }, [activeNow, currentFeatured, isHomeView]);
 
   const gridItems = useMemo(() => {
     const deduped = isHomeView ? excludeRailIds(filteredNews, railItems) : filteredNews;
@@ -151,12 +188,15 @@ export default function NewsPage() {
   const getEmptyType = (): 'no-alerts' | 'no-results' | 'error' | 'no-news' => {
     if (error) return 'error';
     if (searchQuery) return 'no-results';
-    if (currentCategory === 'severe' && news.length === 0) return 'no-alerts';
+    if (currentCategory === 'severe' && news.length === 0) {
+      return projected.sources.find(source => source.id === 'nws-alerts')?.state === 'fresh' && !stats?.errors?.length ? 'no-alerts' : 'error';
+    }
+    if (projected.sources.some(source => source.state !== 'fresh') && !projected.items.length) return 'error';
     if (currentCategory !== 'all') return 'no-results';
     return 'no-news';
   };
 
-  const feedErrorCount = stats?.errors?.length ?? 0;
+  const feedErrorCount = Math.max(stats?.errors?.length ?? 0, projected.sources.filter(source => source.state !== 'fresh').length);
 
   return (
     <PageWrapper>
@@ -170,7 +210,7 @@ export default function NewsPage() {
             EARTH & SPACE NEWS
           </h1>
           <p className={cn('text-sm sm:text-base font-mono', themeClasses.text)}>
-            Real-time hazard feeds from USGS, NASA, NOAA, NWS, NHC, and science publishers
+            Official hazard reports, outlooks, and science reading · Verified active coverage starts with NWS warnings
           </p>
           {lastUpdated && !showInitialSkeleton && (
             <p
@@ -180,8 +220,7 @@ export default function NewsPage() {
               )}
               aria-live="polite"
             >
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
-              Updated {formatUpdatedAgo(lastUpdated)}
+              Feed assembled {formatUpdatedAgo(lastUpdated)} · source check times below
               {isRefreshing && <span className="opacity-70"> — refreshing…</span>}
             </p>
           )}
@@ -200,6 +239,7 @@ export default function NewsPage() {
         {!showInitialSkeleton && feedErrorCount > 0 && (
           <NewsFeedBanner errorCount={feedErrorCount} />
         )}
+        {!showInitialSkeleton && <NewsSourceRow sources={stats?.enabledSources ?? []} health={projected.sources} />}
 
         {showInitialSkeleton ? (
           <div className="space-y-8">
@@ -208,7 +248,7 @@ export default function NewsPage() {
           </div>
         ) : (
           <>
-            {isHomeView && happeningNow.length > 0 && (
+            {isHomeView && activeNow.length > 0 && (
               <div className="mb-8">
                 <h2
                   className={cn(
@@ -223,19 +263,19 @@ export default function NewsPage() {
                   HAPPENING NOW
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {happeningNow.map((item) => (
+                  {activeNow.map((item) => (
                     <NewsCard key={`now-${item.id}`} item={item} variant="compact" />
                   ))}
                 </div>
               </div>
             )}
 
-            {isHomeView && featuredStory && (
+            {isHomeView && currentFeatured && (
               <div className="mb-8">
                 <h2 className={cn('text-xl font-bold font-mono mb-4', themeClasses.headerText)}>
                   TOP STORY
                 </h2>
-                <NewsHero item={featuredStory} />
+                <NewsHero item={currentFeatured} />
               </div>
             )}
 
@@ -262,6 +302,11 @@ export default function NewsPage() {
                 />
               )}
             </div>
+            {visibleDelayed.length > 0 && <section className="mt-8" aria-labelledby="delayed-reports-title">
+              <h2 id="delayed-reports-title" className="text-xl font-bold font-mono mb-2">DELAYED REPORTS</h2>
+              <p className="text-sm mb-4">Last-known reports. Current conditions cannot be verified from these sources.</p>
+              <NewsGrid items={visibleDelayed} />
+            </section>}
           </>
         )}
 
@@ -280,7 +325,6 @@ export default function NewsPage() {
                   .join(' • ')}
               </p>
             )}
-            <NewsSourceRow sources={stats?.enabledSources ?? []} />
           </div>
         )}
       </div>

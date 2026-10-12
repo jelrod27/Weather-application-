@@ -17,7 +17,6 @@ export {
   aggregateFeeds,
   cacheControlForCategories,
   getCategoryConfig,
-  getFeaturedItem,
 } from './aggregate-cache';
 
 /**
