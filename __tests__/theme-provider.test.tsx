@@ -8,8 +8,8 @@ jest.mock('@/lib/auth', () => ({ useAuth: () => mockAuth }))
 jest.mock('@/lib/services/preferences-service', () => ({ updateUserPreferencesAPI: (...args: unknown[]) => mockSave(...args) }))
 jest.mock('@/lib/user-cache-service', () => ({ userCacheService: { mirrorServerPreferences: jest.fn() } }))
 function Probe(): ReactElement {
-  const { theme, setTheme } = useTheme()
-  return <><output>{theme}</output><button onClick={() => setTheme('clear-sky')}>Clear Sky</button></>
+  const { theme, setTheme, previewTheme, restoreTheme } = useTheme()
+  return <><output>{theme}</output><button onClick={() => setTheme('clear-sky')}>Clear Sky</button><button onClick={() => previewTheme('dracula')}>Preview Dracula</button><button onClick={() => restoreTheme('nord')}>Restore Nord</button></>
 }
 describe('theme preference resolution', () => {
   beforeEach(() => { localStorage.clear(); mockAuth.user = null; mockAuth.preferences = null; mockAuth.loading = false; jest.clearAllMocks() })
@@ -19,4 +19,7 @@ describe('theme preference resolution', () => {
   it('keeps valid local preference precedence over account theme', () => { localStorage.setItem('weather-edu-theme', 'daybreak'); mockAuth.user = { id:'user' }; mockAuth.preferences = { theme:'nord' }; render(<ThemeProvider><Probe /></ThemeProvider>); expect(screen.getByRole('status')).toHaveTextContent('daybreak') })
   it('drops a restricted theme on logout', () => { localStorage.setItem('weather-edu-theme', 'dracula'); mockAuth.user = {id:'user'}; const {rerender}=render(<ThemeProvider><Probe /></ThemeProvider>); expect(screen.getByRole('status')).toHaveTextContent('dracula'); mockAuth.user=null; rerender(<ThemeProvider><Probe /></ThemeProvider>); expect(screen.getByRole('status')).toHaveTextContent('clear-sky') })
   it('saves an explicit Clear Sky choice through the existing service', async () => { localStorage.setItem('weather-edu-theme','daybreak'); mockAuth.user={id:'user'}; mockSave.mockResolvedValue({ theme:'clear-sky' }); render(<ThemeProvider><Probe /></ThemeProvider>); fireEvent.click(screen.getByRole('button',{name:'Clear Sky'})); await waitFor(()=>expect(mockSave).toHaveBeenCalledWith({theme:'clear-sky'})); expect(localStorage.getItem('weather-edu-theme')).toBe('clear-sky') })
+  it('previews a premium theme visually for a guest', () => { render(<ThemeProvider><Probe /></ThemeProvider>); fireEvent.click(screen.getByRole('button',{name:'Preview Dracula'})); expect(screen.getByRole('status')).toHaveTextContent('dracula'); expect(localStorage.getItem('weather-edu-theme')).toBeNull() })
+  it('restores the theme in use before a preview', () => { render(<ThemeProvider><Probe /></ThemeProvider>); fireEvent.click(screen.getByRole('button',{name:'Preview Dracula'})); fireEvent.click(screen.getByRole('button',{name:'Restore Nord'})); expect(screen.getByRole('status')).toHaveTextContent('nord') })
+  it('restores the previous theme when saving fails', async () => { localStorage.setItem('weather-edu-theme','daybreak'); mockAuth.user={id:'user'}; mockSave.mockRejectedValue(new Error('offline')); render(<ThemeProvider><Probe /></ThemeProvider>); fireEvent.click(screen.getByRole('button',{name:'Clear Sky'})); await waitFor(()=>expect(screen.getByRole('status')).toHaveTextContent('daybreak')); expect(localStorage.getItem('weather-edu-theme')).toBe('daybreak') })
 })

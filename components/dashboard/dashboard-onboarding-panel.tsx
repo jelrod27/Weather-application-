@@ -88,7 +88,7 @@ export default function DashboardOnboardingPanel({
           size="icon"
           onClick={handleDismiss}
           aria-label="Dismiss onboarding"
-          className={`absolute right-2 top-2 ${themeClasses.text} hover:bg-white/10`}
+          className={`absolute right-2 top-2 ${themeClasses.text} hover:bg-primary/10`}
         >
           <X className="w-4 h-4" aria-hidden="true" />
         </Button>
@@ -134,7 +134,7 @@ export default function DashboardOnboardingPanel({
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={onAddLocation}
-            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90`}
+            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90`}
           >
             <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
             Add Location
@@ -144,7 +144,7 @@ export default function DashboardOnboardingPanel({
             variant="outline"
             disabled={geoLoading}
             onClick={handleUseMyLocation}
-            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-white/10`}
+            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary/10`}
           >
             <Navigation className={`w-4 h-4 mr-2 ${geoLoading ? 'animate-pulse' : ''}`} aria-hidden="true" />
             {geoLoading ? 'Detecting...' : 'Use My Location'}
@@ -153,7 +153,7 @@ export default function DashboardOnboardingPanel({
             type="button"
             variant="ghost"
             onClick={handleDismiss}
-            className={`font-mono text-sm ${themeClasses.mutedText} hover:bg-white/5`}
+            className={`font-mono text-sm ${themeClasses.mutedText} hover:bg-primary/5`}
           >
             Skip for now
           </Button>

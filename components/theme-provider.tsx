@@ -16,6 +16,10 @@ interface ThemeContextType {
   toggleTheme: () => void
   availableThemes: Theme[]
   isAuthenticated: boolean
+  /** Apply a theme visually only — no persistence, no auth gate (previews). */
+  previewTheme: (theme: Theme) => void
+  /** Restore a theme visually only, e.g. ending a preview. */
+  restoreTheme: (theme: Theme) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -94,10 +98,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       return
     }
 
+    const previousTheme = themeRef.current
     setThemeState(newTheme)
 
     if (typeof window !== 'undefined') {
       safeStorage.setItem('weather-edu-theme', newTheme)
+      document.cookie = `weather-theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`
     }
 
     if (isAuthenticated) {
@@ -106,11 +112,26 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         if (updated) {
           userCacheService.mirrorServerPreferences(updated)
           await refreshPreferences()
+        } else {
+          throw new Error('Theme preference was not saved')
         }
       } catch (e) {
-        console.error('Failed to save theme preference', e)
+        console.error('Failed to save theme preference; restoring previous theme', e)
+        setThemeState(previousTheme)
+        if (typeof window !== 'undefined') {
+          safeStorage.setItem('weather-edu-theme', previousTheme)
+          document.cookie = `weather-theme=${previousTheme}; path=/; max-age=31536000; SameSite=Lax`
+        }
       }
     }
+  }
+
+  const previewTheme = (newTheme: Theme) => {
+    setThemeState(newTheme)
+  }
+
+  const restoreTheme = (previousTheme: Theme) => {
+    setThemeState(previousTheme)
   }
 
   const toggleTheme = () => {
@@ -134,6 +155,17 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.classList.add(theme)
     root.setAttribute('data-theme', theme)
     body.classList.add(`theme-${theme}`)
+
+    const background = getComputedStyle(root).getPropertyValue('--background').trim()
+    if (background) {
+      let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      if (!meta) {
+        meta = document.createElement('meta')
+        meta.name = 'theme-color'
+        document.head.appendChild(meta)
+      }
+      meta.content = `hsl(${background})`
+    }
   }, [theme, mounted])
 
   return (
@@ -144,6 +176,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         toggleTheme,
         availableThemes,
         isAuthenticated,
+        previewTheme,
+        restoreTheme,
       }}
     >
       {children}

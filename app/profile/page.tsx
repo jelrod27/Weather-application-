@@ -105,7 +105,7 @@ function ProfileContent() {
         <Card className={`max-w-2xl mx-auto border-4 ${themeClasses.background} ${themeClasses.borderColor} ${themeClasses.glow}`}>
           <CardHeader className="text-center space-y-4 pb-8">
             <div className={`w-16 h-16 border-2 flex items-center justify-center mx-auto rounded-full ${themeClasses.accentBg} ${themeClasses.borderColor}`}>
-              <User className="w-8 h-8 text-black" />
+              <User className="w-8 h-8 text-primary-foreground" />
             </div>
             <div>
               <CardTitle className={`text-3xl font-bold uppercase tracking-wider font-mono ${themeClasses.text}`}>
@@ -195,7 +195,7 @@ function ProfileContent() {
                 <Button
                   data-testid="profile-edit-button"
                   onClick={() => setEditing(true)}
-                  className={`w-full font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90`}
+                  className={`w-full font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90`}
                 >
                   <User className="w-4 h-4 mr-2" />
                   Edit Profile
@@ -205,7 +205,7 @@ function ProfileContent() {
                   <Button
                     onClick={handleSave}
                     disabled={loading}
-                    className={`flex-1 font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90`}
+                    className={`flex-1 font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90`}
                   >
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -222,7 +222,7 @@ function ProfileContent() {
                       setUsername(profile?.username || '')
                       setFullName(profile?.full_name || '')
                     }}
-                    className={`flex-1 font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-white/10`}
+                    className={`flex-1 font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary/10`}
                   >
                     Cancel
                   </Button>

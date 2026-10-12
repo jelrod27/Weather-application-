@@ -226,7 +226,7 @@ export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: A
                     : `${themeClasses.background} bg-white/10`
                   }`}
               >
-                {isFavorite && <Star className="w-3 h-3 text-black fill-current" aria-hidden="true" />}
+                {isFavorite && <Star className="w-3 h-3 text-primary-foreground fill-current" aria-hidden="true" />}
               </button>
               <Label
                 htmlFor="add-location-favorite"
@@ -240,7 +240,7 @@ export default function AddLocationModal({ isOpen, onClose, onLocationAdded }: A
             <Button
               type="submit"
               disabled={loading || !searchTerm.trim()}
-              className={`w-full font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black mt-4`}
+              className={`w-full font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground mt-4`}
             >
               {loading ? (
                 <span>Adding...</span>
