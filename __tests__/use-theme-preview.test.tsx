@@ -3,7 +3,7 @@ import { useThemePreview } from '@/hooks/use-theme-preview'
 import { THEME_PREVIEW_DURATION } from '@/lib/theme-tiers'
 import { toastService } from '@/lib/toast-service'
 
-const mockAuth = { user: null }
+const mockAuth = { user: null as { id: string } | null }
 const mockSetTheme = jest.fn()
 const mockPreviewTheme = jest.fn()
 const mockRestoreTheme = jest.fn()
@@ -37,6 +37,7 @@ describe('guest theme preview', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     jest.clearAllMocks()
+    mockAuth.user = null
   })
 
   afterEach(() => {
@@ -56,5 +57,19 @@ describe('guest theme preview', () => {
     act(() => { jest.advanceTimersByTime(THEME_PREVIEW_DURATION + 1000) })
     expect(mockRestoreTheme).not.toHaveBeenCalled()
     expect(toastService.info).not.toHaveBeenCalled()
+  })
+
+  it('saves the active preview when the guest signs in', () => {
+    const { rerender } = render(<PreviewProbe />)
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Dracula' }))
+    expect(screen.getByRole('status')).toHaveTextContent('previewing')
+
+    mockAuth.user = { id: 'user' }
+    rerender(<PreviewProbe />)
+
+    expect(mockSetTheme).toHaveBeenCalledWith('dracula')
+    expect(screen.getByRole('status')).toHaveTextContent('idle')
+    act(() => { jest.advanceTimersByTime(THEME_PREVIEW_DURATION + 1000) })
+    expect(mockRestoreTheme).not.toHaveBeenCalled()
   })
 })

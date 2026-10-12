@@ -144,6 +144,10 @@ export function useThemePreview() {
   useEffect(() => {
     if (user && previewState.isPreviewActive) {
       clearTimers()
+      if (previewState.previewTheme) {
+        setTheme(previewState.previewTheme)
+      }
+      themeBeforePreviewRef.current = null
       setPreviewState({
         isPreviewActive: false,
         previewTheme: null,
@@ -152,7 +156,7 @@ export function useThemePreview() {
       })
       toastService.success('🎉 Welcome! All themes are now unlocked for you!')
     }
-  }, [user, previewState.isPreviewActive])
+  }, [user, previewState.isPreviewActive, previewState.previewTheme, setTheme])
 
   return {
     ...previewState,

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
 import type { ThemeType } from '@/lib/theme-config'
 import { THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
@@ -62,9 +62,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME)
   const [mounted, setMounted] = useState(false)
   const themeRef = useRef<Theme>(theme)
-  themeRef.current = theme
   const activeUserIdRef = useRef<string | null>(user?.id ?? null)
-  activeUserIdRef.current = user?.id ?? null
   const saveStateRef = useRef<ThemeSaveState>({
     userId: user?.id ?? null,
     queue: Promise.resolve(),
@@ -72,6 +70,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     pending: 0,
     lastSavedTheme: theme,
   })
+
+  useLayoutEffect(() => {
+    themeRef.current = theme
+    activeUserIdRef.current = user?.id ?? null
+  }, [theme, user?.id])
 
   const getSaveState = (userId: string | null): ThemeSaveState => {
     if (saveStateRef.current.userId !== userId) {
