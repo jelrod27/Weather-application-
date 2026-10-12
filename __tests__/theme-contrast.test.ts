@@ -79,6 +79,30 @@ describe('theme contrast', () => {
     )
   })
 
+  it.each(THEME_LIST)('%s: muted text is legible on cards', (theme) => {
+    expect(contrast(token(theme, 'muted-foreground'), token(theme, 'card'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
+
+  it.each(THEME_LIST)('%s: destructive text is legible on the page background', (theme) => {
+    expect(contrast(token(theme, 'destructive'), token(theme, 'background'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
+
+  it.each(THEME_LIST)('%s: destructive button text is legible on its fill', (theme) => {
+    expect(
+      contrast(token(theme, 'destructive-foreground'), token(theme, 'destructive')),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(THEME_LIST)('%s: on-primary text is legible on the primary fill', (theme) => {
+    expect(
+      contrast(token(theme, 'primary-foreground'), token(theme, 'primary')),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
   it('accentText does not resolve to the on-fill text colour', () => {
     // --primary-foreground is ~the background in every theme; using it as
     // standalone text is the bug this suite exists to prevent.

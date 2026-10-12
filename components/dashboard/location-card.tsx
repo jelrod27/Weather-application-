@@ -210,8 +210,8 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
               onClick={handleToggleFavorite}
               disabled={actionLoading === 'favorite'}
               className={`h-8 w-8 border-0 ${location.is_favorite
-                  ? `${themeClasses.accentBg} text-black`
-                  : `${themeClasses.text} hover:bg-white/10`
+                  ? `${themeClasses.accentBg} text-primary-foreground`
+                  : `${themeClasses.text} hover:bg-primary/10`
                 }`}
               aria-label={location.is_favorite ? "Remove from favorites" : "Add to favorites"}
               aria-pressed={location.is_favorite}
@@ -224,7 +224,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
               size="icon"
               onClick={fetchWeather}
               disabled={loading}
-              className={`h-8 w-8 border-0 ${themeClasses.text} hover:bg-white/10`}
+              className={`h-8 w-8 border-0 ${themeClasses.text} hover:bg-primary/10`}
               aria-label="Refresh weather data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -309,7 +309,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
               <Button
                 onClick={toggleDetailedView}
                 disabled={!preferencesReady}
-                className={`w-full font-mono uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90`}
+                className={`w-full font-mono uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90`}
               >
                 <Eye className="w-4 h-4 inline mr-2" />
                 {showDetailedWeather ? 'Hide Details' : 'View Full Weather'}
@@ -325,7 +325,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
               variant="outline"
               size="sm"
               onClick={fetchWeather}
-              className={`mt-2 font-mono uppercase border-0 ${themeClasses.text} hover:bg-white/10`}
+              className={`mt-2 font-mono uppercase border-0 ${themeClasses.text} hover:bg-primary/10`}
             >
               Retry
             </Button>
@@ -406,7 +406,7 @@ export default function LocationCard({ location, onUpdate }: LocationCardProps) 
 
                 {/* Link to Full Weather Page */}
                 <Link href={`/weather/${citySlug}`} className="block w-full">
-                  <Button variant="outline" className={`w-full font-mono uppercase tracking-wider border-0 ${themeClasses.text} hover:bg-white/10`}>
+                  <Button variant="outline" className={`w-full font-mono uppercase tracking-wider border-0 ${themeClasses.text} hover:bg-primary/10`}>
                     <MapPin className="w-4 h-4 inline mr-2" />
                     View Full Weather Page
                   </Button>

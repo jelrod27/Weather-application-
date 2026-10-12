@@ -21,8 +21,9 @@ interface ThemePreviewState {
 
 export function useThemePreview() {
   const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, previewTheme, restoreTheme } = useTheme()
   const router = useRouter()
+  const themeBeforePreviewRef = useRef<Theme | null>(null)
   
   const [previewState, setPreviewState] = useState<ThemePreviewState>({
     isPreviewActive: false,
@@ -51,10 +52,11 @@ export function useThemePreview() {
     }
   }
 
-  // End preview and revert to free theme
+  // End preview and revert to the theme in use before it started
   const endPreview = () => {
     clearTimers()
-    setTheme('nord' as Theme) // Revert to free dark theme
+    restoreTheme((themeBeforePreviewRef.current ?? theme) as Theme)
+    themeBeforePreviewRef.current = null
     setPreviewState({
       isPreviewActive: false,
       previewTheme: null,
@@ -69,13 +71,26 @@ export function useThemePreview() {
   const startPreview = (themeId: string) => {
     if (user || !isPremiumTheme(themeId)) {
       // User is authenticated or theme is free - apply permanently
+      clearTimers()
+      themeBeforePreviewRef.current = null
+      setPreviewState({
+        isPreviewActive: false,
+        previewTheme: null,
+        timeRemaining: 0,
+        showWarning: false
+      })
       setTheme(themeId as Theme)
       return
     }
 
-    // Start preview for non-authenticated user — clear any prior preview timers first
+    // Start preview for non-authenticated user — clear any prior preview timers first.
+    // previewTheme applies visually without the auth gate or persistence, so
+    // the guest actually sees the theme setTheme used to silently reject.
     clearTimers()
-    setTheme(themeId as Theme)
+    if (!themeBeforePreviewRef.current) {
+      themeBeforePreviewRef.current = theme
+    }
+    previewTheme(themeId as Theme)
     setPreviewState({
       isPreviewActive: true,
       previewTheme: themeId as Theme,
@@ -129,6 +144,10 @@ export function useThemePreview() {
   useEffect(() => {
     if (user && previewState.isPreviewActive) {
       clearTimers()
+      if (previewState.previewTheme) {
+        setTheme(previewState.previewTheme)
+      }
+      themeBeforePreviewRef.current = null
       setPreviewState({
         isPreviewActive: false,
         previewTheme: null,
@@ -137,7 +156,7 @@ export function useThemePreview() {
       })
       toastService.success('🎉 Welcome! All themes are now unlocked for you!')
     }
-  }, [user, previewState.isPreviewActive])
+  }, [user, previewState.isPreviewActive, previewState.previewTheme, setTheme])
 
   return {
     ...previewState,

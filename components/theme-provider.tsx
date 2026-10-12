@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { safeStorage } from '@/lib/safe-storage'
 import type { ThemeType } from '@/lib/theme-config'
 import { THEME_LIST, FREE_THEMES, DEFAULT_THEME } from '@/lib/theme-config'
@@ -16,6 +16,10 @@ interface ThemeContextType {
   toggleTheme: () => void
   availableThemes: Theme[]
   isAuthenticated: boolean
+  /** Apply a theme visually only — no persistence, no auth gate (previews). */
+  previewTheme: (theme: Theme) => void
+  /** Restore a theme visually only, e.g. ending a preview. */
+  restoreTheme: (theme: Theme) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -38,6 +42,14 @@ interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+interface ThemeSaveState {
+  userId: string | null
+  queue: Promise<void>
+  latestSelection: number
+  pending: number
+  lastSavedTheme: Theme
+}
+
 /**
  * Owns theme presentation only (data-theme / classList / localStorage).
  * Auth session and user_preferences rows come from AuthProvider — do not
@@ -50,7 +62,32 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME)
   const [mounted, setMounted] = useState(false)
   const themeRef = useRef<Theme>(theme)
-  themeRef.current = theme
+  const activeUserIdRef = useRef<string | null>(user?.id ?? null)
+  const saveStateRef = useRef<ThemeSaveState>({
+    userId: user?.id ?? null,
+    queue: Promise.resolve(),
+    latestSelection: 0,
+    pending: 0,
+    lastSavedTheme: theme,
+  })
+
+  useLayoutEffect(() => {
+    themeRef.current = theme
+    activeUserIdRef.current = user?.id ?? null
+  }, [theme, user?.id])
+
+  const getSaveState = (userId: string | null): ThemeSaveState => {
+    if (saveStateRef.current.userId !== userId) {
+      saveStateRef.current = {
+        userId,
+        queue: Promise.resolve(),
+        latestSelection: 0,
+        pending: 0,
+        lastSavedTheme: themeRef.current,
+      }
+    }
+    return saveStateRef.current
+  }
 
   const availableThemes: Theme[] = isAuthenticated ? THEME_LIST : FREE_THEMES
 
@@ -70,13 +107,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Apply server theme when auth prefs arrive, unless a local theme already wins.
   // Drop premium themes on logout.
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || !mounted) return
+
+    getSaveState(user?.id ?? null)
 
     if (!user) {
-      if (!FREE_THEMES.includes(themeRef.current as ThemeType)) {
+      const guestTheme = FREE_THEMES.includes(themeRef.current as ThemeType)
+        ? themeRef.current
+        : DEFAULT_THEME
+      if (guestTheme !== themeRef.current) {
         setThemeState(DEFAULT_THEME)
         safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
       }
+      document.cookie = `weather-theme=${guestTheme}; path=/; max-age=31536000; SameSite=Lax`
       return
     }
 
@@ -87,30 +130,63 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (dbTheme) {
       setThemeState(dbTheme)
     }
-  }, [user, preferences?.theme, authLoading])
+  }, [user, preferences?.theme, authLoading, mounted])
 
-  const setTheme = async (newTheme: Theme) => {
+  const setTheme = (newTheme: Theme) => {
     if (!isAuthenticated && !FREE_THEMES.includes(newTheme)) {
       return
     }
 
+    const saveState = getSaveState(user?.id ?? null)
+    if (isAuthenticated && saveState.pending === 0) {
+      saveState.lastSavedTheme = themeRef.current
+    }
+    const selection = ++saveState.latestSelection
     setThemeState(newTheme)
 
     if (typeof window !== 'undefined') {
       safeStorage.setItem('weather-edu-theme', newTheme)
+      document.cookie = `weather-theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`
     }
 
     if (isAuthenticated) {
-      try {
-        const updated = await updateUserPreferencesAPI({ theme: newTheme })
-        if (updated) {
-          userCacheService.mirrorServerPreferences(updated)
-          await refreshPreferences()
+      ++saveState.pending
+      const persist = async () => {
+        if (saveStateRef.current !== saveState || activeUserIdRef.current !== saveState.userId) {
+          --saveState.pending
+          return
         }
-      } catch (e) {
-        console.error('Failed to save theme preference', e)
+        try {
+          const updated = await updateUserPreferencesAPI({ theme: newTheme })
+          if (!updated) throw new Error('Theme preference was not saved')
+
+          saveState.lastSavedTheme = newTheme
+          if (saveStateRef.current === saveState && activeUserIdRef.current === saveState.userId && saveState.latestSelection === selection) {
+            userCacheService.mirrorServerPreferences(updated)
+            await refreshPreferences()
+          }
+        } catch (e) {
+          console.error('Failed to save theme preference; restoring previous theme', e)
+          if (saveStateRef.current === saveState && activeUserIdRef.current === saveState.userId && saveState.latestSelection === selection) {
+            const restoredTheme = saveState.lastSavedTheme
+            setThemeState(restoredTheme)
+            safeStorage.setItem('weather-edu-theme', restoredTheme)
+            document.cookie = `weather-theme=${restoredTheme}; path=/; max-age=31536000; SameSite=Lax`
+          }
+        } finally {
+          --saveState.pending
+        }
       }
+      saveState.queue = saveState.queue.then(persist, persist)
     }
+  }
+
+  const previewTheme = (newTheme: Theme) => {
+    setThemeState(newTheme)
+  }
+
+  const restoreTheme = (previousTheme: Theme) => {
+    setThemeState(previousTheme)
   }
 
   const toggleTheme = () => {
@@ -134,6 +210,17 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.classList.add(theme)
     root.setAttribute('data-theme', theme)
     body.classList.add(`theme-${theme}`)
+
+    const background = getComputedStyle(root).getPropertyValue('--background').trim()
+    if (background) {
+      let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      if (!meta) {
+        meta = document.createElement('meta')
+        meta.name = 'theme-color'
+        document.head.appendChild(meta)
+      }
+      meta.content = `hsl(${background})`
+    }
   }, [theme, mounted])
 
   return (
@@ -144,6 +231,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         toggleTheme,
         availableThemes,
         isAuthenticated,
+        previewTheme,
+        restoreTheme,
       }}
     >
       {children}

@@ -25,7 +25,7 @@ import {
 // PERFORMANCE: Analytics lazy loaded via client component wrapper
 import AnalyticsWrapper from "@/components/analytics-wrapper"
 import AppThemeProvider from "@/app/providers/ThemeProvider"
-import { DEFAULT_THEME } from "@/lib/theme-config"
+import { DEFAULT_THEME, THEME_LIST } from "@/lib/theme-config"
 import { LocationProvider } from "@/components/location-context"
 import { AuthProvider } from "@/lib/auth"
 import { Toaster } from "@/components/ui/toaster"
@@ -151,6 +151,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning>
+      <head>
+        {/* Apply the saved theme before first paint so non-default users do
+            not flash the default theme on every load. The provider keeps the
+            weather-theme cookie and weather-edu-theme storage in sync. */}
+        <script
+          data-valid-themes={JSON.stringify(THEME_LIST)}
+          data-default-theme={DEFAULT_THEME}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var script=document.currentScript;var valid=JSON.parse(script.dataset.validThemes);var m=document.cookie.match(/(?:^|; )weather-theme=([\\w-]+)/);var t=(m&&m[1])||localStorage.getItem('weather-edu-theme');if(t==='miami'||t==='dark')t=script.dataset.defaultTheme;if(valid.indexOf(t)>-1){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(t);}}catch(e){}})();`,
+          }}
+        />
+      </head>
       {/* Fonts are self-hosted by next/font, pollen is fetched server-side, and
           map tile hosts are preconnected from the layouts that draw maps. */}
       <body className={`${ibmPlexSans.variable} ${inconsolata.variable} ${vt323.variable} min-h-screen font-sans antialiased`} style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}>

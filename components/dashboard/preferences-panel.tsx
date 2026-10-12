@@ -167,7 +167,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
                     'px-4 py-2 font-mono text-sm uppercase tracking-wider transition-colors',
                     selected
                       ? `${themeClasses.accentBg} text-primary-foreground`
-                      : `${themeClasses.text} hover:bg-white/10`,
+                      : `${themeClasses.text} hover:bg-primary/10`,
                   )}
                 >
                   {unit === 'fahrenheit' ? '°F' : '°C'}
@@ -285,7 +285,7 @@ export default function PreferencesPanel({ locations }: PreferencesPanelProps) {
             onClick={handleSave}
             disabled={saving || !dirty}
             aria-label="Save preferences"
-            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90 disabled:opacity-50`}
+            className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90 disabled:opacity-50`}
           >
             <Save className="w-4 h-4 mr-2" aria-hidden="true" />
             {saving ? 'Saving...' : 'Save Preferences'}

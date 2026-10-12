@@ -55,7 +55,7 @@ export default function SavedLocationsPanel({
               onClick={onUpdate}
               disabled={loading}
               aria-label="Refresh saved locations"
-              className={`${themeClasses.borderColor} ${themeClasses.text} hover:bg-white/10`}
+              className={`${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary/10`}
             >
               <RefreshCw
                 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -64,7 +64,7 @@ export default function SavedLocationsPanel({
             </Button>
             <Button
               onClick={onAddLocation}
-              className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black hover:opacity-90 transition-all active:scale-95`}
+              className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground hover:opacity-90 transition-all active:scale-95`}
             >
               <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               Add
@@ -99,7 +99,7 @@ export default function SavedLocationsPanel({
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <Button
                 onClick={onAddLocation}
-                className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-black`}
+                className={`font-mono font-bold uppercase tracking-wider ${themeClasses.accentBg} text-primary-foreground`}
               >
                 <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
                 Add Location
@@ -107,7 +107,7 @@ export default function SavedLocationsPanel({
               <Button
                 asChild
                 variant="outline"
-                className={`font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-white/5`}
+                className={`font-mono font-bold uppercase tracking-wider ${themeClasses.borderColor} ${themeClasses.text} hover:bg-primary/5`}
               >
                 <Link href="/">
                   Go to Search
