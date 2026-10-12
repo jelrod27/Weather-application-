@@ -77,7 +77,7 @@ test('finishing navigation does not interrupt typing in search before its deboun
   const search = page.getByRole('textbox', { name: 'Search news' });
   await search.fill('cloud');
   releaseResponse();
-  await expect(page.getByRole('heading', { name: 'How clouds form', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^How clouds form from/ })).toBeVisible();
   await expect(search).toBeFocused();
   await expect(search).toHaveValue('cloud');
 });
