@@ -10,54 +10,31 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import NewsCard from './NewsCard';
-import NewsSkeleton from './NewsSkeleton';
-import NewsEmpty from './NewsEmpty';
+import NewsHero from './NewsHero';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 
 interface NewsGridProps {
   items: RSSItem[];
-  isLoading?: boolean;
-  error?: string | null;
-  emptyType?: 'no-alerts' | 'no-results' | 'error' | 'no-news';
-  onRetry?: () => void;
+  compact?: boolean;
+  leadWithHero?: boolean;
   className?: string;
 }
 
 export default function NewsGrid({
   items,
-  isLoading = false,
-  error = null,
-  emptyType = 'no-news',
-  onRetry,
+  compact = false,
+  leadWithHero = false,
   className,
-}: NewsGridProps) {
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4', className)}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <NewsSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return <NewsEmpty type="error" message={error} onRetry={onRetry} />;
-  }
-
-  // Empty state
-  if (items.length === 0) {
-    return <NewsEmpty type={emptyType} onRetry={onRetry} />;
-  }
-
-  // Render news grid
+}: NewsGridProps): React.JSX.Element {
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4', className)}>
-      {items.map((item) => (
-        <NewsCard key={item.id} item={item} />
-      ))}
+    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-2', !compact && 'lg:grid-cols-3', className)}>
+      {items.map((item, index) => {
+        const hero = leadWithHero && index === 0;
+        const key = item.identity ? `${item.identity.authority}:${item.identity.eventId}:${item.identity.areaKey ?? ''}` : item.id;
+        return <div key={key} data-news-key={key} className={cn('min-w-0', hero && 'md:col-span-2 lg:col-span-3')}>
+          {hero ? <NewsHero item={item} /> : <NewsCard item={item} variant={compact ? 'compact' : 'default'} />}
+        </div>;
+      })}
     </div>
   );
 }

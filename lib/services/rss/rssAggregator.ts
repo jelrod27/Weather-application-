@@ -15,6 +15,7 @@ import { __testing as parseTesting } from './parse-feed';
 export type { RSSItem } from './parse-feed';
 export {
   aggregateFeeds,
+  browseFeeds,
   cacheControlForCategories,
   getCategoryConfig,
 } from './aggregate-cache';

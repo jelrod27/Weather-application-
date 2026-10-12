@@ -7,13 +7,21 @@
 
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
-import { aggregateFeeds, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
+import { z } from 'zod';
+import { aggregateFeeds, browseFeeds, getCategoryConfig, cacheControlForCategories } from '@/lib/services/rss/rssAggregator';
+import { NEWS_SECTION_IDS } from '@/lib/news/sections';
 import { parseFeedCategories } from '@/lib/api/query-params';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const browseQuerySchema = z.object({
+  section: z.enum(NEWS_SECTION_IDS).optional(),
+  q: z.string().max(200).default(''),
+  offset: z.coerce.number().int().min(0).max(10_000).default(0),
+});
 
 export async function GET(request: NextRequest): Promise<Response> {
   return withApiRoute(request, async () => {
@@ -28,6 +36,22 @@ export async function GET(request: NextRequest): Promise<Response> {
 
       // Parse categories
       const categories = parseFeedCategories(categoriesParam);
+
+      if (searchParams.get('view') === 'sections') {
+        const parsed = browseQuerySchema.safeParse({
+          section: searchParams.get('section') ?? undefined,
+          q: searchParams.get('q') ?? undefined,
+          offset: searchParams.get('offset') ?? undefined,
+        });
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'Invalid news browse parameters' }, { status: 400 });
+        }
+        const result = await browseFeeds({
+          categories, maxAge, section: parsed.data.section,
+          query: parsed.data.q, offset: parsed.data.offset,
+        });
+        return NextResponse.json({ status: 'ok', ...result }, { headers: { 'Cache-Control': 'no-store' } });
+      }
 
       // Aggregate feeds — single payload includes rails for the page client.
       const result = await aggregateFeeds({

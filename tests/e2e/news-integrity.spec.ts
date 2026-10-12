@@ -17,7 +17,7 @@ const source = { id: 'nws-alerts', name: 'NWS', url: 'https://www.weather.gov/al
 test('open page retires expired warnings and moves stale evidence into delayed reports', async ({ page }) => {
   await page.clock.install({ time: epoch });
   await page.route('**/api/news/rss**', route => route.fulfill({ json: {
-    status: 'ok', items: [warning], happeningNow: [warning], featured: warning, delayedItems: [], sources: [source],
+    status: 'ok', sections: [{ id: 'active', items: [warning], total: 1, offset: 0, hasMore: false }], activeIds: [warning.id], sources: [source],
     lastUpdated: iso(0), stats: { byCategory: { severe: 1 }, errors: [] },
   } }));
   await page.goto('/news', { waitUntil: 'domcontentloaded' });
@@ -34,7 +34,7 @@ test('open page retires expired warnings and moves stale evidence into delayed r
 
 test('unavailable NWS coverage never becomes a quiet-weather empty state', async ({ page }) => {
   await page.route('**/api/news/rss**', route => route.fulfill({ json: {
-    status: 'ok', items: [], happeningNow: [], featured: null, delayedItems: [],
+    status: 'ok', sections: [], activeIds: [],
     sources: [{ ...source, state: 'unavailable', lastSuccessAt: null, freshUntil: null, retainedUntil: null, received: 0, accepted: 0 }],
     lastUpdated: iso(0), stats: { byCategory: {}, errors: ['NWS: unavailable'] },
   } }));

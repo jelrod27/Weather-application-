@@ -92,7 +92,7 @@ export function NewsHazardFacts({ item }: NewsHazardFactsProps): ReactElement | 
     {item.hazard?.effective ? <p>Effective <time dateTime={item.hazard.effective}>{visualTime(item.hazard.effective)}</time></p> : null}
     {item.hazard?.expires ? <p>Expires <time dateTime={item.hazard.expires}>{visualTime(item.hazard.expires)}</time></p> : null}
     {item.sourceCheckedAt ? <p>Source checked <time dateTime={item.sourceCheckedAt}>{visualTime(item.sourceCheckedAt)}</time></p> : null}
-    {item.updates && item.updates.length > 1 ? <details className="mt-2" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
+    {item.updates && item.updates.length > 0 ? <details className="mt-2" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
       <summary className="cursor-pointer underline">Official updates ({item.updates.length})</summary>
       <ul className="mt-1 space-y-1">{item.updates.map(update => {
         const url = safeExternalUrl(update.url);

@@ -5,7 +5,7 @@ import { parseFeedDocument } from '@/lib/services/rss/parse-document';
 import { clearFeedSnapshots, fetchFeed } from '@/lib/services/rss/fetch-feed';
 import { deduplicateItems } from '@/lib/services/rss/parse-feed';
 import { selectHappeningNow } from '@/lib/news/rails';
-import { aggregateFeeds } from '@/lib/services/rss/aggregate-cache';
+import { aggregateFeeds, browseFeeds } from '@/lib/services/rss/aggregate-cache';
 import type { FeedSource } from '@/lib/services/rss/feedSources';
 
 jest.mock('@sentry/nextjs', () => ({ addBreadcrumb: jest.fn(), captureMessage: jest.fn() }));
@@ -146,5 +146,29 @@ describe('news source integrity', () => {
     expect(result.happeningNow).toEqual([]);
     expect(result.delayedItems).toHaveLength(1);
     expect(result.delayedItems[0]).toMatchObject({ sourceId: 'nws-alerts', sourceState: 'delayed' });
+  });
+
+  it('browses all available warnings before capping, searches later pages, and preserves full active IDs', async () => {
+    const recorded = JSON.parse(fixture('nws-2026-10-11.json'));
+    const template = recorded.features[0];
+    // Synthetic scale test derived from one recorded NWS record; these are not real warnings.
+    recorded.features = Array.from({ length: 80 }, (_, index) => ({ ...template, properties: {
+      ...template.properties, id: `synthetic-${index}`, headline: `Synthetic warning ${index}`,
+      geocode: { UGC: [`TXC${String(index).padStart(3, '0')}`] }, areaDesc: `Synthetic county ${index}`,
+    } }));
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async input => new URL(String(input)).hostname === 'api.weather.gov'
+      ? Response.json(recorded) : new Response(rss(3)));
+    const overview = await browseFeeds({ categories: ['severe'] });
+    expect(overview.sources.map(source => source.id)).toEqual(['nws-alerts', 'spc-outlooks']);
+    expect(overview.sections[0]).toMatchObject({ total: 80 });
+    expect(overview.sections[0].items).toHaveLength(4);
+    expect(overview.activeIds).toHaveLength(80);
+    const paged = await browseFeeds({ categories: ['severe'], section: 'active', offset: 72 });
+    expect(paged.sections[0]).toMatchObject({ total: 80, offset: 72, hasMore: false });
+    expect(paged.sections[0].items).toHaveLength(8);
+    const searched = await browseFeeds({ categories: ['severe'], query: 'Synthetic county 79' });
+    expect(searched.sections[0].items).toHaveLength(1);
+    expect(searched.sections[0].items[0].location).toContain('Synthetic county 79');
+    expect(searched.activeIds).toHaveLength(80);
   });
 });
