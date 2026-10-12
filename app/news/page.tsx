@@ -60,10 +60,11 @@ export default function NewsPage(): React.JSX.Element {
       <div className="my-5 flex flex-wrap items-center gap-3">
         {view.section && <button type="button" onClick={() => setView(previous => ({ ...previous, section: undefined, offset: 0 }))}
           className="border-2 px-3 py-2 text-sm font-mono">Back to overview</button>}
-        {(view.query || view.category !== 'all') && data && <p role="status" className="text-sm font-mono">{total} matching reports in the available source set</p>}
+        {(view.query || view.category !== 'all') && data && <p role="status" className="text-sm font-mono">{data.countsArePartial
+          ? `${total} retained matches · full counts need a fresh check` : `${total} matching reports in the available source set`}</p>}
       </div>
       {feed.loading && !data ? <NewsSkeleton count={6} /> : data ? <>
-        <NewsCategorySections sections={data.sections} selectedSection={view.section} busy={feed.refreshing}
+        <NewsCategorySections sections={data.sections} selectedSection={view.section} busy={feed.refreshing} countsArePartial={data.countsArePartial}
           onViewAll={section => setView(previous => ({ ...previous, section, offset: 0 }))}
           onPageChange={offset => setView(previous => ({ ...previous, offset }))} />
         {total === 0 && <NewsEmpty type="no-results" message="No matching reports in the available feeds. Missing or incomplete sources do not establish clear conditions." />}

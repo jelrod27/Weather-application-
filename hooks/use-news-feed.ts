@@ -22,6 +22,12 @@ interface NewsFeedState {
   checkedAt: number | null;
 }
 
+interface NewsFeedView extends NewsFeedState {
+  now: number;
+  refresh: () => void;
+  applyPending: () => void;
+}
+
 function hydrate(raw: NewsBrowseResult): NewsBrowseResult {
   if (!Array.isArray(raw.sections) || !Array.isArray(raw.sources) || !Array.isArray(raw.activeIds) ||
       !Number.isFinite(Date.parse(raw.lastUpdated))) throw new Error('News response was incomplete');
@@ -31,9 +37,7 @@ function hydrate(raw: NewsBrowseResult): NewsBrowseResult {
 }
 
 /** One visible-page request at a time. Background data is staged until explicitly applied. */
-export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void): NewsFeedState & {
-  now: number; refresh: () => void; applyPending: () => void;
-} {
+export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void): NewsFeedView {
   const [state, setState] = useState<NewsFeedState>({ displayed: null, pending: null, error: null, loading: true, refreshing: false, checkedAt: null });
   const [now, setNow] = useState(() => Date.now());
   const requestRef = useRef<(apply: boolean) => void>(() => {});

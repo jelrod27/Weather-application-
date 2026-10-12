@@ -7,19 +7,27 @@ export function projectNewsReading(data: NewsBrowseResult, now: number): NewsBro
   const items = data.sections.flatMap(section => section.items);
   const snapshot = projectNewsSnapshot(items, data.sources, now);
   const retained = new Map([...snapshot.items, ...snapshot.delayedItems].map(item => [item.id, item]));
+  const countsArePartial = data.countsArePartial || snapshot.sources.some((source, index) => source.state !== data.sources[index]?.state) ||
+    data.sections.some(section => section.items.some(item => {
+      const current = retained.get(item.id);
+      return !current || newsSection(current, now) !== section.id;
+    }));
   const sections: NewsSectionPage[] = NEWS_SECTION_IDS.map(id => {
     const previous = data.sections.find(section => section.id === id);
     const visible = items.flatMap(item => {
       const current = retained.get(item.id);
       return current && newsSection(current, now) === id ? [current] : [];
     });
-    const priorIds = new Set(previous?.items.map(item => item.id));
-    const kept = visible.filter(item => priorIds.has(item.id)).length;
-    let total = Math.max(0, (previous?.total ?? 0) - (previous?.items.length ?? 0) + kept) + visible.length - kept;
-    if (id === 'active' && snapshot.sources.find(source => source.id === 'nws-alerts')?.state !== 'fresh') total = 0;
+    // After negative evidence, only the loaded records are countable. Do not
+    // subtract them from an old total and present the unseen remainder as available.
+    let total = countsArePartial ? visible.length : previous?.total ?? visible.length;
+    if (id === 'active') {
+      total = Math.min(total, data.activeIds.length);
+      if (snapshot.sources.find(source => source.id === 'nws-alerts')?.state !== 'fresh') total = 0;
+    }
     return { id, items: visible, total, offset: previous?.offset ?? 0, hasMore: previous?.hasMore ?? false };
   }).filter(section => section.items.length > 0 || data.sections.some(prior => prior.id === section.id));
-  return { ...data, sources: snapshot.sources, sections };
+  return { ...data, sources: snapshot.sources, sections, countsArePartial };
 }
 
 /** Apply negative evidence immediately, while new/reordered stories wait for the reader. */
@@ -28,6 +36,11 @@ export function reconcileNewsEvidence(displayed: NewsBrowseResult, checked: News
   const sources = new Map(checked.sources.map(source => [source.id, source]));
   return {
     ...displayed,
+    countsArePartial: displayed.countsArePartial || displayed.activeIds.some(id => !active.has(id)) ||
+      displayed.sources.some(source => {
+        const latest = sources.get(source.id);
+        return latest && latest.state !== 'fresh' && latest.state !== source.state;
+      }),
     activeIds: displayed.activeIds.filter(id => active.has(id)),
     sources: displayed.sources.map(source => {
       const latest = sources.get(source.id);
@@ -46,7 +59,7 @@ export function reconcileNewsEvidence(displayed: NewsBrowseResult, checked: News
 }
 
 export function delayNewsReading(data: NewsBrowseResult): NewsBrowseResult {
-  return { ...data, activeIds: [], sources: data.sources.map(source => ({
+  return { ...data, activeIds: [], countsArePartial: true, sources: data.sources.map(source => ({
     ...source, state: source.state === 'unavailable' ? 'unavailable' : 'delayed',
   })) };
 }

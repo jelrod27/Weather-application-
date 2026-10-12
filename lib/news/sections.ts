@@ -5,7 +5,13 @@ import type { NewsSourceHealth } from './types';
 export const NEWS_SECTION_IDS = ['active', 'reports', 'reading', 'delayed'] as const;
 export type NewsSectionId = typeof NEWS_SECTION_IDS[number];
 export const NEWS_PAGE_SIZE = 24;
-export const NEWS_SECTIONS: Record<NewsSectionId, { title: string; description: string; previewSize: number }> = {
+interface NewsSectionConfig {
+  title: string;
+  description: string;
+  previewSize: number;
+}
+
+export const NEWS_SECTIONS: Record<NewsSectionId, NewsSectionConfig> = {
   active: { title: 'HAPPENING NOW', description: 'Verified active NWS warnings. Tornado, flash flood, and severe thunderstorm warnings lead; severity and urgency, then newest issue time, order each tier.', previewSize: 4 },
   reports: { title: 'OUTLOOKS & RECENT REPORTS', description: 'Forecasts, earthquakes, tropical updates, and other hazard reports. These do not establish verified active conditions.', previewSize: 3 },
   reading: { title: 'WEATHER & SCIENCE READING', description: 'Weather explanations, research, space, and climate stories, newest first.', previewSize: 3 },
@@ -32,6 +38,8 @@ export interface NewsBrowseResult {
   lastUpdated: string;
   /** Complete verified NWS ID set, so a background check can retire cancelled visible cards. */
   activeIds: string[];
+  /** Client projection can retain loaded cards without knowing the remaining collection's counts. */
+  countsArePartial?: boolean;
 }
 
 export function newsSection(item: RSSItem, now = Date.now()): NewsSectionId {

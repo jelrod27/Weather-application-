@@ -24,6 +24,12 @@ const day2 = outlooks.find((item) => item.title.includes('Day 2'))!;
 const freeze = warnings.find((item) => item.hazard?.event === 'Freeze Warning')!;
 
 describe('hazard imagery provenance', () => {
+  it('exposes the exact original bulletin even when a warning has only one update', () => {
+    const bulletin = 'https://api.weather.gov/alerts/urn:oid:synthetic';
+    render(<NewsCard item={{ ...freeze, updates: [{ id: 'single', title: 'Exact original bulletin', url: bulletin, issuedAt: '2026-10-11T19:00:00Z' }] }} variant="compact" />);
+    fireEvent.click(screen.getByText('Official updates (1)'));
+    expect(screen.getByRole('link', { name: /Exact original bulletin/ })).toHaveAttribute('href', bulletin);
+  });
   it('keeps the reported wind/freeze/flash-flood cases distinct without satellite or outlook stock', async () => {
     expect(warnings).toHaveLength(3);
     const items = await enrichItemImages(warnings);

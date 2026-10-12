@@ -31,7 +31,7 @@ export default function NewsGrid({
       {items.map((item, index) => {
         const hero = leadWithHero && index === 0;
         const key = item.identity ? `${item.identity.authority}:${item.identity.eventId}:${item.identity.areaKey ?? ''}` : item.id;
-        return <div key={key} data-news-key={key} className={hero ? 'md:col-span-2 lg:col-span-3' : 'min-w-0'}>
+        return <div key={key} data-news-key={key} className={cn('min-w-0', hero && 'md:col-span-2 lg:col-span-3')}>
           {hero ? <NewsHero item={item} /> : <NewsCard item={item} variant={compact ? 'compact' : 'default'} />}
         </div>;
       })}

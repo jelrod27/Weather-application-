@@ -12,9 +12,10 @@ interface NewsCategorySectionsProps {
   onViewAll: (section: NewsSectionId) => void;
   onPageChange: (offset: number) => void;
   busy: boolean;
+  countsArePartial?: boolean;
 }
 
-export default function NewsCategorySections({ sections, selectedSection, onViewAll, onPageChange, busy }: NewsCategorySectionsProps): React.JSX.Element {
+export default function NewsCategorySections({ sections, selectedSection, onViewAll, onPageChange, busy, countsArePartial }: NewsCategorySectionsProps): React.JSX.Element {
   return <div className="space-y-10">
     {sections.filter(section => section.items.length > 0 || section.id === selectedSection || section.total > 0).map(section => {
       const config = NEWS_SECTIONS[section.id];
@@ -24,13 +25,14 @@ export default function NewsCategorySections({ sections, selectedSection, onView
             <h2 id={`news-${section.id}-title`} className="font-mono text-xl font-bold text-primary">{config.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{config.description}</p>
             <p className="mt-2 text-xs font-mono text-muted-foreground">
-              {section.total} available at the displayed check · {section.items.length} displayed
+              {countsArePartial ? `${section.items.length} retained reports · full counts need a fresh check`
+                : `${section.total} available at the displayed check · ${section.items.length} displayed`}
             </p>
           </div>
-          {!selectedSection && section.total > section.items.length && <button type="button"
+          {!selectedSection && (countsArePartial || section.total > section.items.length) && <button type="button"
             className="shrink-0 border-2 border-primary px-3 py-2 text-sm font-mono font-bold text-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2"
             onClick={() => onViewAll(section.id)} disabled={busy} aria-label={`View all ${config.title.toLowerCase()}`}>
-            View all ({section.total})
+            {countsArePartial ? 'View all available' : `View all (${section.total})`}
           </button>}
         </div>
         {section.id === 'active' && <Link href="/warnings" className="mb-4 inline-block text-sm text-primary underline">Open the local Warning Center</Link>}
@@ -39,7 +41,7 @@ export default function NewsCategorySections({ sections, selectedSection, onView
         {selectedSection === section.id && <nav aria-label={`${config.title.toLowerCase()} pages`} className="mt-5 flex flex-wrap items-center gap-3 font-mono text-sm">
           <button type="button" className="border-2 px-3 py-2 disabled:opacity-40" disabled={busy || section.offset === 0}
             onClick={() => onPageChange(Math.max(0, section.offset - NEWS_PAGE_SIZE))}>Previous page</button>
-          <span>Page {Math.floor(section.offset / NEWS_PAGE_SIZE) + 1} of {Math.max(1, Math.ceil(section.total / NEWS_PAGE_SIZE))}</span>
+          <span>Page {Math.floor(section.offset / NEWS_PAGE_SIZE) + 1}{!countsArePartial && ` of ${Math.max(1, Math.ceil(section.total / NEWS_PAGE_SIZE))}`}</span>
           <button type="button" className="border-2 px-3 py-2 disabled:opacity-40" disabled={busy || !section.hasMore}
             onClick={() => onPageChange(section.offset + NEWS_PAGE_SIZE)}>Next page</button>
         </nav>}

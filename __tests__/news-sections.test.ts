@@ -78,10 +78,25 @@ describe('displayed news evidence', () => {
     expect(result.sources[0]).toMatchObject({ state: 'delayed', lastSuccessAt: newsTime(0) });
   });
 
+  it('clears unloaded active counts when a complete later check confirms no active warnings', () => {
+    const displayed = newsBrowse(Array.from({ length: 90 }, (_, index) => newsWarning({ id: `warning-${index}` })));
+    const checked = newsBrowse([]);
+    const result = projectNewsReading(reconcileNewsEvidence(displayed, checked), NEWS_EPOCH);
+    expect(result.sections.find(section => section.id === 'active')?.total).toBe(0);
+  });
+
   it('retains readable delayed content after network failure without active claims', () => {
     const result = projectNewsReading(delayNewsReading(newsBrowse()), NEWS_EPOCH);
     expect(result.sections.find(section => section.id === 'active')?.total).toBe(0);
     expect(result.sections.find(section => section.id === 'delayed')?.items).toHaveLength(2);
     expect(result.activeIds).toEqual([]);
+  });
+
+  it('does not advertise unseen reading totals after an outage', () => {
+    const displayed = newsBrowse(Array.from({ length: 75 }, (_, index) => newsItem({ id: `reading-${index}` })));
+    const result = projectNewsReading(delayNewsReading(displayed), NEWS_EPOCH);
+    expect(result.countsArePartial).toBe(true);
+    expect(result.sections.find(section => section.id === 'reading')?.total).toBe(0);
+    expect(result.sections.find(section => section.id === 'delayed')?.total).toBe(3);
   });
 });

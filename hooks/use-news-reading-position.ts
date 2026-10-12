@@ -2,11 +2,17 @@
 
 import { useCallback, useLayoutEffect, useRef } from 'react';
 
+interface ReadingAnchor {
+  key: string;
+  top: number;
+}
+
 interface ReadingPosition {
-  anchors: Array<{ key: string; top: number }>;
+  anchors: ReadingAnchor[];
   focused: HTMLElement | null;
   focusKey: string | null;
   focusHref: string | null;
+  expandedKeys: string[];
 }
 
 /** Preserve a visible card's viewport position and restore focus if its DOM node is replaced. */
@@ -22,6 +28,8 @@ export function useNewsReadingPosition(): () => void {
       focused,
       focusKey: focused?.closest<HTMLElement>('[data-news-key]')?.dataset.newsKey ?? null,
       focusHref: focused?.closest('a')?.getAttribute('href') ?? null,
+      expandedKeys: Array.from(document.querySelectorAll<HTMLElement>('[data-news-key]'))
+        .filter(card => card.querySelector('details[open]')).map(card => card.dataset.newsKey!),
     };
   }, []);
   useLayoutEffect(() => {
@@ -29,6 +37,12 @@ export function useNewsReadingPosition(): () => void {
     saved.current = null;
     if (!position) return;
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-news-key]'));
+    // Moving a report to a different section remounts its uncontrolled disclosure.
+    // Reopen it before measuring the anchor or focusing a bulletin inside it.
+    for (const card of cards) {
+      const details = card.querySelector('details');
+      if (details && position.expandedKeys.includes(card.dataset.newsKey!)) details.open = true;
+    }
     const anchor = position.anchors.find(previous => cards.some(card => card.dataset.newsKey === previous.key));
     if (anchor) {
       const element = cards.find(card => card.dataset.newsKey === anchor.key)!;

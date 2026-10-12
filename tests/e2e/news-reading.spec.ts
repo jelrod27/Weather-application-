@@ -21,6 +21,7 @@ async function fixtureFeed(page: Page): Promise<void> {
   });
 }
 
+test.describe('news reading experience', () => {
 for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
   test(`${viewport.name}: bounded sections, view all, full search and category navigation`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport);
@@ -117,4 +118,23 @@ test('hidden page pauses refresh; return and failed refresh retain delayed readi
   expect(requests).toBe(2);
   await expect(page.getByText('Verified active NWS warning', { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-news-section="delayed"] [data-news-key]')).toHaveCount(2);
+});
+
+test('expiry keeps the focused original bulletin visible when its card moves sections', async ({ page }) => {
+  await page.clock.install({ time: NEWS_EPOCH });
+  const warning = newsWarning({ updates: [
+    { id: 'u1', title: 'Original CAP bulletin', url: 'https://api.weather.gov/alerts/urn:oid:synthetic', issuedAt: newsTime(-60_000) },
+  ] });
+  warning.warning!.expires = newsTime(37_000);
+  await page.route('**/api/news/rss**', route => route.fulfill({ json: { status: 'ok', ...newsBrowse([warning, newsItem()]) } }));
+  await page.goto('/news');
+  await page.getByText('Official updates (1)', { exact: true }).click();
+  const bulletin = page.getByRole('link', { name: /Original CAP bulletin/ });
+  await bulletin.focus();
+  await page.clock.runFor(37_000);
+  await expect(page.locator('[data-news-section="active"]')).toHaveCount(0);
+  await expect(bulletin).toBeVisible();
+  await expect(bulletin).toBeFocused();
+  await expect(page.locator('[data-news-section="reports"] details')).toHaveAttribute('open', '');
+});
 });

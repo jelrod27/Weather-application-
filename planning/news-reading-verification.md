@@ -56,6 +56,10 @@ location facts are preserved. Warning Center navigation remains available.
   mid-read; this can temporarily exceed that section's overview preview size. Its
   count reflects retained context. Applying a new check restores the normal limits,
   except for client-retained outage context unavailable to a cold server.
+- When client projection changes section membership or source availability, full
+  counts become unknown. Show retained loaded counts with that limitation until a
+  new check is applied; never advertise the unseen remainder of an old total as
+  still available. Pagination drops its total-page claim while counts are unknown.
 - Network failures retain readable delayed content. A successful response from a
   cold server with unavailable sources also preserves the client's own retained
   reports, including on explicit Refresh/Apply. Retention deadlines still apply.
@@ -63,6 +67,8 @@ location facts are preserved. Warning Center navigation remains available.
   If a card's DOM is replaced, restore the focused source link or card; if the report
   disappears entirely, provide a usable Refresh focus target. Normal browser scroll
   limits still apply at the beginning/end of the document.
+- Preserve open bulletin disclosures across automatic section moves before
+  restoring focus inside them. Even a single bulletin exposes its exact source URL.
 
 ## Regression evidence
 
