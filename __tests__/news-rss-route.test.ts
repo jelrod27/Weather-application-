@@ -25,6 +25,7 @@ jest.mock('@/lib/services/weather-rate-limiter', () => ({
 }))
 
 jest.mock('@/lib/services/rss/rssAggregator', () => ({
+  browseFeeds: jest.fn().mockResolvedValue({ sections: [], sources: [], activeIds: [], lastUpdated: '2026-10-11T00:00:00Z' }),
   aggregateFeeds: jest.fn().mockResolvedValue({
     items: [],
     happeningNow: [],
@@ -40,7 +41,7 @@ jest.mock('@/lib/services/rss/rssAggregator', () => ({
 
 import { GET } from '@/app/api/news/rss/route'
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter'
-import { aggregateFeeds } from '@/lib/services/rss/rssAggregator'
+import { aggregateFeeds, browseFeeds } from '@/lib/services/rss/rssAggregator'
 import { NextRequest } from 'next/server'
 
 const mockedRateLimit = rateLimitRequest as jest.MockedFunction<typeof rateLimitRequest>
@@ -80,4 +81,18 @@ describe('GET /api/news/rss', () => {
   expect(await res.json()).toMatchObject({ sources: [{ id: 'nws-alerts', state: 'unavailable' }], featured: null });
   expect(res.headers).toMatchObject({ 'Cache-Control': 'no-store' });
 });
+
+  it('passes category, query and section pagination through without the legacy item cap', async () => {
+    const res = await GET(new NextRequest('http://localhost/api/news/rss?view=sections&section=reading&q=clouds&offset=48&categories=science'));
+    expect(browseFeeds).toHaveBeenCalledWith({ categories: ['science'], maxAge: 72, section: 'reading', query: 'clouds', offset: 48 });
+    expect(mockedAggregate).not.toHaveBeenCalled();
+    expect(await res.json()).toMatchObject({ status: 'ok', sections: [], activeIds: [] });
+    expect(res.headers).toMatchObject({ 'Cache-Control': 'no-store' });
+  });
+
+  it.each(['section=unknown', 'offset=-1', 'offset=NaN', 'offset=1.5', 'q=' + 'x'.repeat(201)])('rejects invalid browse input: %s', async query => {
+    const res = await GET(new NextRequest(`http://localhost/api/news/rss?view=sections&${query}`));
+    expect(res.status).toBe(400);
+    expect(browseFeeds).not.toHaveBeenCalled();
+  });
 })

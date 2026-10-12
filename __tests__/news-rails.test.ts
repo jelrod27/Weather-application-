@@ -1,6 +1,4 @@
 import {
-  excludeRailIds,
-  groupItemsByCategory,
   isHurricaneSeason,
   selectFeaturedItem,
   selectHappeningNow,
@@ -71,18 +69,4 @@ describe('news rails', () => {
     expect(selectFeaturedItem([tropical, science], [], january)).toEqual(science);
   });
 
-  it('dedupes rail ids from the main grid pool', () => {
-    const featured = item({ id: 'featured' });
-    const grid = item({ id: 'grid' });
-    expect(excludeRailIds([featured, grid], [featured])).toEqual([grid]);
-  });
-
-  it('groups home sections in hazard-first order', () => {
-    const sections = groupItemsByCategory([
-      item({ id: 'science', category: 'science' }),
-      item({ id: 'severe', category: 'severe' }),
-      item({ id: 'quake', category: 'earthquakes' }),
-    ]);
-    expect(sections.map((section) => section.category)).toEqual(['severe', 'earthquakes', 'science']);
-  });
 });

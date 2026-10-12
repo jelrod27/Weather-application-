@@ -1,19 +1,8 @@
-import type { FeedCategory } from '@/lib/services/rss/feedSources';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
 import { isActiveTropicalHeadline } from '@/lib/news/tropical-headlines';
+import { compareWarningImportance } from '@/lib/warnings/priority';
 
 export const HAPPENING_NOW_MAX = 8;
-
-/** Home view section order — hazards first, research last. */
-export const HOME_SECTION_ORDER: FeedCategory[] = [
-  'severe',
-  'hurricanes',
-  'earthquakes',
-  'volcanoes',
-  'space',
-  'climate',
-  'science',
-];
 
 export function isHurricaneSeason(now = new Date()): boolean {
   const month = now.getUTCMonth();
@@ -23,7 +12,15 @@ export function isHurricaneSeason(now = new Date()): boolean {
 export function selectHappeningNow(items: RSSItem[], now = Date.now()): RSSItem[] {
   return items
     .filter(item => isVerifiedActiveWarning(item, now))
+    .sort(compareActiveWarnings)
     .slice(0, HAPPENING_NOW_MAX);
+}
+
+export function compareActiveWarnings(a: RSSItem, b: RSSItem): number {
+  return compareWarningImportance(
+    { event: a.hazard?.event ?? '', severity: a.warning?.severity ?? 'Unknown', urgency: a.warning?.urgency ?? 'Unknown' },
+    { event: b.hazard?.event ?? '', severity: b.warning?.severity ?? 'Unknown', urgency: b.warning?.urgency ?? 'Unknown' },
+  ) || b.timestamp.getTime() - a.timestamp.getTime() || a.id.localeCompare(b.id, 'en');
 }
 
 export function isVerifiedActiveWarning(item: RSSItem, now = Date.now()): boolean {
@@ -59,27 +56,4 @@ export function selectFeaturedItem(
     (item) => item.category !== 'hurricanes' || isActiveTropicalHeadline(item),
   );
   return actionablePool[0] ?? items[0] ?? null;
-}
-
-export function excludeRailIds(items: RSSItem[], rails: RSSItem[]): RSSItem[] {
-  const ids = new Set(rails.map((item) => item.id));
-  return items.filter((item) => !ids.has(item.id));
-}
-
-export function groupItemsByCategory(
-  items: RSSItem[],
-): Array<{ category: FeedCategory; items: RSSItem[] }> {
-  const byCategory = new Map<FeedCategory, RSSItem[]>();
-  for (const item of items) {
-    const list = byCategory.get(item.category) ?? [];
-    list.push(item);
-    byCategory.set(item.category, list);
-  }
-
-  return HOME_SECTION_ORDER.filter((category) => (byCategory.get(category)?.length ?? 0) > 0).map(
-    (category) => ({
-      category,
-      items: byCategory.get(category)!,
-    }),
-  );
 }

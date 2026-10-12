@@ -5,13 +5,16 @@
 import {
   selectFeaturedItem,
   selectHappeningNow,
+  isVerifiedActiveWarning,
 } from '@/lib/news/rails';
 import { projectNewsSnapshot } from '@/lib/news/snapshot';
+import { selectNewsSections } from '@/lib/news/sections';
 import { CATEGORY_CONFIG, FEED_SOURCES, type FeedCategory } from './feedSources';
 import { enrichItemImages } from './enrich-images';
 import { clearFeedSnapshots, fetchFeed } from './fetch-feed';
 import { PRIORITY_ORDER, deduplicateItems, type RSSItem } from './parse-feed';
 import type { NewsSourceHealth } from '@/lib/news/types';
+import type { NewsBrowseOptions, NewsBrowseResult } from '@/lib/news/sections';
 
 export interface AggregatedResult {
   items: RSSItem[];
@@ -45,9 +48,7 @@ interface AggregateOptions {
   maxAge?: number; // hours
 }
 
-export async function aggregateFeeds(options: AggregateOptions = {}): Promise<AggregatedResult> {
-  const { categories, maxItems = 50, maxAge = 72 } = options;
-
+async function collectFeedItems(categories: FeedCategory[] | undefined, maxAge: number) {
   // Filter feeds by category if specified
   const feeds = categories
     ? FEED_SOURCES.filter(f => f.enabled && categories.includes(f.category))
@@ -59,7 +60,7 @@ export async function aggregateFeeds(options: AggregateOptions = {}): Promise<Ag
   // Collect items and errors
   let allItems: RSSItem[] = [];
   const bySource: Record<string, number> = {};
-  let sources: NewsSourceHealth[] = [];
+  const sources: NewsSourceHealth[] = [];
 
   results.forEach((result, index) => {
     const feed = feeds[index];
@@ -84,6 +85,37 @@ export async function aggregateFeeds(options: AggregateOptions = {}): Promise<Ag
     if (pDiff !== 0) return pDiff;
     return b.timestamp.getTime() - a.timestamp.getTime();
   });
+
+  return { items: allItems, sources, bySource, feeds };
+}
+
+/** The news page browses each section independently; legacy consumers retain their capped feed. */
+export async function browseFeeds(options: NewsBrowseOptions & AggregateOptions = {}): Promise<NewsBrowseResult> {
+  const collected = await collectFeedItems(options.categories, options.maxAge ?? 72);
+  const snapshot = projectNewsSnapshot(collected.items, collected.sources);
+  const available = [...snapshot.items, ...snapshot.delayedItems];
+  const selected = selectNewsSections(available, options).flatMap(section => section.items);
+  const ids = new Set(selected.map(item => item.id));
+  const [enriched, remaining] = await Promise.all([
+    enrichItemImages(selected),
+    // Strip unrelated hazard imagery and assign honest fallbacks without fetching unseen images.
+    enrichItemImages(available.filter(item => !ids.has(item.id)), { maxEnrich: 0 }),
+  ]);
+  const current = projectNewsSnapshot([...enriched, ...remaining], snapshot.sources);
+  return {
+    sections: selectNewsSections([...current.items, ...current.delayedItems], options),
+    sources: current.sources,
+    lastUpdated: new Date().toISOString(),
+    activeIds: current.items.filter(item => isVerifiedActiveWarning(item)).map(item => item.id),
+  };
+}
+
+export async function aggregateFeeds(options: AggregateOptions = {}): Promise<AggregatedResult> {
+  const { categories, maxItems = 50, maxAge = 72 } = options;
+  const collected = await collectFeedItems(categories, maxAge);
+  let allItems = collected.items;
+  let sources = collected.sources;
+  const { bySource, feeds } = collected;
 
   const available = allItems.length;
   const candidates = projectNewsSnapshot(allItems, sources);
