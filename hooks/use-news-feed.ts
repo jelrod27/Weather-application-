@@ -14,6 +14,7 @@ interface NewsFeedOptions extends NewsBrowseOptions {
 }
 
 interface NewsFeedState {
+  requestUrl: string | null;
   displayed: NewsBrowseResult | null;
   pending: NewsBrowseResult | null;
   error: string | null;
@@ -23,6 +24,7 @@ interface NewsFeedState {
 }
 
 interface NewsFeedView extends NewsFeedState {
+  viewReady: boolean;
   now: number;
   refresh: () => void;
   applyPending: () => void;
@@ -38,7 +40,7 @@ function hydrate(raw: NewsBrowseResult): NewsBrowseResult {
 
 /** One visible-page request at a time. Background data is staged until explicitly applied. */
 export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void): NewsFeedView {
-  const [state, setState] = useState<NewsFeedState>({ displayed: null, pending: null, error: null, loading: true, refreshing: false, checkedAt: null });
+  const [state, setState] = useState<NewsFeedState>({ requestUrl: null, displayed: null, pending: null, error: null, loading: true, refreshing: false, checkedAt: null });
   const [now, setNow] = useState(() => Date.now());
   const requestRef = useRef<(apply: boolean) => void>(() => {});
   const changeRef = useRef(beforeChange);
@@ -57,7 +59,7 @@ export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void):
     let nextAttempt = 0;
     let failures = 0;
     changeRef.current();
-    setState({ displayed: null, pending: null, error: null, loading: true, refreshing: false, checkedAt: null });
+    setState({ requestUrl: url, displayed: null, pending: null, error: null, loading: true, refreshing: false, checkedAt: null });
 
     function schedule(): void {
       clearTimeout(timer);
@@ -145,5 +147,5 @@ export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void):
     setState(previous => previous.pending ? { ...previous, displayed: previous.pending, pending: null } : previous);
   }, [beforeChange]);
   const displayed = useMemo(() => state.displayed ? projectNewsReading(state.displayed, now) : null, [state.displayed, now]);
-  return { ...state, displayed, now, refresh, applyPending };
+  return { ...state, displayed, now, refresh, applyPending, viewReady: state.requestUrl === url && !state.loading && displayed !== null };
 }

@@ -35,14 +35,18 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await expect(page.getByRole('link', { name: 'Open the local Warning Center' })).toHaveAttribute('href', '/warnings');
     await page.screenshot({ path: testInfo.outputPath(`${viewport.name}-news-sections.png`), fullPage: true });
 
-    await page.getByRole('button', { name: 'View all weather & science reading' }).click();
+    await page.getByRole('button', { name: 'View all weather & science reading' }).focus();
+    await page.keyboard.press('Enter');
     await expect(page.locator('[data-news-section="reading"] [data-news-key]')).toHaveCount(24);
+    await expect(page.getByRole('heading', { name: 'WEATHER & SCIENCE READING', exact: true })).toBeFocused();
     await page.getByRole('button', { name: 'Next page' }).click();
     await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'WEATHER & SCIENCE READING', exact: true })).toBeFocused();
     await page.getByRole('button', { name: 'Next page' }).click();
     await expect(page.getByRole('link', { name: /^Cloud lesson 69 from/ })).toBeVisible();
     await page.getByRole('button', { name: 'Previous page' }).click();
     await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'WEATHER & SCIENCE READING', exact: true })).toBeFocused();
 
     await page.getByRole('textbox', { name: 'Search news' }).fill('Cloud lesson 74');
     await page.clock.runFor(350);
@@ -65,9 +69,10 @@ test('background checks preserve reading position, focus, and official bulletin 
     { id: 'u1', title: 'Original official warning', url: 'https://www.weather.gov/alerts?update=1', issuedAt: newsTime(-60_000) },
   ] });
   let requests = 0;
+  let updated = false;
   await page.route('**/api/news/rss**', route => {
     requests++;
-    return route.fulfill({ json: { status: 'ok', ...newsBrowse(requests === 1 ? [warning, ...reading] : [
+    return route.fulfill({ json: { status: 'ok', ...newsBrowse(!updated ? [warning, ...reading] : [
       warning, newsItem({ id: 'new-story', title: 'New weather research', timestamp: new Date(NEWS_EPOCH) }), ...reading,
     ]) } });
   });
@@ -83,12 +88,14 @@ test('background checks preserve reading position, focus, and official bulletin 
   await anchor.scrollIntoViewIfNeeded();
   await focused.focus();
   const top = await anchor.evaluate(element => element.getBoundingClientRect().top);
+  const initialRequests = requests;
+  updated = true;
   await page.clock.runFor(120_000);
   await expect(page.getByRole('button', { name: 'Apply latest feed' })).toBeEnabled();
   await expect(page.getByText('New weather research', { exact: true })).toHaveCount(0);
   await expect(focused).toBeFocused();
   expect(Math.abs(await anchor.evaluate(element => element.getBoundingClientRect().top) - top)).toBeLessThan(3);
-  expect(requests).toBe(2);
+  expect(requests).toBe(initialRequests + 1);
 
   // Dispatch activation without Playwright auto-scrolling to the toolbar; preserve the reader's anchor.
   await page.getByRole('button', { name: 'Apply latest feed' }).dispatchEvent('click');
@@ -100,24 +107,27 @@ test('background checks preserve reading position, focus, and official bulletin 
 test('hidden page pauses refresh; return and failed refresh retain delayed reading', async ({ page }) => {
   await page.clock.install({ time: NEWS_EPOCH });
   let requests = 0;
+  let offline = false;
   await page.route('**/api/news/rss**', route => {
     requests++;
-    return requests === 1 ? route.fulfill({ json: { status: 'ok', ...newsBrowse() } }) : route.fulfill({ status: 503, body: 'Synthetic outage' });
+    return !offline ? route.fulfill({ json: { status: 'ok', ...newsBrowse() } }) : route.fulfill({ status: 503, body: 'Synthetic outage' });
   });
   await page.goto('/news');
   await expect(page.getByRole('heading', { name: 'How clouds form', exact: true })).toBeVisible();
+  const initialRequests = requests;
+  offline = true;
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await page.clock.runFor(600_000);
-  expect(requests).toBe(1);
+  expect(requests).toBe(initialRequests);
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect(page.getByRole('alert').filter({ hasText: 'Refresh failed' })).toBeVisible();
-  expect(requests).toBe(2);
+  expect(requests).toBe(initialRequests + 1);
   await expect(page.getByText('Verified active NWS warning', { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-news-section="delayed"] [data-news-key]')).toHaveCount(2);
 });

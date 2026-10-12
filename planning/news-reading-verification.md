@@ -69,6 +69,9 @@ location facts are preserved. Warning Center navigation remains available.
   limits still apply at the beginning/end of the document.
 - Preserve open bulletin disclosures across automatic section moves before
   restoring focus inside them. Even a single bulletin exposes its exact source URL.
+- Explicit View all / page navigation moves keyboard focus to the loaded section
+  heading. Returning to the overview focuses the page heading. Search and category
+  controls retain their own focus, including when they interrupt pending navigation.
 
 ## Regression evidence
 

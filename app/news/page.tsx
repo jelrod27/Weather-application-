@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PageWrapper from '@/components/page-wrapper';
 import NewsFilter from '@/components/news/NewsFilter';
 import NewsSkeleton from '@/components/news/NewsSkeleton';
@@ -28,22 +28,32 @@ function assembledAge(raw: string, now: number): string {
 
 export default function NewsPage(): React.JSX.Element {
   const [view, setView] = useState<NewsView>({ category: 'all', query: '', offset: 0 });
+  const focusAfterLoad = useRef<NewsSectionId | 'overview' | null>(null);
   const preservePosition = useNewsReadingPosition();
   const feed = useNewsFeed(view, preservePosition);
   const data = feed.displayed;
   const errors = data?.sources.filter(source => source.state !== 'fresh').length ?? 0;
   const total = data?.sections.reduce((sum, section) => sum + section.total, 0) ?? 0;
+  useEffect(() => {
+    if (!feed.viewReady || !focusAfterLoad.current) return;
+    document.getElementById(`news-${focusAfterLoad.current}-title`)?.focus();
+    focusAfterLoad.current = null;
+  }, [feed.viewReady, data]);
 
   return <PageWrapper>
     <div className="container mx-auto px-4 py-6">
       <header className="mb-6 border-b-2 border-primary/30 pb-6">
-        <h1 className="mb-2 font-mono text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">EARTH & SPACE NEWS</h1>
+        <h1 id="news-overview-title" tabIndex={-1} className="mb-2 font-mono text-3xl font-extrabold text-primary sm:text-4xl md:text-5xl">EARTH & SPACE NEWS</h1>
         <p className="font-mono text-sm sm:text-base">Official hazard reports, outlooks, and science reading · Verified active coverage starts with NWS warnings</p>
         {data && <p className="mt-2 text-xs font-mono text-muted-foreground">Feed assembled {assembledAge(data.lastUpdated, feed.now)} · source check times below</p>}
       </header>
       <NewsFilter currentCategory={view.category} searchQuery={view.query}
-        onCategoryChange={category => setView(previous => ({ ...previous, category, section: undefined, offset: 0 }))}
-        onSearchChange={query => setView(previous => previous.query === query ? previous : { ...previous, query, section: undefined, offset: 0 })}
+        onCategoryChange={category => { focusAfterLoad.current = null; setView(previous => ({ ...previous, category, section: undefined, offset: 0 })); }}
+        onSearchChange={query => {
+          if (query === view.query) return;
+          focusAfterLoad.current = null;
+          setView(previous => ({ ...previous, query, section: undefined, offset: 0 }));
+        }}
         onRefresh={feed.refresh} isLoading={feed.loading || feed.refreshing} className="mb-4" />
       <div className="mb-6 flex flex-col items-stretch gap-3 rounded border border-primary/25 p-3 text-sm sm:flex-row sm:flex-wrap sm:items-center">
         <button type="button" disabled={!feed.pending || feed.refreshing} onClick={feed.applyPending}
@@ -58,15 +68,15 @@ export default function NewsPage(): React.JSX.Element {
       {errors > 0 && <NewsFeedBanner errorCount={errors} />}
       {data && <NewsSourceRow sources={data.sources.map(source => source.name)} health={data.sources} />}
       <div className="my-5 flex flex-wrap items-center gap-3">
-        {view.section && <button type="button" onClick={() => setView(previous => ({ ...previous, section: undefined, offset: 0 }))}
+        {view.section && <button type="button" onClick={() => { focusAfterLoad.current = 'overview'; setView(previous => ({ ...previous, section: undefined, offset: 0 })); }}
           className="border-2 px-3 py-2 text-sm font-mono">Back to overview</button>}
         {(view.query || view.category !== 'all') && data && <p role="status" className="text-sm font-mono">{data.countsArePartial
           ? `${total} retained matches · full counts need a fresh check` : `${total} matching reports in the available source set`}</p>}
       </div>
       {feed.loading && !data ? <NewsSkeleton count={6} /> : data ? <>
         <NewsCategorySections sections={data.sections} selectedSection={view.section} busy={feed.refreshing} countsArePartial={data.countsArePartial}
-          onViewAll={section => setView(previous => ({ ...previous, section, offset: 0 }))}
-          onPageChange={offset => setView(previous => ({ ...previous, offset }))} />
+          onViewAll={section => { focusAfterLoad.current = section; setView(previous => ({ ...previous, section, offset: 0 })); }}
+          onPageChange={offset => { focusAfterLoad.current = view.section ?? null; setView(previous => ({ ...previous, offset })); }} />
         {total === 0 && <NewsEmpty type="no-results" message="No matching reports in the available feeds. Missing or incomplete sources do not establish clear conditions." />}
         <p className="mt-8 border-t pt-4 text-xs text-muted-foreground">Counts describe the displayed check and can change between pages. Search includes reports beyond the overview. Source coverage lists provider limits; this is a national/global overview, not a complete archive.</p>
       </> : !feed.loading && <NewsEmpty type="error" onRetry={feed.refresh} />}

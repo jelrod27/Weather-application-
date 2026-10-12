@@ -22,7 +22,7 @@ export default function NewsCategorySections({ sections, selectedSection, onView
       return <section key={section.id} aria-labelledby={`news-${section.id}-title`} data-news-section={section.id}>
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b-2 border-primary/25 pb-3">
           <div className="min-w-0 flex-1">
-            <h2 id={`news-${section.id}-title`} className="font-mono text-xl font-bold text-primary">{config.title}</h2>
+            <h2 id={`news-${section.id}-title`} tabIndex={-1} className="font-mono text-xl font-bold text-primary">{config.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{config.description}</p>
             <p className="mt-2 text-xs font-mono text-muted-foreground">
               {countsArePartial ? `${section.items.length} retained reports · full counts need a fresh check`
