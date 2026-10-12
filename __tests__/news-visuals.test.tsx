@@ -9,6 +9,7 @@ import { spcOutlookImage } from '@/lib/news/spc-image';
 import { parseAtomFeed, parseRSSFeed } from '@/lib/services/rss/parse-feed';
 import { enrichItemImages } from '@/lib/services/rss/enrich-images';
 import { FEED_SOURCES } from '@/lib/services/rss/feedSources';
+import { newsItem } from '../tests/fixtures/news-reading';
 import type { FeedSource } from '@/lib/services/rss/feedSources';
 import type { RSSItem } from '@/lib/services/rss/parse-feed';
 
@@ -24,6 +25,12 @@ const day2 = outlooks.find((item) => item.title.includes('Day 2'))!;
 const freeze = warnings.find((item) => item.hazard?.event === 'Freeze Warning')!;
 
 describe('hazard imagery provenance', () => {
+  it.each(['high', 'medium'] as const)('does not label %s-priority editorial reading as a warning', priority => {
+    render(<NewsHero item={newsItem({ priority })} />);
+    expect(screen.queryByText('URGENT')).not.toBeInTheDocument();
+    expect(screen.queryByText('WARNING')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /How clouds form/ })).not.toHaveClass('ring-destructive');
+  });
   it('exposes the exact original bulletin even when a warning has only one update', () => {
     const bulletin = 'https://api.weather.gov/alerts/urn:oid:synthetic';
     render(<NewsCard item={{ ...freeze, updates: [{ id: 'single', title: 'Exact original bulletin', url: bulletin, issuedAt: '2026-10-11T19:00:00Z' }] }} variant="compact" />);

@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
+import { isVerifiedActiveWarning } from '@/lib/news/rails';
 import CategoryBadge from './CategoryBadge';
 import PriorityIndicator from './PriorityIndicator';
 import NewsVisual, { NewsHazardFacts } from './NewsVisual';
@@ -27,6 +28,7 @@ interface NewsHeroProps {
 export default function NewsHero({ item, className }: NewsHeroProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const safeUrl = safeExternalUrl(item.url);
+  const activeWarning = isVerifiedActiveWarning(item);
 
   const openSafeUrl = () => {
     if (!safeUrl) {
@@ -51,7 +53,7 @@ export default function NewsHero({ item, className }: NewsHeroProps): React.Reac
     <Card
       className={cn(
         'overflow-hidden group cursor-pointer transition-all hover:shadow-xl container-primary card-interactive',
-        item.priority === 'high' && 'ring-2 ring-destructive',
+        activeWarning && 'ring-2 ring-destructive',
         themeClasses.background,
         className
       )}
@@ -69,7 +71,7 @@ export default function NewsHero({ item, className }: NewsHeroProps): React.Reac
           <div>
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <CategoryBadge category={item.category} />
-              <PriorityIndicator priority={item.priority} showLabel size="md" />
+              {activeWarning && <PriorityIndicator priority={item.priority} showLabel size="md" />}
               {item.magnitude && (
                 <span className={cn(
                   'inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded font-mono',
