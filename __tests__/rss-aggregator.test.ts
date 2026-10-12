@@ -223,6 +223,21 @@ describe('parseJsonFeed (USGS elevated volcanoes)', () => {
 });
 
 describe('deduplicateItems', () => {
+  it('orders official updates by actual time across UTC offsets and calendar dates', () => {
+    const issuedTimes = ['2026-10-11T21:50:00Z', '2026-10-11T15:42:00-07:00', '2026-10-12T00:00:00+02:00'];
+    const reports = issuedTimes.map((issuedAt, index) => item({
+      id: `report-${index}`, category: 'severe', kind: 'hazard', sourceId: 'nws-alerts',
+      timestamp: new Date(issuedAt), updatedAt: issuedAt,
+      identity: { authority: 'nws', eventId: 'KEKA.GL.W.0032', productId: `report-${index}`, areaKey: 'PZZ455' },
+      updates: [{ id: `report-${index}`, title: 'Gale Warning', url: `https://api.weather.gov/alerts/report-${index}`, issuedAt }],
+    }));
+
+    const [grouped] = deduplicateItems(reports);
+
+    expect(grouped.id).toBe('report-1');
+    expect(grouped.updates?.map(update => update.id)).toEqual(['report-1', 'report-2', 'report-0']);
+  });
+
   it('collapses near-identical titles from different sources to the higher-priority one', () => {
     const items = [
       item({ id: 'a', title: 'Major earthquake strikes northern coast region', priority: 'low', source: 'A' }),

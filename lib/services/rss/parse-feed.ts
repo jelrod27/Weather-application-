@@ -656,7 +656,7 @@ export function deduplicateItems(items: RSSItem[]): RSSItem[] {
         id: candidate.identity!.productId, title: candidate.title, url: candidate.url,
         issuedAt: candidate.updatedAt ?? candidate.timestamp.toISOString(),
       }]).map(update => [`${update.id}:${update.issuedAt}`, update])).values()]
-        .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt)) : undefined;
+        .sort((a, b) => Date.parse(b.issuedAt) - Date.parse(a.issuedAt)) : undefined;
       kept[dupIndex] = { key: normalizeTitle(selected.title), item: { ...selected, ...(updates ? { updates } : {}) } };
     }
   }

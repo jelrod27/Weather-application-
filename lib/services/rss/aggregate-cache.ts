@@ -85,15 +85,19 @@ export async function aggregateFeeds(options: AggregateOptions = {}): Promise<Ag
     return b.timestamp.getTime() - a.timestamp.getTime();
   });
 
-  // Limit items, then enrich imagery (OG/USGS/stock) so cards feel like a news site.
   const available = allItems.length;
-  // Preserve separate delayed context; it must never displace a current item.
-  const delayed = allItems.filter(item => item.sourceState === 'delayed' || item.sourceState === 'unavailable' ||
-    (item.sourceId === 'nws-alerts' && item.sourceState === 'partial'));
-  const delayedIds = new Set(delayed.map(item => item.id));
-  allItems = allItems.filter(item => !delayedIds.has(item.id)).slice(0, maxItems);
-  const enriched = await Promise.all([enrichItemImages(allItems), enrichItemImages(delayed.slice(0, maxItems))]);
-  const projected = projectNewsSnapshot([...enriched[0], ...enriched[1]], sources);
+  const candidates = projectNewsSnapshot(allItems, sources);
+  // Reserve the active lane before the cap; newer outlooks must not displace it.
+  const activeWarnings = selectHappeningNow(candidates.items).slice(0, maxItems);
+  const activeIds = new Set(activeWarnings.map(item => item.id));
+  const currentItems = [...activeWarnings, ...candidates.items.filter(item => !activeIds.has(item.id))].slice(0, maxItems);
+  // Enrich only bounded results, keeping delayed context separate from current slots.
+  const enriched = await Promise.all([
+    enrichItemImages(currentItems),
+    enrichItemImages(candidates.delayedItems.slice(0, maxItems)),
+  ]);
+  // Image lookups can take time; recheck lifecycle before returning the response.
+  const projected = projectNewsSnapshot([...enriched[0], ...enriched[1]], candidates.sources);
   allItems = projected.items;
   const delayedItems = projected.delayedItems;
   sources = projected.sources;

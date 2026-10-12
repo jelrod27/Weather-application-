@@ -112,4 +112,39 @@ describe('news source integrity', () => {
     expect(item).toMatchObject({ kind: 'outlook', tropicalStatus: 'unverified' });
     expect(item.identity).toBeUndefined();
   });
+
+  it.each([1, 3])('reserves verified warnings when the response is capped at %i items', async maxItems => {
+    const nws = JSON.parse(fixture('nws-2026-10-11.json'));
+    nws.features = [nws.features[0]];
+    const outlooks = rss(3).replaceAll('22:00:00', '22:49:00');
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async input => new URL(String(input)).hostname === 'api.weather.gov'
+      ? Response.json(nws) : new Response(outlooks));
+
+    const result = await aggregateFeeds({ categories: ['severe'], maxItems });
+
+    expect(result.items).toHaveLength(maxItems);
+    expect(result.items[0].sourceId).toBe('nws-alerts');
+    expect(result.happeningNow).toEqual([result.items[0]]);
+    expect(result.featured).toEqual(result.items[0]);
+    expect(result.items.slice(1).every(item => item.sourceId === 'spc-outlooks')).toBe(true);
+    expect(result.stats).toMatchObject({ total: maxItems, available: 4, truncated: true });
+  });
+
+  it('does not reserve current slots for retained warnings after an NWS failure', async () => {
+    const nws = JSON.parse(fixture('nws-2026-10-11.json'));
+    nws.features = [nws.features[0]];
+    const fetcher = jest.spyOn(globalThis, 'fetch').mockImplementation(async input => new URL(String(input)).hostname === 'api.weather.gov'
+      ? Response.json(nws) : new Response(rss(3)));
+    await aggregateFeeds({ categories: ['severe'], maxItems: 1 });
+    jest.setSystemTime(NOW + 2 * 60_000);
+    fetcher.mockResolvedValue(new Response('down', { status: 503 }));
+
+    const result = await aggregateFeeds({ categories: ['severe'], maxItems: 1 });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].sourceId).toBe('spc-outlooks');
+    expect(result.happeningNow).toEqual([]);
+    expect(result.delayedItems).toHaveLength(1);
+    expect(result.delayedItems[0]).toMatchObject({ sourceId: 'nws-alerts', sourceState: 'delayed' });
+  });
 });
