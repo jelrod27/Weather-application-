@@ -24,7 +24,7 @@ interface NewsFeedState {
 }
 
 interface NewsFeedView extends NewsFeedState {
-  viewReady: boolean;
+  viewSettled: boolean;
   now: number;
   refresh: () => void;
   applyPending: () => void;
@@ -147,5 +147,5 @@ export function useNewsFeed(options: NewsFeedOptions, beforeChange: () => void):
     setState(previous => previous.pending ? { ...previous, displayed: previous.pending, pending: null } : previous);
   }, [beforeChange]);
   const displayed = useMemo(() => state.displayed ? projectNewsReading(state.displayed, now) : null, [state.displayed, now]);
-  return { ...state, displayed, now, refresh, applyPending, viewReady: state.requestUrl === url && !state.loading && displayed !== null };
+  return { ...state, displayed, now, refresh, applyPending, viewSettled: state.requestUrl === url && !state.loading };
 }

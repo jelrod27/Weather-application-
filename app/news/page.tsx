@@ -35,10 +35,14 @@ export default function NewsPage(): React.JSX.Element {
   const errors = data?.sources.filter(source => source.state !== 'fresh').length ?? 0;
   const total = data?.sections.reduce((sum, section) => sum + section.total, 0) ?? 0;
   useEffect(() => {
-    if (!feed.viewReady || !focusAfterLoad.current) return;
-    document.getElementById(`news-${focusAfterLoad.current}-title`)?.focus();
+    if (!feed.viewSettled || !focusAfterLoad.current) return;
+    // A removed navigation button leaves focus on body. Respect any control the reader chose while loading.
+    if (document.activeElement === document.body) {
+      const target = document.getElementById(`news-${focusAfterLoad.current}-title`) ?? document.getElementById('news-refresh');
+      target?.focus();
+    }
     focusAfterLoad.current = null;
-  }, [feed.viewReady, data]);
+  }, [feed.viewSettled, data]);
 
   return <PageWrapper>
     <div className="container mx-auto px-4 py-6">

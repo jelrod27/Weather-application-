@@ -71,7 +71,8 @@ location facts are preserved. Warning Center navigation remains available.
   restoring focus inside them. Even a single bulletin exposes its exact source URL.
 - Explicit View all / page navigation moves keyboard focus to the loaded section
   heading. Returning to the overview focuses the page heading. Search and category
-  controls retain their own focus, including when they interrupt pending navigation.
+  controls retain their own focus, including when they interrupt pending navigation
+  before the search debounce. Failed navigation restores focus to Refresh.
 
 ## Regression evidence
 

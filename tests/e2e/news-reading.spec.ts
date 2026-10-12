@@ -61,6 +61,39 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
   });
 }
 
+test('finishing navigation does not interrupt typing in search before its debounce', async ({ page }) => {
+  await fixtureFeed(page);
+  await page.clock.pauseAt(NEWS_EPOCH + 10_000);
+  await page.goto('/news');
+  await expect(page.locator('[data-news-section="reading"] [data-news-key]')).toHaveCount(3);
+  let releaseResponse!: () => void;
+  const responseReady = new Promise<void>(resolve => { releaseResponse = resolve; });
+  await page.route('**/api/news/rss**', async route => {
+    await responseReady;
+    await route.fulfill({ json: { status: 'ok', ...newsBrowse([newsItem()], { section: 'reading' }) } });
+  });
+  await page.getByRole('button', { name: 'View all weather & science reading' }).click();
+  await expect(page.locator('[data-news-section="reading"]')).toHaveCount(0);
+  const search = page.getByRole('textbox', { name: 'Search news' });
+  await search.fill('cloud');
+  releaseResponse();
+  await expect(page.getByRole('heading', { name: 'How clouds form', exact: true })).toBeVisible();
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue('cloud');
+});
+
+test('failed section navigation leaves a usable refresh focus target', async ({ page }) => {
+  await fixtureFeed(page);
+  await page.goto('/news');
+  await expect(page.locator('[data-news-section="reading"] [data-news-key]')).toHaveCount(3);
+  await page.route('**/api/news/rss**', route => route.fulfill({ status: 503, body: 'Synthetic outage' }));
+  await page.getByRole('button', { name: 'View all weather & science reading' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('alert').filter({ hasText: 'Refresh failed' })).toBeVisible();
+  await expect(page.locator('#news-refresh')).toBeFocused();
+  await expect(page.locator('#news-refresh')).toBeEnabled();
+});
+
 test('background checks preserve reading position, focus, and official bulletin access until applied', async ({ page }) => {
   await page.clock.install({ time: NEWS_EPOCH });
   const reading = [newsItem(), newsItem({ id: 'reading-2', title: 'Reading anchor' })];
