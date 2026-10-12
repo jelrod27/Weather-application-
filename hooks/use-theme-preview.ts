@@ -71,6 +71,14 @@ export function useThemePreview() {
   const startPreview = (themeId: string) => {
     if (user || !isPremiumTheme(themeId)) {
       // User is authenticated or theme is free - apply permanently
+      clearTimers()
+      themeBeforePreviewRef.current = null
+      setPreviewState({
+        isPreviewActive: false,
+        previewTheme: null,
+        timeRemaining: 0,
+        showWarning: false
+      })
       setTheme(themeId as Theme)
       return
     }

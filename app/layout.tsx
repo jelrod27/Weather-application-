@@ -156,8 +156,10 @@ export default function RootLayout({
             not flash the default theme on every load. The provider keeps the
             weather-theme cookie and weather-edu-theme storage in sync. */}
         <script
+          data-valid-themes={JSON.stringify(THEME_LIST)}
+          data-default-theme={DEFAULT_THEME}
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var valid=${JSON.stringify(THEME_LIST)};var m=document.cookie.match(/(?:^|; )weather-theme=([\\w-]+)/);var t=(m&&m[1])||localStorage.getItem('weather-edu-theme');if(t==='miami'||t==='dark')t='${DEFAULT_THEME}';if(valid.indexOf(t)>-1){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(t);}}catch(e){}})();`,
+            __html: `(function(){try{var script=document.currentScript;var valid=JSON.parse(script.dataset.validThemes);var m=document.cookie.match(/(?:^|; )weather-theme=([\\w-]+)/);var t=(m&&m[1])||localStorage.getItem('weather-edu-theme');if(t==='miami'||t==='dark')t=script.dataset.defaultTheme;if(valid.indexOf(t)>-1){document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(t);}}catch(e){}})();`,
           }}
         />
       </head>

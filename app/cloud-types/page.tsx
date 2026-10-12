@@ -201,7 +201,7 @@ export default function CloudTypesPage() {
           <TabsList className="flex flex-wrap justify-center gap-2 h-auto bg-transparent">
             <TabsTrigger
               value="all"
-              className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:${themeClasses.accentBg} data-[state=active]:text-primary-foreground`}
+              className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               ALL
             </TabsTrigger>
@@ -213,7 +213,7 @@ export default function CloudTypesPage() {
               <TabsTrigger
                 key={category}
                 value={category}
-                className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:${themeClasses.accentBg} data-[state=active]:text-primary-foreground`}
+                className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 {category.toUpperCase()}
                 <span className="ml-1 opacity-75">
@@ -233,7 +233,7 @@ export default function CloudTypesPage() {
               <TabsTrigger
                 key={cloudType}
                 value={cloudType}
-                className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:${themeClasses.accentBg} data-[state=active]:text-primary-foreground`}
+                className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider card-inner data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 {cloudType.toUpperCase()}
                 <span className="ml-1 opacity-75">

@@ -42,6 +42,14 @@ interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+interface ThemeSaveState {
+  userId: string | null
+  queue: Promise<void>
+  latestSelection: number
+  pending: number
+  lastSavedTheme: Theme
+}
+
 /**
  * Owns theme presentation only (data-theme / classList / localStorage).
  * Auth session and user_preferences rows come from AuthProvider — do not
@@ -55,6 +63,28 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [mounted, setMounted] = useState(false)
   const themeRef = useRef<Theme>(theme)
   themeRef.current = theme
+  const activeUserIdRef = useRef<string | null>(user?.id ?? null)
+  activeUserIdRef.current = user?.id ?? null
+  const saveStateRef = useRef<ThemeSaveState>({
+    userId: user?.id ?? null,
+    queue: Promise.resolve(),
+    latestSelection: 0,
+    pending: 0,
+    lastSavedTheme: theme,
+  })
+
+  const getSaveState = (userId: string | null): ThemeSaveState => {
+    if (saveStateRef.current.userId !== userId) {
+      saveStateRef.current = {
+        userId,
+        queue: Promise.resolve(),
+        latestSelection: 0,
+        pending: 0,
+        lastSavedTheme: themeRef.current,
+      }
+    }
+    return saveStateRef.current
+  }
 
   const availableThemes: Theme[] = isAuthenticated ? THEME_LIST : FREE_THEMES
 
@@ -74,13 +104,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Apply server theme when auth prefs arrive, unless a local theme already wins.
   // Drop premium themes on logout.
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || !mounted) return
+
+    getSaveState(user?.id ?? null)
 
     if (!user) {
-      if (!FREE_THEMES.includes(themeRef.current as ThemeType)) {
+      const guestTheme = FREE_THEMES.includes(themeRef.current as ThemeType)
+        ? themeRef.current
+        : DEFAULT_THEME
+      if (guestTheme !== themeRef.current) {
         setThemeState(DEFAULT_THEME)
         safeStorage.setItem('weather-edu-theme', DEFAULT_THEME)
       }
+      document.cookie = `weather-theme=${guestTheme}; path=/; max-age=31536000; SameSite=Lax`
       return
     }
 
@@ -91,14 +127,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (dbTheme) {
       setThemeState(dbTheme)
     }
-  }, [user, preferences?.theme, authLoading])
+  }, [user, preferences?.theme, authLoading, mounted])
 
-  const setTheme = async (newTheme: Theme) => {
+  const setTheme = (newTheme: Theme) => {
     if (!isAuthenticated && !FREE_THEMES.includes(newTheme)) {
       return
     }
 
-    const previousTheme = themeRef.current
+    const saveState = getSaveState(user?.id ?? null)
+    if (isAuthenticated && saveState.pending === 0) {
+      saveState.lastSavedTheme = themeRef.current
+    }
+    const selection = ++saveState.latestSelection
     setThemeState(newTheme)
 
     if (typeof window !== 'undefined') {
@@ -107,22 +147,34 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
 
     if (isAuthenticated) {
-      try {
-        const updated = await updateUserPreferencesAPI({ theme: newTheme })
-        if (updated) {
-          userCacheService.mirrorServerPreferences(updated)
-          await refreshPreferences()
-        } else {
-          throw new Error('Theme preference was not saved')
+      ++saveState.pending
+      const persist = async () => {
+        if (saveStateRef.current !== saveState || activeUserIdRef.current !== saveState.userId) {
+          --saveState.pending
+          return
         }
-      } catch (e) {
-        console.error('Failed to save theme preference; restoring previous theme', e)
-        setThemeState(previousTheme)
-        if (typeof window !== 'undefined') {
-          safeStorage.setItem('weather-edu-theme', previousTheme)
-          document.cookie = `weather-theme=${previousTheme}; path=/; max-age=31536000; SameSite=Lax`
+        try {
+          const updated = await updateUserPreferencesAPI({ theme: newTheme })
+          if (!updated) throw new Error('Theme preference was not saved')
+
+          saveState.lastSavedTheme = newTheme
+          if (saveStateRef.current === saveState && activeUserIdRef.current === saveState.userId && saveState.latestSelection === selection) {
+            userCacheService.mirrorServerPreferences(updated)
+            await refreshPreferences()
+          }
+        } catch (e) {
+          console.error('Failed to save theme preference; restoring previous theme', e)
+          if (saveStateRef.current === saveState && activeUserIdRef.current === saveState.userId && saveState.latestSelection === selection) {
+            const restoredTheme = saveState.lastSavedTheme
+            setThemeState(restoredTheme)
+            safeStorage.setItem('weather-edu-theme', restoredTheme)
+            document.cookie = `weather-theme=${restoredTheme}; path=/; max-age=31536000; SameSite=Lax`
+          }
+        } finally {
+          --saveState.pending
         }
       }
+      saveState.queue = saveState.queue.then(persist, persist)
     }
   }
 

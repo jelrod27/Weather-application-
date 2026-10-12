@@ -91,6 +91,12 @@ describe('theme contrast', () => {
     )
   })
 
+  it.each(THEME_LIST)('%s: destructive button text is legible on its fill', (theme) => {
+    expect(
+      contrast(token(theme, 'destructive-foreground'), token(theme, 'destructive')),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
   it.each(THEME_LIST)('%s: on-primary text is legible on the primary fill', (theme) => {
     expect(
       contrast(token(theme, 'primary-foreground'), token(theme, 'primary')),
