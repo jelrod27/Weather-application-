@@ -21,12 +21,14 @@ export function useNewsReadingPosition(): () => void {
   const capture = useCallback(() => {
     if (saved.current) return;
     const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusKey = focused?.closest<HTMLElement>('[data-news-key]')?.dataset.newsKey ?? null;
     saved.current = {
       anchors: Array.from(document.querySelectorAll<HTMLElement>('[data-news-key]')).map(element => ({
         key: element.dataset.newsKey!, top: element.getBoundingClientRect().top, bottom: element.getBoundingClientRect().bottom,
-      })).filter(anchor => anchor.bottom > 0 && anchor.top < window.innerHeight),
+      })).filter(anchor => anchor.bottom > 0 && anchor.top < window.innerHeight)
+        .sort((a, b) => Number(b.key === focusKey) - Number(a.key === focusKey)),
       focused,
-      focusKey: focused?.closest<HTMLElement>('[data-news-key]')?.dataset.newsKey ?? null,
+      focusKey,
       focusHref: focused?.closest('a')?.getAttribute('href') ?? null,
       expandedKeys: Array.from(document.querySelectorAll<HTMLElement>('[data-news-key]'))
         .filter(card => card.querySelector('details[open]')).map(card => card.dataset.newsKey!),

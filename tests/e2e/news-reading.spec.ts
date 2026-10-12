@@ -38,7 +38,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await page.getByRole('button', { name: 'Next page' }).click();
     await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Next page' }).click();
-    await expect(page.getByRole('heading', { name: 'Cloud lesson 69', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Cloud lesson 69 from/ })).toBeVisible();
     await page.getByRole('button', { name: 'Previous page' }).click();
     await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
 
