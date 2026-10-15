@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "05812b3576b05f55ed9e59bcbaed4c18c9614e17444f8c36582aaace7e7849ea",
+  "auditSha256": "fc07e187bea47efc436b9387eea42400281e78affd8559126aa2f0ba172d9e57",
+  "decision": "reviewed-partial",
+  "reviewer": "Justin Elrod",
+  "acknowledged": true,
+  "reviewedAt": "2026-10-15T21:53:33.273Z",
+  "gapDispositions": {
+    "news-headlines": "Reviewed current-event claims against the linked NWS Juneau originals (archived MWW issued 421 AM AKDT Wed Oct 14 2026 and Oct 14 CWF for Southeast Alaska), confirming Storm Warnings covering Southeast Alaska waters into Oct 15; retained only those verified claims, left the evergreen Marine Weather explainer unchanged, and kept the partial headline-sample limitation disclosed in the post's Source coverage section."
+  }
+}
