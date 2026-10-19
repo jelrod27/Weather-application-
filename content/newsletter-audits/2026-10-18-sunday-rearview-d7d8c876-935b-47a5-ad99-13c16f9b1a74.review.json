@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "c84ee72afb01f3508bca4801c80cacc2d4c366e56cc3d7374f1af1c89ba3f5de",
+  "auditSha256": "5388dad9985886a610dc176b5061bd8a3150837e8070a65f0ab3bfc66b83d7ba",
+  "decision": "reviewed-partial",
+  "reviewer": "Justin D Elrod",
+  "acknowledged": true,
+  "reviewedAt": "2026-10-19T00:59:20.186Z",
+  "gapDispositions": {
+    "swpc-xray": "Acknowledged 208 leading missing one-minute samples and 3 internal missing samples, and retained the source coverage disclosure. The article makes no claim about X-ray activity during those gaps; the cited October 16 M1.4 flare is within the observed interval."
+  }
+}
