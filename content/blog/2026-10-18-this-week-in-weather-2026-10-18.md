@@ -25,7 +25,7 @@ key_phrases:
   - WFO Lubbock office issuing four tornado warnings between roughly 5:06 p.m. and 6:28 p.m. CDT
   - "M6.8 at 12:23 UTC carried a tsunami flag, though the remote mid-ocean location limits coastal exposure"
   - peak observed Kp among available three-hour blocks was 3.67
-  - no significant geomagnetic follow-on is evident in the subsequent Kp readings
+  - subsequent Kp readings remained below the Kp 5 threshold for a minor storm
   - "Bay Area's first meaningful rain of the season"
   - the October window warrants the same operational awareness as spring
 similarity_max: 0.82
@@ -38,7 +38,7 @@ images_used:
 image_audit:
   - "id=f5-tornado-elie; lane=severe; anchor=56 of the 297 total reports across the week's coverage came from that state.; tags=severe_storms,historical_events; caption=F5 tornado near Elie, Manitoba (2007) — only F5 ever recorded in Canada."
   - "id=tohoku-tsunami-otsuchi-2011; lane=earthquake; anchor=though the remote mid-ocean location limits coastal exposure. A M6.1 at shallow depth (11 km) struck 17 km west of Río Grande, Panama on October 12.; tags=earthquakes,marine,historical_events; caption=Aerial view of Otsuchi, Japan, devastated by the tsunami from the magnitude 9.0 Tōhoku earthquake, March 11, 2011."
-  - "id=sdo-current-193; lane=severe; anchor=which dropped to 2.33 or below within three hours.; tags=space_weather; caption=Current Sun in 193 Å — outer corona, ~1 million K plasma."
+  - "id=sdo-current-193; lane=severe; anchor=subsequent Kp readings remained below the Kp 5 threshold for a minor storm.; tags=space_weather; caption=Current Sun in 193 Å — outer corona, ~1 million K plasma."
 spotlight_active: null
 generation_retries: 0
 word_count: 1160
@@ -61,7 +61,7 @@ On the seismic side, 114 M4.5-or-greater earthquakes were recorded globally duri
 ![Aerial view of Otsuchi, Japan, devastated by the tsunami from the magnitude 9.0 Tōhoku earthquake, March 11, 2011.](https://commons.wikimedia.org/wiki/Special:FilePath/US_Navy_110315-N-5503T-307_An_aerial_view_of_damage_to_Otsuchi,_Japan,_after_a_9.0_magnitude_earthquake_and_subsequent_tsunami_devastated_the_area_in_northern_Japan.jpg?width=1280)
 *U.S. Navy / MC3 Alexander Tidd*
 
-Geomagnetic activity remained quiet through most of the interval. The peak observed Kp among available three-hour blocks was 3.67, recorded at 18:00 UTC on October 16 — well below the Kp 5 threshold for even minor storm classification. An M1.4 solar flare was recorded at 15:42 UTC on October 16; no significant geomagnetic follow-on is evident in the subsequent Kp readings, which dropped to 2.33 or below within three hours.
+Geomagnetic activity remained quiet through most of the interval. The peak observed Kp among available three-hour blocks was 3.67, recorded at 18:00 UTC on October 16 — well below the Kp 5 threshold for even minor storm classification. An M1.4 solar flare was recorded at 15:42 UTC on October 16; subsequent Kp readings remained below the Kp 5 threshold for a minor storm.
 
 ![Current Sun in 193 Å — outer corona, ~1 million K plasma.](https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg)
 *NASA SDO*
@@ -86,7 +86,7 @@ Point forecasts below cover October 18–24. All temperatures are °F; precipita
 
 **London (51.50°N / 0.13°W):** The wettest forecast in this set. Rain is expected on October 18 (0.17 in, 88% probability), October 20 (0.54 in, 78%), October 21 (0.24 in, 50%), October 22 (0.06 in, 76%), and October 23 (0.63 in, 87%). Only October 24 shows a meaningful break, with probability falling to 46% and no accumulation modeled. Highs stay between 54°F and 57°F throughout.
 
-**Tokyo (35.68°N / 139.69°W):** Warm early — highs of 74–78°F October 18–21 — with a notable precipitation event on October 19 (0.71 in, 10% probability flag notwithstanding, WMO code 63 indicates moderate rain). October 24 carries the highest precipitation signal: 0.90 inches with an 81% probability and a shower code (WMO 81).
+**Tokyo (35.68°N / 139.69°E):** Warm early — highs of 74–78°F October 18–21 — with a notable precipitation event on October 19 (0.71 in, 10% probability flag notwithstanding, WMO code 63 indicates moderate rain). October 24 carries the highest precipitation signal: 0.90 inches with an 81% probability and a shower code (WMO 81).
 
 **Sydney (33.87°S / 151.21°E):** Spring conditions, with highs climbing from 68°F on October 18 to 84°F on October 24. Scattered light precipitation is modeled most days, peaking at 0.24 inches on October 22 (73% probability). The period ends warm and partly cloudy.
 
