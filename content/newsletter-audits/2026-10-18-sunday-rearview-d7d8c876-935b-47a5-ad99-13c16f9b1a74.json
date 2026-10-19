@@ -1,0 +1,546 @@
+{
+  "version": 1,
+  "cadence": "sunday_rearview",
+  "generatedAt": "2026-10-18T15:28:15.119Z",
+  "window": {
+    "start": "2026-10-11T12:00:00.000Z",
+    "end": "2026-10-18T12:00:00.000Z"
+  },
+  "sources": [
+    {
+      "id": "iem-warnings",
+      "label": "IEM polygon warnings issued (TO/SV/FF/MA/EW.W only)",
+      "url": "https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-10-11T12%3A00%3A00.000Z&endts=2026-10-18T12%3A00%3A00.000Z",
+      "retrievedAt": "2026-10-18T15:28:15.675Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T12:00:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 363,
+      "observationStart": "2026-10-11T12:33:00.000Z",
+      "observationEnd": "2026-10-18T09:04:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "archive queries (unique warning events)",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-11",
+      "label": "SPC preliminary reports 2026-10-11",
+      "url": "https://www.spc.noaa.gov/climo/reports/261011_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:15.386Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-12T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T12:00:00.000Z",
+          "end": "2026-10-12T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 66,
+      "observationStart": "2026-10-11T12:15:00.000Z",
+      "observationEnd": "2026-10-12T01:45:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-12",
+      "label": "SPC preliminary reports 2026-10-12",
+      "url": "https://www.spc.noaa.gov/climo/reports/261012_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:15.516Z",
+      "requested": {
+        "start": "2026-10-12T12:00:00.000Z",
+        "end": "2026-10-13T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-12T12:00:00.000Z",
+          "end": "2026-10-13T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 1,
+      "observationStart": "2026-10-13T03:53:00.000Z",
+      "observationEnd": "2026-10-13T03:53:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-13",
+      "label": "SPC preliminary reports 2026-10-13",
+      "url": "https://www.spc.noaa.gov/climo/reports/261013_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:15.731Z",
+      "requested": {
+        "start": "2026-10-13T12:00:00.000Z",
+        "end": "2026-10-14T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-13T12:00:00.000Z",
+          "end": "2026-10-14T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 159,
+      "observationStart": "2026-10-13T21:40:00.000Z",
+      "observationEnd": "2026-10-14T03:03:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-14",
+      "label": "SPC preliminary reports 2026-10-14",
+      "url": "https://www.spc.noaa.gov/climo/reports/261014_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:16.021Z",
+      "requested": {
+        "start": "2026-10-14T12:00:00.000Z",
+        "end": "2026-10-15T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-14T12:00:00.000Z",
+          "end": "2026-10-15T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 35,
+      "observationStart": "2026-10-14T18:57:00.000Z",
+      "observationEnd": "2026-10-15T04:18:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-15",
+      "label": "SPC preliminary reports 2026-10-15",
+      "url": "https://www.spc.noaa.gov/climo/reports/261015_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:16.158Z",
+      "requested": {
+        "start": "2026-10-15T12:00:00.000Z",
+        "end": "2026-10-16T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-15T12:00:00.000Z",
+          "end": "2026-10-16T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 3,
+      "observationStart": "2026-10-15T23:01:00.000Z",
+      "observationEnd": "2026-10-15T23:26:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-16",
+      "label": "SPC preliminary reports 2026-10-16",
+      "url": "https://www.spc.noaa.gov/climo/reports/261016_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:16.438Z",
+      "requested": {
+        "start": "2026-10-16T12:00:00.000Z",
+        "end": "2026-10-17T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-16T12:00:00.000Z",
+          "end": "2026-10-17T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 33,
+      "observationStart": "2026-10-16T16:17:00.000Z",
+      "observationEnd": "2026-10-16T22:55:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-10-17",
+      "label": "SPC preliminary reports 2026-10-17",
+      "url": "https://www.spc.noaa.gov/climo/reports/261017_rpts.csv",
+      "retrievedAt": "2026-10-18T15:28:16.727Z",
+      "requested": {
+        "start": "2026-10-17T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-17T12:00:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 0,
+      "observationStart": null,
+      "observationEnd": null,
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": []
+    },
+    {
+      "id": "swpc-kp",
+      "label": "NOAA SWPC planetary Kp",
+      "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+      "retrievedAt": "2026-10-18T15:28:15.376Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T12:00:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 56,
+      "observationStart": "2026-10-11T12:00:00.000Z",
+      "observationEnd": "2026-10-18T09:00:00.000Z",
+      "expectedUnits": 56,
+      "observedUnits": 56,
+      "unit": "three-hour blocks",
+      "reasons": []
+    },
+    {
+      "id": "swpc-xray",
+      "label": "NOAA GOES primary 0.1–0.8 nm X-ray flux",
+      "url": "https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json",
+      "retrievedAt": "2026-10-18T15:28:15.394Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T15:28:00.000Z",
+          "end": "2026-10-14T14:19:00.000Z"
+        },
+        {
+          "start": "2026-10-14T14:21:00.000Z",
+          "end": "2026-10-15T13:32:00.000Z"
+        },
+        {
+          "start": "2026-10-15T13:33:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "partial",
+      "usable": true,
+      "records": 9869,
+      "observationStart": "2026-10-11T15:28:00.000Z",
+      "observationEnd": "2026-10-18T11:59:00.000Z",
+      "expectedUnits": 10080,
+      "observedUnits": 9869,
+      "unit": "one-minute samples",
+      "reasons": [
+        "Missing 211 of 10080 expected intervals; peak is only for observed coverage"
+      ]
+    },
+    {
+      "id": "usgs-significant",
+      "label": "USGS significant (significance > 600) earthquakes",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-11T12%3A00%3A00.000Z&endtime=2026-10-18T11%3A59%3A59.999Z&orderby=time&limit=20000&minsig=601",
+      "retrievedAt": "2026-10-18T15:28:15.485Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T12:00:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 5,
+      "observationStart": "2026-10-12T23:20:36.003Z",
+      "observationEnd": "2026-10-17T05:06:57.657Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "catalog queries",
+      "reasons": []
+    },
+    {
+      "id": "usgs-m45",
+      "label": "USGS M4.5+ earthquakes",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-10-11T12%3A00%3A00.000Z&endtime=2026-10-18T11%3A59%3A59.999Z&orderby=time&limit=20000&minmagnitude=4.5",
+      "retrievedAt": "2026-10-18T15:28:15.969Z",
+      "requested": {
+        "start": "2026-10-11T12:00:00.000Z",
+        "end": "2026-10-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-11T12:00:00.000Z",
+          "end": "2026-10-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 114,
+      "observationStart": "2026-10-11T12:13:18.599Z",
+      "observationEnd": "2026-10-18T08:00:06.054Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "catalog queries",
+      "reasons": []
+    },
+    {
+      "id": "forecast-40.71--74",
+      "label": "Open-Meteo point forecast: Northeast (NYC area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.104Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-33.75--84.39",
+      "label": "Open-Meteo point forecast: Southeast (Atlanta area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=33.75&longitude=-84.39&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.105Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-41.88--87.63",
+      "label": "Open-Meteo point forecast: Midwest (Chicago area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=41.88&longitude=-87.63&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.115Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-39.74--104.99",
+      "label": "Open-Meteo point forecast: Mountain West (Denver area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=39.74&longitude=-104.99&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.119Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-37.77--122.42",
+      "label": "Open-Meteo point forecast: Pacific (San Francisco area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.128Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-32.78--96.8",
+      "label": "Open-Meteo point forecast: South Plains (Dallas area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=32.78&longitude=-96.8&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.126Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-51.5--0.13",
+      "label": "Open-Meteo point forecast: London",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=51.5&longitude=-0.13&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.140Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-35.68-139.69",
+      "label": "Open-Meteo point forecast: Tokyo",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=35.68&longitude=139.69&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.139Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast--33.87-151.21",
+      "label": "Open-Meteo point forecast: Sydney",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=-33.87&longitude=151.21&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-10-18&end_date=2026-10-24",
+      "retrievedAt": "2026-10-18T15:28:16.140Z",
+      "requested": {
+        "start": "2026-10-18T00:00:00.000Z",
+        "end": "2026-10-25T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-18T00:00:00.000Z",
+          "end": "2026-10-25T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-10-18T00:00:00.000Z",
+      "observationEnd": "2026-10-24T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    }
+  ]
+}
