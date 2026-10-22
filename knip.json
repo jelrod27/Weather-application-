@@ -24,7 +24,6 @@
   ],
   "ignoreDependencies": [
     "autoprefixer",
-    "critters",
     "cross-env",
     "ts-jest",
     "@jest/globals",

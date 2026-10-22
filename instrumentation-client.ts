@@ -8,6 +8,7 @@
 // loads lazily via the dynamic import() in initSentryLazy below.
 import type * as SentryNextjs from '@sentry/nextjs';
 import { isValidSentryDsn } from '@/lib/sentry-utils';
+import { SENTRY_DATA_COLLECTION } from '@/lib/sentry-data-collection';
 
 let sentryInitialized = false;
 let sentryModule: typeof SentryNextjs | null = null;
@@ -35,7 +36,7 @@ async function initSentryLazy() {
     // drops GlobalHandlers, so window errors never reach Sentry.
     Sentry.init({
       dsn: sentryDsn,
-      enableLogs: true,
+      dataCollection: SENTRY_DATA_COLLECTION,
       tracesSampleRate: 0,
       replaysSessionSampleRate: 0,
       replaysOnErrorSampleRate: 0,

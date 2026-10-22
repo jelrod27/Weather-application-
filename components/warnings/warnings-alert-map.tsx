@@ -122,7 +122,8 @@ export default function WarningsAlertMap({
 
     map.on('pointermove', (evt) => {
       const hit = map.forEachFeatureAtPixel(evt.pixel, () => true)
-      map.getTargetElement().style.cursor = hit ? 'pointer' : ''
+      const target = map.getTargetElement()
+      if (target) target.style.cursor = hit ? 'pointer' : ''
     })
 
     const ro = new ResizeObserver(() => map.updateSize())

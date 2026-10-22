@@ -209,7 +209,8 @@ export default function TurbulenceMap({
       const hit = map.forEachFeatureAtPixel(evt.pixel, (f) =>
         f.get('pirep') ? true : undefined,
       );
-      map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+      const target = map.getTargetElement();
+      if (target) target.style.cursor = hit ? 'pointer' : '';
     });
 
     const updateMapSize = () => mapInstanceRef.current?.updateSize();

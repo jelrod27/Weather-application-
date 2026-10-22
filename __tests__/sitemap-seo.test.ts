@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 /**
  * SEO tests for sitemap generation and next.config redirect rules.
  */
