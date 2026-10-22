@@ -1,4 +1,5 @@
 import { isValidSentryDsn } from "@/lib/sentry-utils";
+import { SENTRY_DATA_COLLECTION } from "@/lib/sentry-data-collection";
 import * as Sentry from "@sentry/nextjs";
 
 const sentryDsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
@@ -7,8 +8,8 @@ if (sentryDsn && isValidSentryDsn(sentryDsn)) {
   Sentry.init({
     dsn: sentryDsn,
 
-    // Enable Sentry Logs
-    enableLogs: true,
+    // Sentry 11 enables logs by usage; keep request data collection restricted.
+    dataCollection: SENTRY_DATA_COLLECTION,
 
     // Lower sample rate in production to reduce costs
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,

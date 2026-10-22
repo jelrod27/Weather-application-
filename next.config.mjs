@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // Bundle analyzer (only enabled when ANALYZE=true)
 // Use dynamic import to avoid ES module issues

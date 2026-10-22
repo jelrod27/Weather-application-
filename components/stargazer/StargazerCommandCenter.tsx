@@ -338,10 +338,10 @@ export default function StargazerCommandCenter() {
     handleDeviceLocation,
     refresh,
   } = useStargazerController();
-  const [, setClockTick] = useState(0);
+  const [, setViewRevision] = useState(0);
   const now = Date.now();
   useEffect(() => {
-    const update = () => setClockTick(tick => tick + 1);
+    const update = () => setViewRevision(revision => revision + 1);
     const timer = window.setInterval(update, 60000);
     document.addEventListener('visibilitychange', update);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', update); };
@@ -357,6 +357,9 @@ export default function StargazerCommandCenter() {
 
   const changeObservingContext = (change: Pick<StargazerContext, 'at' | 'equipment'>): void => {
     window.history.replaceState(null, '', getStargazerHref({ ...context, ...change, from: 'start' }) + window.location.hash);
+    // Controlled inputs must reflect the URL immediately, without waiting for
+    // Next.js to finish its history transition (acknowledgement may be a no-op).
+    setViewRevision(revision => revision + 1);
     acknowledgeSharedTime();
   };
 
