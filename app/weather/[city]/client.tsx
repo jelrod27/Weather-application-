@@ -116,9 +116,10 @@ export default function CityWeatherClient({ city, citySlug, heading, climateGuid
             <HomeHub userLocation={hubLocation} />
           </div>
 
-          {/* The live card arrives after the fetch; reserve its height so the
-              climate guide and footer do not jump when it lands (CLS). */}
-          <div className="min-h-[480px]">
+          {/* Keep the guide below the initial viewport while weather loads.
+              A fixed 480px slot lets it briefly paint on tall desktop screens
+              before the full forecast pushes it down. */}
+          <div className="min-h-[max(480px,100vh)]">
             {loading && (
               <div className="flex justify-center items-center mt-8">
                 <Loader2 className="h-8 w-8 animate-spin text-weather-primary" />

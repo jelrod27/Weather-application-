@@ -155,16 +155,16 @@ export const cityData: { [key: string]: {
     name: 'Atlanta',
     state: 'GA',
     searchTerm: 'Atlanta, GA',
-    title: 'Atlanta Georgia Climate & Summer Weather Guide - 16 Bit Weather',
+    title: 'Atlanta Climate & Weather by Month - 16 Bit Weather',
     description:
-      'Atlanta climate and summer weather: humid subtropical seasons, monthly averages, severe storm risk, and the best time to visit.',
+      'Atlanta climate by month: temperatures, annual rainfall, humid summers, and the best time to visit, with a live forecast.',
     content: {
       intro:
-        'Atlanta has a humid subtropical climate with hot, stormy summers and mild winters. Sitting about 1,050 feet above sea level in Georgia\'s Piedmont, the city gets four seasons — and frequent severe thunderstorms in spring.',
+        'Atlanta has a humid subtropical climate with hot, humid summers and cool winters. July is normally the hottest month, with an average high near 90°F; January highs average 54°F. Rain falls throughout the year.',
       climate:
-        'Summer highs reach the upper 80s–90s°F with high humidity and near-daily afternoon storms. Winters are mild (lows often in the 30s°F) but ice storms can shut the city down. Annual rainfall is about 50 inches — more than Seattle.',
+        'The 1991–2020 normals at Hartsfield-Jackson Atlanta International Airport put July highs and lows near 90°F and 72°F, compared with 54°F and 36°F in January. Annual precipitation averages 50.43 inches, including rain and the liquid equivalent of frozen precipitation. These are long-term averages, not a forecast for your visit.',
       patterns:
-        'Dixie Alley severe weather peaks in spring. Fall is the most comfortable season. Snow is rare (~2 inches/year), but even light ice events paralyze roads. Hurricane remnants occasionally bring heavy rain in late summer and fall.',
+        'Spring and fall offer milder temperatures than summer, though rain and storms remain possible. October is the driest month in the airport\'s 1991–2020 normals, averaging 3.28 inches of precipitation. Winter cold snaps can bring snow or ice, and hurricane remnants can bring heavy rain in late summer and fall.',
     },
   },
   'denver-co': {
@@ -628,6 +628,8 @@ export interface CitySeoEnrichment {
   monthlyHighs: number[]
   /** 12 average monthly low temps in °F, Jan → Dec. */
   monthlyLows: number[]
+  /** Source and baseline for the displayed monthly normals, when verified. */
+  climateSource?: { label: string; url: string }
   /** Short recommendation of when weather is most pleasant. */
   bestTimeToVisit: string
   /** Notable weather hazards — used as chips in the UI. */
@@ -962,27 +964,32 @@ export const cityEnrichments: Record<string, CitySeoEnrichment> = {
   'atlanta-ga': {
     climateType: 'Humid subtropical (Köppen Cfa)',
     seasons: {
-      spring: 'Spring is glorious in Atlanta — azaleas and dogwoods bloom in late March through April, highs climb from the 60s°F to the 80s°F, and the city lights up in color. Severe thunderstorms are a regular feature.',
-      summer: 'Summers are hot, humid, and stormy. Highs in the upper 80s°F, dewpoints in the low 70s°F, and afternoon thunderstorms are a near-daily routine from June through August.',
-      fall: 'Fall is Atlanta\'s best-weather season — cool, dry, sunny, and with gorgeous foliage in the North Georgia mountains. October highs in the 70s°F are ideal.',
-      winter: 'Winters are mild but variable. Highs average in the low 50s°F but occasional cold snaps bring freezing temperatures. Ice storms — more than snowstorms — are the main winter hazard.',
+      spring: 'Average highs rise from 66°F in March to 81°F in May. Spring offers milder temperatures than summer, but thunderstorms can disrupt outdoor plans.',
+      summer: 'June through August is hot and humid, with average highs of 87–90°F and lows around 69–72°F. Plan for heat and the possibility of afternoon thunderstorms.',
+      fall: 'Average highs fall from 84°F in September to 64°F in November. October averages a 74°F high and is the driest month in the 1991–2020 normals; dry weather is not guaranteed.',
+      winter: 'December through February highs average 54–58°F, with lows around 36–39°F. Freezing conditions, snow and ice remain possible despite the relatively mild averages.',
     },
-    monthlyHighs: [52, 57, 65, 73, 81, 87, 89, 88, 82, 73, 63, 54],
-    monthlyLows: [33, 36, 43, 50, 60, 68, 71, 70, 64, 52, 43, 35],
-    bestTimeToVisit: 'Mid-September through early November, or mid-March through May. Both offer mild temperatures, low humidity, and a break from both summer humidity and winter storms.',
+    monthlyHighs: [54, 58, 66, 74, 81, 87, 90, 89, 84, 74, 64, 56],
+    monthlyLows: [36, 39, 45, 53, 61, 69, 72, 71, 66, 55, 44, 38],
+    climateSource: {
+      label: 'NOAA/NCEI · Atlanta Hartsfield-Jackson airport · 1991–2020 normals (°F, rounded)',
+      url: 'https://www.ncei.noaa.gov/data/normals-monthly/1991-2020/access/USW00013874.csv',
+    },
+    bestTimeToVisit: 'For milder outdoor weather, consider April–May or October. April and October average highs near 74°F, compared with 90°F in July. This is a temperature-based suggestion: rain, storms and unusual heat or cold are still possible. Check the live forecast before your trip.',
     severeRisks: ['Severe thunderstorms', 'Tornadoes', 'Ice storms', 'Flash flooding', 'Hurricane remnants'],
     uniqueFacts: [
-      'Atlanta sits 1,050 feet above sea level — the highest major city east of the Mississippi — which moderates summer heat.',
-      'The 2014 "Snowpocalypse" dropped just 2 inches but paralyzed the city for days due to icy roads.',
-      'Atlanta averages about 50 inches of rain per year, more than Seattle.',
+      'July is normally the hottest month at the airport, with a mean temperature of 80.9°F and an average high of 90.1°F.',
+      'Annual precipitation averages 50.43 inches in the 1991–2020 normals; October averages the least, at 3.28 inches.',
+      'These normals describe the airport station. Conditions in individual neighborhoods and on a particular travel day can differ.',
     ],
     faqs: [
-      { question: 'What is Atlanta Georgia climate like?', answer: 'Atlanta has a humid subtropical climate (Köppen Cfa): hot humid summers, mild winters, about 50 inches of rain per year, and a lively severe-weather season in spring.' },
-      { question: 'What is Atlanta summer weather like?', answer: 'Summers are hot and humid with highs in the upper 80s°F, dewpoints often in the low 70s°F, and frequent afternoon thunderstorms from June through August.' },
-      { question: 'When is the best time to visit Atlanta?', answer: 'Mid-September through early November offers the best weather — mild, dry, sunny days in the 70s°F with spectacular fall color in the nearby mountains. Spring (March-May) is also beautiful with blooming trees.' },
+      { question: 'What is Atlanta weather like year round?', answer: 'Atlanta has a humid subtropical climate with hot, humid summers and cool winters. At the airport, 1991–2020 average highs range from 54°F in January to 90°F in July, with precipitation throughout the year.' },
+      { question: 'What is the hottest month in Atlanta?', answer: 'July is normally the hottest month. The airport\'s 1991–2020 normals give an average high of 90.1°F, low of 71.8°F and mean temperature of 80.9°F. Individual days can be hotter or cooler.' },
+      { question: 'How much rain does Atlanta get a year?', answer: 'Atlanta averages about 50 inches a year. The airport\'s 1991–2020 normal annual precipitation is 50.43 inches, including rain and the liquid equivalent of frozen precipitation. October has the lowest monthly normal, at 3.28 inches.' },
+      { question: 'When is the best time to visit Atlanta?', answer: 'April–May or October are useful starting points if you prefer milder temperatures. April and October average highs near 74°F, compared with 90°F in July. No season guarantees dry weather; check the forecast before traveling.' },
       { question: 'Does Atlanta get tornadoes?', answer: 'Yes. Atlanta sits in "Dixie Alley" and sees several tornado warnings each spring and occasionally in fall. The 2008 Atlanta tornado caused damage to downtown — rare for a major city.' },
       { question: 'How much snow does Atlanta get?', answer: 'Very little — about 2 inches per year on average. The city is poorly equipped for snow and ice, and even small amounts can shut down highways. January and February are the most likely months.' },
-      { question: 'Is Atlanta humid in summer?', answer: 'Yes, but less oppressive than Houston or Miami. Summer dewpoints average in the upper 60s°F with frequent afternoon thunderstorms providing brief cooling.' },
+      { question: 'Is Atlanta humid in summer?', answer: 'Yes. Atlanta\'s summers are humid, and moisture can make the heat feel more uncomfortable. Monthly temperature averages do not describe the heat index on a particular day; check the current feels-like temperature and forecast.' },
     ],
   },
   'denver-co': {

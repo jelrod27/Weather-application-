@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: production-smoke-${{ github.event.deployment.sha }}
+  group: production-smoke-${{ github.event.deployment.id }}
   cancel-in-progress: true
 
 jobs:
@@ -25,6 +25,7 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.event.deployment.sha }}
       DEPLOY_CREATOR: ${{ github.event.deployment.creator.login }}
+      DEPLOY_APP: ${{ github.event.deployment.performed_via_github_app.slug }}
       DEPLOY_STATE: ${{ github.event.deployment_status.state }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -32,6 +33,13 @@ jobs:
         id: verify
         run: |
           set -euo pipefail
+          # Newsletter jobs use the "production" Actions environment. GitHub's
+          # environment name comparison is case-insensitive, so those events
+          # also reach this job; they do not represent a site deployment.
+          if [ "$DEPLOY_APP" = 'github-actions' ]; then
+            echo 'GitHub Actions environment event; skipping site smoke checks'
+            exit 0
+          fi
           if [ "$DEPLOY_CREATOR" != 'vercel[bot]' ]; then
             echo '::error::Unexpected production deployment creator'
             exit 1

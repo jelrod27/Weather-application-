@@ -1,6 +1,6 @@
 # Forecast temperature quality — issue #656
 
-Status: initial slice implemented and validated; included in the combined forecast/advisory PR. Not yet merged or deployed.
+Status: **Shipped — [PR #658](https://github.com/jelrod27/Weather-application-/pull/658), merged October 5, 2026 as `95f8c1291c19589041bf92b4cfb28f80feaa5f90`**, closing #656. The initial slice was delivered in the combined forecast/advisory PR. Review and publication instructions below are historical.
 
 ## Problem and evidence
 

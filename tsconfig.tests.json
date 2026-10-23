@@ -9,6 +9,8 @@
     ]
   },
   "include": [
+    "__tests__/production-smoke-workflow.test.ts",
+    "__tests__/weather-city-page-metadata.test.ts",
     "lib/cron/**/*.ts",
     "lib/api/**/*.ts",
     "lib/aviation/**/*.ts",
