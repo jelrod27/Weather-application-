@@ -152,6 +152,13 @@ export default function CityClimateGuide({
                 </tbody>
               </table>
             </div>
+            {enrichment.climateSource ? (
+              <p className="mt-3 text-xs leading-relaxed text-weather-muted">
+                Source: <a href={enrichment.climateSource.url} className="underline underline-offset-2">
+                  {enrichment.climateSource.label}
+                </a>
+              </p>
+            ) : null}
           </section>
         ) : null}
 

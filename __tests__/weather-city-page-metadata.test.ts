@@ -2,8 +2,15 @@
  * Unit tests for weather/[city]/page.tsx metadata generation.
  */
 
-import { generateMetadata } from '@/app/weather/[city]/page'
+import { renderToStaticMarkup } from 'react-dom/server'
+import CityWeatherPage, { generateMetadata } from '@/app/weather/[city]/page'
 import { cityData } from '@/lib/cities'
+
+// Reproduce prerendering's client bailout without executing weather requests.
+jest.mock('@/app/weather/[city]/client', () => ({
+  __esModule: true,
+  default: () => { throw new Promise(() => {}) },
+}))
 
 describe('weather/[city]/page generateMetadata', () => {
   const makeParams = (city: string) => Promise.resolve({ city })
@@ -18,7 +25,7 @@ describe('weather/[city]/page generateMetadata', () => {
     expect(metadata.description).toContain('climate')
     expect(metadata.alternates?.canonical).toBe(`https://www.16bitweather.co/weather/${slug}`)
     expect(metadata.openGraph?.images).toBeDefined()
-    expect(metadata.twitter?.card).toBe('summary_large_image')
+    expect(metadata.twitter).toEqual(expect.objectContaining({ card: 'summary_large_image' }))
   })
 
   it('uses year-round wording for priority SEO cities', async () => {
@@ -42,5 +49,16 @@ describe('weather/[city]/page generateMetadata', () => {
     expect(metaStr).not.toContain('16-bit-weather.vercel.app')
     expect(metaStr).not.toContain('og-image.png')
     expect(metaStr).toContain('/api/og?')
+  })
+
+  it('keeps the climate guide readable while the live client is suspended', async () => {
+    const page = await CityWeatherPage({ params: makeParams('atlanta-ga') })
+    const container = document.createElement('div')
+    container.innerHTML = renderToStaticMarkup(page)
+
+    expect(container.querySelector('h1')).toHaveTextContent('Atlanta')
+    expect(container.querySelector('#city-climate-guide')).toHaveAttribute('open')
+    expect(container.querySelectorAll('tbody td')).toHaveLength(24)
+    expect(container.querySelector('a[href*="USW00013874.csv"]')).not.toBeNull()
   })
 })

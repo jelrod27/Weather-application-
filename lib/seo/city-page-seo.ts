@@ -53,6 +53,7 @@ export function resolveCitySlugAlias(
  * state abbreviation rather than push the whole title past 60.
  */
 export function buildCityPageTitle(city: CityMeta, citySlug: string): string {
+  if (citySlug === 'atlanta-ga') return 'Atlanta Climate & Weather by Month'
   const label = city.name.length <= 10 ? `${city.name} ${city.state}` : city.name
   if ((PRIORITY_SEO_CITY_SLUGS as readonly string[]).includes(citySlug)) {
     return `${label} Climate & Year-Round Weather`
@@ -65,7 +66,7 @@ export function buildCityPageDescription(city: CityMeta, citySlug?: string): str
     return `Boston MA climate and year-round weather guide: monthly averages, nor'easter winters, humid summers, and best time to visit, plus a live forecast.`
   }
   if (citySlug === 'atlanta-ga') {
-    return `Atlanta Georgia climate and summer weather guide: humid subtropical seasons, monthly averages, severe storm risk, best time to visit, and a live forecast.`
+    return `Atlanta climate by month: July highs near 90°F, about 50 inches of annual rain, humid summers, and spring or fall travel tips. Includes a live forecast.`
   }
   // Everything below is built from the city's own climate record, so no two
   // cities share a description and none can drift from the page it describes.

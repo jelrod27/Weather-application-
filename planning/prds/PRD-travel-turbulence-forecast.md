@@ -3,7 +3,7 @@
 **Version:** 3.0 — product direction rewrite
 **Originally drafted:** 2026-08-05; first added to the repository 2026-08-26
 **Revised:** 2026-10-04
-**Status:** US advisory first release approved October 4, 2026; implemented and validated for PR review, not yet shipped. The broader North America forecast and optional trip comparison remain proposals.
+**Status:** US advisory first release shipped in [PR #658](https://github.com/jelrod27/Weather-application-/pull/658), merged October 5, 2026 as `95f8c1291c19589041bf92b4cfb28f80feaa5f90`, closing #657. The broader North America forecast and optional trip comparison remain proposals. Review and publication instructions below are historical.
 **Project:** 16-Bit Weather (`16bitweather.co`)
 **Priority:** Proposed P2
 **Surface:** `/travel/turbulence`

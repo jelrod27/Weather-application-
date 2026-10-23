@@ -1,6 +1,6 @@
 # Read your sky
 
-Status: **Approved — layout A implemented; [PR #665](https://github.com/jelrod27/Weather-application-/pull/665) in review**. The user confirmed the complete design and selected A — Field note on October 9, 2026. The implementation pairs the short explanation with its matching scientific illustration, followed by the two-hour outlook. The user subsequently authorized resolving the review findings, pushing the branch, and opening a PR, followed by the CodeRabbit clock correction. Merge and production deployment are not authorized.
+Status: **Shipped — [PR #665](https://github.com/jelrod27/Weather-application-/pull/665), merged October 10, 2026 as `ba08c591bf1f93b156670c3571e6e195ffaa633d`**. The user selected A — Field note on October 9, 2026. The implementation pairs the short explanation with its matching scientific illustration, followed by the two-hour outlook. Scientific cloud-type identification is separate source-feasibility research in [issue #666](https://github.com/jelrod27/Weather-application-/issues/666); it is not an approved production extension. Review and publication instructions below describe the historical delivery process.
 
 Canonical specification: [GitHub issue #664](https://github.com/jelrod27/Weather-application-/issues/664). This file is the local specification copy; keep behavior changes synchronized with the issue.
 

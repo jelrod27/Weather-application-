@@ -11,6 +11,7 @@ import type { Metadata } from 'next'
 import { safeJsonLd } from '@/lib/utils'
 import CityWeatherClient from './client'
 import CityClimateGuide from '@/components/city/city-climate-guide'
+import { ResponsiveContainer } from '@/components/responsive-container'
 import {
   CITY_DATA,
   cityData as cityMetadata,
@@ -154,10 +155,22 @@ export default async function CityWeatherPage({ params }: PageParams) {
 
       <Suspense
         fallback={
-          <div className="min-h-[400px] bg-gradient-to-b from-gray-900 to-black">
-            <div className="container mx-auto px-4 py-8">
-              <div className="text-center text-white">Loading live weather data...</div>
-            </div>
+          <div className="min-h-screen bg-background text-foreground">
+            <ResponsiveContainer maxWidth="2xl" padding="md" className="pt-24">
+              {heading}
+              {/* Keep the guide below the initial viewport while the live
+                  forecast hydrates, so already-painted reading is not pushed
+                  down. The anchor keeps the static guide reachable. */}
+              <div className="min-h-screen font-mono text-sm text-muted-foreground">
+                <p>Loading live weather data...</p>
+                {climateGuide ? (
+                  <a href="#city-climate-guide" className="mt-3 inline-block underline underline-offset-2">
+                    Read the climate guide for {fullLocation}
+                  </a>
+                ) : null}
+              </div>
+              <div className="mt-8">{climateGuide}</div>
+            </ResponsiveContainer>
           </div>
         }
       >
