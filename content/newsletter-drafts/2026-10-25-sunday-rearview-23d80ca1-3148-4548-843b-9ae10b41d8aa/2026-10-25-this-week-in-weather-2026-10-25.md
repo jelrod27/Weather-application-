@@ -27,21 +27,17 @@ key_phrases:
   - 11 minutes of contact
   - 469 total warnings across the seven-day interval
   - "26 minutes, a M6.9 struck 197 km WNW of Port-Olry"
-  - 473 km of rock absorbs the vertical seafloor displacement that drives tsunami generation
+  - Bonin Islands earthquake at 473 km depth
 similarity_max: 0.62
 similarity_judge: claude-sonnet-4-6
 model_used: claude-sonnet-4-6
 images_used:
-  - goes16-visible-conus
   - earthquake-wave-paths
-  - swpc-ovation-aurora
 image_audit:
-  - "id=goes16-visible-conus; lane=severe; anchor=Hail to 1.5 inches was falling near Prescott Airport in Yavapai County.; tags=severe_storms,tech_and_models; caption=GOES-16 visible-band view of the contiguous US."
   - "id=earthquake-wave-paths; lane=earthquake; anchor=eight USGS-significant seismic events and 195 M4.5-or-greater earthquakes globally.; tags=earthquakes,atmosphere_layers; caption=Seismic wave paths through Earth after an earthquake."
-  - "id=swpc-ovation-aurora; lane=forecast; anchor=No G-scale geomagnetic storm occurred during the observation window.; tags=space_weather,atmosphere_layers; caption=OVATION model aurora forecast for the northern hemisphere."
 spotlight_active: null
 generation_retries: 0
-word_count: 1016
+word_count: 1039
 closer_used: the-takeaway
 ---
 
@@ -53,28 +49,22 @@ The convective sequence began October 19, when wind reports clustered along the 
 
 The system intensified through October 20–21. Hail to 2 inches was reported near Mesa, Arizona, in the early morning hours — quarter-to-golf-ball stones documented by photo near the intersection of AZ Avenue and Elliot in Chandler. By mid-morning October 21, hail to 1.5 inches was falling near Prescott Airport in Yavapai County.
 
-![GOES-16 visible-band view of the contiguous US.](https://cdn.star.nesdis.noaa.gov/GOES16/ABI/CONUS/02/1250x750.jpg)
-*NOAA NESDIS*
-
 Then came the tornadoes. An EF-1 touched down near Walker, Yavapai County, Arizona, at approximately 7:30 a.m. local time on October 21, cutting an 8-mile path with estimated peak winds of 105 mph. Hours later, a second EF-1 moved north through the Heber-Overgaard area in Navajo County — 11 minutes of contact, 110 mph peak winds, one injury reported. Tornado warnings continued through October 25, with warnings issued for Santa Fe County, New Mexico, as late as 7:01 p.m. local time on October 24.
 
 The full warning count across the seven-day interval: 330 severe thunderstorm warnings, 71 flash flood warnings, 23 tornado warnings, and 45 marine warnings — 469 total. Among the 108 preliminary SPC storm reports, 76 were hail events and 30 were wind events, with Arizona accounting for 72 of the 108 reports and New Mexico for 24.
 
-Geoseismically, October 24 was active. A M7.0 struck the Bonin Islands, Japan region at a depth of 473 km — deep enough that tsunami generation was not triggered. Within 26 minutes, a M6.9 struck 197 km WNW of Port-Olry, Vanuatu, at only 10 km depth; that one did generate a tsunami warning. A M7.0 in the Nagqu, China region on October 22 (depth 18 km) rounds out a week with eight USGS-significant seismic events and 195 M4.5-or-greater earthquakes globally.
+Geoseismically, October 24 was active. A M7.0 struck the Bonin Islands, Japan region at a depth of 473 km. Within 26 minutes, a M6.9 struck 197 km WNW of Port-Olry, Vanuatu, at a depth of 10 km. A M7.0 in the Nagqu, China region on October 22 (depth 18 km) rounds out a week with eight USGS-significant seismic events and 195 M4.5-or-greater earthquakes globally. These earthquake catalog results do not establish whether tsunami warnings were issued.
 
 ![Seismic wave paths through Earth after an earthquake.](https://commons.wikimedia.org/wiki/Special:FilePath/Earthquake_wave_paths.svg?width=1280)
 *USGS / Wikimedia Commons*
 
-The geomagnetic environment was quiet relative to the week's other activity. Peak planetary Kp among observed three-hour blocks reached 4.67 — minor storm threshold is Kp 5 — and the most recent readings as of October 25 were at or below Kp 1. One M1.7 solar flare was recorded October 19 at 09:03 UTC. No G-scale geomagnetic storm occurred during the observation window.
-
-![OVATION model aurora forecast for the northern hemisphere.](https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg)
-*NOAA SWPC*
+The geomagnetic environment was quiet relative to the week's other activity. Peak planetary Kp among observed three-hour blocks reached 4.67 — minor storm threshold is Kp 5 — and the most recent readings as of October 25 were at or below Kp 1. An M1.7 solar flare was observed in the available X-ray samples on October 19 at 09:03 UTC. The X-ray record is missing 226 one-minute samples, so this is not a complete-period flare tally. No G-scale geomagnetic storm occurred during the observation window.
 
 ---
 
 ## Roadmap
 
-Point forecasts run October 25–31 for six U.S. cities and three international locations.
+Point forecasts cover October 25–31 for six U.S. cities and three international locations. The daily forecast values below are grouped by UTC day, which does not match each city's local calendar day. Check a local-time forecast before making day-specific plans.
 
 **New York City** stays dry through at least October 31, with temperatures climbing from a high of 67°F Sunday to 75°F on October 30 before easing back to 68°F on Halloween. Overnight lows remain in the 40s through mid-week, then rise into the upper 50s by week's end. No precipitation probability exceeds 2%.
 
@@ -84,7 +74,7 @@ Point forecasts run October 25–31 for six U.S. cities and three international 
 
 **Denver** shows a fog signal on October 27 (weather code 45) with a high of 68°F, then clears into the upper 60s for the remainder of the week. Precipitation probability stays at or below 23% throughout, with no accumulation forecast on any day.
 
-**San Francisco** sees a gradual shift toward wetter conditions by week's end. October 25–29 are dry with highs in the low-to-mid 60s. October 31 carries a 34% precipitation probability — the highest in the local forecast — though no accumulation is shown. That probability is a planning signal, not a guarantee.
+**San Francisco** sees a gradual shift toward wetter conditions by week's end. October 25–29 are dry with highs in the low-to-mid 60s. October 31 carries a 34% precipitation probability — the highest in the point forecast — though no accumulation is shown. That probability is a planning signal, not a guarantee.
 
 **Dallas** runs the warmest of the six domestic points, with highs in the low 80s through October 29 and overnight lows rising to 71°F by that date. A 37% precipitation probability on October 31 accompanies a forecast high of 75°F — the first meaningful cooling of the week.
 
@@ -99,8 +89,8 @@ Point forecasts run October 25–31 for six U.S. cities and three international 
 ## The Takeaway
 
 - If you're in the Phoenix-to-Albuquerque corridor, the past week's convective activity — two confirmed EF-1 tornadoes, 23 tornado warnings, and hail to 2 inches — is a reminder to verify that your severe weather plan covers a region most residents don't associate with tornado risk.
-- The M6.9 Vanuatu earthquake on October 24 generated a tsunami warning at 10 km depth; the M7.0 Bonin Islands event the same hour did not, because 473 km of rock absorbs the vertical seafloor displacement that drives tsunami generation — depth is the variable that matters most in that distinction.
-- Chicago's Halloween weekend precipitation window (15–28% probability, October 29–31) and San Francisco's October 31 signal (34%) are low enough that neither warrants a plan change today, but both are worth a recheck Thursday.
+- The October 24 Bonin Islands and Vanuatu earthquakes occurred less than half an hour apart, but at very different depths: 473 km and 10 km, respectively. Consult official tsunami bulletins for any warning history; the earthquake catalog alone does not supply it.
+- Chicago's October 29–31 UTC precipitation window (15–28% probability) and San Francisco's October 31 UTC signal (34%) are low enough that neither warrants a plan change today, but both are worth a recheck Thursday with a local-time forecast.
 
 ## Source coverage
 
