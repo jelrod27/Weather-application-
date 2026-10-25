@@ -3,7 +3,7 @@
 Generates the 16bitweather.co weekly blog posts on two cadences.
 
 - **Wednesday — topic deep-dive.** Pulls one of 16 topics via weighted-random rotation, finds a current-news angle, writes a 600–900-word piece.
-- **Sunday — Rearview + Roadmap.** Recap of past 7 days using real data (Iowa Mesonet, NOAA SPC, NOAA SWPC, USGS) plus seven UTC days of point forecasts for nine named cities. Source coverage and publication rules are defined by [issue #675](https://github.com/jelrod27/Weather-application-/issues/675), phase 2.
+- **Sunday — Rearview + Roadmap.** Recap of past 7 days using real data (Iowa Mesonet, NOAA SPC, NOAA SWPC, USGS), dated NOAA/WPC Lower 48 forecast discussions, and seven UTC days of point forecasts for nine named cities. Source coverage and publication rules are defined by [issue #675](https://github.com/jelrod27/Weather-application-/issues/675), phase 2.
 
 See [`planning/prds/PRD-newsletter-redesign.md`](../../planning/prds/PRD-newsletter-redesign.md) for the design.
 
@@ -28,6 +28,7 @@ scripts/newsletter/
     space-weather.ts       # NOAA SWPC summary
     earthquakes.ts         # USGS FDSN significant/M4.5+ interval queries
     forecast.ts            # Open-Meteo seven UTC days of city point forecasts
+    wpc-discussions.ts     # NOAA/WPC short and extended Lower 48 discussions
 ```
 
 ## Run locally
@@ -59,6 +60,7 @@ Both workflows accept a `dry_run` boolean input.
 
 - `gh workflow run newsletter-wednesday.yml` — schedule a real run
 - `gh workflow run newsletter-wednesday.yml -f dry_run=true` — dry run only
+- `gh workflow run newsletter-sunday.yml` — create next Sunday outlook candidate for review
 - `gh workflow run newsletter-sunday.yml -f dry_run=true`
 
 ## Inspect run metadata
@@ -113,9 +115,11 @@ The validator rejects placeholder images, disallowed image hosts, `images_used` 
 
 ## Coverage and publication
 
-Each Sunday run uses seven **completed noon-to-noon UTC SPC days**, with an exclusive end. A run before noon uses the previous noon as its end. Mesonet and USGS queries use that same interval. Kp and X-ray samples are filtered to it; missing cadence slots prevent a complete-period peak claim. Forecast dates start at midnight UTC on the run date and cover seven days. These are city point forecasts, not evidence for a regional jet stream, MJO, ridge or trough analysis.
+Each Sunday run uses seven **completed noon-to-noon UTC SPC days**, with an exclusive end. A run before noon uses the previous noon as its end. Mesonet and USGS queries use that same interval. Kp and X-ray samples are filtered to it; missing cadence slots prevent a complete-period peak claim. NOAA/WPC short and extended discussions are read as text, checked for an issue time within 18 hours and valid forecast dates, and audited against the next 36 hours and days 3–6 respectively. An unavailable, stale or partly covering discussion creates a review-required draft. Forecast dates start at midnight UTC on the run date and cover seven days. The nine city points illustrate local timing; they are not evidence for a regional jet stream, MJO, ridge or trough analysis.
 
-Collectors return validated values plus a source audit. The audit records URL, retrieval time, requested interval, actual contiguous coverage, observation bounds, record count, expected/observed units and reasons for gaps. A valid zero is usable evidence. Missing, malformed, stale and unsupported data never become zero, quiet conditions or a complete weekly ranking. NWS totals here cover only unique TO.W/SV.W/FF.W/MA.W/EW.W events issued in the interval; other polygon products, watches and zone warnings are outside the labeled scope. SPC reports are preliminary reports, not a count of confirmed tornadoes.
+The Sunday Action runs at 12:00 UTC and writes a review PR with a short evidence checklist. For complete coverage, review the national discussion citations and city details, then merge to publish. For incomplete coverage, the Action opens a draft PR outside the public blog. Review the gaps with an editor, record approval and promote through the commands below, then merge the publishing PR. Running the Action twice can create two candidate PRs; review and promote one. The raw source audit stays in the repository; its reader-facing coverage disclosure appears in an expandable section on the blog page.
+
+Collectors return validated values plus a source audit. The audit records URL, retrieval time, requested interval, actual contiguous coverage, observation bounds, record count, expected/observed units and reasons for gaps. WPC text snapshots are retained in the audit because the public latest-discussion URLs change after publication. A valid zero is usable evidence. Missing, malformed, stale and unsupported data never become zero, quiet conditions or a complete weekly ranking. NWS totals here cover only unique TO.W/SV.W/FF.W/MA.W/EW.W events issued in the interval; other polygon products, watches and zone warnings are outside the labeled scope. SPC reports are preliminary reports, not a count of confirmed tornadoes.
 
 `newsletter-output/run.json` distinguishes `complete`, `partial` and `fatal`, plus the generation/validation/ready stage. Complete and partial generation return exit 0; fatal generation or validation returns exit 1. `newsletter-output/coverage.json` survives later model/validation failures. Workflows upload the run report, source audits and nonpublic candidates even on failure. No key is needed for collection/tests; generation still requires the existing Anthropic key.
 

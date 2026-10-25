@@ -39,6 +39,7 @@ export interface BlogPost {
   // Newsletter metadata. All optional — older posts predate these fields.
   // See planning/prds/PRD-newsletter-redesign.md §4.1 for semantics.
   cadence?: NewsletterCadence
+  coverageStatus?: 'complete' | 'partial'
   topic_slug?: string
   topic_title?: string
   theme?: string
@@ -99,6 +100,7 @@ export function getAllPosts(): BlogPost[] {
       readTime: data.readTime || Math.ceil(content.split(/\s+/).length / 200),
       content,
       cadence: data.cadence,
+      coverageStatus: data.coverage_status === 'partial' ? 'partial' : data.coverage_status === 'complete' ? 'complete' : undefined,
       topic_slug: data.topic_slug,
       topic_title: data.topic_title,
       theme: data.theme,

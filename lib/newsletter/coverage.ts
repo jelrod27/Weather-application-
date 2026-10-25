@@ -21,6 +21,7 @@ const sourceSchema = z.object({
   observedUnits: z.number().int().nonnegative().optional(),
   unit: z.string().min(1),
   reasons: z.array(z.string().min(1)),
+  snapshot: z.string().max(20_000).optional(),
 }).superRefine((source, ctx) => {
   const start = Date.parse(source.requested.start);
   const end = Date.parse(source.requested.end);
@@ -70,11 +71,16 @@ export function coverageOutcome(audit: CoverageAudit): CoverageOutcome {
 
 /** Deterministic disclosure is retained verbatim through review and promotion. */
 export function coverageDisclosure(audit: CoverageAudit): string {
+  // Reviewed posts bind the original disclosure text to their audit. Preserve
+  // those bytes for historical audits that predate WPC discussions.
+  const forecastScope = audit.sources.some(source => source.id.startsWith('wpc-'))
+    ? 'Counts and peaks describe only the observations and intervals listed below. Missing data is unknown, never zero. City forecasts are point forecasts; Lower 48 pattern statements, when present, use the dated NOAA/WPC discussions.'
+    : 'Counts and peaks describe only the observations and intervals listed below. Missing data is unknown, never zero. Forecasts are point forecasts for the named cities.';
   const lines = [
     '## Source coverage',
     '',
     `Reporting interval: ${audit.window.start} to ${audit.window.end} (end exclusive).`,
-    'Counts and peaks describe only the observations and intervals listed below. Missing data is unknown, never zero. Forecasts are point forecasts for the named cities.',
+    forecastScope,
     '',
   ];
   for (const source of audit.sources) {

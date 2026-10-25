@@ -18,6 +18,7 @@ export interface ParsedSource<T> {
   status?: SourceAudit['status'];
   expectedUnits?: number;
   observedUnits?: number;
+  snapshot?: string;
 }
 
 export interface SourceRequest {
@@ -55,6 +56,7 @@ export async function collectSource<T>(
         usable: result.data !== null,
         status: result.status ?? (result.reasons.length ? 'partial' : 'complete'),
         reasons: result.reasons, expectedUnits: result.expectedUnits, observedUnits: result.observedUnits,
+        snapshot: result.snapshot,
       },
     };
   } catch (error) {

@@ -15,7 +15,7 @@
 // Built from a string so the source file isn't littered with raw control bytes.
 const CONTROL_CHARS = new RegExp('[\\u0000-\\u001F\\u007F]', 'g');
 
-export function sanitizeForPrompt(input: string | undefined | null): string {
+export function sanitizeForPrompt(input: string | undefined | null, maxLength = 300): string {
   if (!input) return '';
   return input
     .replace(/```/g, "'''") // collapse triple backticks so JSON fences cannot break
@@ -23,5 +23,5 @@ export function sanitizeForPrompt(input: string | undefined | null): string {
     .replace(CONTROL_CHARS, ' ') // strip control characters (NULs, newlines, etc.)
     .replace(/\s+/g, ' ') // collapse whitespace runs (incl. newlines)
     .trim()
-    .slice(0, 300);
+    .slice(0, maxLength);
 }

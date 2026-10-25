@@ -64,7 +64,7 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
 
   console.log('[sunday] fetching past-week data');
   const evidence = await collectSundayEvidence();
-  const { warnings, spcSummary, spaceSummary, quakeSummary, forecast, coverage } = evidence;
+  const { warnings, spcSummary, spaceSummary, quakeSummary, forecast, national, coverage } = evidence;
   onAudit(coverage);
   const outcome = coverageOutcome(coverage);
   console.log(`[sunday] source coverage: ${outcome}`);
@@ -96,6 +96,7 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
     spaceSummary,
     quakeSummary,
     forecast,
+    national,
     coverage,
     spotlight,
     denyPhrases,
@@ -109,14 +110,14 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
 
   while (retries < MAX_RETRIES) {
     const collides = checkOpenerCollision(openerHash, recentOpenerHashes);
-    const tooShort = outcome === 'complete' && wordCount(draft) < 500;
+    const tooShort = outcome === 'complete' && wordCount(draft) < 900;
     const missingHeaders = !/##\s*Rearview/i.test(draft) || !/##\s*Roadmap/i.test(draft);
     if (!collides && voiceViolations.length === 0 && !tooShort && !missingHeaders) break;
 
     const corrections: string[] = [];
     if (collides) corrections.push(`Your opening collides with a prior Sunday post. Rewrite with a distinct framing and concrete specifics from this week's data.`);
     if (voiceViolations.length > 0) corrections.push(buildVoiceCorrectionInstruction(voiceViolations));
-    if (tooShort) corrections.push(`Draft was ${wordCount(draft)} words. Both Rearview (~250-350 words) and Roadmap (~350-500 words) need to be present and substantive.`);
+    if (tooShort) corrections.push(`Draft was ${wordCount(draft)} words. Use the supported WPC national outlook and city detail to make Rearview (~300-400 words) and Roadmap (~500-700 words) substantive, without padding or unsupported claims.`);
     if (missingHeaders) corrections.push(`Use the exact section headers "## Rearview" and "## Roadmap" — not paraphrased versions.`);
 
     retries += 1;
@@ -127,7 +128,8 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
       spaceSummary,
       quakeSummary,
       forecast,
-    coverage,
+      national,
+      coverage,
       spotlight,
       denyPhrases,
       correction: corrections.join('\n\n'),
@@ -154,7 +156,8 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
       spaceSummary,
       quakeSummary,
       forecast,
-    coverage,
+      national,
+      coverage,
       spotlight,
       denyPhrases: [...denyPhrases, ...similarity.triggerPhrases],
       correction,
@@ -519,6 +522,7 @@ interface GenerateOpts {
   spaceSummary: SundayEvidence['spaceSummary'];
   quakeSummary: SundayEvidence['quakeSummary'];
   forecast: SundayEvidence['forecast'];
+  national: SundayEvidence['national'];
   spotlight: string | null;
   denyPhrases: string[];
   correction: string | null;
@@ -531,6 +535,7 @@ async function generate(opts: GenerateOpts): Promise<string> {
     spaceSummary,
     quakeSummary,
     forecast,
+    national,
     coverage,
     spotlight,
     denyPhrases,
@@ -542,11 +547,11 @@ async function generate(opts: GenerateOpts): Promise<string> {
     { type: 'text' as const, text: VOICE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } },
     {
       type: 'text' as const,
-      text: `SUNDAY CADENCE — REARVIEW + ROADMAP\n\nUse ## Rearview and ## Roadmap. Aim for 250-350 and 350-500 words only when evidence supports that detail. Short partial drafts are correct when sources are missing.\n\nRearview cites real events from the supplied data. Roadmap describes only validated forecast dates for the named city points. If a section has no data, explicitly say it is unavailable.`,
+      text: `SUNDAY CADENCE — REARVIEW + ROADMAP\n\nUse ## Rearview and ## Roadmap. Aim for 300-400 and 500-700 words only when evidence supports that detail. Short partial drafts are correct when sources are missing.\n\nRearview cites real events from the supplied data. Roadmap opens with a Lower 48 forecast pattern only where current NOAA/WPC discussions support it, then gives useful city point forecasts for validated dates. Cite the WPC discussion URLs and state their valid periods. WPC CONUS discussions do not cover Alaska or Hawaii. If a section has no data, explicitly say it is unavailable.`,
     },
   ];
 
-  const dataBlock = formatSundayEvidence({ warnings, spcSummary, spaceSummary, quakeSummary, forecast, coverage });
+  const dataBlock = formatSundayEvidence({ warnings, spcSummary, spaceSummary, quakeSummary, forecast, national, coverage });
 
   const sections: string[] = [];
   sections.push(dataBlock);
@@ -567,7 +572,7 @@ async function generate(opts: GenerateOpts): Promise<string> {
   sections.push(`STRUCTURE:
 - Open with a concrete specific hook from the past week's data — a named storm, a record, a count.
 - ## Rearview: discuss only supported events, even if fewer than three. Distinguish warnings, preliminary storm reports, and confirmed observations. Qualify counts and rankings with their actual coverage. Do NOT include any images or image markdown.
-- ## Roadmap: available city point forecasts with dates; mention missing cities. Do not invent synoptic mechanisms or extrapolate to entire regions. Do NOT include any images or image markdown.
+- ## Roadmap: start with a compact Lower 48 pattern summarized in your own words from the available WPC short and medium range discussions, with issue/valid dates and direct source links. Only describe dates covered by those discussions. Then give selected city point forecasts with dates, clearly labeled as city samples rather than regional conditions. Mention missing WPC discussions or city points. If both WPC discussions are missing, omit national pattern claims. Do not invent synoptic mechanisms or extrapolate from city points. Do NOT include any images or image markdown.
 - ${closer.instruction}
 
 TIME PRECISION:

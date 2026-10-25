@@ -1,6 +1,6 @@
 "use client"
 
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
 import Link from 'next/link'
@@ -21,10 +21,63 @@ interface BlogArticleProps {
 }
 
 export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
+  const coverageMarker = '\n## Source coverage\n'
+  const coverageIndex = post.content.lastIndexOf(coverageMarker)
+  const articleBody = coverageIndex < 0 ? post.content : post.content.slice(0, coverageIndex)
+  const sourceCoverage = coverageIndex < 0 ? null : post.content.slice(coverageIndex + coverageMarker.length)
   const shareConfig = {
     title: post.title,
     text: `${post.title} -- ${post.summary}`,
     url: `https://www.16bitweather.co/blog/${post.slug}`,
+  }
+  const markdownComponents: Components = {
+    h2: ({ children }) => (
+      <h2 className="text-xl font-bold font-mono uppercase tracking-wider mt-10 mb-4 text-[hsl(var(--primary))]">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg font-bold font-mono uppercase tracking-wider mt-8 mb-3 text-[hsl(var(--primary))]">{children}</h3>
+    ),
+    p: ({ children }) => (
+      <p className="font-mono text-sm leading-relaxed mb-4">{children}</p>
+    ),
+    ul: ({ children }) => (
+      <ul className="list-disc space-y-1 my-4 font-mono text-sm">{children}</ul>
+    ),
+    li: ({ children }) => (
+      <li className="ml-4">{children}</li>
+    ),
+    strong: ({ children }) => <strong>{children}</strong>,
+    em: ({ children }) => <em>{children}</em>,
+    a: ({ href, children }) => {
+      // Keep the existing allow-list for generated source links.
+      const safe = allowedBlogUrl(typeof href === 'string' ? href : null)
+      if (!safe) return <span>{children}</span>
+      return (
+        <a href={safe} className="underline text-[hsl(var(--primary))]" target="_blank" rel="noopener noreferrer">{children}</a>
+      )
+    },
+    code: ({ children }) => (
+      <code className="rounded bg-black/25 px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
+    ),
+    pre: ({ children }) => (
+      <pre className="mb-4 overflow-x-auto rounded bg-black/30 p-3 font-mono text-xs">{children}</pre>
+    ),
+    img: ({ src, alt }) => {
+      // Preserve the image-host guard when the body is rendered in two sections.
+      const safe = allowedBlogUrl(typeof src === 'string' ? src : null)
+      if (!safe) return null
+      return (
+        <Image
+          src={safe}
+          alt={alt || ''}
+          width={1200}
+          height={675}
+          unoptimized
+          sizes="(max-width: 768px) 100vw, 768px"
+          className="w-full h-auto rounded-lg my-6 border border-[hsl(var(--border))]"
+        />
+      )
+    },
   }
 
   return (
@@ -110,64 +163,33 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSanitize]}
-            components={{
-              h2: ({ children }) => (
-                <h2 className="text-xl font-bold font-mono uppercase tracking-wider mt-10 mb-4 text-[hsl(var(--primary))]">{children}</h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="text-lg font-bold font-mono uppercase tracking-wider mt-8 mb-3 text-[hsl(var(--primary))]">{children}</h3>
-              ),
-              p: ({ children }) => (
-                <p className="font-mono text-sm leading-relaxed mb-4">{children}</p>
-              ),
-              ul: ({ children }) => (
-                <ul className="list-disc space-y-1 my-4 font-mono text-sm">{children}</ul>
-              ),
-              li: ({ children }) => (
-                <li className="ml-4">{children}</li>
-              ),
-              strong: ({ children }) => <strong>{children}</strong>,
-              em: ({ children }) => <em>{children}</em>,
-              a: ({ href, children }) => {
-                // Render the link only when the host is in the curated
-                // allow-list. Out-of-list hrefs (incl. javascript: / data: /
-                // unknown attacker hosts) render as plain text. Defense
-                // against indirect prompt-injection that gets the model to
-                // embed phishing URLs in a generated post.
-                const safe = allowedBlogUrl(typeof href === 'string' ? href : null)
-                if (!safe) return <span>{children}</span>
-                return (
-                  <a href={safe} className="underline text-[hsl(var(--primary))]" target="_blank" rel="noopener noreferrer">{children}</a>
-                )
-              },
-              code: ({ children }) => (
-                <code className="rounded bg-black/25 px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
-              ),
-              pre: ({ children }) => (
-                <pre className="mb-4 overflow-x-auto rounded bg-black/30 p-3 font-mono text-xs">{children}</pre>
-              ),
-              img: ({ src, alt }) => {
-                // Same allow-list as <a>. Out-of-list image hosts could
-                // beacon viewer IP/UA on every page load with no click
-                // required, so refuse to render them at all.
-                const safe = allowedBlogUrl(typeof src === 'string' ? src : null)
-                if (!safe) return null
-                return (
-                  <Image
-                    src={safe}
-                    alt={alt || ''}
-                    width={1200}
-                    height={675}
-                    unoptimized
-                    sizes="(max-width: 768px) 100vw, 768px"
-                    className="w-full h-auto rounded-lg my-6 border border-[hsl(var(--border))]"
-                  />
-                )
-              },
-            }}
+            components={markdownComponents}
           >
-            {post.content}
+            {articleBody}
           </ReactMarkdown>
+          {sourceCoverage && (
+            <div className="mt-10">
+              {post.coverageStatus === 'partial' && (
+                <p className="font-mono text-sm text-muted-foreground">
+                  Some source data was incomplete. The article names the known gap; open the source details for the full record.
+                </p>
+              )}
+              <details className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.35)] px-4 py-3">
+                <summary className="cursor-pointer font-mono text-sm font-bold text-[hsl(var(--primary))]">
+                  Source coverage and data limitations
+                </summary>
+                <div className="mt-4 border-t border-[hsl(var(--border))] pt-4 break-words">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeSanitize]}
+                    components={markdownComponents}
+                  >
+                    {sourceCoverage}
+                  </ReactMarkdown>
+                </div>
+              </details>
+            </div>
+          )}
         </div>
 
         {/* Bottom share */}
