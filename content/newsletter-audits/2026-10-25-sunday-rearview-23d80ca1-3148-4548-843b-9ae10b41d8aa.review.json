@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "5ff440a475ca7da5287d85b89f6c536403f5dc7872a5ef5197c7ec409f061d36",
+  "auditSha256": "33b69d7c78a65f8f939d000117009669074a79ca433096745a975bb68fed0653",
+  "decision": "reviewed-partial",
+  "reviewer": "jelrod27",
+  "acknowledged": true,
+  "reviewedAt": "2026-10-25T21:26:31.359Z",
+  "gapDispositions": {
+    "swpc-xray": "Qualified the M1.7 flare as an observation in the available X-ray samples, avoided a complete-period flare tally, and disclosed the 226 missing one-minute samples in the prose and source coverage section."
+  }
+}
