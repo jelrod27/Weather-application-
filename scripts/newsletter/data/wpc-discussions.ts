@@ -82,13 +82,13 @@ function parseDiscussion(
   const age = now.getTime() - issueTime;
   const times = [issuedAt];
   if (age < -5 * 60_000 || age > 18 * 60 * 60_000) {
-    return { data: null, records: 0, times, covered: [], status: 'stale', reasons: ['Discussion was not issued within the current forecast cycle'] };
+    return { data: null, records: 0, times, covered: [], snapshot: text, status: 'stale', reasons: ['Discussion was not issued within the current forecast cycle'] };
   }
 
   const coveredStart = Math.max(Date.parse(valid.start), Date.parse(requested.start));
   const coveredEnd = Math.min(Date.parse(valid.end), Date.parse(requested.end));
   if (coveredStart >= coveredEnd) {
-    return { data: null, records: 0, times, covered: [], status: 'stale', reasons: ['Discussion does not overlap the requested outlook dates'] };
+    return { data: null, records: 0, times, covered: [], snapshot: text, status: 'stale', reasons: ['Discussion does not overlap the requested outlook dates'] };
   }
   const covered = [{ start: new Date(coveredStart).toISOString(), end: new Date(coveredEnd).toISOString() }];
   const complete = coveredStart === Date.parse(requested.start) && coveredEnd === Date.parse(requested.end);

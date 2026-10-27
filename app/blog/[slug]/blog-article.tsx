@@ -22,7 +22,7 @@ interface BlogArticleProps {
 
 export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
   const coverageMarker = '\n## Source coverage\n'
-  const coverageIndex = post.content.lastIndexOf(coverageMarker)
+  const coverageIndex = post.coverageStatus ? post.content.lastIndexOf(coverageMarker) : -1
   const articleBody = coverageIndex < 0 ? post.content : post.content.slice(0, coverageIndex)
   const sourceCoverage = coverageIndex < 0 ? null : post.content.slice(coverageIndex + coverageMarker.length)
   const shareConfig = {
