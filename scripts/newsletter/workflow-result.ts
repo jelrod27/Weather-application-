@@ -22,7 +22,24 @@ function main(): void {
   };
   if (!process.env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required');
   fs.appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key, value]) => `${key}=${value}`).join('\n') + '\n');
-  const body = [
+  const national = bundle.audit.sources.filter(source => source.id.startsWith('wpc-'));
+  const gaps = bundle.audit.sources.filter(source => source.status !== 'complete');
+  const sundayChecklist = [
+    `- Candidate: \`${postFile}\``,
+    `- Source audit: \`${values.audit_file}\``,
+    `- Coverage: **${report.outcome}**`,
+    ...national.map(source => `- ${source.label}: **${source.status}** (checked ${source.retrievedAt})`),
+    ...gaps.map(source => `- Needs review: ${source.label} — ${source.reasons.join('; ')}`),
+  ].join('\n');
+  const body = bundle.audit.cadence === 'sunday_rearview' ? [
+    '## Sunday outlook review',
+    sundayChecklist,
+    '## Next step',
+    report.outcome === 'partial'
+      ? 'This draft PR does not publish a blog post. Ask Codex to review the candidate and each source gap with you, record your explicit approval, and open a publishing PR. Merging this draft alone leaves the public blog unchanged. The technical review commands are in `scripts/newsletter/README.md`.'
+      : 'Review the Lower 48 outlook against the dated NOAA/WPC discussions, check the city forecasts and source links, then merge this PR to publish. The site deploys from `main`.',
+    validation.auditMarkdown,
+  ].join('\n\n') : [
     `Generated newsletter candidate: \`${postFile}\`. Coverage: **${report.outcome}**.`,
     report.outcome === 'partial'
       ? 'This draft PR contains no publishable blog post. Review the candidate and source gaps, record a disposition for each incomplete source, then explicitly promote it using scripts/newsletter/review.ts. See scripts/newsletter/README.md. Merging this draft as-is does not publish it.'
@@ -30,6 +47,7 @@ function main(): void {
     coverageDisclosure(bundle.audit), validation.auditMarkdown,
   ].join('\n\n');
   fs.writeFileSync('newsletter-output/pr-body.md', body + '\n');
+  if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, body + '\n');
 }
 
 if (process.argv[1]?.endsWith('workflow-result.ts')) {

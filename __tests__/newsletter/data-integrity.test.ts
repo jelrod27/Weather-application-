@@ -8,6 +8,7 @@ import { fetchPastWeekReports } from '../../scripts/newsletter/data/spc-reports'
 import { fetchPastWeekWarnings } from '../../scripts/newsletter/data/mesonet';
 import { fetchPastWeekQuakes } from '../../scripts/newsletter/data/earthquakes';
 import { fetchForecastOutlook } from '../../scripts/newsletter/data/forecast';
+import { fetchNationalOutlook } from '../../scripts/newsletter/data/wpc-discussions';
 import { collectSundayEvidence, formatSundayEvidence } from '../../scripts/newsletter/data/sunday-evidence';
 import { runSunday } from '../../scripts/newsletter/sunday';
 import { callAnthropic } from '../../scripts/newsletter/repetition';
@@ -69,6 +70,31 @@ describe('recorded provider fixtures (see provenance.json for retrievals and exc
     expect(result.data?.conusQuadrants[0].daily).toHaveLength(7);
     expect(result.sources[0].status).toBe('complete');
     expect(result.sources.slice(1).every(source => !source.usable)).toBe(true);
+  });
+
+  it('retains WPC discussion text in the audit when the discussion is stale', async () => {
+    const shortRange = [
+      'Short Range Forecast Discussion',
+      'NWS Weather Prediction Center College Park MD',
+      '500 AM EDT Sat Oct 10 2026',
+      'Valid 12Z Sun Oct 11 2026 - 00Z Tue Oct 13 2026',
+      'Short range discussion snapshot content '.repeat(8),
+    ].join('\n');
+    const mediumRange = [
+      'Extended Forecast Discussion',
+      'NWS Weather Prediction Center College Park MD',
+      '500 AM EDT Sun Oct 11 2026',
+      'Valid 12Z Wed Oct 07 2026 - 00Z Thu Oct 08 2026',
+      'Extended discussion snapshot content '.repeat(8),
+    ].join('\n');
+    fetchMock.mockImplementation(async input => new Response(
+      String(input).includes('pmdspdbody') ? shortRange : mediumRange,
+    ));
+
+    const result = await fetchNationalOutlook(NOW);
+
+    expect(result.sources.map(source => source.status)).toEqual(['stale', 'stale']);
+    expect(result.sources.map(source => source.snapshot)).toEqual([shortRange.trim(), mediumRange.trim()]);
   });
 });
 
@@ -268,7 +294,11 @@ describe('archive and forecast coverage', () => {
     const result = await collectSundayEvidence(NOW);
     expect(coverageOutcome(result.coverage)).toBe('fatal');
     expect(result).toMatchObject({ warnings: null, spcSummary: null, spaceSummary: null, quakeSummary: null, forecast: null });
-    expect(result.coverage.sources).toHaveLength(21);
+    expect(result.coverage.sources).toHaveLength(23);
+    expect(result.coverage.sources.map(source => source.id)).toEqual(expect.arrayContaining([
+      'wpc-short-range',
+      'wpc-medium-range',
+    ]));
     const prompt = formatSundayEvidence(result);
     expect(prompt).toContain('null means unavailable');
     expect(prompt).not.toContain('"total":0');

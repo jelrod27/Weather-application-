@@ -1,4 +1,7 @@
-name: Newsletter (Sunday Rearview + Roadmap)
+name: Newsletter (Sunday National + City Outlook)
+
+# One scheduled run creates one review PR. Complete coverage opens a normal PR
+# that publishes when merged; gaps open a nonpublic draft for explicit review.
 
 on:
   schedule:
@@ -9,6 +12,10 @@ on:
         description: 'Generate but do not write the post or open a PR'
         type: boolean
         default: false
+
+concurrency:
+  group: newsletter-sunday-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -48,7 +55,7 @@ jobs:
           sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
-      - name: Generate Sunday post
+      - name: Generate sourced national and city outlook
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEWSLETTER_MODEL: ${{ vars.NEWSLETTER_MODEL || 'claude-sonnet-4-6' }}
@@ -71,7 +78,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Prepare validated PR inputs
+      - name: Summarize source coverage and prepare review PR
         id: candidate
         if: ${{ inputs.dry_run != true }}
         run: npx tsx scripts/newsletter/workflow-result.ts
