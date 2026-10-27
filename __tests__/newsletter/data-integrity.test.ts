@@ -268,7 +268,11 @@ describe('archive and forecast coverage', () => {
     const result = await collectSundayEvidence(NOW);
     expect(coverageOutcome(result.coverage)).toBe('fatal');
     expect(result).toMatchObject({ warnings: null, spcSummary: null, spaceSummary: null, quakeSummary: null, forecast: null });
-    expect(result.coverage.sources).toHaveLength(21);
+    expect(result.coverage.sources).toHaveLength(23);
+    expect(result.coverage.sources.map(source => source.id)).toEqual(expect.arrayContaining([
+      'wpc-short-range',
+      'wpc-medium-range',
+    ]));
     const prompt = formatSundayEvidence(result);
     expect(prompt).toContain('null means unavailable');
     expect(prompt).not.toContain('"total":0');
