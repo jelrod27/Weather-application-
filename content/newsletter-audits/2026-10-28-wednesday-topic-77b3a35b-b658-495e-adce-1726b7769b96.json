@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "cadence": "wednesday_topic",
+  "generatedAt": "2026-10-28T17:31:48.714Z",
+  "window": {
+    "start": "2026-10-25T17:31:48.714Z",
+    "end": "2026-10-28T17:31:48.714Z"
+  },
+  "sources": [
+    {
+      "id": "editorial-topic",
+      "label": "Curated educational topic outline: Historical Weather Events (not current observations)",
+      "url": "https://github.com/jelrod27/Weather-application-/blob/main/scripts/newsletter/topics.ts",
+      "retrievedAt": "2026-10-28T17:31:48.714Z",
+      "requested": {
+        "start": "2026-10-25T17:31:48.714Z",
+        "end": "2026-10-28T17:31:48.714Z"
+      },
+      "covered": [
+        {
+          "start": "2026-10-25T17:31:48.714Z",
+          "end": "2026-10-28T17:31:48.714Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 1,
+      "observationStart": null,
+      "observationEnd": null,
+      "unit": "curated topic outlines",
+      "reasons": []
+    },
+    {
+      "id": "news-headlines",
+      "label": "Recent headline sample (up to 40; original stories require review)",
+      "url": "https://www.16bitweather.co/api/news/rss?maxItems=40&maxAge=72",
+      "retrievedAt": "2026-10-28T17:31:50.281Z",
+      "requested": {
+        "start": "2026-10-25T17:31:48.714Z",
+        "end": "2026-10-28T17:31:48.714Z"
+      },
+      "covered": [],
+      "status": "partial",
+      "usable": true,
+      "records": 40,
+      "observationStart": "2026-10-27T04:00:00.000Z",
+      "observationEnd": "2026-10-28T17:23:06.000Z",
+      "unit": "sampled headlines",
+      "reasons": [
+        "Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals"
+      ]
+    }
+  ]
+}
