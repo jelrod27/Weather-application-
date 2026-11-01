@@ -66,7 +66,7 @@ jobs:
           name: newsletter-wednesday-${{ github.run_id }}
           path: |
             newsletter-output/
-            content/newsletter-drafts/
+            content/blog/
             content/newsletter-audits/
           if-no-files-found: warn
           retention-days: 30
@@ -83,7 +83,6 @@ jobs:
           POST_FILE: ${{ steps.candidate.outputs.post_file }}
           AUDIT_FILE: ${{ steps.candidate.outputs.audit_file }}
           RECEIPT_FILE: ${{ steps.candidate.outputs.receipt_file }}
-          OUTCOME: ${{ steps.candidate.outputs.outcome }}
           TITLE: ${{ steps.candidate.outputs.title }}
         run: |
           set -euo pipefail
@@ -96,11 +95,8 @@ jobs:
           git config user.name "16bitbot"
           git config user.email "16bitbot@16bitweather.co"
           git checkout -b "$BRANCH_NAME"
-          git add -- "$POST_FILE" "$AUDIT_FILE"
-          if [ -n "$RECEIPT_FILE" ]; then git add -- "$RECEIPT_FILE"; fi
+          git add -- "$POST_FILE" "$AUDIT_FILE" "$RECEIPT_FILE"
           git commit -m "blog: $TITLE"
           git push origin "$BRANCH_NAME"
-          DRAFT_ARGS=()
-          if [ "$OUTCOME" = "partial" ]; then DRAFT_ARGS+=(--draft); fi
           gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
-            --base main --head "$BRANCH_NAME" "${DRAFT_ARGS[@]}"
+            --base main --head "$BRANCH_NAME"

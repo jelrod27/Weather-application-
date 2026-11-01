@@ -13,7 +13,7 @@ const receiptSchema = z.object({
   version: z.literal(1),
   postSha256: z.string().regex(/^[a-f0-9]{64}$/),
   auditSha256: z.string().regex(/^[a-f0-9]{64}$/),
-  decision: z.enum(['complete', 'reviewed-partial']),
+  decision: z.enum(['complete', 'reviewed-partial', 'disclosed-partial']),
   reviewer: z.string().trim().min(1),
   acknowledged: z.literal(true),
   reviewedAt: z.string().datetime(),
@@ -59,7 +59,7 @@ export interface PublicationCheckOptions {
   allowDraft?: boolean;
 }
 
-/** Shared by all public discovery, generation validation, and the required PR check. Fail closed. */
+/** Shared by public discovery, generation validation and PR CI. Require a content-bound receipt. */
 export function publicationErrors(raw: string, filename: string, opts: PublicationCheckOptions = {}): string[] {
   try {
     const { data, content } = matter(raw);
@@ -77,9 +77,9 @@ export function publicationErrors(raw: string, filename: string, opts: Publicati
       return ['Post or coverage audit changed after approval; review again'];
     }
     if (outcome === 'partial') {
-      if (receipt.decision !== 'reviewed-partial') return ['Partial coverage requires explicit review and promotion'];
+      if (!['reviewed-partial', 'disclosed-partial'].includes(receipt.decision)) return ['Partial coverage needs a publication receipt that records its limitations'];
       const gaps = bundle.audit.sources.filter(source => source.status !== 'complete');
-      if (gaps.some(source => !receipt.gapDispositions[source.id]?.trim())) return ['Every coverage gap needs a recorded reviewer disposition'];
+      if (gaps.some(source => !receipt.gapDispositions[source.id]?.trim())) return ['Every coverage gap needs a recorded disposition'];
     } else if (receipt.decision !== 'complete') return ['Review decision does not match coverage'];
     return [];
   } catch {

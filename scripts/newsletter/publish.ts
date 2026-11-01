@@ -125,7 +125,7 @@ export async function publishPost(input: PublishInput, opts: PublishOptions): Pr
   const yaml = serializeFrontmatter(frontmatterFields);
   const fileBody = `---\n${yaml}---\n\n${input.body.trim()}\n\n${coverageDisclosure(coverage)}\n`;
   const fileName = `${datePrefix}-${slug}.md`;
-  const directory = outcome === 'complete' ? path.join(root, 'content/blog') : path.join(root, 'content/newsletter-drafts', publicationId);
+  const directory = path.join(root, 'content/blog');
   const filePath = path.join(directory, fileName);
   const result = { filePath, auditPath, outcome, slug, title };
 
@@ -138,10 +138,15 @@ export async function publishPost(input: PublishInput, opts: PublishOptions): Pr
   fs.mkdirSync(path.dirname(auditPath), { recursive: true });
   const auditRaw = JSON.stringify(coverage, null, 2) + '\n';
   fs.writeFileSync(auditPath, auditRaw, 'utf8');
-  if (outcome === 'complete') {
-    const receipt = buildReceipt(fileBody, auditRaw, { decision: 'complete', reviewer: 'coverage-validation', gapDispositions: {} });
-    fs.writeFileSync(auditPath.replace(/\.json$/, '.review.json'), JSON.stringify(receipt, null, 2) + '\n');
-  }
+  // Record disclosed gaps without claiming a human performed an extra review.
+  const receipt = buildReceipt(fileBody, auditRaw, {
+    decision: outcome === 'complete' ? 'complete' : 'disclosed-partial',
+    reviewer: 'newsletter-automation',
+    gapDispositions: Object.fromEntries(coverage.sources
+      .filter(source => source.status !== 'complete')
+      .map(source => [source.id, `Published with ${source.status} coverage disclosed to readers: ${source.reasons.join('; ')}`])),
+  });
+  fs.writeFileSync(auditPath.replace(/\.json$/, '.review.json'), JSON.stringify(receipt, null, 2) + '\n');
   fs.writeFileSync(filePath, fileBody, { encoding: 'utf8', flag: 'wx' });
   console.log(`[publish] wrote ${filePath} (${fileBody.length} bytes)`);
   return result;

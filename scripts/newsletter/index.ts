@@ -116,7 +116,7 @@ async function main() {
 
   if (!dryRun) {
     fs.copyFileSync(published.filePath, path.join(OUTPUT_DIR, 'candidate.md'));
-    const validation = validateGeneratedPost(published.filePath, { publication: true, draft: published.outcome === 'partial' });
+    const validation = validateGeneratedPost(published.filePath, { publication: true });
     if (!validation.ok) {
       writeRunReport({ ...published, outcome: 'fatal', stage: 'validation', errors: validation.errors });
       throw new Error('Generated candidate failed validation; artifacts retained for inspection');

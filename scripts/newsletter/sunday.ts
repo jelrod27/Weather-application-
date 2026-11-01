@@ -2,7 +2,7 @@
  * Sunday cadence — Rearview + Roadmap pipeline.
  * See planning/prds/PRD-newsletter-redesign.md §4.3 for the spec.
  *
- * Failed sources stay unknown. Partial evidence creates a reviewable draft.
+ * Failed sources stay unknown. Partial evidence publishes with disclosed gaps.
  */
 
 import { coverageOutcome } from '@/lib/newsletter/coverage';

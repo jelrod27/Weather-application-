@@ -10,11 +10,16 @@ import { validateGeneratedPost } from './validate-post';
 export function validateNewsletterChanges(base: string, root = process.cwd()): string[] {
   // Resolve a commit, not an arbitrary option or shell fragment.
   const sha = execFileSync('git', ['rev-parse', '--verify', '--end-of-options', `${base}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
-  const changed = new Set(execFileSync('git', ['diff', '--name-only', '-z', '--diff-filter=ACMR', `${sha}...HEAD`, '--', 'content/blog', 'content/newsletter-audits'], {
+  const changed = new Set(execFileSync('git', ['diff', '--name-only', '-z', '--diff-filter=ACMR', `${sha}...HEAD`, '--', 'content/blog', 'content/newsletter-audits', 'content/newsletter-drafts'], {
     cwd: root, encoding: 'utf8',
   }).split('\0').filter(Boolean));
   const blogDir = path.join(root, 'content/blog');
   const errors: string[] = [];
+  for (const draft of changed) {
+    if (!draft.startsWith('content/newsletter-drafts/') || !/\.mdx?$/.test(draft)) continue;
+    const published = path.join(blogDir, path.basename(draft));
+    if (!fs.existsSync(published)) errors.push(`${draft}: Newsletter PR must include a publishable post in content/blog; merging a draft alone does not publish`);
+  }
   if (!fs.existsSync(blogDir)) return errors;
   for (const filename of fs.readdirSync(blogDir).filter(file => /\.mdx?$/.test(file))) {
     const relative = `content/blog/${filename}`;
