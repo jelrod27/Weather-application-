@@ -105,6 +105,8 @@ jobs:
           git add -- "$POST_FILE" "$AUDIT_FILE" "$RECEIPT_FILE"
           git commit -m "blog: $TITLE"
           git push origin "$BRANCH_NAME"
+          GENERATED_HEAD="$(git rev-parse HEAD)"
+          printf '\n<!-- newsletter-generated-head: %s -->\n' "$GENERATED_HEAD" >> newsletter-output/pr-body.md
           PR_URL="$(gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
             --base main --head "$BRANCH_NAME")"
-          gh pr merge "$PR_URL" --auto --squash --match-head-commit "$(git rev-parse HEAD)"
+          gh pr merge "$PR_URL" --auto --squash --match-head-commit "$GENERATED_HEAD"

@@ -64,6 +64,9 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -78,6 +81,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify newsletter generated commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npx tsx scripts/newsletter/check-auto-merge-head.ts
 
       - name: Run Jest test suite
         run: npm run test:ci

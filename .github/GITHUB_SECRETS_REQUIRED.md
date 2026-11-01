@@ -33,6 +33,10 @@ branches, so a `workflow_dispatch` from a feature branch cannot use them.
 
 ## What CI does *not* need
 
+The Unit Tests job uses GitHub's automatically provided token with only Contents
+and Pull requests read access to read a newsletter PR's current generated-head
+record. This requires no additional stored secret or write permission.
+
 - Supabase keys: `ci.yml`, `e2e-pr.yml`, and `lighthouse-pr.yml` build with
   placeholder `NEXT_PUBLIC_SUPABASE_*` values set in the workflow file.
 - Weather API keys: Open-Meteo needs none. Google Pollen and other optional

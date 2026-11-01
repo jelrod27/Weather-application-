@@ -4,6 +4,8 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 
+import { validateNewsletterAutoMergeHead } from '../scripts/newsletter/check-auto-merge-head';
+
 const WORKFLOW_FILES = [
   '.github/workflows/newsletter-sunday.yml',
   '.github/workflows/newsletter-wednesday.yml',
@@ -51,6 +53,7 @@ function normalizeInstallerBlock(installerBlock: string): string {
 function runPublicationStep(workflow: string, createStatus = '0', mergeStatus = '0'): {
   status: number | null;
   calls: Array<{ command: string; args: string[] }>;
+  body: string;
 } {
   const stepStart = workflow.indexOf('      - name: Open PR');
   const runStart = workflow.indexOf('        run: |\n', stepStart);
@@ -63,6 +66,8 @@ function runPublicationStep(workflow: string, createStatus = '0', mergeStatus = 
   try {
     const bin = join(root, 'bin');
     mkdirSync(bin);
+    mkdirSync(join(root, 'newsletter-output'));
+    writeFileSync(join(root, 'newsletter-output/pr-body.md'), 'Generated edition\n');
     const log = join(root, 'calls.jsonl');
     const stub = `#!${process.execPath}
 const fs = require('node:fs');
@@ -87,7 +92,11 @@ if (command === 'git' && args[0] === 'rev-parse' && args[1] === 'HEAD') process.
       },
     });
     if (result.error) throw result.error;
-    return { status: result.status, calls: readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) };
+    return {
+      status: result.status,
+      calls: readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)),
+      body: readFileSync(join(root, 'newsletter-output/pr-body.md'), 'utf8'),
+    };
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -113,7 +122,7 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
   });
 
   it('requests protected squash auto-merge for the new PR with its creation-time head', () => {
-    const { status, calls } = runPublicationStep(workflow);
+    const { status, calls, body } = runPublicationStep(workflow);
     expect(status).toBe(0);
     const create = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'create');
     const merge = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'merge');
@@ -123,6 +132,11 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
       'pr', 'merge', 'https://github.com/jelrod27/Weather-application-/pull/123',
       '--auto', '--squash', '--match-head-commit', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     ]);
+    expect(body).toContain('<!-- newsletter-generated-head: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -->');
+    const ref = calls.find(call => call.command === 'git' && call.args[0] === 'checkout')!.args[2];
+    const pr = { body, base: { ref: 'main' }, head: { ref, sha: 'a'.repeat(40) } };
+    expect(validateNewsletterAutoMergeHead({ pull_request: pr })).toEqual([]);
+    expect(validateNewsletterAutoMergeHead({ pull_request: { ...pr, head: { ...pr.head, sha: 'b'.repeat(40) } } }).length).toBeGreaterThan(0);
     expect(workflow).not.toContain('--admin');
     const step = workflow.slice(workflow.indexOf('      - name: Open PR'));
     expect(step).toContain('if: ${{ inputs.dry_run != true }}');
@@ -161,6 +175,7 @@ it('runs coverage enforcement in the required Unit Tests job with base history a
   const job = workflow.split('  unit-tests:')[1].split('  dead-code:')[0];
   expect(job).toContain('fetch-depth: 0');
   expect(job).toContain('npx tsx scripts/newsletter/validate-changes.ts --base "$NEWSLETTER_BASE_SHA"');
+  expect(job).toContain('npx tsx scripts/newsletter/check-auto-merge-head.ts');
   expect(job).not.toContain('continue-on-error: true');
 });
 
