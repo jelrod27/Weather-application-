@@ -76,7 +76,7 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         run: npx tsx scripts/newsletter/workflow-result.ts
 
-      - name: Open PR with the candidate
+      - name: Open PR and enable automatic publishing
         if: ${{ inputs.dry_run != true }}
         env:
           GH_TOKEN: ${{ secrets.CONTENT_BOT_TOKEN }}
@@ -98,5 +98,6 @@ jobs:
           git add -- "$POST_FILE" "$AUDIT_FILE" "$RECEIPT_FILE"
           git commit -m "blog: $TITLE"
           git push origin "$BRANCH_NAME"
-          gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
-            --base main --head "$BRANCH_NAME"
+          PR_URL="$(gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
+            --base main --head "$BRANCH_NAME")"
+          gh pr merge "$PR_URL" --auto --squash --match-head-commit "$(git rev-parse HEAD)"

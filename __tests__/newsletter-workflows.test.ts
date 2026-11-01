@@ -1,5 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+/** @jest-environment node */
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 
 const WORKFLOW_FILES = [
   '.github/workflows/newsletter-sunday.yml',
@@ -45,6 +48,51 @@ function normalizeInstallerBlock(installerBlock: string): string {
     .trim();
 }
 
+function runPublicationStep(workflow: string, createStatus = '0', mergeStatus = '0'): {
+  status: number | null;
+  calls: Array<{ command: string; args: string[] }>;
+} {
+  const stepStart = workflow.indexOf('      - name: Open PR');
+  const runStart = workflow.indexOf('        run: |\n', stepStart);
+  if (stepStart < 0 || runStart < 0) throw new Error('Publishing step not found');
+  const scriptStart = runStart + '        run: |\n'.length;
+  const nextStep = workflow.indexOf('\n      - ', scriptStart);
+  const script = workflow.slice(scriptStart, nextStep < 0 ? undefined : nextStep)
+    .split('\n').map(line => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+  const root = mkdtempSync(join(tmpdir(), 'newsletter-workflow-'));
+  try {
+    const bin = join(root, 'bin');
+    mkdirSync(bin);
+    const log = join(root, 'calls.jsonl');
+    const stub = `#!${process.execPath}
+const fs = require('node:fs');
+const path = require('node:path');
+const command = path.basename(process.argv[1]);
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.CALL_LOG, JSON.stringify({ command, args }) + '\\n');
+if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+  if (process.env.CREATE_STATUS !== '0') process.exit(Number(process.env.CREATE_STATUS));
+  process.stdout.write('https://github.com/jelrod27/Weather-application-/pull/123\\n');
+}
+if (command === 'gh' && args[0] === 'pr' && args[1] === 'merge') process.exit(Number(process.env.MERGE_STATUS));
+if (command === 'git' && args[0] === 'rev-parse' && args[1] === 'HEAD') process.stdout.write('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n');
+`;
+    for (const command of ['gh', 'git']) writeFileSync(join(bin, command), stub, { mode: 0o755 });
+    const result = spawnSync('bash', ['-c', script], {
+      cwd: root, encoding: 'utf8', env: {
+        PATH: [bin, '/usr/bin', '/bin'].join(delimiter),
+        GH_TOKEN: 'fixture', CALL_LOG: log, CREATE_STATUS: createStatus, MERGE_STATUS: mergeStatus,
+        GITHUB_RUN_ID: '42', POST_FILE: 'content/blog/edition.md', AUDIT_FILE: 'content/newsletter-audits/edition.json',
+        RECEIPT_FILE: 'content/newsletter-audits/edition.review.json', TITLE: 'Weekly weather edition',
+      },
+    });
+    if (result.error) throw result.error;
+    return { status: result.status, calls: readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)) };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
   const workflow = readWorkflow(workflowPath);
 
@@ -62,6 +110,33 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(workflow.indexOf('- name: Install gitleaks')).toBeLessThan(
       workflow.indexOf('- name: Generate '),
     );
+  });
+
+  it('queues the exact generated PR for protected squash auto-merge', () => {
+    const { status, calls } = runPublicationStep(workflow);
+    expect(status).toBe(0);
+    const create = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'create');
+    const merge = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'merge');
+    expect(create).toBeGreaterThanOrEqual(0);
+    expect(merge).toBeGreaterThan(create);
+    expect(calls[merge].args).toEqual([
+      'pr', 'merge', 'https://github.com/jelrod27/Weather-application-/pull/123',
+      '--auto', '--squash', '--match-head-commit', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    ]);
+    expect(workflow).not.toContain('--admin');
+    const step = workflow.slice(workflow.indexOf('      - name: Open PR'));
+    expect(step).toContain('if: ${{ inputs.dry_run != true }}');
+  });
+
+  it('does not request a merge when PR creation fails', () => {
+    const { status, calls } = runPublicationStep(workflow, '1');
+    expect(status).not.toBe(0);
+    expect(calls.some(call => call.command === 'gh' && call.args.includes('merge'))).toBe(false);
+  });
+
+  it('fails visibly when enabling auto-merge fails', () => {
+    const { status } = runPublicationStep(workflow, '0', '1');
+    expect(status).not.toBe(0);
   });
 
   it('keeps the Husky secret scan enabled', () => {
