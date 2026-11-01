@@ -134,6 +134,8 @@ describe('newsletter publication boundary', () => {
     expect(values).toMatch(/receipt_file=content\/newsletter-audits\/[^\n]+\.review\.json/);
     const body = fs.readFileSync(path.join(outputDir, 'pr-body.md'), 'utf8');
     expect(body).toMatch(/merg(e|ing).*publish/i);
+    expect(body).toContain('Auto-merge is requested');
+    expect(body).toContain('required checks and resolved review conversations');
     expect(body).not.toMatch(/does not publish|publishes nothing|explicit approval|draft PR/);
     if (partial) expect(body).toContain('Request failed');
   });

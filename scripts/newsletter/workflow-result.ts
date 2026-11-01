@@ -37,11 +37,11 @@ function main(): void {
     '## Sunday outlook review',
     sundayChecklist,
     '## Next step',
-    'Merging this PR publishes the blog post when the site deploys from `main`. The post, source audit and publication receipt are included. Review the Lower 48 outlook against the dated NOAA/WPC discussions, city forecasts and source links. Any source gaps remain disclosed in the published article; no separate promotion is required.',
+    'Merging this PR publishes the blog post when the site deploys from `main`. Auto-merge is requested by the generating workflow and waits for required checks and resolved review conversations. The post, source audit and publication receipt are included. Review the Lower 48 outlook against the dated NOAA/WPC discussions, city forecasts and source links. Any source gaps remain disclosed in the published article; no separate promotion is required.',
     validation.auditMarkdown,
   ].join('\n\n') : [
     `Generated newsletter candidate: \`${postFile}\`. Coverage: **${report.outcome}**.`,
-    'Merging this PR publishes the blog post when the site deploys from `main`. The post, source audit and publication receipt are included. Review the prose and citations; any source gaps remain disclosed in the published article. No separate promotion is required.',
+    'Merging this PR publishes the blog post when the site deploys from `main`. Auto-merge is requested by the generating workflow and waits for required checks and resolved review conversations. The post, source audit and publication receipt are included. Review the prose and citations; any source gaps remain disclosed in the published article. No separate promotion is required.',
     coverageDisclosure(bundle.audit), validation.auditMarkdown,
   ].join('\n\n');
   fs.writeFileSync('newsletter-output/pr-body.md', body + '\n');

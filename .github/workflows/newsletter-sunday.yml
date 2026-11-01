@@ -1,7 +1,7 @@
 name: Newsletter (Sunday National + City Outlook)
 
-# Each successful run creates a normal PR that publishes when merged,
-# including editions with disclosed source gaps.
+# Each successful run opens a publishing PR and requests protected auto-merge.
+# GitHub waits for required checks and resolved conversations before merging.
 
 on:
   schedule:
@@ -83,7 +83,7 @@ jobs:
         if: ${{ inputs.dry_run != true }}
         run: npx tsx scripts/newsletter/workflow-result.ts
 
-      - name: Open PR with the candidate
+      - name: Open PR and enable automatic publishing
         if: ${{ inputs.dry_run != true }}
         env:
           GH_TOKEN: ${{ secrets.CONTENT_BOT_TOKEN }}
@@ -105,5 +105,8 @@ jobs:
           git add -- "$POST_FILE" "$AUDIT_FILE" "$RECEIPT_FILE"
           git commit -m "blog: $TITLE"
           git push origin "$BRANCH_NAME"
-          gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
-            --base main --head "$BRANCH_NAME"
+          GENERATED_HEAD="$(git rev-parse HEAD)"
+          printf '\n<!-- newsletter-generated-head: %s -->\n' "$GENERATED_HEAD" >> newsletter-output/pr-body.md
+          PR_URL="$(gh pr create --title "blog: $TITLE" --body-file newsletter-output/pr-body.md \
+            --base main --head "$BRANCH_NAME")"
+          gh pr merge "$PR_URL" --auto --squash --match-head-commit "$GENERATED_HEAD"

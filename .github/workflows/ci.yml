@@ -64,6 +64,9 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -78,6 +81,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify newsletter generated commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npx tsx scripts/newsletter/check-auto-merge-head.ts
 
       - name: Run Jest test suite
         run: npm run test:ci
@@ -128,16 +136,8 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - name: Cache Next.js build
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('next.config.mjs') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-            nextjs-${{ runner.os }}-
-
+      # Build clean: restored Turbopack font assets have caused invalid-query
+      # failures here while the fresh E2E and Lighthouse builds passed.
       - name: Install dependencies
         run: npm ci
 
