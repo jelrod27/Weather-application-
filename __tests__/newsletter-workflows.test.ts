@@ -112,7 +112,7 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     );
   });
 
-  it('queues the exact generated PR for protected squash auto-merge', () => {
+  it('requests protected squash auto-merge for the new PR with its creation-time head', () => {
     const { status, calls } = runPublicationStep(workflow);
     expect(status).toBe(0);
     const create = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'create');
