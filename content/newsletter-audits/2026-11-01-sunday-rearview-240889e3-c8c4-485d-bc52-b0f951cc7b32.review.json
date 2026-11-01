@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "9b238909f07f90e4ce54431389f877106c1a24095e39d2ea00f88b383a123a90",
+  "auditSha256": "d39e38cad3dc351bf8735db34579584cf5a19799eb9038fc2cefd01f5999f88b",
+  "decision": "disclosed-partial",
+  "reviewer": "codex-editorial-validation",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-01T17:14:25.459Z",
+  "gapDispositions": {
+    "swpc-xray": "Retained the 312 missing one-minute samples and observed-coverage limitation. Kept the latest C2.9 sample explicitly separate from full-interval flare activity; removed unsupported no-flare and no-disruption claims."
+  }
+}
