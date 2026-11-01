@@ -17,8 +17,10 @@ export function validateNewsletterChanges(base: string, root = process.cwd()): s
   const errors: string[] = [];
   for (const draft of changed) {
     if (!draft.startsWith('content/newsletter-drafts/') || !/\.mdx?$/.test(draft)) continue;
-    const published = path.join(blogDir, path.basename(draft));
-    if (!fs.existsSync(published)) errors.push(`${draft}: Newsletter PR must include a publishable post in content/blog; merging a draft alone does not publish`);
+    const publicPath = `content/blog/${path.basename(draft)}`;
+    if (!changed.has(publicPath) || !fs.existsSync(path.join(root, publicPath))) {
+      errors.push(`${draft}: Newsletter PR must include a publishable post in content/blog; merging a draft alone does not publish`);
+    }
   }
   if (!fs.existsSync(blogDir)) return errors;
   for (const filename of fs.readdirSync(blogDir).filter(file => /\.mdx?$/.test(file))) {

@@ -251,6 +251,35 @@ describe('newsletter publication boundary', () => {
     expect(validateNewsletterChanges(base, root).join('\n')).toContain('must include a publishable post');
   });
 
+  it.each([false, true])('requires an edited legacy draft to publish its edit in the same PR (publicChanged=%s)', async publicChanged => {
+    const git = (...args: string[]): string => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+    git('init', '--quiet');
+    git('config', 'user.name', 'Fixture');
+    git('config', 'user.email', 'fixture@example.test');
+    const candidate = await publishPost(INPUT, { coverage: audit(), root });
+    const draftPath = path.join(root, 'content/newsletter-drafts/legacy', path.basename(candidate.filePath));
+    fs.mkdirSync(path.dirname(draftPath), { recursive: true });
+    fs.copyFileSync(candidate.filePath, draftPath);
+    git('add', '.');
+    git('commit', '-qm', 'Published edition and retained draft');
+    const base = git('rev-parse', 'HEAD');
+    const edited = fs.readFileSync(draftPath, 'utf8').replace('Kp reached 8', 'Kp reached 7');
+    fs.writeFileSync(draftPath, edited);
+    if (publicChanged) {
+      fs.writeFileSync(candidate.filePath, edited);
+      const bundle = readPublicationBundle(edited, root);
+      const prior = JSON.parse(fs.readFileSync(bundle.receiptPath, 'utf8'));
+      fs.writeFileSync(bundle.receiptPath, JSON.stringify(buildReceipt(edited, bundle.auditRaw, {
+        decision: prior.decision, reviewer: prior.reviewer, gapDispositions: prior.gapDispositions,
+      })));
+    }
+    git('add', '.');
+    git('commit', '-qm', 'Edit legacy draft');
+    const errors = validateNewsletterChanges(base, root);
+    if (publicChanged) expect(errors).toEqual([]);
+    else expect(errors.join('\n')).toContain('must include a publishable post');
+  });
+
   it.each(['body', 'audit', 'receipt'])('rejects automatic partial publication when its %s is altered', async changed => {
     const candidate = await publishPost(INPUT, { coverage: audit(), root });
     const receiptPath = candidate.auditPath.replace(/\.json$/, '.review.json');

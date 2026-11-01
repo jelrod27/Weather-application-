@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "postSha256": "01451166a1b5c3f215f3706cf3e162c65e4b472d625a32dfca6aa50a54115281",
+  "postSha256": "8444ba909094ffe566d0335dcf7bc0e7cfcc11d185b20e7811c6912a113fe3b2",
   "auditSha256": "9e2ff5ef716d2cec08beb766d785d9ecece1d52fcdb011aa5cb2d9f18e707891",
   "decision": "disclosed-partial",
   "reviewer": "newsletter-automation",
   "acknowledged": true,
-  "reviewedAt": "2026-11-01T16:32:44.814Z",
+  "reviewedAt": "2026-11-01T16:49:21.722Z",
   "gapDispositions": {
     "news-headlines": "Published with partial coverage disclosed to readers: Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals"
   }

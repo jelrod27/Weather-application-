@@ -14,6 +14,9 @@ describe('newsletter source links', () => {
     'https://repository.library.noaa.gov/view/noaa/63587',
     'https://www.ferc.gov/news-events/news/final-report-february-2021-freeze-underscores-winterization-recommendations',
     'https://www.ecmwf.int/en/newsletter/150/meteorology/impact-orographic-drag-forecast-skill',
+    'https://arctic.noaa.gov/report-card/report-card-2023/greenland-ice-sheet-2023/',
+    'https://galvestontx.gov/DocumentCenter/View/18247/City-of-Galveston-Hazard-Mitigation-Plan---2022-Update',
+    'https://creativecommons.org/licenses/by-sa/3.0/',
   ])('allows an explainer citation without trusting lookalike hosts: %s', (url) => {
     expect(allowedBlogUrl(url)).toBe(url);
     expect(allowedBlogUrl(url.replace('https:', 'http:'))).toBeNull();
@@ -97,7 +100,7 @@ describe('IMAGES catalog', () => {
   });
 
   it('every license is one of the allowed public-use values', () => {
-    const allowed = new Set(['PD-USGov', 'PD', 'CC0', 'CC-BY-4.0']);
+    const allowed = new Set(['PD-USGov', 'PD', 'CC0', 'CC-BY-4.0', 'CC-BY-SA-3.0']);
     for (const img of IMAGES) {
       expect(allowed.has(img.license)).toBe(true);
     }

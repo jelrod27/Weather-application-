@@ -1,5 +1,5 @@
 import { embedImagesInDraft, filterPlacementsByNarrativeFit, stripBareImageMarkdown } from '../../scripts/newsletter/content-match';
-import type { ImageEntry } from '../../scripts/newsletter/images';
+import { IMAGES, type ImageEntry } from '../../scripts/newsletter/images';
 
 const liveImage: ImageEntry = {
   id: 'goes-conus-geocolor',
@@ -63,6 +63,19 @@ describe('filterPlacementsByNarrativeFit', () => {
 });
 
 describe('embedImagesInDraft', () => {
+  it.each([
+    ['greenland-ice-sheet', 'Eric Gaba'],
+    ['antarctic-ice-shelf', 'Robert A. Rohde'],
+  ])('includes the creator and license when embedding %s', (id, creator) => {
+    const image = IMAGES.find(entry => entry.id === id)!;
+    const out = embedImagesInDraft('## Ice sheets\n\nThe ice sheet is changing.', [{ image, insertAfter: 'ice sheet is changing' }]);
+    expect(image.license).toBe('CC-BY-SA-3.0');
+    expect(out).toContain(creator);
+    expect(out).toContain('https://creativecommons.org/licenses/by-sa/3.0/');
+    expect(out).toContain('https://commons.wikimedia.org/wiki/File:');
+    expect(out).toContain('Resized for display');
+  });
+
   it('inserts an image after the paragraph containing the anchor snippet', () => {
     const draft = '## Rearview\n\nFirst paragraph mentions a tornado outbreak.\n\nSecond paragraph follows.';
     const out = embedImagesInDraft(draft, [
