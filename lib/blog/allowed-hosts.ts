@@ -18,6 +18,7 @@
 export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   // Curated newsletter image sources (kept in sync with scripts/newsletter/images.ts)
   'commons.wikimedia.org',
+  'creativecommons.org',
   'cdn.star.nesdis.noaa.gov',
   'droughtmonitor.unl.edu',
   'ocean.weather.gov',
@@ -36,6 +37,8 @@ export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   // External authorities reasonable to link to from a weather post.
   'www.weather.gov',
   'www.noaa.gov',
+  'arctic.noaa.gov',
+  'galvestontx.gov',
   'earthquake.usgs.gov',
   'www.spc.noaa.gov',
   'www.nhc.noaa.gov',

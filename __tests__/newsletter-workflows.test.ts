@@ -69,11 +69,12 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(workflow).not.toContain('--no-verify');
   });
 
-  it('preserves failure artifacts and opens partial candidates as draft PRs', () => {
+  it('preserves failure artifacts and opens publishing PRs for both coverage outcomes', () => {
     expect(workflow).toMatch(/name: Preserve candidate and audit artifacts\s+if: always\(\)/);
     expect(workflow).toContain('newsletter-output/');
-    expect(workflow).toContain('content/newsletter-drafts/');
-    expect(workflow).toContain('if [ "$OUTCOME" = "partial" ]; then DRAFT_ARGS+=(--draft); fi');
+    expect(workflow).toContain('content/blog/');
+    expect(workflow).not.toContain('--draft');
+    expect(workflow).toContain('git add -- "$POST_FILE" "$AUDIT_FILE" "$RECEIPT_FILE"');
     expect(workflow).toContain('--body-file newsletter-output/pr-body.md');
     expect(workflow).toContain('run: npx tsx scripts/newsletter/workflow-result.ts');
     expect(workflow).not.toContain('git add content/blog/');

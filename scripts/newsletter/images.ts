@@ -1,6 +1,6 @@
 import { TOPIC_SLUGS, type TopicSlug } from './topics';
 
-export type ImageLicense = 'PD-USGov' | 'PD' | 'CC0' | 'CC-BY-4.0';
+export type ImageLicense = 'PD-USGov' | 'PD' | 'CC0' | 'CC-BY-4.0' | 'CC-BY-SA-3.0';
 
 /**
  * Image classification — used by the generator prompt and the hero-image
@@ -37,8 +37,8 @@ export interface ImageAuditEntry {
 }
 
 /**
- * Curated catalog of public-domain weather and earth-science imagery.
- * Sourced from NOAA, NASA, USGS, and Wikimedia Commons (PD/CC0 only).
+ * Curated catalog of public-domain and openly licensed weather and earth-science imagery.
+ * Sourced from NOAA, NASA, USGS, and Wikimedia Commons; licensed works retain attribution.
  *
  * Validation: run `npm run validate:images` to HEAD-check every URL.
  * Any non-200 entry should be replaced, not silently ignored.
@@ -133,9 +133,9 @@ export const IMAGES: ImageEntry[] = [
     id: 'greenland-ice-sheet',
     url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Greenland_ice_sheet_AMSL_thickness_map-en.png?width=1280',
     caption: 'Greenland ice sheet thickness map.',
-    credit: 'NASA / NOAA',
+    credit: '© [Eric Gaba (Sting)](https://commons.wikimedia.org/wiki/User:Sting) / [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Greenland_ice_sheet_AMSL_thickness_map-en.png), [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Resized for display.',
     topic_tags: ['cryosphere', 'paleoclimate'],
-    license: 'PD-USGov',
+    license: 'CC-BY-SA-3.0',
   },
   {
     id: 'antarctic-ice-shelf',
@@ -143,9 +143,9 @@ export const IMAGES: ImageEntry[] = [
     caption: 'Larsen B Ice Shelf collapse imaged by NASA MODIS, 2002.',
     kind: 'archival',
     archival_year: 2002,
-    credit: 'NASA',
+    credit: '© Robert A. Rohde / [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Larsen_B_Collapse.jpg), [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Resized for display.',
     topic_tags: ['cryosphere'],
-    license: 'PD-USGov',
+    license: 'CC-BY-SA-3.0',
   },
 
   // ============================================================

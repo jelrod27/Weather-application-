@@ -21,7 +21,7 @@ scripts/newsletter/
   news.ts                  # news-angle finder hitting /api/news/rss
   wednesday.ts             # Wednesday topic pipeline
   sunday.ts                # Sunday Rearview + Roadmap pipeline
-  publish.ts               # audited complete post / nonpublic partial draft writer
+  publish.ts               # public post, source audit and publication receipt writer
   data/
     mesonet.ts             # Iowa State Mesonet (NWS warnings archive)
     spc-reports.ts         # NOAA SPC daily storm reports
@@ -34,7 +34,7 @@ scripts/newsletter/
 ## Run locally
 
 ```bash
-# Wednesday topic deep-dive (writes a nonpublic review candidate)
+# Wednesday topic deep-dive (writes a publishable blog post and source audit)
 ANTHROPIC_API_KEY=sk-... npx tsx scripts/newsletter/index.ts --cadence wednesday
 
 # Sunday rearview + roadmap
@@ -115,23 +115,25 @@ The validator rejects placeholder images, disallowed image hosts, `images_used` 
 
 ## Coverage and publication
 
-Each Sunday run uses seven **completed noon-to-noon UTC SPC days**, with an exclusive end. A run before noon uses the previous noon as its end. Mesonet and USGS queries use that same interval. Kp and X-ray samples are filtered to it; missing cadence slots prevent a complete-period peak claim. NOAA/WPC short and extended discussions are read as text, checked for an issue time within 18 hours and valid forecast dates, and audited against the next 36 hours and days 3–6 respectively. An unavailable, stale or partly covering discussion creates a review-required draft. Forecast dates start at midnight UTC on the run date and cover seven days. The nine city points illustrate local timing; they are not evidence for a regional jet stream, MJO, ridge or trough analysis.
+Each Sunday run uses seven **completed noon-to-noon UTC SPC days**, with an exclusive end. A run before noon uses the previous noon as its end. Mesonet and USGS queries use that same interval. Kp and X-ray samples are filtered to it; missing cadence slots prevent a complete-period peak claim. NOAA/WPC short and extended discussions are read as text, checked for an issue time within 18 hours and valid forecast dates, and audited against the next 36 hours and days 3–6 respectively. An unavailable, stale or partly covering discussion is disclosed in the published article; unavailable data cannot support a national pattern claim. Forecast dates start at midnight UTC on the run date and cover seven days. The nine city points illustrate local timing; they are not evidence for a regional jet stream, MJO, ridge or trough analysis.
 
-The Sunday Action runs at 12:00 UTC and writes a review PR with a short evidence checklist. For complete coverage, review the national discussion citations and city details, then merge to publish. For incomplete coverage, the Action opens a draft PR outside the public blog. Review the gaps with an editor, record approval and promote through the commands below, then merge the publishing PR. Running the Action twice can create two candidate PRs; review and promote one. The raw source audit stays in the repository; its reader-facing coverage disclosure appears in an expandable section on the blog page.
+Both weekly Actions run at 12:00 UTC on their scheduled days and open normal publishing PRs. Every successful run includes the public post, source audit and content-bound publication receipt. Review the prose, citations and any source gaps, then merge to publish when the site deploys from `main`. Partial coverage does not create a draft PR or require a separate promotion. Running an Action twice can create two PRs; merge one edition. The raw source audit stays in the repository; its reader-facing coverage disclosure appears in an expandable section on the blog page.
 
 Collectors return validated values plus a source audit. The audit records URL, retrieval time, requested interval, actual contiguous coverage, observation bounds, record count, expected/observed units and reasons for gaps. WPC text snapshots are retained in the audit because the public latest-discussion URLs change after publication. A valid zero is usable evidence. Missing, malformed, stale and unsupported data never become zero, quiet conditions or a complete weekly ranking. NWS totals here cover only unique TO.W/SV.W/FF.W/MA.W/EW.W events issued in the interval; other polygon products, watches and zone warnings are outside the labeled scope. SPC reports are preliminary reports, not a count of confirmed tornadoes.
 
-`newsletter-output/run.json` distinguishes `complete`, `partial` and `fatal`, plus the generation/validation/ready stage. Complete and partial generation return exit 0; fatal generation or validation returns exit 1. `newsletter-output/coverage.json` survives later model/validation failures. Workflows upload the run report, source audits and nonpublic candidates even on failure. No key is needed for collection/tests; generation still requires the existing Anthropic key.
+`newsletter-output/run.json` distinguishes `complete`, `partial` and `fatal`, plus the generation/validation/ready stage. Complete and partial generation return exit 0; fatal generation or validation returns exit 1. `newsletter-output/coverage.json` survives later model/validation failures. Workflows upload the run report, source audits and generated posts even on failure. Failed or invalid output never opens a PR. No key is needed for collection/tests; generation still requires the existing Anthropic key.
 
-- **Complete:** writes `content/blog/<post>.md`, a source audit and a content-bound coverage receipt. The workflow opens a normal PR; it never merges automatically.
-- **Partial:** writes `content/newsletter-drafts/<id>/<post>.md` and `content/newsletter-audits/<id>.json`. The workflow opens a draft PR. Merging that PR as-is publishes nothing.
+- **Complete:** writes `content/blog/<post>.md`, a source audit and a content-bound `complete` receipt. The workflow opens a normal PR; it never merges automatically.
+- **Partial:** writes the same public post, audit and receipt bundle, using the `disclosed-partial` decision and recording each source's limitations. The post retains its honest `partial` coverage status and reader-visible disclosure. Merging publishes it without another review command. Automatic receipts identify `newsletter-automation`, not a human reviewer.
 - **Fatal:** no evidence-based narrative is generated; the failure report remains an artifact. A later validation failure retains the candidate for inspection but opens no PR.
 
-Wednesday's existing aggregator cannot establish original-source completeness. Its bounded headline sample is marked partial; the curated topic outline permits an evergreen review candidate when headlines fail. Current-event claims require an editor to check the linked originals. This remains a deliberate review gate until the news-source health work can supply stronger evidence.
+Wednesday's existing aggregator cannot establish original-source completeness. Its bounded headline sample remains marked partial; the curated topic outline permits an evergreen educational article when headlines fail. Any current-event claims must stay within the supplied evidence, with source links and dates. The PR remains the editorial checkpoint; partial coverage alone does not prevent publication on merge.
 
-All new or changed generated public posts must pass the same coverage gate in PR CI. Public loaders exclude unresolved/invalid candidates from listings, direct slug lookup, related posts, RSS, sitemap, education highlights and generation history. `lib/newsletter/legacy-posts.json` contains hashes of pre-gate posts so unchanged historical posts remain visible without editing their frontmatter. It is a fixed compatibility snapshot, not a way to exempt new posts. Changed legacy generated posts require an audit and review; create a candidate and use the same process below.
+All new or changed generated public posts must pass the same coverage gate in PR CI. Public loaders accept complete and disclosed-partial posts with valid receipts, and exclude invalid or unreceipted candidates from listings, direct slug lookup, related posts, RSS, sitemap, education highlights and generation history. CI rejects added or edited newsletter drafts without a corresponding public post. `lib/newsletter/legacy-posts.json` contains hashes of pre-gate posts so unchanged historical posts remain visible without editing their frontmatter. It is a fixed compatibility snapshot, not a way to exempt new posts. Changed legacy generated posts still require a valid audit and receipt.
 
-## Review and promote a partial candidate
+## Legacy drafts: optional human review and promotion
+
+New weekly runs already produce publishing PRs. These commands remain available for drafts retained from the previous workflow or for an editor who wants to record a manual review. They are not an extra step for new editions.
 
 1. Read the candidate and its `publication_id` audit. Check source links and exact date windows. Correct unsupported claims in the draft, keeping the generated **Source coverage** disclosure intact. If updating evidence, update the audit and regenerate the disclosure from `coverageDisclosure`; do not turn gaps into complete status without evidence.
 2. Create a JSON object mapping **every incomplete source ID** to the disposition taken in the prose. For example:
@@ -153,7 +155,7 @@ All new or changed generated public posts must pass the same coverage gate in PR
 
 4. Commit the public post, audit and `.review.json` receipt in a reviewed PR. Retain the original audit and reader-visible limitations; promotion does not erase partial coverage. Keep the source candidate for history. The command refuses to overwrite an existing public file. Revisions to already-published posts should be reviewed as candidates, then explicitly replace the public file in the PR with the reviewed bytes.
 
-Approval binds the **entire candidate (body and frontmatter)** and **exact audit**, normalizing only checkout line endings. Changing either requires another review. Review receipts are repository records, not cryptographic authentication of a human identity; branch protection and code review remain the authorization boundary. Image catalog/allow-list/narrative checks, gitleaks and existing secret scoping remain required.
+Every publication receipt binds the **entire candidate (body and frontmatter)** and **exact audit**, normalizing only checkout line endings. Changing either requires a new receipt. Existing human-reviewed `reviewed-partial` receipts remain valid. Receipts are repository records, not cryptographic authentication of a human identity; branch protection and code review remain the authorization boundary. Image catalog/allow-list/narrative checks, gitleaks and existing secret scoping remain required.
 
 ## Provider contracts and offline verification
 
@@ -163,4 +165,4 @@ Approval binds the **entire candidate (body and frontmatter)** and **exact audit
 - [USGS FDSN query](https://earthquake.usgs.gov/fdsnws/event/1/): exact bounds, M4.5+ and significance >600 as separate queries; truncation and invalid rows require partial status.
 - [Open-Meteo forecast API](https://open-meteo.com/en/docs): explicit UTC dates, Fahrenheit and inches; daily array alignment, ranges and units are validated independently for each city.
 
-Recorded payloads in `__tests__/fixtures/newsletter/` include retrieval URLs, UTC times and excerpt limits in `provenance.json`. They prove the inspected NOAA interval had a Kp peak of 7, alongside the actual SPC/IEM/USGS/Open-Meteo schemas. Clearly synthetic cases in `__tests__/newsletter/data-integrity.test.ts` exercise failures and boundary values with a fixed clock. They cover both Kp formats, early-window peaks, zeroes, malformed/stale data, independent failures, missing SPC days, warning identity/window handling, query boundaries and partial city forecasts. `publication.test.ts` exercises draft storage, actual public loaders, promotion/hash invalidation and the git-diff PR gate without network or model calls.
+Recorded payloads in `__tests__/fixtures/newsletter/` include retrieval URLs, UTC times and excerpt limits in `provenance.json`. They prove the inspected NOAA interval had a Kp peak of 7, alongside the actual SPC/IEM/USGS/Open-Meteo schemas. Clearly synthetic cases in `__tests__/newsletter/data-integrity.test.ts` exercise failures and boundary values with a fixed clock. They cover both Kp formats, early-window peaks, zeroes, malformed/stale data, independent failures, missing SPC days, warning identity/window handling, query boundaries and partial city forecasts. `publication.test.ts` exercises both cadences' automatic partial publication, actual public discovery paths, CLI PR preparation, legacy promotion, receipt invalidation and the git-diff PR gate without network or model calls.
