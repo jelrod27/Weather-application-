@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "46b93781bd4fd0c16f5214a0cfd88c1b03cfc3778f88d8056cb92bbeb95aadb5",
+  "auditSha256": "0d8e79a33dd366fb3cc8a42efa8d63206089cd64fd8bc489c597ab565cb6479d",
+  "decision": "disclosed-partial",
+  "reviewer": "newsletter-automation",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-04T19:00:03.201Z",
+  "gapDispositions": {
+    "news-headlines": "Published with partial coverage disclosed to readers: Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals"
+  }
+}
