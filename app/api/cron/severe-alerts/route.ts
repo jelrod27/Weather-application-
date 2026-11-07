@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         let emailsFailed = 0
         let emailsSkipped = 0
         let pushesFailed = 0
+        let pushesRetired = 0
 
         const result = await runSevereAlertMonitor(supabase, {
           onNewAlert: async (item) => {
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
             else emailsFailed += 1
             const pushResult = await sendSeverePushNotifications(supabase, { userId: item.subscription.user_id }, item.payload)
             pushesFailed += pushResult.failed
+            pushesRetired += pushResult.retired
           },
           onNewGuestAlert: async (item) => {
             const emailResult = await deliverGuestSevereAlertEmail(supabase, item)
@@ -53,6 +55,7 @@ export async function GET(request: NextRequest) {
               item.payload,
             )
             pushesFailed += pushResult.failed
+            pushesRetired += pushResult.retired
           },
         })
 
@@ -64,6 +67,7 @@ export async function GET(request: NextRequest) {
           emailsSkipped,
           emailsFailed,
           pushesFailed,
+          pushesRetired,
           ...result,
         }, { status: success ? 200 : 503 })
       } catch (error) {

@@ -33,13 +33,25 @@ async function loadSubscriptions(
   return (data ?? []) as PushRow[]
 }
 
+async function retireSubscription(
+  supabase: SupabaseClient<Database>,
+  id: string,
+  signal: AbortSignal,
+): Promise<void> {
+  try {
+    await supabase.from('push_subscriptions').delete().eq('id', id).abortSignal(signal)
+  } catch {
+    // Cleanup is best effort; a later alert can retry removing the unusable row.
+  }
+}
+
 export async function sendSeverePushNotifications(
   supabase: SupabaseClient<Database>,
   owner: PushOwner,
   payload: SevereWeatherAlertPayload,
-): Promise<{ sent: number; failed: number; skipped: boolean }> {
+): Promise<{ sent: number; failed: number; retired: number; skipped: boolean }> {
   const vapid = getVapidConfig()
-  if (!vapid) return { sent: 0, failed: 0, skipped: true }
+  if (!vapid) return { sent: 0, failed: 0, retired: 0, skipped: true }
 
   // Includes subscription lookup, provider requests, and expired-row cleanup.
   const signal = AbortSignal.timeout(3_000)
@@ -50,9 +62,9 @@ export async function sendSeverePushNotifications(
     console.error('[web-push] load subscriptions failed', error)
     // The device count is unknown; count one failed recipient lookup so cron
     // monitoring distinguishes a database outage from a healthy no-device skip.
-    return { sent: 0, failed: 1, skipped: false }
+    return { sent: 0, failed: 1, retired: 0, skipped: false }
   }
-  if (subscriptions.length === 0) return { sent: 0, failed: 0, skipped: true }
+  if (subscriptions.length === 0) return { sent: 0, failed: 0, retired: 0, skipped: true }
 
   const webpush = await import('web-push')
 
@@ -69,15 +81,20 @@ export async function sendSeverePushNotifications(
 
   let sent = 0
   let failed = 0
+  let retired = 0
   // One budget for the entire recipient, regardless of stored device count.
 
-  for (const row of subscriptions) {
+  for (const [index, row] of subscriptions.entries()) {
     if (signal.aborted) {
-      failed = subscriptions.length - sent
+      failed += subscriptions.length - index
       break
     }
+    if (!isAllowedPushEndpoint(row.endpoint)) {
+      retired += 1
+      await retireSubscription(supabase, row.id, signal)
+      continue
+    }
     try {
-      if (!isAllowedPushEndpoint(row.endpoint)) throw new Error('Unsupported push provider')
       const details = webpush.generateRequestDetails(
         {
           endpoint: row.endpoint,
@@ -99,19 +116,16 @@ export async function sendSeverePushNotifications(
       }
       sent += 1
     } catch (error) {
-      failed += 1
       const status = (error as { statusCode?: number }).statusCode
       if (status === 404 || status === 410) {
-        try {
-          await supabase.from('push_subscriptions').delete().eq('id', row.id).abortSignal(signal)
-        } catch {
-          // Cleanup is best effort; retry the expired-row removal on a later alert.
-        }
+        retired += 1
+        await retireSubscription(supabase, row.id, signal)
       } else {
+        failed += 1
         console.error('[web-push] send failed', status ?? error)
       }
     }
   }
 
-  return { sent, failed, skipped: false }
+  return { sent, failed, retired, skipped: false }
 }

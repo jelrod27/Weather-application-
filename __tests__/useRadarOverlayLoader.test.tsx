@@ -17,10 +17,29 @@ jest.mock('@/components/radar-v2/radar-styles', () => ({
   spcStyle: () => undefined,
   stormReportStyle: () => undefined,
 }))
-jest.mock('ol/layer/Tile', () => ({ __esModule: true, default: class TileLayer {} }))
+jest.mock('ol/layer/Tile', () => ({ __esModule: true, default: class TileLayer {
+  constructor(private options: { source: unknown }) {}
+  getSource() { return this.options.source }
+  setVisible() {}
+  setOpacity() {}
+} }))
 jest.mock('ol/layer/Vector', () => ({ __esModule: true, default: class VectorLayer {} }))
 jest.mock('ol/source/Vector', () => ({ __esModule: true, default: class VectorSource {} }))
-jest.mock('ol/source/XYZ', () => ({ __esModule: true, default: class XYZ {} }))
+jest.mock('ol/source/XYZ', () => ({ __esModule: true, default: class XYZ {
+  private listeners = new Map<string, Set<(event: unknown) => void>>()
+  constructor(private options: { url: string }) {}
+  getKey() { return this.options.url }
+  getTileGrid() { return null }
+  setUrl(url: string) { this.options.url = url }
+  on(type: string, listener: (event: unknown) => void) {
+    if (!this.listeners.has(type)) this.listeners.set(type, new Set())
+    this.listeners.get(type)!.add(listener)
+  }
+  un(type: string, listener: (event: unknown) => void) { this.listeners.get(type)?.delete(listener) }
+  dispatchEvent(event: { type: string; tile: unknown }) {
+    this.listeners.get(event.type)?.forEach((listener) => listener(event))
+  }
+} }))
 jest.mock('ol/Feature', () => ({ __esModule: true, default: class Feature {} }))
 jest.mock('ol/geom/Point', () => ({ __esModule: true, default: class Point {} }))
 jest.mock('ol/format/GeoJSON', () => ({ __esModule: true, default: class GeoJSON {} }))
@@ -103,6 +122,41 @@ describe('useRadarOverlayLoader refresh behavior', () => {
     jest.restoreAllMocks()
     Reflect.deleteProperty(globalThis, 'fetch')
     jest.useRealTimers()
+  })
+
+  it('recovers an immediate first-tile failure when attaching the precipitation layer', async () => {
+    Object.defineProperty(globalThis, 'fetch', { configurable: true, writable: true,
+      value: jest.fn(async () => jsonResponse(metadata)),
+    })
+    const load = jest.fn()
+    const map = {
+      getSize: () => [100, 100],
+      getView: () => ({ calculateExtent: () => [-1, -1, 1, 1], getResolution: () => 1 }),
+      on: jest.fn(), un: jest.fn(), removeLayer: jest.fn(), updateSize: jest.fn(),
+      getLayers: () => ({ getArray: () => [] }),
+      addLayer: jest.fn((layer: { getSource(): { getKey(): string; dispatchEvent(event: { type: string; tile: unknown }): void } }) => {
+        const source = layer.getSource()
+        const failed = { key: source.getKey(), getKey: () => `${source.getKey()}/6/18/24`,
+          getTileCoord: () => [6, 18, 24], getState: () => 3, load }
+        load.mockImplementation(() => source.dispatchEvent({ type: 'tileloaderror', tile: failed }))
+        // A fast proxy/image failure can arrive as soon as the layer is rendered.
+        source.dispatchEvent({ type: 'tileloaderror', tile: failed })
+      }),
+    }
+    const localProps: UseRadarOverlayLoaderProps = { ...props, isFullPage: false, isWidget: true,
+      mapInstanceRef: { current: map as never }, radarLayerRef: { current: null }, coverageLayerRef: { current: null } }
+    const { result, unmount } = renderHook(() => useRadarOverlayLoader(localProps))
+    await flushPromises()
+    expect(map.addLayer).toHaveBeenCalledTimes(1)
+    expect(result.current.tileHealth).toBe('retrying')
+    act(() => { jest.advanceTimersByTime(1000) })
+    expect(load).toHaveBeenCalledTimes(1)
+    act(() => { jest.advanceTimersByTime(2000) })
+    expect(load).toHaveBeenCalledTimes(2)
+    expect(result.current.tileHealth).toBe('unavailable')
+    unmount()
+    act(() => { jest.advanceTimersByTime(60_000) })
+    expect(load).toHaveBeenCalledTimes(2)
   })
 
   it('serializes overlay polls and retains last-good data when refreshes fail', async () => {

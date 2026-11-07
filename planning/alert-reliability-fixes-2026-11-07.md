@@ -52,3 +52,10 @@ The preexisting Sentry investigation report is preserved unchanged.
 - Dependency analysis found no additional packages required by the bundled fixes; package-lock changes remove only the unused leaf dependency.
 - Latest-main validation: 304 suites / 2,587 tests passed, both TypeScript projects passed, lint passed with 89 existing warnings, Knip passed and production build passed. The local test command uses a canonical TMPDIR to avoid the existing macOS /var versus /private/var alias in newsletter subprocess fixtures; no newsletter source changes were needed.
 - Kernel removal reproduction: a stale KERNEL_API_KEY with no preview URL previously prevented Playwright from loading; after cleanup the same command discovers all six warning cases across Chromium and Firefox.
+
+## Release review and CI follow-up
+
+- CodeRabbit identified false failures from expired push subscriptions. Retired endpoints (404/410 and unsupported stored providers) are now counted separately from failed deliveries and cleaned up best effort. Database/provider errors and unattempted devices after a deadline still fail monitoring. Regression tests observed RED before the correction and GREEN afterward.
+- CI exposed a genuine initial radar error race: the first failed tile could finish before source listeners were registered. The precipitation layer now attaches only after the health hook subscribes. A deterministic hook test reproduced the old healthy status on immediate failure and now verifies bounded recovery/exhaustion. The two affected browser tests passed 10 repeated runs after the fix.
+- Independent review approved both follow-ups. Latest local validation: 304 suites / 2,593 tests; both TypeScript projects; targeted ESLint; production build. CodeRabbit's blanket docstring-coverage advisory is not a required repository check; no boilerplate documentation expansion was included.
+- Final warning/radar browser validation after both follow-ups: 24/24 passed across Chromium and Firefox.

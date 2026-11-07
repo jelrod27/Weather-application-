@@ -30,12 +30,13 @@ function client(endpoints: string[]) {
 
 beforeEach(() => { jest.clearAllMocks() })
 
-it('never sends to previously stored untrusted endpoints', async () => {
-  const { supabase } = client(['https://127.0.0.1/internal', 'https://attacker.example/push'])
+it('retires previously stored untrusted endpoints without sending to them', async () => {
+  const { supabase, remove } = client(['https://127.0.0.1/internal', 'https://attacker.example/push'])
   const log = jest.spyOn(console, 'error').mockImplementation(() => undefined)
   try {
-    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 2, skipped: false })
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 0, retired: 2, skipped: false })
     expect(requestPublicHttps).not.toHaveBeenCalled()
+    expect(remove.mock.calls).toEqual([['id', 'push-0'], ['id', 'push-1']])
   } finally { log.mockRestore() }
 })
 
@@ -62,11 +63,11 @@ it('applies the same recipient deadline to expired-subscription cleanup', async 
   } finally { timeout.mockRestore() }
 })
 
-it('keeps guest delivery ownership and removes expired push subscriptions', async () => {
+it.each([404, 410])('keeps guest ownership and retires HTTP %s subscriptions without delivery failures', async (statusCode) => {
   const { supabase, remove } = client(['https://fcm.googleapis.com/expired'])
-  const response = Object.assign(Readable.from([]), { statusCode: 410 })
+  const response = Object.assign(Readable.from([]), { statusCode })
   jest.mocked(requestPublicHttps).mockResolvedValue(response as never)
-  expect(await sendSeverePushNotifications(supabase as never, { guestSubscriberId: 'g1' }, payload)).toMatchObject({ sent: 0, failed: 1 })
+  expect(await sendSeverePushNotifications(supabase as never, { guestSubscriberId: 'g1' }, payload)).toMatchObject({ sent: 0, failed: 0, retired: 1 })
   expect(remove).toHaveBeenCalledWith('id', 'push-0')
   expect(response.destroyed).toBe(true)
 })
@@ -82,7 +83,7 @@ it('does not let many devices multiply a recipient deadline', async () => {
     throw new Error('deadline exceeded')
   })
   try {
-    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 20, skipped: false })
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 20, retired: 0, skipped: false })
     expect(timeout).toHaveBeenCalledWith(3000)
     expect(requestPublicHttps).toHaveBeenCalledTimes(1)
   } finally { timeout.mockRestore(); log.mockRestore() }
@@ -102,13 +103,46 @@ it.each(['returned', 'thrown'])('reports a %s subscription lookup failure instea
   else load.mockRejectedValue(new Error('database unavailable'))
   const log = jest.spyOn(console, 'error').mockImplementation(() => undefined)
   try {
-    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 1, skipped: false })
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 1, retired: 0, skipped: false })
     expect(requestPublicHttps).not.toHaveBeenCalled()
   } finally { log.mockRestore() }
 })
 
 it('keeps a successfully read empty push list as a healthy skip', async () => {
   const { supabase } = client([])
-  expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 0, skipped: true })
+  expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 0, retired: 0, skipped: true })
   expect(requestPublicHttps).not.toHaveBeenCalled()
+})
+
+
+it('reports actual provider errors as failures without retiring the subscription', async () => {
+  const { supabase, remove } = client(['https://fcm.googleapis.com/push'])
+  const response = Object.assign(Readable.from([]), { statusCode: 503 })
+  jest.mocked(requestPublicHttps).mockResolvedValue(response as never)
+  const log = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+  try {
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 1, retired: 0, skipped: false })
+    expect(remove).not.toHaveBeenCalled()
+  } finally { log.mockRestore() }
+})
+
+it('does not count retired devices again when the remaining recipient deadline expires', async () => {
+  const { supabase } = client(['https://fcm.googleapis.com/old', 'https://fcm.googleapis.com/new-1', 'https://fcm.googleapis.com/new-2'])
+  const controller = new AbortController()
+  const timeout = jest.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal)
+  jest.mocked(requestPublicHttps).mockImplementation(async () => {
+    controller.abort()
+    return Object.assign(Readable.from([]), { statusCode: 410 }) as never
+  })
+  try {
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 2, retired: 1, skipped: false })
+    expect(requestPublicHttps).toHaveBeenCalledTimes(1)
+  } finally { timeout.mockRestore() }
+})
+
+it('keeps expired-device cleanup best effort when deletion fails', async () => {
+  const { supabase, cleanup } = client(['https://fcm.googleapis.com/old'])
+  cleanup.mockRejectedValue(new Error('cleanup unavailable'))
+  jest.mocked(requestPublicHttps).mockResolvedValue(Object.assign(Readable.from([]), { statusCode: 410 }) as never)
+  expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 0, retired: 1, skipped: false })
 })

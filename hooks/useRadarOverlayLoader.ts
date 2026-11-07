@@ -117,6 +117,16 @@ export function useRadarOverlayLoader({
   const [radarSource, setRadarSource] = useState<XYZ | null>(null)
   const tileHealth = useRadarTileHealth(radarSource, mapInstanceRef.current, activeLayers.precipitation && metadata != null)
 
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    const layer = radarLayerRef.current
+    if (!map || !layer || !radarSource || layer.getSource() !== radarSource) return
+    // The health hook's effects run first. Fast image failures must not arrive
+    // before its listeners are attached to the newly created source.
+    map.addLayer(layer)
+    return () => { map.removeLayer(layer) }
+  }, [radarSource, mapInstanceRef, radarLayerRef])
+
   const urlStateInitializedRef = useRef(false)
   const frameIndexRef = useRef(0)
   const lastRadarTileFetchRef = useRef<string | null>(null)
@@ -297,7 +307,6 @@ export function useRadarOverlayLoader({
       layer.setVisible(activeLayers.precipitation)
       radarLayerRef.current = layer
       setRadarSource(layer.getSource())
-      map.addLayer(layer)
     } else {
       const source = radarLayerRef.current.getSource()
       if (source instanceof XYZ) {
