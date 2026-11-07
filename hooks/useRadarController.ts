@@ -15,6 +15,7 @@ import type {
 } from '@/lib/radar'
 import { formatRadarFrameAgeLabel } from '@/lib/radar'
 import { formatLocationTime } from '@/lib/format-location-time'
+import type { RadarTileHealth } from '@/lib/radar/radar-tile-recovery'
 import { useRadarMapEngine } from '@/hooks/useRadarMapEngine'
 import { useRadarOverlayLoader } from '@/hooks/useRadarOverlayLoader'
 import { useRadarUrlSnapshot, useRadarUrlState } from '@/hooks/useRadarUrlState'
@@ -53,6 +54,7 @@ export type UseRadarControllerResult = {
   metadata: RadarMetadata | null
   frames: RadarFrame[]
   metadataError: string | null
+  tileHealth: RadarTileHealth
   updatedLabel: string | null
   activeLayers: RadarShareLayerState
   layerSheetOpen: boolean
@@ -157,6 +159,7 @@ export function useRadarController({
     metadata: overlay.metadata,
     frames: overlay.frames,
     metadataError: overlay.metadataError,
+    tileHealth: overlay.tileHealth,
     updatedLabel,
     activeLayers: overlay.activeLayers,
     layerSheetOpen: overlay.layerSheetOpen,

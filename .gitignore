@@ -107,7 +107,6 @@ service-account*.json
 !*.example
 
 # Test infrastructure state files (contain ephemeral tokens)
-tests/e2e/.kernel-browser-state.json
 *browser-state.json
 
 # Plan files may contain sensitive information

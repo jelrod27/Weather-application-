@@ -32,6 +32,7 @@ const retainedRadar: ReturnType<typeof useRadarController> = {
   },
   frames: [{ isLive: true, timestamp: 1_788_868_800_000, isoTime: '2026-09-08T12:00:00Z', epochSeconds: 1_788_868_800, offsetMinutes: 0 }],
   metadataError: null,
+  tileHealth: 'healthy',
   updatedLabel: '5:00 AM',
   activeLayers: {
     precipitation: false,

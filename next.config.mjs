@@ -241,18 +241,14 @@ export default withBundleAnalyzer(withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Webpack-specific build options (sentry-cli/webpack plugin). In
-  // @sentry/nextjs v10 the top-level `disableLogger` and `automaticVercelMonitors`
-  // options were deprecated in favor of these nested `webpack.*` equivalents.
+  // Webpack-specific build options (sentry-cli/webpack plugin).
+  // Keep logger tree-shaking in webpack options. Cron routes use explicit
+  // authenticated check-ins so semantic processing failures are reported.
   webpack: {
     // Tree-shake Sentry SDK logger statements to reduce bundle size
     // (replaces the deprecated top-level `disableLogger: true`).
     treeshake: {
       removeDebugLogging: true,
     },
-    // Automatic instrumentation of Vercel Cron Monitors
-    // (replaces the deprecated top-level `automaticVercelMonitors: true`).
-    // https://docs.sentry.io/product/crons/
-    automaticVercelMonitors: true,
   },
 }));

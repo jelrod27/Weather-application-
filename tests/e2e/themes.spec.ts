@@ -8,7 +8,7 @@ test.describe('Theme System', () => {
     await setupStableApp(page);
   });
 
-  // Skip this test in Preview/CI - auth mocking doesn't work with Kernel cloud browsers
+  // Auth mocking is limited to local test targets.
   test('can change theme via profile page', async ({ page }) => {
     test.skip(skipAuthTests, 'Auth mocking not supported against deployed preview URLs');
 

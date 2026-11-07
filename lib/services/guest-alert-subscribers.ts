@@ -61,8 +61,7 @@ export async function fetchEnabledGuestSubscribers(
     .not('verified_at', 'is', null)
 
   if (error) {
-    console.error('[guest-alert-subscribers] fetch enabled failed', error)
-    return []
+    throw new Error(`Guest subscribers lookup failed: ${error.message}`)
   }
 
   return ((data ?? []) as GuestRow[]).map(mapRow)

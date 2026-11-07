@@ -28,8 +28,7 @@ async function loadSubscriptions(
       : query.eq('guest_subscriber_id', owner.guestSubscriberId)
   const { data, error } = await query.abortSignal(signal)
   if (error) {
-    console.error('[web-push] load subscriptions failed', error)
-    return []
+    throw new Error(`Push subscription lookup failed: ${error.message}`)
   }
   return (data ?? []) as PushRow[]
 }
@@ -44,7 +43,15 @@ export async function sendSeverePushNotifications(
 
   // Includes subscription lookup, provider requests, and expired-row cleanup.
   const signal = AbortSignal.timeout(3_000)
-  const subscriptions = await loadSubscriptions(supabase, owner, signal)
+  let subscriptions: PushRow[]
+  try {
+    subscriptions = await loadSubscriptions(supabase, owner, signal)
+  } catch (error) {
+    console.error('[web-push] load subscriptions failed', error)
+    // The device count is unknown; count one failed recipient lookup so cron
+    // monitoring distinguishes a database outage from a healthy no-device skip.
+    return { sent: 0, failed: 1, skipped: false }
+  }
   if (subscriptions.length === 0) return { sent: 0, failed: 0, skipped: true }
 
   const webpush = await import('web-push')

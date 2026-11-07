@@ -53,6 +53,7 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
     metadata,
     frames,
     metadataError,
+    tileHealth,
     updatedLabel,
     activeLayers,
     layerSheetOpen,
@@ -121,6 +122,19 @@ function RadarShell(props: RadarShellProps): React.JSX.Element {
           <RadarStatusChip
             updatedLabel={updatedLabel ?? ''}
           />
+        ) : null}
+
+        {activeLayers.precipitation && tileHealth !== 'healthy' ? (
+          <div
+            data-testid="radar-tile-status"
+            role="status"
+            aria-live="polite"
+            className="absolute inset-x-3 top-[calc(7.5rem+env(safe-area-inset-top))] z-[2000] mx-auto w-fit max-w-[calc(100%-1.5rem)] rounded-lg border border-amber-500/50 bg-[var(--bg-elev)] px-3 py-2 text-sm text-[var(--text)]"
+          >
+            {tileHealth === 'retrying'
+              ? 'Precipitation imagery incomplete. Retrying…'
+              : 'Some precipitation imagery is unavailable. Reload to try again.'}
+          </div>
         ) : null}
 
         {metadataError && !metadata ? (

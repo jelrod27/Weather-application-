@@ -95,3 +95,20 @@ it('accepts provider success without buffering or waiting for its response body'
   expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toMatchObject({ sent: 1, failed: 0 })
   expect(response.destroyed).toBe(true)
 })
+
+it.each(['returned', 'thrown'])('reports a %s subscription lookup failure instead of a healthy skip', async (failure) => {
+  const { supabase, load } = client([])
+  if (failure === 'returned') load.mockResolvedValue({ data: null, error: { message: 'database unavailable' } })
+  else load.mockRejectedValue(new Error('database unavailable'))
+  const log = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+  try {
+    expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 1, skipped: false })
+    expect(requestPublicHttps).not.toHaveBeenCalled()
+  } finally { log.mockRestore() }
+})
+
+it('keeps a successfully read empty push list as a healthy skip', async () => {
+  const { supabase } = client([])
+  expect(await sendSeverePushNotifications(supabase as never, { userId: 'u1' }, payload)).toEqual({ sent: 0, failed: 0, skipped: true })
+  expect(requestPublicHttps).not.toHaveBeenCalled()
+})

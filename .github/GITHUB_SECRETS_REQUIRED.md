@@ -41,8 +41,6 @@ record. This requires no additional stored secret or write permission.
   placeholder `NEXT_PUBLIC_SUPABASE_*` values set in the workflow file.
 - Weather API keys: Open-Meteo needs none. Google Pollen and other optional
   keys are Vercel runtime env vars, not CI secrets.
-- `KERNEL_API_KEY`: opt-in legacy mode for Playwright (see `playwright.config.ts`);
-  no workflow sets it.
 
 ## Vercel preview trust boundary
 

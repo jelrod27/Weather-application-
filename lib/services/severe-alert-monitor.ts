@@ -21,6 +21,7 @@ import {
 } from './severe-alert-monitor-concurrency'
 import { processGuestPlace } from './severe-alert-monitor-guest'
 import { pointKey } from './severe-alert-monitor-shared'
+import { loadMonitorStates } from './severe-alert-monitor-state'
 
 export type { SevereMonitorHooks, SevereMonitorRunResult }
 
@@ -79,8 +80,12 @@ export async function runSevereAlertMonitor(
   supabase: SupabaseClient<Database>,
   hooks: SevereMonitorHooks = {},
 ): Promise<SevereMonitorRunResult> {
-  const subscriptions = await fetchEnabledSevereSubscriptions(supabase)
-  const guests = await fetchEnabledGuestSubscribers(supabase)
+  const [accountLoad, guestLoad] = await Promise.allSettled([
+    fetchEnabledSevereSubscriptions(supabase),
+    fetchEnabledGuestSubscribers(supabase),
+  ])
+  const subscriptions = accountLoad.status === 'fulfilled' ? accountLoad.value : []
+  const guests = guestLoad.status === 'fulfilled' ? guestLoad.value : []
   const result: SevereMonitorRunResult = {
     subscriptionsChecked: subscriptions.length,
     guestSubscribersChecked: guests.length,
@@ -92,6 +97,15 @@ export async function runSevereAlertMonitor(
     scoutAlerts: 0,
     allClears: 0,
     errors: [],
+  }
+
+  // A failed recipient query is not a healthy empty run. Process the other
+  // cohort independently so an account lookup outage cannot suppress guests.
+  for (const [label, load] of [['subscriptions', accountLoad], ['guests', guestLoad]] as const) {
+    if (load.status === 'rejected') {
+      const message = load.reason instanceof Error ? load.reason.message : 'recipient lookup failed'
+      result.errors.push(`${label}: ${message}`)
+    }
   }
 
   if (subscriptions.length === 0 && guests.length === 0) {
@@ -112,6 +126,11 @@ export async function runSevereAlertMonitor(
     return result
   }
 
+  const [accountStates, guestStates] = await Promise.all([
+    loadMonitorStates(supabase, 'account', subscriptions.map((subscription) => subscription.id)),
+    loadMonitorStates(supabase, 'guest', guests.map((subscriber) => subscriber.id)),
+  ])
+
   const needsPointFallback = nationalAlerts.some((alert) => !alert.geometry)
   const pointCache: PointKeyCache = new Map()
   const nowcastCache = new Map<string, Promise<boolean>>()
@@ -127,6 +146,9 @@ export async function runSevereAlertMonitor(
 
   await mapWithConcurrency(subscriptions, SEVERE_MONITOR_CONCURRENCY, async (subscription) => {
     try {
+      const previousIds = accountStates.get(subscription.id)
+      if (previousIds instanceof Error) throw previousIds
+      if (!previousIds) throw new Error('Missing monitor state snapshot')
       const pointKeys = await pointActiveKeysForPin(
         subscription.latitude,
         subscription.longitude,
@@ -142,6 +164,7 @@ export async function runSevereAlertMonitor(
         result,
         hooks,
         nowcastWet,
+        previousIds,
       )
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'subscription monitor failed'
@@ -151,6 +174,9 @@ export async function runSevereAlertMonitor(
 
   await mapWithConcurrency(guests, SEVERE_MONITOR_CONCURRENCY, async (subscriber) => {
     try {
+      const previousIds = guestStates.get(subscriber.id)
+      if (previousIds instanceof Error) throw previousIds
+      if (!previousIds) throw new Error('Missing monitor state snapshot')
       const pointKeys = await pointActiveKeysForPin(
         subscriber.latitude,
         subscriber.longitude,
@@ -166,6 +192,7 @@ export async function runSevereAlertMonitor(
         result,
         hooks,
         nowcastWet,
+        previousIds,
       )
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'guest monitor failed'

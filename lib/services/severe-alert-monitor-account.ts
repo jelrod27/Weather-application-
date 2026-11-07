@@ -26,23 +26,6 @@ import {
   trackingIds,
 } from './severe-alert-monitor-shared'
 
-async function loadMonitorState(
-  supabase: SupabaseClient<Database>,
-  subscriptionId: string,
-): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('alert_monitor_state')
-    .select('active_alert_ids')
-    .eq('subscription_id', subscriptionId)
-    .maybeSingle()
-
-  if (error) {
-    throw new Error(`Monitor state read failed: ${error.message}`)
-  }
-
-  return (data as { active_alert_ids?: string[] } | null)?.active_alert_ids ?? []
-}
-
 async function saveMonitorState(
   supabase: SupabaseClient<Database>,
   subscriptionId: string,
@@ -101,6 +84,7 @@ export async function processAccountPlace(
   result: SevereMonitorRunResult,
   hooks: SevereMonitorHooks,
   nowcastWet: (lat: number, lon: number) => Promise<boolean>,
+  previousIds: string[],
 ): Promise<void> {
   const prefs = hazardPrefsFrom(subscription)
   const currentAlerts = coveringAlerts(
@@ -110,7 +94,6 @@ export async function processAccountPlace(
     pointActiveKeys,
   )
   const currentIds = trackingIds(currentAlerts)
-  const previousIds = await loadMonitorState(supabase, subscription.id)
   const previousSet = new Set(previousIds)
   const liveKeys = coveringKeys(currentAlerts)
   const endedSeen = new Set<string>()

@@ -119,8 +119,7 @@ export async function fetchEnabledSevereSubscriptions(
     .eq('enabled', true)
 
   if (error) {
-    console.error('[severe-alert-subscriptions] fetch enabled failed', error)
-    return []
+    throw new Error(`Severe subscriptions lookup failed: ${error.message}`)
   }
 
   const rows: Array<{
