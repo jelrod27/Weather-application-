@@ -63,23 +63,23 @@ const denverSub = {
 function makeSupabaseMock(
   state: Record<string, string[]>,
   inserts: unknown[],
-  options?: { insertError?: { code: string } },
+  options?: { insertError?: { code: string }; stateReads?: string[]; readFailureIds?: string[]; writeFailureIds?: string[] },
 ) {
   return {
     from: (table: string) => {
       if (table === 'alert_monitor_state') {
         return {
-          select: () => ({
-            eq: (_col: string, subscriptionId: string) => ({
-              maybeSingle: async () => ({
-                data: state[subscriptionId]
-                  ? { active_alert_ids: state[subscriptionId] }
-                  : null,
-                error: null,
+          select: () => {
+            options?.stateReads?.push(table)
+            return {
+              in: async (_col: string, ids: string[]) => ({
+                data: ids.filter((id) => state[id]).map((id) => ({ subscription_id: id, active_alert_ids: state[id] })),
+                error: ids.some((id) => options?.readFailureIds?.includes(id)) ? { message: 'state unavailable' } : null,
               }),
-            }),
-          }),
+            }
+          },
           upsert: async (row: { subscription_id: string; active_alert_ids: string[] }) => {
+            if (options?.writeFailureIds?.includes(row.subscription_id)) return { error: { message: 'write unavailable' } }
             state[row.subscription_id] = row.active_alert_ids
             return { error: null }
           },
@@ -104,16 +104,15 @@ function makeSupabaseMock(
 
       if (table === 'guest_alert_monitor_state') {
         return {
-          select: () => ({
-            eq: (_col: string, subscriberId: string) => ({
-              maybeSingle: async () => ({
-                data: state[subscriberId]
-                  ? { active_alert_ids: state[subscriberId] }
-                  : null,
-                error: null,
+          select: () => {
+            options?.stateReads?.push(table)
+            return {
+              in: async (_col: string, ids: string[]) => ({
+                data: ids.filter((id) => state[id]).map((id) => ({ subscriber_id: id, active_alert_ids: state[id] })),
+                error: ids.some((id) => options?.readFailureIds?.includes(id)) ? { message: 'state unavailable' } : null,
               }),
-            }),
-          }),
+            }
+          },
           upsert: async (row: { subscriber_id: string; active_alert_ids: string[] }) => {
             state[row.subscriber_id] = row.active_alert_ids
             return { error: null }
@@ -710,6 +709,116 @@ describe('runSevereAlertMonitor', () => {
     expect(inserts).toHaveLength(0)
   })
 
+  it('loads prior state once per account batch while preserving new-alert delivery and repeated-run deduplication', async () => {
+    const subs = Array.from({ length: 3 }, (_, i) => ({ ...denverSub, id: `batch-${i}`, user_id: `user-${i}` }))
+    fetchEnabledSevereSubscriptions.mockResolvedValue(subs)
+    mockFetchAlerts.mockResolvedValue([{
+      id: 'batch-warning', event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    }])
+    const state: Record<string, string[]> = { 'batch-0': ['batch-warning'] }
+    const inserts: unknown[] = []
+    const reads: string[] = []
+    const onNewAlert = jest.fn()
+    const supabase = makeSupabaseMock(state, inserts, { stateReads: reads })
+    const first = await runSevereAlertMonitor(supabase as never, { onNewAlert })
+    expect(first.errors).toEqual([])
+    expect(first.newAlerts).toBe(2)
+    expect(onNewAlert).toHaveBeenCalledTimes(2)
+    expect(reads).toEqual(['alert_monitor_state'])
+    const second = await runSevereAlertMonitor(supabase as never, { onNewAlert })
+    expect(second.errors).toEqual([])
+    expect(second.newAlerts).toBe(0)
+    expect(onNewAlert).toHaveBeenCalledTimes(2)
+    expect(inserts).toHaveLength(2)
+  })
+
+  it('skips an unreadable account batch without changing its history and still delivers to later accounts and guests', async () => {
+    const subs = Array.from({ length: 101 }, (_, i) => ({ ...denverSub, id: `failure-${i}`, user_id: `user-${i}` }))
+    fetchEnabledSevereSubscriptions.mockResolvedValue(subs)
+    const guests = Array.from({ length: 3 }, (_, i) => ({ ...denverSub, id: `guest-batch-${i}`, email: 'guest@example.com' }))
+    fetchEnabledGuestSubscribers.mockResolvedValue(guests)
+    mockFetchAlerts.mockResolvedValue([{
+      id: 'batch-warning', event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    }])
+    const state: Record<string, string[]> = { 'failure-0': ['older-warning'], 'guest-batch-0': ['batch-warning'] }
+    const inserts: unknown[] = []
+    const reads: string[] = []
+    const onNewAlert = jest.fn()
+    const onNewGuestAlert = jest.fn()
+    const supabase = makeSupabaseMock(state, inserts, { stateReads: reads, readFailureIds: ['failure-0'] })
+    const result = await runSevereAlertMonitor(supabase as never, { onNewAlert, onNewGuestAlert })
+    expect(result.errors).toHaveLength(100)
+    expect(result.errors).toContain('failure-0: Monitor state read failed: state unavailable')
+    expect(result.newAlerts).toBe(1)
+    expect(result.guestNewAlerts).toBe(2)
+    expect(result.endedAlerts).toBe(0)
+    expect(onNewAlert).toHaveBeenCalledTimes(1)
+    expect(onNewAlert.mock.calls[0][0].subscription.id).toBe('failure-100')
+    expect(onNewGuestAlert).toHaveBeenCalledTimes(2)
+    expect(state['failure-0']).toEqual(['older-warning'])
+    expect(state['failure-1']).toBeUndefined()
+    expect(state['failure-100']).toContain('batch-warning')
+    expect(reads.filter((table) => table === 'alert_monitor_state')).toHaveLength(2)
+    expect(reads.filter((table) => table === 'guest_alert_monitor_state')).toHaveLength(1)
+    // Subsequent runs must also avoid re-delivering successful places.
+    const repeated = await runSevereAlertMonitor(supabase as never, { onNewAlert, onNewGuestAlert })
+    expect(repeated.newAlerts).toBe(0)
+    expect(repeated.guestNewAlerts).toBe(0)
+    expect(onNewAlert).toHaveBeenCalledTimes(1)
+    expect(onNewGuestAlert).toHaveBeenCalledTimes(2)
+  })
+
+  it('isolates failed guest state reads while delivering account warnings', async () => {
+    fetchEnabledGuestSubscribers.mockResolvedValue([{ ...denverSub, id: 'failed-guest', email: 'guest@example.com' }])
+    mockFetchAlerts.mockResolvedValue([{
+      id: 'account-warning', event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    }])
+    const state: Record<string, string[]> = { 'failed-guest': ['previous-warning'] }
+    const onNewAlert = jest.fn()
+    const onNewGuestAlert = jest.fn()
+    const result = await runSevereAlertMonitor(makeSupabaseMock(state, [], { readFailureIds: ['failed-guest'] }) as never, { onNewAlert, onNewGuestAlert })
+    expect(result.newAlerts).toBe(1)
+    expect(result.guestNewAlerts).toBe(0)
+    expect(result.guestEndedAlerts).toBe(0)
+    expect(result.errors).toEqual(['guest:failed-guest: Monitor state read failed: state unavailable'])
+    expect(onNewAlert).toHaveBeenCalledTimes(1)
+    expect(onNewGuestAlert).not.toHaveBeenCalled()
+    expect(state['failed-guest']).toEqual(['previous-warning'])
+  })
+
+  it('keeps per-place write failures isolated after batching state reads', async () => {
+    fetchEnabledSevereSubscriptions.mockResolvedValue([denverSub, { ...denverSub, id: 'healthy-sub' }])
+    mockFetchAlerts.mockResolvedValue([])
+    const state: Record<string, string[]> = {}
+    const result = await runSevereAlertMonitor(makeSupabaseMock(state, [], { writeFailureIds: ['sub-1'] }) as never)
+    expect(result.errors).toEqual(['sub-1: Monitor state write failed: write unavailable'])
+    expect(state['sub-1']).toBeUndefined()
+    expect(state['healthy-sub']).toEqual([])
+  })
+
+  it.each(['account', 'guest', 'both'])('reports %s recipient lookup failures while still processing readable recipients', async (failed) => {
+    const guest = { ...denverSub, id: 'healthy-guest', email: 'guest@example.com' }
+    fetchEnabledGuestSubscribers.mockResolvedValue([guest])
+    if (failed !== 'guest') fetchEnabledSevereSubscriptions.mockRejectedValue(new Error('account lookup unavailable'))
+    if (failed !== 'account') fetchEnabledGuestSubscribers.mockRejectedValue(new Error('guest lookup unavailable'))
+    mockFetchAlerts.mockResolvedValue([{
+      id: 'cohort-warning', event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    }])
+    const onNewAlert = jest.fn()
+    const onNewGuestAlert = jest.fn()
+    const result = await runSevereAlertMonitor(makeSupabaseMock({}, []) as never, { onNewAlert, onNewGuestAlert })
+    expect(result.errors).toEqual(failed === 'both'
+      ? ['subscriptions: account lookup unavailable', 'guests: guest lookup unavailable']
+      : [failed === 'account' ? 'subscriptions: account lookup unavailable' : 'guests: guest lookup unavailable'])
+    expect(onNewAlert).toHaveBeenCalledTimes(failed === 'guest' ? 1 : 0)
+    expect(onNewGuestAlert).toHaveBeenCalledTimes(failed === 'account' ? 1 : 0)
+    if (failed === 'both') expect(mockFetchAlerts).not.toHaveBeenCalled()
+  })
+
   it('processes many subscriptions without exceeding bounded concurrency', async () => {
     const subs = Array.from({ length: 12 }, (_, i) => ({
       ...denverSub,
@@ -726,18 +835,14 @@ describe('runSevereAlertMonitor', () => {
       from: (table: string) => {
         if (table === 'alert_monitor_state') {
           return {
-            select: () => ({
-              eq: () => ({
-                maybeSingle: async () => {
-                  current += 1
-                  max = Math.max(max, current)
-                  await new Promise((resolve) => setTimeout(resolve, 20))
-                  current -= 1
-                  return { data: null, error: null }
-                },
-              }),
-            }),
-            upsert: async () => ({ error: null }),
+            select: () => ({ in: async () => ({ data: [], error: null }) }),
+            upsert: async () => {
+              current += 1
+              max = Math.max(max, current)
+              await new Promise((resolve) => setTimeout(resolve, 20))
+              current -= 1
+              return { error: null }
+            },
           }
         }
         if (table === 'bitwatch_deliveries') {

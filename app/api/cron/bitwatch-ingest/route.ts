@@ -1,3 +1,4 @@
+import { withCronMonitor } from '@/lib/cron/with-cron-monitor'
 import { verifyCronBearer } from '@/lib/cron/verify-cron-auth'
 import { INGEST_SUPABASE_TIMEOUT_MS, runBitwatchIngest } from '@/lib/bitwatch/ingest'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
@@ -17,17 +18,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.message }, { status: auth.status })
     }
 
-    const supabase = createServiceRoleSupabaseClient({ timeoutMs: INGEST_SUPABASE_TIMEOUT_MS })
-    if (!supabase) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
-    }
+    return withCronMonitor('bitwatch-ingest', async () => {
+      const supabase = createServiceRoleSupabaseClient({ timeoutMs: INGEST_SUPABASE_TIMEOUT_MS })
+      if (!supabase) {
+        return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+      }
 
-    try {
-      const result = await runBitwatchIngest(supabase)
-      return NextResponse.json({ success: result.ok, ...result })
-    } catch (error) {
-      logRouteError('cron/bitwatch-ingest', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+      try {
+        const result = await runBitwatchIngest(supabase)
+        return NextResponse.json({ success: result.ok, ...result }, { status: result.ok ? 200 : 503 })
+      } catch (error) {
+        logRouteError('cron/bitwatch-ingest', error)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+      }
+    })
   }, { rateLimit: false, context: 'cron/bitwatch-ingest' })
 }

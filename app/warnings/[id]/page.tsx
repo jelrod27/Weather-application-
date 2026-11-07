@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageWrapper from '@/components/page-wrapper'
@@ -17,7 +18,9 @@ type PageParams = {
   searchParams?: Promise<{ returnTo?: string }>
 }
 
-async function loadAlert(rawId: string) {
+// Share the canonical lookup and NWS fallback with metadata for this render.
+// React clears this cache between requests so warning updates and retries stay fresh.
+const loadAlert = cache(async (rawId: string) => {
   const decoded = (() => {
     try {
       return decodeURIComponent(rawId)
@@ -33,7 +36,7 @@ async function loadAlert(rawId: string) {
   const alerts = await fetchActiveAlertsDetail()
   const matchedId = findAlertByQueryParam(alerts, decoded) ?? findAlertByQueryParam(alerts, warningIdSlug(decoded))
   return alerts.find((alert) => alert.id === matchedId) ?? null
-}
+})
 
 /** areaDesc is a semicolon list of counties that can run to hundreds of characters. */
 function shortenAreaDesc(areaDesc: string): string {

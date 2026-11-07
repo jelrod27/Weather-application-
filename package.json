@@ -80,7 +80,6 @@
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^16.4.3",
     "@next/eslint-plugin-next": "^16.4.3",
-    "@onkernel/sdk": "^0.136.0",
     "@playwright/test": "^1.64.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",

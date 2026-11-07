@@ -30,6 +30,8 @@ import {
   RADAR_OVERLAY_REFRESH_MS,
 } from '@/components/radar-v2/radar-constants'
 import { alertStyle, spcStyle, stormReportStyle } from '@/components/radar-v2/radar-styles'
+import { useRadarTileHealth } from '@/hooks/useRadarTileHealth'
+import type { RadarTileHealth } from '@/lib/radar/radar-tile-recovery'
 
 import type Map from 'ol/Map'
 import TileLayer from 'ol/layer/Tile'
@@ -56,6 +58,7 @@ export interface UseRadarOverlayLoaderResult {
   metadata: RadarMetadata | null
   frames: RadarFrame[]
   metadataError: string | null
+  tileHealth: RadarTileHealth
   activeLayers: RadarShareLayerState
   layerSheetOpen: boolean
   setLayerSheetOpen: (open: boolean) => void
@@ -111,6 +114,18 @@ export function useRadarOverlayLoader({
   const [alertsGeoJson, setAlertsGeoJson] = useState<RadarFeatureCollection | null>(null)
   const [spcGeoJson, setSpcGeoJson] = useState<RadarFeatureCollection | null>(null)
   const [stormReports, setStormReports] = useState<RadarStormReport[]>([])
+  const [radarSource, setRadarSource] = useState<XYZ | null>(null)
+  const tileHealth = useRadarTileHealth(radarSource, mapInstanceRef.current, activeLayers.precipitation && metadata != null)
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    const layer = radarLayerRef.current
+    if (!map || !layer || !radarSource || layer.getSource() !== radarSource) return
+    // The health hook's effects run first. Fast image failures must not arrive
+    // before its listeners are attached to the newly created source.
+    map.addLayer(layer)
+    return () => { map.removeLayer(layer) }
+  }, [radarSource, mapInstanceRef, radarLayerRef])
 
   const urlStateInitializedRef = useRef(false)
   const frameIndexRef = useRef(0)
@@ -265,6 +280,7 @@ export function useRadarOverlayLoader({
     lastRadarTileFetchRef.current = tileFetchKey
 
     if (!radarLayerRef.current) {
+      const imageAttempts = new WeakMap<object, number>()
       const layer = new TileLayer({
         source: new XYZ({
           url: radarTemplate,
@@ -272,6 +288,16 @@ export function useRadarOverlayLoader({
           maxZoom: RAINVIEWER_MAX_NATIVE_ZOOM,
           tileSize: metadata.rainviewer.tileSize,
           transition: 0,
+          tileLoadFunction: (tile, src) => {
+            if (!('getImage' in tile) || typeof tile.getImage !== 'function') return
+            const image: unknown = tile.getImage()
+            if (!(image instanceof HTMLImageElement)) return
+            const attempt = imageAttempts.get(tile) ?? 0
+            imageAttempts.set(tile, attempt + 1)
+            // Firefox may reuse a failed decoded image for an identical URL.
+            // Retry the same logical tile with a fresh browser request key.
+            image.src = attempt === 0 ? src : `${src}?retry=${attempt}`
+          },
         }),
         opacity,
         zIndex: 500,
@@ -280,7 +306,7 @@ export function useRadarOverlayLoader({
       })
       layer.setVisible(activeLayers.precipitation)
       radarLayerRef.current = layer
-      map.addLayer(layer)
+      setRadarSource(layer.getSource())
     } else {
       const source = radarLayerRef.current.getSource()
       if (source instanceof XYZ) {
@@ -407,6 +433,7 @@ export function useRadarOverlayLoader({
     metadata,
     frames,
     metadataError,
+    tileHealth,
     activeLayers,
     layerSheetOpen,
     setLayerSheetOpen,

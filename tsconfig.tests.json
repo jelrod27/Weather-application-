@@ -9,6 +9,14 @@
     ]
   },
   "include": [
+    "__tests__/useRadarOverlayLoader.test.tsx",
+    "__tests__/severe-alert-recipient-loading.test.ts",
+    "__tests__/push-delivery-security.test.ts",
+    "__tests__/cron-semantic-monitoring.test.ts",
+    "__tests__/severe-alert-monitor.test.ts",
+    "__tests__/severe-alert-monitor-state.test.ts",
+    "__tests__/warning-detail-loading.test.tsx",
+    "__tests__/warning-detail-recovery.test.tsx",
     "__tests__/production-smoke-workflow.test.ts",
     "__tests__/weather-city-page-metadata.test.ts",
     "lib/cron/**/*.ts",
@@ -37,6 +45,8 @@
     "__tests__/weather-journey.test.tsx",
     "__tests__/radar-controls.test.tsx",
     "__tests__/radar-shell-status.test.tsx",
+    "__tests__/radar-tile-recovery.test.ts",
+    "tests/e2e/radar-tile-rendering.spec.ts",
     "__tests__/travel-controls.test.tsx",
     "__tests__/travel-corridor-map.test.tsx",
     "__tests__/outdoor-windows.test.ts",

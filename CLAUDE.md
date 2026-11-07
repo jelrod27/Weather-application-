@@ -115,7 +115,7 @@ OpenLayers (`ol`) draws every map except one: radar (`components/radar-v2/`, `ho
 ## Testing
 
 - Unit tests: `__tests__/**/*.test.[tj]s?(x)` (Jest + jsdom, `jest.config.mjs`). CSS, images, `react-markdown`, `rehype-sanitize`, and `remark-gfm` are mocked via `moduleNameMapper` — importing markdown libs in a test needs no extra setup.
-- E2E: `tests/e2e/**/*.spec.ts`. Local runs auto-start the dev server against `127.0.0.1:3000`; setting `PLAYWRIGHT_TEST_BASE_URL` targets a deployed preview instead. `KERNEL_API_KEY` opts into OnKernel cloud browsers (legacy) and then *requires* a base URL.
+- E2E: `tests/e2e/**/*.spec.ts`. Local runs auto-start the dev server against `127.0.0.1:3000`; setting `PLAYWRIGHT_TEST_BASE_URL` targets a deployed preview instead. Both targets use native Playwright browsers; CI selects Chromium with `--project=chromium`.
 - **Type-check gap**: `tsconfig.json` excludes test files and `tsconfig.tests.json` includes only a handful by name, so most of `__tests__/` is never type-checked by the hook or CI. Widening it is tracked separately — new tests are not automatically covered.
 
 ## Git Hooks (husky)
