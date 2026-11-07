@@ -39,21 +39,22 @@ def main():
         parser.error('--scratch must be a dedicated mounted volume of at most 80 MiB')
     if deps.name != 'node_modules' or not (deps / 'jest/bin/jest.js').is_file():
         parser.error('--deps must contain an existing Jest installation')
-    # One owner per volume. Only this runner's disposable transform cache is
-    # reset, after locking and before any target process exists. Never follow
-    # a cache symlink or remove source/user files.
+    # One owner per volume. Reset only this runner's disposable directories,
+    # after locking and before any target process exists. Never follow a
+    # symlink or remove source/user files.
     lock = os.open(scratch.parent / 'runner.lock', os.O_CREAT | os.O_RDWR, 0o600)
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         parser.error('scratch volume is already in use')
-    cache = scratch / 'cache'
-    if cache.is_symlink():
-        parser.error('scratch cache must not be a symlink')
-    if cache.exists():
-        shutil.rmtree(cache)
-    for name in ['home', 'tmp', 'cache']:
-        (scratch / name).mkdir(exist_ok=True)
+    disposable_directories = [scratch / name for name in ['home', 'tmp', 'cache']]
+    for directory in disposable_directories:
+        if directory.is_symlink():
+            parser.error(f'scratch {directory.name} must not be a symlink')
+    for directory in disposable_directories:
+        if directory.exists():
+            shutil.rmtree(directory)
+        directory.mkdir()
     quote = json.dumps
     reads = [repo, deps, node.parent, scratch, Path('/System'), Path('/usr'), Path('/bin'), Path('/sbin')]
     profile = '\n'.join([
@@ -82,6 +83,9 @@ def main():
 const fs = require('fs'), net = require('net'), cp = require('child_process');
 const assert = require('assert');
 assert.deepStrictEqual(Object.keys(process.env).sort(), JSON.parse(process.argv[1]).sort());
+for (const directory of [process.env.HOME, process.env.TMPDIR, process.env.XDG_CACHE_HOME]) {
+  assert.deepStrictEqual(fs.readdirSync(directory), [], 'disposable directories must start empty');
+}
 for (const op of [
   () => fs.readFileSync(process.argv[2]),
   () => fs.writeFileSync(process.argv[3], 'must not write'),

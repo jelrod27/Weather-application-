@@ -31,6 +31,7 @@ export default function AlertBell() {
 
 function AccountAlertBell() {
   const requests = useRef<AbortController | null>(null)
+  const latestRequest = useRef(0)
   const [open, setOpen] = useState(false)
   const [alerts, setAlerts] = useState<ParsedUserAlert[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -39,7 +40,8 @@ function AccountAlertBell() {
   const fetchAlerts = useCallback(async () => {
     const controller = requests.current
     if (!controller || controller.signal.aborted) return
-    const isCurrent = () => requests.current === controller && !controller.signal.aborted
+    const requestId = ++latestRequest.current
+    const isCurrent = () => requests.current === controller && !controller.signal.aborted && requestId === latestRequest.current
     setLoading(true)
     try {
       const res = await fetch('/api/user/alerts?limit=12', { signal: controller.signal })

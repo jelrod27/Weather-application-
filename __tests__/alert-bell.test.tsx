@@ -11,10 +11,10 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-function response(owner: string): Response {
+function response(owner: string, readAt: string | null = null): Response {
   return { ok: true, json: async () => ({
-    unreadCount: 1,
-    alerts: [{ id: owner, kind: 'severe_weather', createdAt: '2030-01-01', readAt: null, title: 'Warning', summary: `${owner} private location`, href: '/warnings' }],
+    unreadCount: readAt ? 0 : 1,
+    alerts: [{ id: owner, kind: 'severe_weather', createdAt: '2030-01-01', readAt, title: 'Warning', summary: `${owner} private location`, href: '/warnings' }],
   }) } as Response
 }
 
@@ -80,6 +80,36 @@ describe('alert bell account lifecycle', () => {
     expect(request.signal?.aborted ?? false).toBe(false)
     await act(async () => patch.resolve(response('A')))
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the latest read state when an older poll finishes after a refresh', async () => {
+    const poll = deferred<Response>()
+    fetchMock.mockResolvedValueOnce(response('A')).mockReturnValueOnce(poll.promise)
+      .mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce(response('A', '2030-01-02'))
+    render(<AlertBell />)
+    await act(async () => {})
+    act(() => jest.advanceTimersByTime(60_000))
+    fireEvent.click(screen.getByRole('button', { name: /weather alerts/i }))
+    fireEvent.click(screen.getByRole('button', { name: /mark all read/i }))
+    await act(async () => {})
+    expect(screen.getByRole('button', { name: 'Weather alerts' })).toBeInTheDocument()
+    await act(async () => poll.resolve(response('A')))
+    expect(screen.getByRole('button', { name: 'Weather alerts' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /mark all read/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps loading while the latest poll is pending after an older request finishes', async () => {
+    const initial = deferred<Response>(), poll = deferred<Response>()
+    fetchMock.mockReturnValueOnce(initial.promise).mockReturnValueOnce(poll.promise)
+    render(<AlertBell />)
+    act(() => jest.advanceTimersByTime(60_000))
+    fireEvent.click(screen.getByRole('button', { name: /weather alerts/i }))
+    await act(async () => initial.resolve(response('stale')))
+    expect(screen.getByText('Loading alerts…')).toBeInTheDocument()
+    expect(screen.queryByText('stale private location')).not.toBeInTheDocument()
+    await act(async () => poll.resolve(response('latest')))
+    expect(screen.getByText('latest private location')).toBeInTheDocument()
+    expect(screen.queryByText('Loading alerts…')).not.toBeInTheDocument()
   })
 
   it('invalidates an earlier A lifecycle even when the same user returns', async () => {

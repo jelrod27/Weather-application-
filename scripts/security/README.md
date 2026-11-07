@@ -41,8 +41,8 @@ Next build/config behavior. The normal project Jest configuration is unchanged
 except that its custom configuration object now has a named export.
 
 Defaults: 60 seconds CPU/wall, 512 MiB monitored RSS, 16 MiB per file, 128 KiB
-captured output. A volume lock prevents concurrent jobs; the runner resets only
-its disposable transform cache between jobs to avoid cumulative disk use.
+captured output. A volume lock prevents concurrent jobs; the runner resets its
+disposable home, temporary files and caches between jobs to avoid cumulative disk use.
 Compiler/full-suite checks used 1536 MiB monitored RSS and at
 most 120 seconds. Only bounded stdout/stderr is returned; files from scratch
 are not retained. No secrets or provider credentials belong
