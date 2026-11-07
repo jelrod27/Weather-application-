@@ -78,6 +78,9 @@ export async function middleware(request: NextRequest) {
     },
   })
   response.headers.set('Content-Security-Policy', csp)
+  if (/^\/alerts\/(?:manage|verify)\/?$/.test(request.nextUrl.pathname)) {
+    response.headers.set('Referrer-Policy', 'no-referrer')
+  }
 
   // Normalize aliases before static page rendering. Reading searchParams in
   // an on-demand static city page causes DYNAMIC_SERVER_USAGE in production.

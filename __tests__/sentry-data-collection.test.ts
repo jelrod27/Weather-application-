@@ -6,7 +6,7 @@ const expectedDataCollection = {
   userInfo: false,
   cookies: false,
   httpHeaders: {
-    request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+    request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user', 'referer'] },
     response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
   },
   httpBodies: [],

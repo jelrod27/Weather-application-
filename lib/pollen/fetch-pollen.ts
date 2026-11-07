@@ -85,7 +85,16 @@ async function fetchGooglePollen(
       `&location.latitude=${latitude}&location.longitude=${longitude}&days=1`
 
     const response = await fetchWithTimeout(googlePollenUrl, { signal })
-    if (!response.ok) return null
+    if (!response.ok) {
+      // Keep credential/quota failures observable without logging the keyed
+      // URL or Google's response body, which can contain sensitive context.
+      logRouteError('pollen', new Error('Google Pollen request rejected'), {
+        upstream: 'pollen.googleapis.com',
+        reason: 'http_error',
+        status: response.status,
+      })
+      return null
+    }
 
     const data = await response.json()
     const dailyInfo = data.dailyInfo?.[0]

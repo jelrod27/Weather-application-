@@ -2,7 +2,7 @@ import { z } from 'zod'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { ApiError, withApiRoute } from '@/lib/api/with-api-route'
-import { upsertGuestSubscriber } from '@/lib/services/guest-alert-subscribers'
+import { GuestSubscriberConflictError, upsertGuestSubscriber } from '@/lib/services/guest-alert-subscribers'
 import { sendGuestManageEmail, sendGuestVerifyEmail } from '@/lib/services/guest-alert-email'
 import { claimGuestEmailSlot } from '@/lib/services/guest-alert-email-limit'
 import { requestIp, verifyTurnstileToken } from '@/lib/security/turnstile'
@@ -69,7 +69,13 @@ export async function POST(request: NextRequest) {
         notifySevereThunderstorm: parsed.data.notifySevereThunderstorm,
         notifyFlashFlood: parsed.data.notifyFlashFlood,
         notifyUpgrades: parsed.data.notifyUpgrades,
+      }).catch((error: unknown) => {
+        if (error instanceof GuestSubscriberConflictError) return null
+        throw error
       })
+      // Another request won the row transition. Never send tokens from a
+      // stale snapshot, or expose the recipient's current state to callers.
+      if (!result) return NextResponse.json(EMAIL_RESPONSE)
 
       if (result.alreadyVerified && result.manageToken) {
         const emailResult = await sendGuestManageEmail({

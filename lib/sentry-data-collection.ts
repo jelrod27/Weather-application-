@@ -5,7 +5,9 @@ export const SENTRY_DATA_COLLECTION = {
   userInfo: false,
   cookies: false,
   httpHeaders: {
-    request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+    // Referer can embed a guest manage capability even when dedicated URL
+    // query fields are redacted. This policy covers events and request spans.
+    request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user', 'referer'] },
     response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
   },
   httpBodies: [],
