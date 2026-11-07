@@ -18,6 +18,13 @@ export type GuestAlertSubscriber = {
 const GUEST_SELECT =
   'id, email, latitude, longitude, location_label, enabled, verified_at, manage_token_hash, notify_tornado, notify_severe_thunderstorm, notify_flash_flood, notify_upgrades'
 
+export class GuestSubscriberConflictError extends Error {
+  constructor() {
+    super('Guest subscription changed during resend')
+    this.name = 'GuestSubscriberConflictError'
+  }
+}
+
 type GuestRow = {
   id: string
   email: string
@@ -143,13 +150,18 @@ export async function upsertGuestSubscriber(
   }
 
   if (row) {
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('guest_alert_subscribers')
       .update(payload as never)
       .eq('id', row.id)
+      .is('verified_at', null)
+      .eq('manage_token_hash', row.manage_token_hash)
+      .select(GUEST_SELECT)
+      .maybeSingle()
     if (error) throw new Error(`Guest resend update failed: ${error.message}`)
+    if (!updated) throw new GuestSubscriberConflictError()
     return {
-      subscriber: { ...mapRow(row), ...input, locationLabel: input.locationLabel, verifiedAt: null },
+      subscriber: mapRow(updated as GuestRow),
       verifyToken,
       manageToken,
       alreadyVerified: false,
@@ -188,12 +200,13 @@ export async function verifyGuestSubscriber(
   if (error) throw new Error(`Guest verify lookup failed: ${error.message}`)
   const row = data as (GuestRow & { verify_token_expires_at?: string | null }) | null
   if (!row) return null
-  if (row.verify_token_expires_at && new Date(row.verify_token_expires_at).getTime() < Date.now()) {
+  const expiresAt = row.verify_token_expires_at ? Date.parse(row.verify_token_expires_at) : NaN
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
     return null
   }
 
   const now = new Date().toISOString()
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('guest_alert_subscribers')
     .update({
       verified_at: now,
@@ -202,9 +215,14 @@ export async function verifyGuestSubscriber(
       updated_at: now,
     } as never)
     .eq('id', row.id)
+    .eq('verify_token_hash', hash)
+    .is('verified_at', null)
+    .gt('verify_token_expires_at', now)
+    .select(GUEST_SELECT)
+    .maybeSingle()
 
   if (updateError) throw new Error(`Guest verify update failed: ${updateError.message}`)
-  return { ...mapRow(row), verifiedAt: now }
+  return updated ? mapRow(updated as GuestRow) : null
 }
 
 export async function findGuestByManageToken(

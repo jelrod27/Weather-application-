@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
@@ -23,37 +23,49 @@ function tierClass(tier?: ParsedUserAlert['tier']): string {
 
 export default function AlertBell() {
   const { user, isInitialized } = useAuth()
+  if (!isInitialized || !user) return null
+  // Replacing the keyed child clears loaded rows before the next account's
+  // first render, independently of effect cleanup or response timing.
+  return <AccountAlertBell key={user.id} />
+}
+
+function AccountAlertBell() {
+  const requests = useRef<AbortController | null>(null)
   const [open, setOpen] = useState(false)
   const [alerts, setAlerts] = useState<ParsedUserAlert[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
 
   const fetchAlerts = useCallback(async () => {
-    if (!user) return
+    const controller = requests.current
+    if (!controller || controller.signal.aborted) return
+    const isCurrent = () => requests.current === controller && !controller.signal.aborted
     setLoading(true)
     try {
-      const res = await fetch('/api/user/alerts?limit=12')
+      const res = await fetch('/api/user/alerts?limit=12', { signal: controller.signal })
       if (!res.ok) return
       const data = (await res.json()) as { alerts: ParsedUserAlert[]; unreadCount: number }
+      if (!isCurrent()) return
       setAlerts(data.alerts ?? [])
       setUnreadCount(data.unreadCount ?? 0)
     } catch (error) {
-      console.error('[alert-bell] fetch failed', error)
+      if (isCurrent()) console.error('[alert-bell] fetch failed', error)
     } finally {
-      setLoading(false)
+      if (isCurrent()) setLoading(false)
     }
-  }, [user])
+  }, [])
 
   useEffect(() => {
-    if (!user) {
-      setAlerts([])
-      setUnreadCount(0)
-      return
-    }
+    const controller = new AbortController()
+    requests.current = controller
     fetchAlerts()
     const interval = setInterval(fetchAlerts, POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [user, fetchAlerts])
+    return () => {
+      clearInterval(interval)
+      controller.abort()
+      if (requests.current === controller) requests.current = null
+    }
+  }, [fetchAlerts])
 
   useEffect(() => {
     if (!open) return
@@ -66,20 +78,22 @@ export default function AlertBell() {
   }, [open])
 
   async function markRead(ids: string[]) {
+    const controller = requests.current
+    if (!controller || controller.signal.aborted) return
     try {
       await fetch('/api/user/alerts', {
         method: 'PATCH',
+        // Let an issued mutation finish when clicking its link unmounts the
+        // navigation. The lifecycle guard below still prevents stale refresh.
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       })
     } catch (error) {
-      console.error('[alert-bell] mark read failed', error)
+      if (!controller.signal.aborted) console.error('[alert-bell] mark read failed', error)
     } finally {
-      await fetchAlerts()
+      if (requests.current === controller && !controller.signal.aborted) await fetchAlerts()
     }
   }
-
-  if (!isInitialized || !user) return null
 
   return (
     <div className="relative alert-bell-container">

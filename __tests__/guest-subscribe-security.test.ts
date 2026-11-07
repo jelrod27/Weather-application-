@@ -3,13 +3,16 @@
 import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/alerts/guest-subscribe/route'
 import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
-import { upsertGuestSubscriber } from '@/lib/services/guest-alert-subscribers'
+import { GuestSubscriberConflictError, upsertGuestSubscriber } from '@/lib/services/guest-alert-subscribers'
 import { sendGuestVerifyEmail, sendGuestManageEmail } from '@/lib/services/guest-alert-email'
 
 jest.mock('@/lib/services/weather-rate-limiter', () => ({ rateLimitRequest: jest.fn().mockResolvedValue({ allowed: true, headers: {} }) }))
 jest.mock('@/lib/supabase/service-role-client', () => ({ createServiceRoleSupabaseClient: jest.fn() }))
 jest.mock('@/lib/security/turnstile', () => ({ requestIp: () => '203.0.113.1', verifyTurnstileToken: async () => true }))
-jest.mock('@/lib/services/guest-alert-subscribers', () => ({ upsertGuestSubscriber: jest.fn() }))
+jest.mock('@/lib/services/guest-alert-subscribers', () => ({
+  ...jest.requireActual('@/lib/services/guest-alert-subscribers'),
+  upsertGuestSubscriber: jest.fn(),
+}))
 jest.mock('@/lib/services/guest-alert-email', () => ({ sendGuestVerifyEmail: jest.fn(), sendGuestManageEmail: jest.fn() }))
 
 describe('guest email recipient cooldown', () => {
@@ -46,6 +49,18 @@ describe('guest email recipient cooldown', () => {
     expect((await subscribe()).status).toBe(503)
     expect(upsertGuestSubscriber).not.toHaveBeenCalled()
     expect(sendGuestVerifyEmail).not.toHaveBeenCalled()
+  })
+
+  it('keeps a concurrent resend conflict indistinguishable and sends no stale token', async () => {
+    const accepted = await (await subscribe()).json()
+    jest.mocked(sendGuestVerifyEmail).mockClear()
+    jest.mocked(sendGuestManageEmail).mockClear()
+    jest.mocked(upsertGuestSubscriber).mockRejectedValue(new GuestSubscriberConflictError())
+    const response = await subscribe()
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(accepted)
+    expect(sendGuestVerifyEmail).not.toHaveBeenCalled()
+    expect(sendGuestManageEmail).not.toHaveBeenCalled()
   })
 
   it('uses the same hashed quota key across email casing and whitespace', async () => {

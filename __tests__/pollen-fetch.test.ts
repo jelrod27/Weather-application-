@@ -74,6 +74,10 @@ describe('fetchPollenForLocation', () => {
     expect(mockLogRouteError).toHaveBeenCalled()
     const logged = JSON.stringify(mockLogRouteError.mock.calls)
     expect(logged).not.toContain('secret-key-value')
+    for (const [, error] of mockLogRouteError.mock.calls) {
+      expect(String(error)).not.toContain('secret-key-value')
+      if (error instanceof Error) expect(error.stack).not.toContain('secret-key-value')
+    }
   })
 
   it('falls back to Open-Meteo when Google key is absent', async () => {
@@ -93,5 +97,29 @@ describe('fetchPollenForLocation', () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled()
     expect(result.source).toBe('open-meteo')
     expect(result.tree.Birch).toBe('Moderate')
+  })
+
+  it.each([403, 429, 503])('reports rejected Google requests safely (HTTP %s) and retains fallback', async status => {
+    process.env.GOOGLE_POLLEN_API_KEY = 'dummy-sensitive-google-key'
+    const readBody = jest.fn(async () => ({ error: { message: 'request key=dummy-sensitive-google-key' } }))
+    mockFetchWithTimeout.mockResolvedValueOnce({ ok: false, status, json: readBody } as unknown as Response)
+    mockFetchOpenMeteoAirQuality.mockResolvedValueOnce({
+      hourly: { time: ['2025-03-25T14:00'], birch_pollen: [35], grass_pollen: [10], ragweed_pollen: [5] },
+      utc_offset_seconds: 0,
+    } as never)
+
+    const result = await fetchPollenForLocation(40.71, -74.01)
+
+    expect(result.source).toBe('open-meteo')
+    expect(mockLogRouteError).toHaveBeenCalledWith('pollen', expect.any(Error), {
+      upstream: 'pollen.googleapis.com', reason: 'http_error', status,
+    })
+    expect(JSON.stringify(mockLogRouteError.mock.calls)).not.toContain('dummy-sensitive-google-key')
+    for (const [, error] of mockLogRouteError.mock.calls) {
+      expect(String(error)).not.toContain('dummy-sensitive-google-key')
+      if (error instanceof Error) expect(error.stack).not.toContain('dummy-sensitive-google-key')
+    }
+    expect(JSON.stringify(result)).not.toContain('dummy-sensitive-google-key')
+    expect(readBody).not.toHaveBeenCalled()
   })
 })

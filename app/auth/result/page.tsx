@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { themeTokens } from '@/lib/theme-tokens'
+import { validateRedirectPath } from '@/lib/utils/redirect-validation'
 
 function AuthResultContent() {
     const searchParams = useSearchParams()
@@ -13,7 +14,7 @@ function AuthResultContent() {
 
     const success = searchParams.get('success') === 'true'
     const error = searchParams.get('error')
-    const next = searchParams.get('next') || '/dashboard'
+    const next = validateRedirectPath(searchParams.get('next'))
 
     useEffect(() => {
         if (success) {
