@@ -15,6 +15,8 @@ jest.mock('@/components/alerts/alert-bell', () => ({ __esModule: true, default: 
 
 import Navigation from '@/components/navigation';
 
+afterEach(() => { mockPathname = '/'; });
+
 describe('Navigation', () => {
   it('shows formatted location and rounded temperature in the header', () => {
     render(
@@ -78,10 +80,8 @@ describe('Navigation', () => {
  expect(screen.getByRole('button',{name:'Weather'})).toHaveClass('font-bold')
  fireEvent.click(screen.getByRole('button',{name:'Weather'}))
  expect(screen.getByRole('link',{name:'SPACE'})).toHaveClass('bg-secondary')
- mockPathname='/'
  })
  it('does not activate SPACE on a neighboring prefix',()=>{
  mockPathname='/space-weather-other';render(<Navigation/>)
  expect(screen.getByRole('button',{name:'Weather'})).not.toHaveClass('font-bold')
- mockPathname='/'
  })

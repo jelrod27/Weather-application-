@@ -214,6 +214,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowFullsize(true)}
+                aria-label="Expand solar image"
                 className="font-mono text-xs"
               >
                 <Maximize2 className="w-4 h-4" />
@@ -319,12 +320,18 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
             >
               Close
             </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={`Sun in ${bandName} (expanded)`}
-              className="max-w-full max-h-[90vh] object-contain"
-            />
+            {imageUrl && !imageError ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={imageUrl}
+                alt={`Sun in ${bandName} (expanded)`}
+                className="max-w-full max-h-[90vh] object-contain"
+              />
+            ) : (
+              <div role="status" className="font-mono text-sm text-white">
+                {imageError ? 'Solar imagery unavailable' : 'ACQUIRING SOLAR DATA...'}
+              </div>
+            )}
             <div className={cn('text-center mt-2 font-mono text-sm', selectedWavelength.color)}>
               {bandName} - {selectedWavelength.description}
             </div>

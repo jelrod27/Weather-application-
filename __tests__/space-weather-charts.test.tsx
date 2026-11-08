@@ -284,3 +284,114 @@ describe('SpaceWeatherCharts observation coverage', () => {
   expect(mockFetch).toHaveBeenCalledTimes(8)
  })
 })
+
+describe('SpaceWeatherCharts background refresh', () => {
+  const response = (url: string, speed = 700) => ({
+    ok: true,
+    json: async () => {
+      const time = new Date(Date.now() - 60_000).toISOString();
+      if (url.includes('plasma')) return {
+        data: [{ time, speed, density: 5, temperature: 120000, bz: -3, bx: 1, by: 2, bt: 4 }],
+        source: 'NOAA SWPC (RTSW)',
+      };
+      if (url.includes('magnetometer')) return { data: [{ time, hp: 45 }], source: 'GOES' };
+      if (url.includes('xray-flux')) return { data: { recent: [{ timeTag: time, flux: 1e-6 }] }, source: 'GOES' };
+      return { data: [{ time, flux: 0.5 }], source: 'GOES' };
+    },
+  });
+
+  function deferRequests() {
+    const requests: {
+      url: string;
+      resolve: (value: ReturnType<typeof response>) => void;
+      reject: (reason: Error) => void;
+    }[] = [];
+    mockFetch.mockImplementation((url: string) => new Promise((resolve, reject) => {
+      requests.push({ url, resolve, reject });
+    }));
+    return requests;
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockFetch.mockReset();
+    mockFetch.mockImplementation((url: string) => Promise.resolve(response(url)));
+  });
+
+  afterEach(() => jest.useRealTimers());
+
+  it('keeps observations mounted while a scheduled refresh is pending and updates them when it finishes', async () => {
+    await act(async () => { render(<SpaceWeatherCharts />); });
+    const reading = screen.getByText('700 km/s');
+    const requests = deferRequests();
+
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+
+    expect(screen.queryAllByText('Loading...')).toHaveLength(0);
+    expect(screen.getByText('700 km/s')).toBe(reading);
+    await act(async () => {
+      requests.forEach(request => request.resolve(response(request.url, 710)));
+    });
+    expect(screen.getByText('710 km/s')).toBe(reading);
+  });
+
+  it('keeps previous observations with an explicit refresh failure until a successful refresh', async () => {
+    await act(async () => { render(<SpaceWeatherCharts />); });
+    const reading = screen.getByText('700 km/s');
+    mockFetch.mockRejectedValue(new Error('Offline'));
+
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+
+    expect(screen.getByText('700 km/s')).toBe(reading);
+    expect(screen.getByRole('alert')).toHaveTextContent(/failed to refresh/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/previous observations.*out of date/i);
+    expect(screen.getAllByText(/Observed UTC:/)).toHaveLength(10);
+
+    const requests = deferRequests();
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText('700 km/s')).toBe(reading);
+
+    await act(async () => {
+      requests.forEach(request => request.resolve(response(request.url, 720)));
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('720 km/s')).toBeInTheDocument();
+  });
+
+  it('clears a failed source on a partial refresh instead of implying its old observations refreshed', async () => {
+    await act(async () => { render(<SpaceWeatherCharts />); });
+    mockFetch.mockImplementation((url: string) => url.includes('plasma')
+      ? Promise.reject(new Error('Plasma offline'))
+      : Promise.resolve(response(url)));
+
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+
+    expect(screen.queryByText('700 km/s')).not.toBeInTheDocument();
+    expect(screen.getByText('-- km/s')).toBeInTheDocument();
+    expect(screen.getByText('45.0 nT')).toBeInTheDocument();
+    expect(screen.getAllByText('No data available')).toHaveLength(7);
+  });
+
+  it('ignores an old background response after a range change and lets the foreground load finish across a poll tick', async () => {
+    await act(async () => { render(<SpaceWeatherCharts />); });
+    const oldRequests = deferRequests();
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+
+    const rangeRequests = deferRequests();
+    await act(async () => { fireEvent.click(screen.getByLabelText('Set time range to 6H')); });
+    await act(async () => {
+      oldRequests.forEach(request => request.resolve(response(request.url, 999)));
+    });
+    expect(screen.queryByText('999 km/s')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Loading...')).toHaveLength(10);
+
+    // A poll must not supersede an unresolved foreground request.
+    await act(async () => { jest.advanceTimersByTime(60_000); });
+    await act(async () => {
+      rangeRequests.slice(0, 4).forEach(request => request.resolve(response(request.url, 850)));
+    });
+    expect(screen.queryAllByText('Loading...')).toHaveLength(0);
+    expect(screen.getByText('850 km/s')).toBeInTheDocument();
+  });
+});

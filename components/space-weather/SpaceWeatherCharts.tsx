@@ -424,10 +424,17 @@ export default function SpaceWeatherCharts() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchGeneration = useRef(0);
-  const fetchData = useCallback(async (selectedRange: TimeRange) => {
+  const fetchPending = useRef(false);
+  const fetchData = useCallback(async (selectedRange: TimeRange, background = false) => {
+    // A slow foreground load must finish before polling can supersede it.
+    // Foreground range changes can still replace an in-flight background fetch.
+    if (background && fetchPending.current) return;
     const generation = ++fetchGeneration.current;
-    setIsLoading(true);
-    setError(null);
+    fetchPending.current = true;
+    if (!background) {
+      setIsLoading(true);
+      setError(null);
+    }
 
     try {
       const results = await Promise.allSettled([
@@ -450,6 +457,11 @@ export default function SpaceWeatherCharts() {
       ]);
 
       if (generation !== fetchGeneration.current) return;
+      const allFailed = results.every((r) => r.status === 'rejected');
+      if (background && allFailed) {
+        setError('Failed to refresh space weather data. Any previous observations shown may be out of date.');
+        return;
+      }
       // Each route answers with a `{ data, source }` envelope, so the series
       // has to be unwrapped rather than read off the response body.
       setDatasets({
@@ -459,22 +471,23 @@ export default function SpaceWeatherCharts() {
         xray: xrayChartSeries(results[3]),
       });
 
-      const allFailed = results.every((r) => r.status === 'rejected');
-      if (allFailed) {
-        setError('Failed to fetch space weather data. Please try again.');
-      }
+      setError(allFailed ? 'Failed to fetch space weather data. Please try again.' : null);
     } catch (err) {
+      if (generation !== fetchGeneration.current) return;
       console.error('[SpaceWeatherCharts]', err);
       setError('An unexpected error occurred while fetching data.');
     } finally {
-      if (generation === fetchGeneration.current) setIsLoading(false);
+      if (generation === fetchGeneration.current) {
+        fetchPending.current = false;
+        setIsLoading(false);
+      }
     }
   }, []);
 
   const invalidateFetch = useCallback(() => { fetchGeneration.current++; }, []);
   useEffect(() => {
     void fetchData(range);
-    const timer = setInterval(() => { void fetchData(range); }, 60_000);
+    const timer = setInterval(() => { void fetchData(range, true); }, 60_000);
     return () => { clearInterval(timer); invalidateFetch(); };
   }, [range, fetchData, invalidateFetch]);
 
@@ -544,7 +557,7 @@ export default function SpaceWeatherCharts() {
 
       {/* Error state */}
       {error && !isLoading && (
-        <div className="border border-red-500/50 rounded bg-red-500/10 p-4 text-center">
+        <div role="alert" className="border border-red-500/50 rounded bg-red-500/10 p-4 text-center">
           <div className="text-red-400 font-mono text-sm">{error}</div>
           <button
             onClick={() => fetchData(range)}

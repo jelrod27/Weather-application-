@@ -12,6 +12,102 @@ beforeEach(() => {
 const jsonResponse = (payload: unknown): Response => ({ok:true,json:async () => payload}) as Response
 const enlilUrl = 'https://services.swpc.noaa.gov/images/animations/enlil/enlil_com2_00001_20261108T120000.jpg'
 const enlilPayload = { data: { frames: [enlilUrl], latest: enlilUrl, fallback: enlilUrl, frameCount: 1 }, source:'NOAA SWPC' }
+function deferredResponse() {
+ let resolve!: (response: Response) => void
+ let reject!: (error: Error) => void
+ const promise = new Promise<Response>((resolveResponse, rejectResponse) => {
+  resolve = resolveResponse
+  reject = rejectResponse
+ })
+ return {promise, resolve, reject}
+}
+
+it('shows loading status when expanding solar imagery before its URL is available', () => {
+ jest.mocked(fetch).mockImplementation(() => new Promise<Response>(() => undefined))
+ render(<SunImageViewer />)
+ fireEvent.click(screen.getByRole('button', {name:'Expand solar image'}))
+ expect(screen.queryByAltText('Sun in 171 Å (expanded)')).not.toBeInTheDocument()
+ expect(screen.getByRole('status')).toHaveTextContent('ACQUIRING SOLAR DATA...')
+})
+
+it('shows unavailable status when expanding failed solar imagery', async () => {
+ jest.useFakeTimers()
+ jest.mocked(fetch).mockResolvedValue({ok:false} as Response)
+ try {
+  render(<SunImageViewer />)
+  await act(async () => undefined)
+  await act(async () => { jest.advanceTimersByTime(1500) })
+  await act(async () => { jest.advanceTimersByTime(3000) })
+  fireEvent.click(screen.getByRole('button', {name:'Expand solar image'}))
+  expect(screen.queryByAltText('Sun in 171 Å (expanded)')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Solar imagery unavailable')
+ } finally { jest.useRealTimers() }
+})
+
+it('replaces expanded solar imagery with loading status during automatic refresh', async () => {
+ jest.useFakeTimers()
+ jest.mocked(fetch).mockResolvedValueOnce({ok:true,headers:new Headers(),blob:async () => new Blob(['jpeg'])} as Response)
+  .mockImplementation(() => new Promise<Response>(() => undefined))
+ try {
+  render(<SunImageViewer />)
+  await act(async () => undefined)
+  fireEvent.load(screen.getByAltText('Sun in 171 Å'))
+  fireEvent.click(screen.getByRole('button', {name:'Expand solar image'}))
+  expect(screen.getByAltText('Sun in 171 Å (expanded)')).toHaveAttribute('src', 'blob:solar-image')
+  await act(async () => { jest.advanceTimersByTime(5 * 60 * 1000) })
+  expect(screen.queryByAltText('Sun in 171 Å (expanded)')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('ACQUIRING SOLAR DATA...')
+ } finally { jest.useRealTimers() }
+})
+
+it.each(['success', 'invalid', 'rejection'] as const)('ignores older ENLIL %s after a newer refresh succeeds', async outcome => {
+ const older = deferredResponse()
+ const newer = deferredResponse()
+ const newerUrl = enlilUrl.replace('120000', '130000')
+ const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+ jest.mocked(fetch).mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+ try {
+  render(<EnlilModelViewer />)
+  fireEvent.click(screen.getByTitle('Refresh'))
+  await act(async () => newer.resolve(jsonResponse({...enlilPayload, data:{...enlilPayload.data, frames:[newerUrl], latest:newerUrl}})))
+  fireEvent.load(screen.getByTestId('enlil-frame'))
+  await act(async () => {
+   if (outcome === 'rejection') older.reject(new Error('Obsolete request failed'))
+   else older.resolve(jsonResponse(outcome === 'success' ? enlilPayload : {data:null}))
+  })
+  expect(screen.getByTestId('enlil-frame')).toHaveAttribute('src', newerUrl)
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByText('ACQUIRING ENLIL MODEL DATA...')).not.toBeInTheDocument()
+  expect(consoleError).not.toHaveBeenCalled()
+ } finally { consoleError.mockRestore() }
+})
+
+it('keeps the current ENLIL refresh loading when an older request finishes', async () => {
+ const older = deferredResponse()
+ const newer = deferredResponse()
+ jest.mocked(fetch).mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+ render(<EnlilModelViewer />)
+ fireEvent.click(screen.getByTitle('Refresh'))
+ await act(async () => older.resolve(jsonResponse(enlilPayload)))
+ expect(screen.queryByTestId('enlil-frame')).not.toBeInTheDocument()
+ expect(screen.getByTitle('Refresh').querySelector('svg')).toHaveClass('animate-spin')
+ await act(async () => newer.resolve(jsonResponse(enlilPayload)))
+ expect(screen.getByTestId('enlil-frame')).toHaveAttribute('src', enlilUrl)
+ expect(screen.getByTitle('Refresh').querySelector('svg')).not.toHaveClass('animate-spin')
+})
+
+it('ignores ENLIL request failures after unmount', async () => {
+ const pending = deferredResponse()
+ const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+ jest.mocked(fetch).mockReturnValueOnce(pending.promise)
+ try {
+  const {unmount} = render(<EnlilModelViewer />)
+  unmount()
+  await act(async () => pending.reject(new Error('Request finished after leaving the viewer')))
+  expect(consoleError).not.toHaveBeenCalled()
+ } finally { consoleError.mockRestore() }
+})
+
 it('updates the request time when selecting a new solar channel', async () => {
  jest.useFakeTimers().setSystemTime(new Date('2026-11-08T12:00:00Z'))
  jest.mocked(fetch).mockResolvedValue({ok:true,headers:new Headers(),blob:async () => new Blob(['jpeg'])} as Response)

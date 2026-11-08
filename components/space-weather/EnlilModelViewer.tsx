@@ -68,9 +68,11 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
 
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const preloadRef = useRef<HTMLImageElement[]>([]);
+  const requestIdRef = useRef(0);
 
   // Fetch frames from API
   const fetchFrames = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     setImageFailed(false);
@@ -82,6 +84,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
     try {
       const response = await fetch('/api/space-weather/enlil');
       const data: EnlilApiResponse = await response.json();
+      if (requestId !== requestIdRef.current) return;
 
       if (response.ok && data.data && Array.isArray(data.data.frames)
         && data.data.frames.every(isImageUrl)
@@ -95,17 +98,19 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
         setError('ENLIL model data unavailable');
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('[EnlilModelViewer] Failed to fetch ENLIL frames:', err);
       setFrames([]);
       setError('Failed to load ENLIL model data');
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   }, []);
 
   // Fetch on mount
   useEffect(() => {
-    fetchFrames();
+    void fetchFrames();
+    return () => { requestIdRef.current += 1; };
   }, [fetchFrames]);
 
   // Preload nearby frames for smooth playback
