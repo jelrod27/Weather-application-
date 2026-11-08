@@ -177,7 +177,39 @@ const TIME_RANGES: { label: string; value: TimeRange }[] = [
   { label: '7D', value: '7D' },
 ];
 
+const FEED_NAMES: Record<ChartConfig['source'], string> = {
+  plasma: 'Solar wind plasma',
+  proton: 'GOES proton flux',
+  magnetometer: 'GOES magnetometer',
+  xray: 'GOES X-ray flux',
+};
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Bound both response headers and JSON parsing, even if abort is ignored. */
+async function fetchChartData(url: string): Promise<unknown> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    // Finish before the next scheduled poll so one hung feed cannot stall it.
+    timer = setTimeout(() => {
+      reject(new Error('Space weather feed request timed out'));
+      controller.abort();
+    }, 30_000);
+  });
+
+  try {
+    return await Promise.race([
+      fetch(url, { signal: controller.signal }).then(response => {
+        if (!response.ok) throw new Error(`Space weather feed fetch failed: ${response.status}`);
+        return response.json();
+      }),
+      deadline,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function getMinutesForRange(range: TimeRange): number {
   switch (range) {
@@ -289,9 +321,10 @@ interface ChartCardProps {
   config: ChartConfig;
   data: DataPoint[];
   range: TimeRange;
+  sourceFailed: boolean;
 }
 
-function ChartCard({ config, data, range }: ChartCardProps) {
+function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
   const stats = useMemo(() => getStats(data), [data]);
   const { title, unit, color, zeroLine, logScale, colorWhenNegative } = config;
 
@@ -328,7 +361,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
       <div className="h-40">
         {observed.length === 0 ? (
           <div className="flex items-center justify-center h-full text-xs text-gray-600">
-            No data available
+            {sourceFailed ? 'Feed unavailable' : 'No data available'}
           </div>
         ) : useAreaChart ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -422,6 +455,7 @@ export default function SpaceWeatherCharts() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSources, setFailedSources] = useState<ChartConfig['source'][]>([]);
 
   const fetchGeneration = useRef(0);
   const fetchPending = useRef(false);
@@ -438,22 +472,10 @@ export default function SpaceWeatherCharts() {
 
     try {
       const results = await Promise.allSettled([
-        fetch(`/api/space-weather/plasma?range=${selectedRange.toLowerCase()}`).then((r) => {
-          if (!r.ok) throw new Error(`Plasma fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/proton-flux').then((r) => {
-          if (!r.ok) throw new Error(`Proton flux fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/magnetometer').then((r) => {
-          if (!r.ok) throw new Error(`Magnetometer fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/xray-flux').then((r) => {
-          if (!r.ok) throw new Error(`X-ray flux fetch failed: ${r.status}`);
-          return r.json();
-        }),
+        fetchChartData(`/api/space-weather/plasma?range=${selectedRange.toLowerCase()}`),
+        fetchChartData('/api/space-weather/proton-flux'),
+        fetchChartData('/api/space-weather/magnetometer'),
+        fetchChartData('/api/space-weather/xray-flux'),
       ]);
 
       if (generation !== fetchGeneration.current) return;
@@ -471,7 +493,14 @@ export default function SpaceWeatherCharts() {
         xray: xrayChartSeries(results[3]),
       });
 
-      setError(allFailed ? 'Failed to fetch space weather data. Please try again.' : null);
+      const sources: ChartConfig['source'][] = ['plasma', 'proton', 'magnetometer', 'xray'];
+      const failed = sources.filter((_, index) => results[index].status === 'rejected');
+      setFailedSources(failed);
+      setError(allFailed
+        ? 'Failed to fetch space weather data. Please try again.'
+        : failed.length > 0
+          ? `Space weather feeds unavailable: ${failed.map(source => FEED_NAMES[source]).join(', ')}. Other available feeds are shown.`
+          : null);
     } catch (err) {
       if (generation !== fetchGeneration.current) return;
       console.error('[SpaceWeatherCharts]', err);
@@ -577,6 +606,7 @@ export default function SpaceWeatherCharts() {
               config={config}
               data={chartDataMap[config.id] ?? []}
               range={range}
+              sourceFailed={failedSources.includes(config.source)}
             />
           ))}
         </div>
