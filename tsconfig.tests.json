@@ -9,6 +9,9 @@
     ]
   },
   "include": [
+    "__tests__/newsletter/temporal-claims.test.ts",
+    "__tests__/newsletter/temporal-gate.test.ts",
+    "__tests__/newsletter/temporal-evidence.test.ts",
     "__tests__/newsletter/publication-path-security.test.ts",
     "__tests__/radar-tile-route.test.ts",
     "__tests__/useRadarOverlayLoader.test.tsx",

@@ -6,6 +6,7 @@ import { fetchPastWeekWarnings } from './mesonet';
 import { fetchSpaceWeatherSummary } from './space-weather';
 import { fetchPastWeekReports } from './spc-reports';
 import { sanitizeForPrompt } from '../util/sanitize';
+import { temporalReference } from '../temporal-claims';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
 
 export interface SundayEvidence {
@@ -37,6 +38,8 @@ export function formatSundayEvidence(evidence: SundayEvidence): string {
   // beside the values, and never a numeric substitute for a failed source.
   const summarized = {
     ...data,
+    temporalReference: temporalReference(coverage, data.forecast
+      ? [...data.forecast.conusQuadrants, ...data.forecast.international].flatMap(point => point.daily.map(day => day.date)) : []),
     spcSummary: data.spcSummary ? { ...data.spcSummary, reports: data.spcSummary.reports.slice(0, 20) } : null,
     national: data.national ? {
       shortRange: data.national.shortRange && {

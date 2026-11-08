@@ -11,10 +11,11 @@ import path from 'node:path';
 import matter from 'gray-matter';
 
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts';
-import { publicationErrors } from '@/lib/newsletter/publication';
+import { publicationErrors, readPublicationBundle } from '@/lib/newsletter/publication';
 import { imageGateFor } from './image-selection';
 import { extractMarkdownImages } from './markdown-images';
 import { IMAGES, type ImageEntry } from './images';
+import { temporalClaimErrors } from './temporal-claims';
 
 interface ParsedAuditEntry {
   id: string;
@@ -30,7 +31,7 @@ export interface ValidationResult {
   auditMarkdown: string;
 }
 
-interface PostValidationOptions { publication?: boolean; draft?: boolean; root?: string }
+interface PostValidationOptions { publication?: boolean; draft?: boolean; root?: string; temporal?: boolean }
 
 export function validateGeneratedPost(filePath: string, opts: PostValidationOptions = {}): ValidationResult {
   const raw = fs.readFileSync(filePath, 'utf8');
@@ -43,6 +44,13 @@ export function validateGeneratedPost(filePath: string, opts: PostValidationOpti
       errors.push('Draft validation is only allowed inside content/newsletter-drafts');
     }
     errors.push(...publicationErrors(raw, filePath, { root, requireAudit: true, allowDraft: opts.draft }));
+  }
+  if ((opts.temporal ?? opts.publication) && data.cadence === 'sunday_rearview') {
+    try {
+      errors.push(...temporalClaimErrors(content, readPublicationBundle(raw, opts.root).audit));
+    } catch {
+      errors.push('Temporal validation requires the dated source audit');
+    }
   }
   // Same gate the selection path picks through — if selection went through it,
   // these calls cannot produce an error.

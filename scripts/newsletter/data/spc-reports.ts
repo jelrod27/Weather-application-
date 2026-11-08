@@ -1,6 +1,7 @@
 /** SPC preliminary reports use noon-to-noon UTC days; a 404 is unknown, never zero. */
 import { DAY_MS, reportingWindow } from '@/lib/newsletter/coverage';
 import { collectSource } from './source';
+import { summarizeReportClocks } from '../temporal-claims';
 import type { Collected } from './source';
 
 export type SpcReportCategory = 'tornado' | 'hail' | 'wind';
@@ -44,6 +45,7 @@ export async function fetchPastWeekReports(days = 7, now = new Date()): Promise<
         expectedUnits: 1, observedUnits: parsed.rejected ? 0 : 1,
         reasons: parsed.rejected ? [`${parsed.rejected} invalid rows; counts are lower bounds for validated reports`] : [],
         status: parsed.rejected ? 'partial' : 'complete',
+        snapshot: JSON.stringify(summarizeReportClocks(parsed.reports)),
       };
     }, true));
   }

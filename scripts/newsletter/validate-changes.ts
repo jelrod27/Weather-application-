@@ -37,7 +37,7 @@ export function validateNewsletterChanges(base: string, root = process.cwd()): s
     }
     if (!generated) continue;
     const checks = publicationErrors(raw, filename, { root, requireAudit: changed.has(relative) });
-    if (changed.has(relative) || data.publication_version) checks.push(...validateGeneratedPost(file).errors);
+    if (changed.has(relative) || data.publication_version) checks.push(...validateGeneratedPost(file, { root, temporal: changed.has(relative) }).errors);
     errors.push(...checks.map(error => `${relative}: ${error}`));
   }
   return errors;
