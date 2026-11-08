@@ -112,6 +112,10 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
   const [imageError, setImageError] = useState(false);
   const [showFullsize, setShowFullsize] = useState(false);
   const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageSource, setImageSource] = useState('');
+  const [actualBand, setActualBand] = useState('');
 
   // Set initial time on client mount and auto-refresh every 5 minutes
   useEffect(() => {
@@ -135,7 +139,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
     if (retryCountRef.current < MAX_RETRIES) {
       retryCountRef.current += 1;
       // Retry after a short delay
-      setTimeout(() => {
+      retryTimerRef.current = setTimeout(() => {
         setLastUpdate(new Date());
       }, 1500 * retryCountRef.current);
     } else {
@@ -151,9 +155,38 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
     retryCountRef.current = 0;
   };
 
-  // Add cache buster to URL (use 0 if not yet mounted to avoid hydration mismatch)
-  const cacheTime = lastUpdate?.getTime() ?? 0;
-  const imageUrl = buildProxyUrl(selectedWavelength.wavelengthParam, cacheTime);
+  // Read metadata from the successful image source, including 195 → 193 Å fallback.
+  useEffect(() => {
+    if (!lastUpdate) return;
+    const controller = new AbortController();
+    let objectUrl: string | undefined;
+    setIsLoading(true);
+    setImageError(false);
+    setImageUrl('');
+    setImageSource('');
+    setActualBand('');
+    const load = async () => {
+      try {
+        const response = await fetch(buildProxyUrl(selectedWavelength.wavelengthParam, lastUpdate.getTime()), { signal: controller.signal });
+        if (!response.ok) throw new Error('Solar image unavailable');
+        const blob = await response.blob();
+        if (controller.signal.aborted) return;
+        objectUrl = URL.createObjectURL(blob);
+        setImageSource(response.headers.get('X-Source') || 'Solar imagery');
+        setActualBand(response.headers.get('X-Wavelength') || '');
+        setImageUrl(objectUrl);
+      } catch {
+        if (!controller.signal.aborted) handleImageError();
+      }
+    };
+    void load();
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, [selectedWavelength, lastUpdate, handleImageError]);
+  const bandName = /^\d+$/.test(actualBand) ? `${Number(actualBand)} Å` : selectedWavelength.name;
 
   return (
     <>
@@ -164,7 +197,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
               <Sun className="w-5 h-5 text-orange-500" />
               SUN VIEWER
               <span className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-500 rounded">
-                SUVI/SDO
+                {imageSource || 'SOLAR IMAGERY'}
               </span>
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -203,7 +236,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 <div className="text-center">
                   <div className="text-red-500 font-mono text-sm">SIGNAL LOST</div>
                   <div className={cn('text-xs font-mono mt-1', themeClasses.text, 'opacity-60')}>
-                    NASA SDO servers unreachable
+                    Solar imagery unavailable
                   </div>
                   <Button
                     variant="ghost"
@@ -217,9 +250,9 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
               </div>
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {imageUrl && <img
               src={imageUrl}
-              alt={`Sun in ${selectedWavelength.name}`}
+              alt={`Sun in ${bandName}`}
               className={cn(
                 'w-full h-full object-contain',
                 isLoading && 'opacity-0',
@@ -227,12 +260,12 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
               )}
               onLoad={handleImageLoad}
               onError={handleImageError}
-            />
+            />}
 
             {/* Wavelength info overlay */}
             <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
               <div className={cn('text-xs font-mono px-2 py-1 bg-black/70 rounded', selectedWavelength.color)}>
-                {selectedWavelength.name}
+                {bandName}
               </div>
               <div className={cn('text-xs font-mono px-2 py-1 bg-black/70 rounded', themeClasses.text)}>
                 {selectedWavelength.description}
@@ -247,6 +280,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 key={wavelength.id}
                 onClick={() => {
                   setSelectedWavelength(wavelength);
+                  setLastUpdate(new Date());
                   setIsLoading(true);
                   setImageError(false);
                   retryCountRef.current = 0;
@@ -265,9 +299,9 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
             ))}
           </div>
 
-          {/* Last Update */}
+          {/* Client request time, not image acquisition time. */}
           <div className={cn('text-xs font-mono text-center', themeClasses.text, 'opacity-70')}>
-            Last update: {lastUpdate ? lastUpdate.toISOString().slice(11, 19) + 'Z' : '--:--:--'}
+            Last requested: {lastUpdate ? lastUpdate.toISOString().slice(11, 19) + 'Z' : '--:--:--'}
           </div>
         </CardContent>
       </Card>
@@ -288,11 +322,11 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
-              alt={`Sun in ${selectedWavelength.name} (full resolution)`}
+              alt={`Sun in ${bandName} (expanded)`}
               className="max-w-full max-h-[90vh] object-contain"
             />
             <div className={cn('text-center mt-2 font-mono text-sm', selectedWavelength.color)}>
-              {selectedWavelength.name} - {selectedWavelength.description}
+              {bandName} - {selectedWavelength.description}
             </div>
           </div>
         </div>

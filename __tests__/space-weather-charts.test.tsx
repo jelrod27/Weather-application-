@@ -56,7 +56,7 @@ describe('SpaceWeatherCharts', () => {
 
   it('should render the Earth position marker text', () => {
     render(<SpaceWeatherCharts />);
-    expect(screen.getByText(/Earth ~72min propagation from DSCOVR at L1/)).toBeDefined();
+    expect(screen.getByText(/Solar wind at L1: Earth arrival depends on wind speed and propagation/)).toBeDefined();
   });
 
   it('should fetch data from all four endpoints on mount and render 10 chart titles', async () => {
@@ -259,3 +259,28 @@ describe('SpaceWeatherCharts renders live values from real route envelopes', () 
     expect(screen.queryAllByText('No data available')).toHaveLength(0);
   });
 });
+
+describe('SpaceWeatherCharts observation coverage', () => {
+ beforeEach(()=>jest.clearAllMocks())
+ afterEach(()=>jest.useRealTimers())
+ it('excludes future readings and reports each available observation window',async()=>{
+  const now=Date.now()
+  mockFetch.mockImplementation((url:string)=>Promise.resolve({ok:true,json:async()=>url.includes('plasma')?{data:[
+   {time:new Date(now-60_000).toISOString(),speed:706},
+   {time:new Date(now+60_000).toISOString(),speed:999},
+  ]}:{data:[]}}))
+  render(<SpaceWeatherCharts/> )
+  expect(await screen.findByText('706 km/s')).toBeInTheDocument()
+  expect(screen.queryByText('999 km/s')).not.toBeInTheDocument()
+  expect(screen.getByText(/Observed UTC:/)).toBeInTheDocument()
+  expect(screen.getAllByText('No data available').length).toBeGreaterThan(0)
+ })
+ it('refreshes observations while charts remain mounted',async()=>{
+  jest.useFakeTimers()
+  mockFetch.mockResolvedValue({ok:true,json:async()=>({data:[]})})
+  await act(async()=>{render(<SpaceWeatherCharts/> )})
+  expect(mockFetch).toHaveBeenCalledTimes(4)
+  await act(async()=>{jest.advanceTimersByTime(60_000)})
+  expect(mockFetch).toHaveBeenCalledTimes(8)
+ })
+})

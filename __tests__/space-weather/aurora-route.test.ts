@@ -7,6 +7,8 @@ import { GET } from '@/app/api/space-weather/aurora/route'
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import { viewlineFor } from '@/lib/space-weather/kp-scale'
 const fetchMock = jest.mocked(fetchSwpcJson)
+beforeEach(() => jest.useFakeTimers().setSystemTime(new Date('2026-09-25T12:05:00Z')))
+afterEach(() => jest.useRealTimers())
 
 it.each([0, 2, 3, 5, 9])('uses the shared viewline for Kp %s, including genuine zero', async (kp) => {
   fetchMock.mockResolvedValue([['time_tag', 'Kp'], ['2026-09-25 12:00:00', String(kp)]] as never)

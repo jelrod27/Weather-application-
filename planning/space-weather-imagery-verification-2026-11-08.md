@@ -1,0 +1,24 @@
+# Space Weather imagery verification — 2026-11-08
+
+## Provider evidence
+
+- NOAA documents SUVI's 94, 131, 171, **195**, 284 and 304 Å channels ([SUVI product](https://www.spaceweather.gov/products/goes-solar-ultraviolet-imager-suvi)). SDO AIA's corresponding coronal fallback is **193** Å, and AIA has no 284 Å channel ([NASA HMI/AIA spectral bands](https://sdo.gsfc.nasa.gov/data/channels.php)). Direct requests on November 8 returned HTTP 200 `image/png` for [SUVI 284](https://services.swpc.noaa.gov/images/animations/suvi/primary/284/latest.png), while the previously configured [SDO 284 fallback](https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0284.jpg) returned 404.
+- NOAA's [C2 manifest](https://services.swpc.noaa.gov/products/animations/lasco-c2.json) and [C3 manifest](https://services.swpc.noaa.gov/products/animations/lasco-c3.json) returned 102 and 103 actual frame records in the direct verification snapshot. Records contain a relative `url`, for example `/images/animations/lasco-c2/20261108_1912_c2_512.jpg`; the exposure time is in the filename. Counts change with provider coverage. The route now validates camera/path/calendar, deduplicates, sorts, and returns only the requested tail of these records. Invalid/empty/unreachable manifests return 502 with zero frames and an independent provider animation URL.
+- Direct GIF block parsing found **one image frame** in [C2 realtime latest.gif](https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.gif), versus **415 frames** in [current_c2small.gif](https://soho.nascom.nasa.gov/data/LATEST/current_c2small.gif). Expansion now preserves the displayed URL. UI text no longer promises a measured 48-hour duration.
+- The [ENLIL directory](https://services.swpc.noaa.gov/images/animations/enlil/) returned HTTP 200 HTML with real `enlil_com2_<number>_<YYYYMMDDTHHMMSS>.jpg` filenames. The existing server regex correctly matches that contract and remains unchanged. ENLIL is a propagation **model**, not an in-situ observation ([NOAA ENLIL product](https://www.spaceweather.gov/products/wsa-enlil-solar-wind-prediction)). Its client no longer converts synthetic `Frame 1` labels to dates; the available directory does not supply a verified per-frame observation time.
+
+## Corrections and regression evidence
+
+Solar proxy success requires a JPEG/PNG MIME type and matching binary signature; an HTTP 200 HTML error page, including one incorrectly labeled JPEG, is rejected and triggers the configured fallback. Successful responses identify the actual instrument and wavelength independently of the hosting domain: SWPC-hosted SDO HMI remains HMI, and SOHO LASCO remains LASCO. The viewer reads these headers from the fetched image and displays 193 Å when the 195 Å primary falls back. Its timestamp is explicitly **Last requested**, including channel changes, rather than a claim about acquisition freshness. Requests and object URLs are cleaned up; automatic retries remain bounded at two, with manual retry available.
+
+Coronagraph camera changes cancel pending old-camera requests and clear old-camera URLs. The modal retains the actual animation/selected frame. A failed frame falls back without displaying its exposure timestamp as the GIF's time. Failed animation images display an unavailable state and stop claiming playback until refresh.
+
+ENLIL validates frame arrays and NOAA image URLs before rendering, reports image failure instead of treating it as loaded, stops playback, and permits a fresh image mount through Refresh. Unavailable data removes the loading skeleton rather than leaving an indefinite acquisition message.
+
+Validation completed:
+
+- `npm test -- --runInBand __tests__/space-weather/imagery-routes.test.ts __tests__/space-weather/imagery-viewers.test.tsx` — 28 tests passed after final review. New behavior regressions were observed failing before implementation; the unchanged ENLIL directory contract and bounded solar retries are characterization coverage. The final review also reproduced active-camera reselection clearing manual frames; a same-camera guard now preserves the selected real frame, position and playback controls.
+- Scoped ESLint for the three imagery routes, three viewer components, and both new test files passed.
+- Direct HTTPS requests verified manifest shapes, source availability/MIME, and actual GIF frame counts above; these are dated snapshots, not availability guarantees.
+
+Full Jest, both TypeScript projects, build, and browser verification are coordinated by the parent task after all parallel area changes settle. Imagery payload signatures screen out HTML/type mismatches but are not a full decoder: browser decode errors remain visible and retryable. This work does not derive solar image acquisition freshness from a request timestamp, or model forecast times from directory frame labels.

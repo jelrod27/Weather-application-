@@ -9,6 +9,17 @@
     ]
   },
   "include": [
+    "__tests__/space-weather/accuracy-routes.test.ts",
+    "__tests__/space-weather/accuracy-missing.test.tsx",
+    "__tests__/space-weather/imagery-routes.test.ts",
+    "__tests__/space-weather/imagery-viewers.test.tsx",
+    "__tests__/current-conditions.test.tsx",
+    "__tests__/navigation.test.tsx",
+    "__tests__/space-weather-nav.test.tsx",
+    "__tests__/space-weather/aurora-route.test.ts",
+    "__tests__/space-weather/xray-flux-route.test.ts",
+    "__tests__/swpc-kp.test.ts",
+    "__tests__/swpc-solar-wind.test.ts",
     "__tests__/newsletter/temporal-claims.test.ts",
     "__tests__/newsletter/temporal-gate.test.ts",
     "__tests__/newsletter/temporal-evidence.test.ts",

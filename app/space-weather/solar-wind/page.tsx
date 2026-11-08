@@ -37,7 +37,7 @@ async function loadSolarWind(): Promise<SolarWindReading | null> {
       headers: { Accept: 'application/json' },
       next: { revalidate: 300 },
     })
-    const parsed = parseRtswSolarWind(windJson, magJson)
+    const parsed = parseRtswSolarWind(windJson, magJson, Date.now())
     if (!parsed.available) return null
 
     // current.timeTag is the tag of the row these values came from. Reading it

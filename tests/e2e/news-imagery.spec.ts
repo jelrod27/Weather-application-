@@ -29,6 +29,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
       await expect(page.locator(`svg[data-hazard="${family}"]`).first()).toBeVisible();
     }
     const map = page.getByRole('img', { name: /SPC Day 2/ }).first();
+    await map.scrollIntoViewIfNeeded();
     await expect(map).toBeVisible();
     await expect(map).toHaveCSS('object-fit', 'contain');
     await expect(page.getByRole('link', { name: 'NOAA / Storm Prediction Center', exact: true }).first()).toBeVisible();
@@ -41,6 +42,7 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 
     await page.route('**/day2otlk_20261011_1730_prt.png', (route) => route.abort());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'View all outlooks & recent reports' }).click();
+    await page.locator('figure').filter({ hasText: 'Day 2 convective outlook' }).first().scrollIntoViewIfNeeded();
     await expect(page.getByRole('img', { name: /Weather report illustration/ }).first()).toBeVisible();
     await expect(page.getByRole('img', { name: /SPC Day 2/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'NOAA / Storm Prediction Center', exact: true })).toHaveCount(0);

@@ -76,7 +76,8 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
   ]
 
   const weatherPaths = weatherItems.map(i => i.href)
-  const isWeatherActive = weatherPaths.includes(pathname)
+  const isPathActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(`${href}/`))
+  const isWeatherActive = weatherPaths.some(isPathActive)
 
   return (
     <>
@@ -106,7 +107,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
             {/* Home */}
             {topNavItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive = isPathActive(item.href)
               return (
                 <Button key={item.href} variant={isActive ? "secondary" : "ghost"} size="sm" asChild
                   className={cn("font-semibold transition-all duration-200", isActive && "font-bold shadow-sm")}>
@@ -137,7 +138,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
                   <div className="rounded-lg border border-border bg-background/95 backdrop-blur-lg shadow-xl animate-in slide-in-from-top-2 py-1">
                   {weatherItems.map((item) => {
                     const Icon = item.icon
-                    const isActive = pathname === item.href
+                    const isActive = isPathActive(item.href)
                     return (
                       <Link key={item.href} href={item.href}
                         className={cn(
@@ -158,7 +159,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
             {/* Education, Blog, News, About */}
             {rightNavItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive = isPathActive(item.href)
               return (
                 <Button key={item.href} variant={isActive ? "secondary" : "ghost"} size="sm" asChild
                   className={cn("font-semibold transition-all duration-200", isActive && "font-bold shadow-sm")}>
@@ -225,7 +226,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
               {/* All main nav items */}
               {allNavItems.map((item) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href
+                const isActive = isPathActive(item.href)
 
                 return (
                   <Button

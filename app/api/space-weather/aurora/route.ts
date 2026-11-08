@@ -10,7 +10,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { viewlineFor } from '@/lib/space-weather/kp-scale';
-import { parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
+import { parseCurrentKpIndex } from '@/lib/services/swpc-kp';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
-    const current = parsePlanetaryKpIndex(kpData).current;
+    const current = parseCurrentKpIndex(kpData).current;
     const viewline = viewlineFor(current?.kp);
     if (!current || !viewline) throw new Error('Live Kp unavailable');
     const currentKp = current.kp;

@@ -30,11 +30,11 @@
 
 **Files:** `package.json`, `package-lock.json`, a dated security verification note under `planning/`.
 
-- [ ] Record baseline npm audit and dependency paths; distinguish advisory IDs from affected ancestor packages.
-- [ ] Verify patched versions and Node/API compatibility against the npm registry. Upgrade narrowly without downgrading the application/toolchain or suppressing unresolved advisories.
-- [ ] Trace CodeQL #332 from network prose to the generated Markdown write, filename construction and render boundary; fix a concrete vulnerability if found, otherwise record an evidence-backed disposition.
-- [ ] Install the exact lockfile and run dependency-sensitive local checks. Record any advisory without a compatible fix and its actual use.
-- [ ] Independently review and commit this area, including this plan.
+- [x] Record baseline npm audit and dependency paths; distinguish advisory IDs from affected ancestor packages.
+- [x] Verify patched versions and Node/API compatibility against the npm registry. Upgrade narrowly without downgrading the application/toolchain or suppressing unresolved advisories.
+- [x] Trace CodeQL #332 from network prose to the generated Markdown write, filename construction and render boundary; fix a concrete vulnerability if found, otherwise record an evidence-backed disposition.
+- [x] Install the exact lockfile and run dependency-sensitive local checks. Record any advisory without a compatible fix and its actual use.
+- [x] Independently review and commit this area, including this plan.
 
 ## Task 2 — Alert and radar reliability
 
@@ -49,34 +49,34 @@
 
 **Files:** focused temporal validation/helper under `scripts/newsletter/`, `sunday.ts`, `data/sunday-evidence.ts`, validation integration, newsletter tests and README.
 
-- [ ] Pin the November 12–13 Thursday/Friday contradiction and November 3 16:10–19:08 UTC local-time window with failing tests.
-- [ ] Supply deterministic weekdays and source time-zone context; validate supported explicit weekday/date claims and local clock descriptions against dated source evidence. Reject contradictions rather than silently editing model prose.
-- [ ] Run the gate before publication and include detected contradictions in bounded generation correction/retry handling; exhausted contradictions must fail generation.
-- [ ] Test correct claims, date/year boundaries, DST/local dates, ranges, quoted/reference material, and incomplete evidence without inventing missing facts.
-- [ ] Verify the publication receipt and image gates still apply. Independently review and commit this area.
+- [x] Pin the November 12–13 Thursday/Friday contradiction and November 3 16:10–19:08 UTC local-time window with failing tests.
+- [x] Supply deterministic weekdays and source time-zone context; validate supported explicit weekday/date claims and local clock descriptions against dated source evidence. Reject contradictions rather than silently editing model prose.
+- [x] Run the gate before publication and include detected contradictions in bounded generation correction/retry handling; exhausted contradictions must fail generation.
+- [x] Test correct claims, date/year boundaries, DST/local dates, ranges, quoted/reference material, and incomplete evidence without inventing missing facts.
+- [x] Verify the publication receipt and image gates still apply. Independently review and commit this area.
 
 ## Task 4 — Space Weather accuracy
 
 **Files:** affected Space Weather routes, helpers and components; focused Jest and browser tests; dated verification note.
 
-- [ ] Map and verify remaining sunspot labeling, alert product classification, imagery contract, freshness/range and navigation findings against current NOAA/NASA contracts.
-- [ ] Add regressions for still-valid defects, then make the smallest corrections within the existing provider/UI architecture.
-- [ ] Preserve the previous release's same-spacecraft joins, unavailable/partial statuses and bounded flare retry behavior.
-- [ ] Run affected route/component/browser checks and independently review before committing this area.
+- [x] Map and verify remaining sunspot labeling, alert product classification, imagery contract, freshness/range and navigation findings against current NOAA/NASA contracts.
+- [x] Add regressions for still-valid defects, then make the smallest corrections within the existing provider/UI architecture.
+- [x] Preserve the previous release's same-spacecraft joins, unavailable/partial statuses and bounded flare retry behavior.
+- [x] Run affected route/component/browser checks and independently review before committing this area.
 
 ## Task 5 — Scientific cloud-type source research
 
 **Files:** `planning/research/cloud-types-*`, `planning/prds/PRD-read-your-sky-cloud-types.md`, PRD index.
 
-- [ ] Follow issue #666: predeclare 12 coordinates and evaluation policies before scoring; compare DWD BUFR, Meteomatics and meteoblue using primary sources and permitted real data.
-- [ ] Decode/sample available records, record exact retention and failures, report missing seven-day slots explicitly, and verify the research helper against known fixtures.
-- [ ] Produce cited taxonomy/rights/access/cost comparison, policy sensitivity, Field note A evidence examples, and go/conditional-go/no-go decision with release gates.
-- [ ] Keep research outside production code and avoid paid trials/provider contact. Independently review and commit this area.
+- [x] Follow issue #666: predeclare 12 coordinates and evaluation policies before scoring; compare DWD BUFR, Meteomatics and meteoblue using primary sources and permitted real data.
+- [x] Decode/sample available records, record exact retention and failures, report missing seven-day slots explicitly, and verify the research helper against known fixtures.
+- [x] Produce cited taxonomy/rights/access/cost comparison, policy sensitivity, Field note A evidence examples, and go/conditional-go/no-go decision with release gates.
+- [x] Keep research outside production code and avoid paid trials/provider contact. Independently review and commit this area.
 
 ## Integrated local release gate
 
-- [ ] Full Jest, both TypeScript projects, lint, Knip and production build.
-- [ ] Local Playwright for affected flows in Chromium and Firefox; broaden to the full suite as appropriate for shared behavior. Local Lighthouse forecast/radar/sky gates.
-- [ ] Repair local failures and repeat only affected checks, then perform a whole-branch independent review.
-- [ ] Confirm exactly five coherent area commits, clean worktree, no secrets, and current main compatibility.
-- [ ] Summarize changes, evidence and limitations; push normally and open one PR using `gh`. Do not merge.
+- [x] Full Jest, both TypeScript projects, lint, Knip and production build.
+- [x] Local Playwright for affected flows in Chromium and Firefox; broaden to the full suite as appropriate for shared behavior. Local Lighthouse forecast/radar/sky gates.
+- [x] Repair local failures and repeat only affected checks, then perform a whole-branch independent review.
+- [x] Confirm exactly five coherent area commits, clean worktree, no secrets, and current main compatibility.
+- [ ] Summarize changes, evidence and limitations; push normally and open one PR using `gh`. Do not merge. (Publication is the next step after this local validation record.)

@@ -18,8 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export interface SolarWindData {
   current: {
     speed: number; // km/s
-    density: number; // particles/cm³
-    temperature: number; // K
+    density: number | null; // particles/cm³
+    temperature: number | null; // K
     bz: number | null; // nT; null when mag feed unavailable
     bt: number | null; // nT
   };
@@ -91,17 +91,18 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
     );
   }
 
-  const speed = data?.current?.speed ?? 0;
-  const density = data?.current?.density ?? 0;
+  const speed = data?.current?.speed ?? null;
+  const density = data?.current?.density ?? null;
   const bz = data?.current?.bz ?? null;
   const bt = data?.current?.bt ?? null;
 
-  const speedStatus = getSpeedStatus(speed);
+  const unavailable = { text: 'UNAVAILABLE', color: 'text-gray-400' };
+  const speedStatus = speed === null ? unavailable : getSpeedStatus(speed);
   const bzStatus =
     bz == null
       ? { text: 'UNAVAILABLE', color: 'text-gray-400', isWarning: false }
       : getBzStatus(bz);
-  const densityStatus = getDensityStatus(density);
+  const densityStatus = density === null ? unavailable : getDensityStatus(density);
 
   return (
     <Card className={cn('container-primary', themeClasses.background)}>
@@ -130,7 +131,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
             </div>
             <div className="flex items-baseline gap-2">
               <span className={cn('text-2xl font-bold font-mono', speedStatus.color)}>
-                {speed}
+                {speed ?? '--'}
               </span>
               <span className={cn('text-xs font-mono', themeClasses.text)}>km/s</span>
             </div>
@@ -148,7 +149,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
             </div>
             <div className="flex items-baseline gap-2">
               <span className={cn('text-2xl font-bold font-mono', densityStatus.color)}>
-                {density.toFixed(1)}
+                {density === null ? '--' : density.toFixed(1)}
               </span>
               <span className={cn('text-xs font-mono', themeClasses.text)}>p/cm³</span>
             </div>

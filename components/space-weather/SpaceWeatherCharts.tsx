@@ -11,7 +11,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Satellite } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -195,14 +195,15 @@ function filterByRange(
   range: TimeRange
 ): Record<string, unknown>[] {
   const minutes = getMinutesForRange(range);
-  const cutoff = Date.now() - minutes * 60 * 1000;
+  const now = Date.now();
+  const cutoff = now - minutes * 60 * 1000;
   return data.filter((d) => {
     // swpcTimeTagMs, not `new Date(tag)`: SWPC tags omit the zone but mean UTC,
     // and a bare parse resolves them in the *viewer's* timezone. East of UTC
     // that shifts every point earlier than it really is, so a reader in Berlin
     // picking the 30m range saw empty charts.
     const ms = swpcTimeTagMs(d.time);
-    return Number.isFinite(ms) && ms >= cutoff;
+    return Number.isFinite(ms) && ms >= cutoff && ms <= now;
   });
 }
 
@@ -219,7 +220,7 @@ function extractTimeSeries(
     return {
       time: time.toISOString(),
       timestamp: time.getTime(),
-      value: val !== null && !isNaN(val as number) ? (val as number) : null,
+      value: val !== null && Number.isFinite(val) ? (val as number) : null,
     };
   }).sort((a, b) => a.timestamp - b.timestamp);
 }
@@ -294,6 +295,8 @@ function ChartCard({ config, data, range }: ChartCardProps) {
   const stats = useMemo(() => getStats(data), [data]);
   const { title, unit, color, zeroLine, logScale, colorWhenNegative } = config;
 
+  const observed = data.filter(point => point.value !== null);
+  const coverage = observed.length > 0 ? `${new Date(observed[0].timestamp).toISOString().slice(0, 16).replace('T', ' ')} – ${new Date(observed[observed.length - 1].timestamp).toISOString().slice(0, 16).replace('T', ' ')}` : null;
   const useAreaChart = !!colorWhenNegative && zeroLine;
 
   return (
@@ -320,9 +323,10 @@ function ChartCard({ config, data, range }: ChartCardProps) {
         </span>
       </div>
 
+      {coverage && <p className="text-[10px] text-gray-500 mb-2">Observed UTC: {coverage}</p>}
       {/* Chart */}
       <div className="h-40">
-        {data.length === 0 ? (
+        {observed.length === 0 ? (
           <div className="flex items-center justify-center h-full text-xs text-gray-600">
             No data available
           </div>
@@ -357,7 +361,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
                 stroke={color}
                 strokeWidth={1.5}
                 fill={`url(#grad-${config.id}-pos)`}
-                connectNulls
+                connectNulls={false}
                 dot={false}
                 activeDot={{ r: 3, fill: color }}
                 isAnimationActive={false}
@@ -392,7 +396,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
                 stroke={color}
                 strokeWidth={1.5}
                 dot={false}
-                connectNulls
+                connectNulls={false}
                 activeDot={{ r: 3, fill: color }}
                 isAnimationActive={false}
               />
@@ -419,7 +423,9 @@ export default function SpaceWeatherCharts() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchGeneration = useRef(0);
   const fetchData = useCallback(async (selectedRange: TimeRange) => {
+    const generation = ++fetchGeneration.current;
     setIsLoading(true);
     setError(null);
 
@@ -443,6 +449,7 @@ export default function SpaceWeatherCharts() {
         }),
       ]);
 
+      if (generation !== fetchGeneration.current) return;
       // Each route answers with a `{ data, source }` envelope, so the series
       // has to be unwrapped rather than read off the response body.
       setDatasets({
@@ -460,13 +467,16 @@ export default function SpaceWeatherCharts() {
       console.error('[SpaceWeatherCharts]', err);
       setError('An unexpected error occurred while fetching data.');
     } finally {
-      setIsLoading(false);
+      if (generation === fetchGeneration.current) setIsLoading(false);
     }
   }, []);
 
+  const invalidateFetch = useCallback(() => { fetchGeneration.current++; }, []);
   useEffect(() => {
-    fetchData(range);
-  }, [range, fetchData]);
+    void fetchData(range);
+    const timer = setInterval(() => { void fetchData(range); }, 60_000);
+    return () => { clearInterval(timer); invalidateFetch(); };
+  }, [range, fetchData, invalidateFetch]);
 
   const chartDataMap = useMemo(() => {
     const map: Record<string, DataPoint[]> = {};
@@ -509,10 +519,11 @@ export default function SpaceWeatherCharts() {
         </div>
       </div>
 
+      <p className="text-xs font-mono text-gray-500">Selected range is a display limit. Each chart shows its available observation window; feeds may cover less than 24H or 7D.</p>
       {/* Earth position marker */}
       <div className="text-[10px] font-mono text-gray-500 flex items-center gap-1.5">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500" />
-        Earth ~72min propagation from DSCOVR at L1
+        Solar wind at L1: Earth arrival depends on wind speed and propagation
       </div>
 
       {/* Loading state */}
@@ -564,7 +575,7 @@ export default function SpaceWeatherCharts() {
         themeClasses.text,
         'opacity-60'
       )}>
-        DATA: NOAA SWPC DSCOVR, GOES MAGNETOMETER, GOES X-RAY SENSOR, GOES PROTON SENSOR
+        DATA: NOAA SWPC RTSW, GOES MAGNETOMETER, GOES X-RAY SENSOR, GOES PROTON SENSOR
       </div>
     </div>
   );
