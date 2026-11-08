@@ -47,6 +47,17 @@ The four existing browser skips are the real-session login redirect and the prof
 
 Next.js dev normalized the generated warning heading in `AGENTS.md` from level one to level two. Its instruction text and generated block are preserved. The final production build restored production type imports in `next-env.d.ts`.
 
+## PR #708 review follow-up
+
+The first remote cycle passed all twelve required contexts, including Build and Preview Smoke. The separate CodeQL findings check identified comment removal in the temporal validator (#335); CodeRabbit completed its initial review and posted seven inline findings plus one test-cleanup nitpick. Valid findings were reproduced locally and corrected before the next push:
+
+- Newsletter comments are masked without token concatenation or newline removal. Spaced em-dash weather asides no longer become date ranges; actual invalid bare date ranges remain rejected after an independent review caught an initially overbroad exception.
+- ENLIL requests ignore stale success/error/finally completions and invalidate on unmount. Expanded solar imagery shows loading/unavailable status instead of an empty image source.
+- Background chart polling preserves mounted charts and, on complete refresh failure, previous observations with an explicit out-of-date warning. Partial failures still clear the failed source, recovery clears the warning, and polling cannot supersede a foreground range change. Navigation pathname cleanup runs even if an assertion fails.
+- Research retrieval isolates per-file failures and exits nonzero, missing/corrupt recorded hashes fail explicitly, and full re-decoding uses a disposable copy. The duplicate Manaus example is an explicit restatement. All fifteen original captured artifacts remain byte-identical, including the original retrieval log; all 249 cached input hashes verified without downloads. Availability metrics and the no-go decision are unchanged.
+
+Final combined local verification: **324 Jest suites / 2,791 tests**, **17 research tests**, and **14 Space Weather Playwright scenarios in Chromium/Firefox against the production build** passed. Production build, both TypeScript projects, scoped forced newsletter lint and `git diff --check` passed. Full lint retained zero errors / 89 existing warnings. Independent review cleared all correction areas after the bare-range repair. Full 380-scenario E2E and Lighthouse were not repeated for these bounded corrections; their original complete results remain above, and remote required E2E/Lighthouse will rerun on the pushed head. Logs use the `pr708-review-*` prefix under `/private/tmp/weather-followups/`.
+
 ## Live local API smoke and limits
 
 After the final production build, live local requests returned HTTP 200 for sunspots, Kp, scales, wind, X-ray, C2 coronagraph and the solar-image proxy. The monthly sunspot response identified October 2026; C2 returned 12 actual manifest frames; the solar image was PNG with NOAA SUVI / 195 Å identity. An initial scales request was unavailable under the freshness guard; subsequent fresh requests recovered to 200. These are point-in-time checks, not an upstream availability guarantee. Existing oversized RTSW cache warnings and framework deprecation warnings remain outside this accuracy correction.

@@ -300,6 +300,8 @@
   },
   {
     "state": "nearby-only",
+    "restatement_of_state": "supported-type",
+    "restatement_explanation": "This restates the same captured Manaus report used by supported-type to emphasize station-to-selected-point representativeness. It is not an independent observation or an additional measured success; the nearby station reports its own sky, not clouds overhead at the selected point.",
     "synthetic": false,
     "selected_coordinate": {
       "id": "manaus",
