@@ -1,0 +1,133 @@
+{
+  "declared_at_utc": "2026-11-08T20:16:49.596105+00:00",
+  "predeclared_before_report_decoding": true,
+  "requested_window": {
+    "start": "2026-11-01T20:00:00Z",
+    "end_inclusive": "2026-11-08T19:00:00Z",
+    "cadence": "hourly",
+    "slots_per_location": 168
+  },
+  "elevation_note": "Reference elevations are deliberately rounded application-policy inputs, not surveyed point elevations or terrain validation. Distance sensitivity is measured; elevation policy is provisional.",
+  "locations": [
+    {
+      "id": "san-ramon",
+      "name": "San Ramon, California",
+      "latitude": 37.7799,
+      "longitude": -121.978,
+      "reference_elevation_m": 150,
+      "geography": "inland valley near coast; coastal ranges"
+    },
+    {
+      "id": "hamburg",
+      "name": "Hamburg, Germany",
+      "latitude": 53.5511,
+      "longitude": 9.9937,
+      "reference_elevation_m": 10,
+      "geography": "data-rich lowland/coastal plain"
+    },
+    {
+      "id": "london",
+      "name": "London, United Kingdom",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "reference_elevation_m": 25,
+      "geography": "data-rich inland estuary"
+    },
+    {
+      "id": "athens",
+      "name": "Athens, Greece",
+      "latitude": 37.9838,
+      "longitude": 23.7275,
+      "reference_elevation_m": 80,
+      "geography": "coastal basin/mountain barriers"
+    },
+    {
+      "id": "tromso",
+      "name": "Tromso, Norway",
+      "latitude": 69.6492,
+      "longitude": 18.9553,
+      "reference_elevation_m": 20,
+      "geography": "high latitude coastal mountains"
+    },
+    {
+      "id": "nairobi",
+      "name": "Nairobi, Kenya",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "reference_elevation_m": 1795,
+      "geography": "equatorial inland plateau"
+    },
+    {
+      "id": "kathmandu",
+      "name": "Kathmandu, Nepal",
+      "latitude": 27.7172,
+      "longitude": 85.324,
+      "reference_elevation_m": 1400,
+      "geography": "high-relief inland valley"
+    },
+    {
+      "id": "tokyo",
+      "name": "Tokyo, Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503,
+      "reference_elevation_m": 40,
+      "geography": "dense coastal plain"
+    },
+    {
+      "id": "alice-springs",
+      "name": "Alice Springs, Australia",
+      "latitude": -23.698,
+      "longitude": 133.8807,
+      "reference_elevation_m": 545,
+      "geography": "arid sparse inland terrain"
+    },
+    {
+      "id": "manaus",
+      "name": "Manaus, Brazil",
+      "latitude": -3.119,
+      "longitude": -60.0217,
+      "reference_elevation_m": 90,
+      "geography": "equatorial inland rainforest"
+    },
+    {
+      "id": "la-paz",
+      "name": "La Paz, Bolivia",
+      "latitude": -16.4897,
+      "longitude": -68.1193,
+      "reference_elevation_m": 3640,
+      "geography": "high-altitude inland basin"
+    },
+    {
+      "id": "honolulu",
+      "name": "Honolulu, Hawaii",
+      "latitude": 21.3099,
+      "longitude": -157.8581,
+      "reference_elevation_m": 6,
+      "geography": "remote oceanic coast/mountain island"
+    }
+  ],
+  "policies": {
+    "strict": {
+      "max_age_minutes": 60,
+      "max_distance_km": 25,
+      "max_elevation_difference_m": 200
+    },
+    "baseline": {
+      "max_age_minutes": 90,
+      "max_distance_km": 50,
+      "max_elevation_difference_m": 300
+    },
+    "relaxed": {
+      "max_age_minutes": 180,
+      "max_distance_km": 100,
+      "max_elevation_difference_m": 500
+    }
+  },
+  "classifier_acceptance_proposed_before_scoring": {
+    "independent_per_class_precision_min": 0.9,
+    "independent_per_class_recall_min": 0.7,
+    "min_independent_cases_per_class_per_day_night": 100,
+    "abstention_and_coverage_required": true,
+    "note": "Proposed release-review thresholds, not demonstrated accuracy or a guarantee. All commercial classifier accuracy remains unvalidated."
+  }
+}

@@ -9,6 +9,7 @@
 
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import { logRouteError } from '@/lib/error-utils'
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 
 export const GOES_XRAY_URL =
@@ -93,7 +94,9 @@ export function parseLatestXrayFlux(payload: unknown): FlareReading | null {
 export async function loadCurrentFlare(): Promise<FlareReading | null> {
   try {
     const payload = await fetchSwpcJson(GOES_XRAY_URL, { next: { revalidate: 300 } })
-    return parseLatestXrayFlux(payload)
+    const dated = Array.isArray(payload) ? payload.filter(row => row
+      && isCurrentObservation(row.time_tag, CURRENT_MAX_AGE_MS.xray)) : []
+    return parseLatestXrayFlux(dated)
   } catch (error) {
     logRouteError('space-weather/solar-flares', error)
     return null

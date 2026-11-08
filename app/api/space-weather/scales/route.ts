@@ -10,6 +10,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -82,6 +83,10 @@ export async function GET(request: NextRequest) {
       throw new Error('No current scale data available');
     }
 
+    if (!isCurrentObservation(`${current.DateStamp}T${current.TimeStamp}Z`, CURRENT_MAX_AGE_MS.scales)) {
+      throw new Error('No fresh NOAA scales observation');
+    }
+
     // Missing or malformed observations cannot establish a quiet zero.
     const parseScale = (value: unknown): number => {
       if (typeof value !== 'string' || !/^[0-5]$/.test(value)) {
@@ -123,14 +128,7 @@ export async function GET(request: NextRequest) {
     logRouteError('space-weather/scales', error);
 
     return NextResponse.json({
-      scales: {
-        timestamp: new Date().toISOString(),
-        dateStamp: '',
-        timeStamp: '',
-        R: { scale: 0, text: 'Unknown', description: 'Data unavailable' },
-        S: { scale: 0, text: 'Unknown', description: 'Data unavailable' },
-        G: { scale: 0, text: 'Unknown', description: 'Data unavailable' },
-      },
+      scales: null,
       source: 'NOAA Space Weather Prediction Center',
       error: 'Unable to fetch live data',
     }, { status: 500 });

@@ -30,6 +30,16 @@ const tabs: { id: SpaceWeatherTabId; label: string; icon: React.ElementType }[] 
 ];
 
 export default function SpaceWeatherNav({ activeTab, onTabChange }: SpaceWeatherNavProps) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, id: SpaceWeatherTabId) => {
+    const index = tabs.findIndex(tab => tab.id === id);
+    const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
+      : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
+      : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
+    if (next === null) return;
+    event.preventDefault();
+    onTabChange(tabs[next].id);
+    event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#tab-${tabs[next].id}`)?.focus();
+  };
   return (
     <nav
       className="border border-border rounded-lg bg-card/50 overflow-x-auto scrollbar-none"
@@ -50,6 +60,8 @@ export default function SpaceWeatherNav({ activeTab, onTabChange }: SpaceWeather
               type="button"
               id={`tab-${id}`}
               aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              onKeyDown={event => handleKeyDown(event, id)}
               aria-controls={`panel-${id}`}
               onClick={() => onTabChange(id)}
               className={cn(

@@ -6,6 +6,7 @@
 
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import type { FetchWithTimeoutOptions } from '@/lib/fetch-with-timeout'
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 
 export const RTSW_WIND_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json'
@@ -64,8 +65,8 @@ export type SolarWindCurrent = {
 export type SolarWindRecentPoint = {
   timeTag: string;
   speed: number;
-  density: number;
-  bz: number;
+  density: number | null;
+  bz: number | null;
 };
 
 type WindRow = {
@@ -95,7 +96,7 @@ function asMagRows(payload: unknown): MagRow[] {
 }
 
 function hasSpeed(row: WindRow): boolean {
-  return typeof row.proton_speed === 'number' && row.proton_speed > 0;
+  return typeof row.proton_speed === 'number' && Number.isFinite(row.proton_speed) && row.proton_speed > 0;
 }
 
 /** Epoch ms for a row's RTSW time tag. */
@@ -202,7 +203,7 @@ export function selectRtswWindSeries(payload: unknown): WindRow[] {
 
 export function pickLatestMag(rows: MagRow[]): MagRow | null {
   const hasField = (row: MagRow) =>
-    typeof row.bz_gsm === 'number' && typeof row.bt === 'number';
+    typeof row.bz_gsm === 'number' && Number.isFinite(row.bz_gsm) && typeof row.bt === 'number' && Number.isFinite(row.bt);
   return (
     newestBy(rows, (row) => Boolean(row.active) && hasField(row)) ??
     newestBy(rows, hasField)
@@ -226,6 +227,7 @@ export function determineSpeedTrend(values: number[]): 'increasing' | 'decreasin
 export function parseRtswSolarWind(
   windPayload: unknown,
   magPayload: unknown,
+  now?: number,
 ): {
   current: SolarWindCurrent;
   recent: SolarWindRecentPoint[];
@@ -236,12 +238,18 @@ export function parseRtswSolarWind(
   // serves RTSW newest-first, and the `recent` series and its trend both read
   // the tail of the array as the most recent samples: unsorted, the chart drew
   // the oldest 360 samples and the trend arrow pointed the wrong way.
-  const windRows = oldestFirst(asWindRows(windPayload));
-  const magRows = oldestFirst(asMagRows(magPayload));
+  const dated = <T extends { time_tag?: string }>(rows: T[]) => rows.filter(row => row
+    && Number.isFinite(rowTimeMs(row)) && (now === undefined || rowTimeMs(row) <= now));
+  const windRows = oldestFirst(dated(asWindRows(windPayload)));
+  const magRows = oldestFirst(dated(asMagRows(magPayload)));
   const latestWind = pickLatestWind(windRows);
-  const latestMag = pickLatestMag(magRows);
+  // Join only the wind spacecraft at the same UTC instant. A second source
+  // or a nearby minute cannot establish this row's magnetic observation.
+  const sameInstantMag = latestWind ? magRows.filter(row => rowTimeMs(row) === rowTimeMs(latestWind)
+    && (latestWind.source ? row.source === latestWind.source : !row.source && Boolean(row.active) === Boolean(latestWind.active))) : [];
+  const latestMag = pickLatestMag(sameInstantMag);
 
-  if (!latestWind) {
+  if (!latestWind || (now !== undefined && !isCurrentObservation(latestWind.time_tag, CURRENT_MAX_AGE_MS.solarWind, now))) {
     return {
       current: {
         timeTag: '',
@@ -279,19 +287,15 @@ export function parseRtswSolarWind(
     recent.push({
       timeTag: String(row.time_tag ?? ''),
       speed,
-      density: row.proton_density ?? 0,
-      bz: 0,
+      density: typeof row.proton_density === 'number' && Number.isFinite(row.proton_density) && row.proton_density >= 0 ? row.proton_density : null,
+      bz: null,
     });
   }
 
-  // Attach nearest mag Bz samples to recent points. Both sides go through
-  // swpcTimeTagMs: a bare Date.parse reads an unzoned SWPC tag as local time,
-  // and across a DST boundary two rows minutes apart pick up offsets an hour
-  // apart, which silently blows the 15-minute match window below.
+  // Join same-source Bz only at the same UTC instant. Missing field samples
+  // remain null, so a chart cannot manufacture a neutral magnetic field.
   if (magRows.length > 0 && recent.length > 0) {
-    const magWithBz = latestMag
-      ? sameSourceAs(latestMag, magRows, (r) => typeof r.bz_gsm === 'number')
-      : magRows.filter((r) => typeof r.bz_gsm === 'number');
+    const magWithBz = magRows.filter(row => (latestWind.source ? row.source === latestWind.source : !row.source && Boolean(row.active) === Boolean(latestWind.active)) && typeof row.bz_gsm === 'number' && Number.isFinite(row.bz_gsm));
     for (const point of recent) {
       const t = swpcTimeTagMs(point.timeTag);
       if (Number.isNaN(t)) continue;
@@ -306,7 +310,7 @@ export function parseRtswSolarWind(
           best = m;
         }
       }
-      if (best && bestDelta < 15 * 60 * 1000) {
+      if (best && bestDelta === 0) {
         point.bz = Math.round((best.bz_gsm as number) * 10) / 10;
       }
     }
@@ -321,11 +325,11 @@ export function parseRtswSolarWind(
       timeTag: String(latestWind.time_tag ?? ''),
       speed: Math.round(latestWind.proton_speed ?? 0),
       density:
-        typeof latestWind.proton_density === 'number'
+        typeof latestWind.proton_density === 'number' && Number.isFinite(latestWind.proton_density) && latestWind.proton_density >= 0
           ? Math.round(latestWind.proton_density * 10) / 10
           : null,
       temperature:
-        typeof latestWind.proton_temperature === 'number'
+        typeof latestWind.proton_temperature === 'number' && Number.isFinite(latestWind.proton_temperature) && latestWind.proton_temperature >= 0
           ? Math.round(latestWind.proton_temperature)
           : null,
       bz:

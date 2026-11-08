@@ -5,12 +5,12 @@
  * Licensed under Fair Source License, Version 0.9
  *
  * Provides SOHO LASCO coronagraph image URLs for animation
- * Primary: Animated GIFs from NASA showing 48-hour loops
- * Secondary: Archive frames when available
+ * Provider-listed frames from NOAA SWPC, with NASA animation fallback.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -36,58 +36,43 @@ export interface CoronagraphApiResponse {
   note: string;
 }
 
-// Animated GIF URLs (always available, NASA-provided 48hr loops)
+// Provider animations; duration and availability depend on upstream coverage.
 const ANIMATED_GIFS = {
   c2: {
-    full: 'https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.gif',
+    full: 'https://soho.nascom.nasa.gov/data/LATEST/current_c2small.gif',
     small: 'https://soho.nascom.nasa.gov/data/LATEST/current_c2small.gif',
   },
   c3: {
-    full: 'https://soho.nascom.nasa.gov/data/realtime/c3/512/latest.gif',
+    full: 'https://soho.nascom.nasa.gov/data/LATEST/current_c3small.gif',
     small: 'https://soho.nascom.nasa.gov/data/LATEST/current_c3small.gif',
   },
 };
 
-// Latest static images (always available)
+// Latest static images (availability depends on the provider).
 const LATEST_IMAGES = {
   c2: 'https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.jpg',
   c3: 'https://soho.nascom.nasa.gov/data/realtime/c3/512/latest.jpg',
 };
 
-/**
- * Generate frame URLs using SOHO archive structure
- * Note: SOHO archive URLs are not always reliable for realtime access
- * The archive structure is: /data/REPROCESSING/Completed/YYYY/cN/YYYYMMDD/
- * We generate these URLs but mark them as potentially unavailable
- */
-function generateArchiveFrameUrls(camera: 'c2' | 'c3', count: number = 12): CoronagraphFrame[] {
-  const frames: CoronagraphFrame[] = [];
-  const now = new Date();
-
-  // Generate timestamps for last ~2-3 hours (12 frames at 12-min intervals)
-  for (let i = count - 1; i >= 0; i--) {
-    const frameTime = new Date(now.getTime() - i * 12 * 60 * 1000);
-
-    // Format for SOHO archive (uses UTC)
-    const year = frameTime.getUTCFullYear();
-    const month = String(frameTime.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(frameTime.getUTCDate()).padStart(2, '0');
-    const hour = String(frameTime.getUTCHours()).padStart(2, '0');
-    const minute = String(Math.floor(frameTime.getUTCMinutes() / 12) * 12).padStart(2, '0');
-
-    // Archive URL structure - these may not exist in realtime
-    frames.push({
-      timestamp: frameTime.toISOString(),
-      url: `https://soho.nascom.nasa.gov/data/realtime/${camera}/512/${year}${month}${day}_${hour}${minute}_${camera}_512.jpg`,
-      camera,
-      available: false, // Mark as potentially unavailable - client should verify
-    });
+/** Only provider-listed frames carry an acquisition time. Never infer missing exposures. */
+function manifestFrames(manifest: unknown, camera: 'c2' | 'c3'): CoronagraphFrame[] {
+  if (!Array.isArray(manifest)) return [];
+  const frames = new Map<string, CoronagraphFrame>();
+  const pattern = new RegExp(`^/images/animations/lasco-${camera}/(\\d{8})_(\\d{4})_${camera}_512\\.jpg$`);
+  for (const entry of manifest) {
+    if (!entry || typeof entry !== 'object' || typeof entry.url !== 'string') continue;
+    const match = entry.url.match(pattern);
+    if (!match) continue;
+    const [, date, time] = match;
+    const timestamp = `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${time.slice(0,2)}:${time.slice(2,4)}:00.000Z`;
+    const parsed = new Date(timestamp);
+    if (!Number.isFinite(parsed.getTime()) || parsed.toISOString() !== timestamp) continue;
+    frames.set(entry.url, {url: `https://services.swpc.noaa.gov${entry.url}`, timestamp, camera, available: true});
   }
-
-  return frames;
+  return [...frames.values()].sort((a,b) => a.timestamp.localeCompare(b.timestamp));
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { searchParams } = request.nextUrl;
@@ -103,8 +88,10 @@ export async function GET(request: NextRequest) {
     // Limit frame count to reasonable range
     const safeFrameCount = Math.min(Math.max(frameCount, 6), 24);
 
-    // Generate archive frame URLs (may not be available)
-    const archiveFrames = generateArchiveFrameUrls(camera, safeFrameCount);
+    // Fetch actual exposures listed by NOAA; never extrapolate a cadence.
+    const manifest = await fetchSwpcJson<unknown>(`https://services.swpc.noaa.gov/products/animations/lasco-${camera}.json`);
+    const archiveFrames = manifestFrames(manifest, camera).slice(-safeFrameCount);
+    if (archiveFrames.length === 0) throw new Error('No valid LASCO manifest frames');
 
     // Build response following PRD section 6.1 format
     const response: CoronagraphApiResponse = {
@@ -116,11 +103,11 @@ export async function GET(request: NextRequest) {
         animatedGif: ANIMATED_GIFS[camera].full,
         camera,
         frameCount: archiveFrames.length,
-        // Recommend using animated GIF since archive frames are unreliable
-        useAnimatedGif: true,
+        // Provider-listed frames support manual playback.
+        useAnimatedGif: false,
       },
       source: 'SOHO LASCO (NASA/ESA)',
-      note: `LASCO ${camera.toUpperCase()} coronagraph. Individual archive frames may not be available in realtime - use animatedGif or fallbackGif for reliable animation. The animated GIF shows a 48-hour loop of actual coronagraph images.`,
+      note: `LASCO ${camera.toUpperCase()} coronagraph. Frames and acquisition times are from the NOAA SWPC animation manifest. The GIF is a separate provider animation.`,
     };
 
     return NextResponse.json(response, { headers: rateLimitHeaders });
@@ -144,10 +131,10 @@ export async function GET(request: NextRequest) {
         useAnimatedGif: true,
       },
       source: 'SOHO LASCO (NASA/ESA)',
-      note: 'Error generating frame URLs. Use fallbackGif for animation.',
+      note: 'Frame manifest unavailable. The provider animation may still be available.',
     };
 
-    return NextResponse.json(errorResponse, { status: 500 });
+    return NextResponse.json(errorResponse, { status: 502, headers: rateLimitHeaders });
   }
   }, { context: 'space-weather/coronagraph' });
 }

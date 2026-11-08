@@ -33,6 +33,7 @@ import {
 } from './state';
 import { buildVoiceCorrectionInstruction, sweepVoice, VOICE_SYSTEM_PROMPT } from './voice';
 import { collectSundayEvidence, formatSundayEvidence } from './data/sunday-evidence';
+import { temporalClaimErrors } from './temporal-claims';
 import type { TopicSlug } from './topics';
 import type { SundayEvidence } from './data/sunday-evidence';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
@@ -112,13 +113,15 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
     const collides = checkOpenerCollision(openerHash, recentOpenerHashes);
     const tooShort = outcome === 'complete' && wordCount(draft) < 900;
     const missingHeaders = !/##\s*Rearview/i.test(draft) || !/##\s*Roadmap/i.test(draft);
-    if (!collides && voiceViolations.length === 0 && !tooShort && !missingHeaders) break;
+    const temporalErrors = temporalClaimErrors(draft, coverage);
+    if (!collides && voiceViolations.length === 0 && !tooShort && !missingHeaders && temporalErrors.length === 0) break;
 
     const corrections: string[] = [];
     if (collides) corrections.push(`Your opening collides with a prior Sunday post. Rewrite with a distinct framing and concrete specifics from this week's data.`);
     if (voiceViolations.length > 0) corrections.push(buildVoiceCorrectionInstruction(voiceViolations));
     if (tooShort) corrections.push(`Draft was ${wordCount(draft)} words. Use the supported WPC national outlook and city detail to make Rearview (~300-400 words) and Roadmap (~500-700 words) substantive, without padding or unsupported claims.`);
     if (missingHeaders) corrections.push(`Use the exact section headers "## Rearview" and "## Roadmap" — not paraphrased versions.`);
+    if (temporalErrors.length) corrections.push(`Correct these explicit temporal contradictions using the supplied dated evidence:\n${temporalErrors.join('\n')}`);
 
     retries += 1;
     console.log(`[sunday] retry ${retries} — ${corrections.length} correction(s)`);
@@ -138,6 +141,9 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
     openerHash = computeOpenerHash(draft);
     voiceViolations = sweepVoice(draft);
   }
+
+  const generationTemporalErrors = temporalClaimErrors(draft, coverage);
+  if (generationTemporalErrors.length) throw new Error(`Newsletter temporal validation failed after ${retries} retries: ${generationTemporalErrors.join('; ')}`);
 
   let similarity: SimilarityVerdict = { max: 0, worstMatch: null, triggerPhrases: [] };
   try {
@@ -170,6 +176,9 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
       // keep prior similarity
     }
   }
+
+  const finalTemporalErrors = temporalClaimErrors(draft, coverage);
+  if (finalTemporalErrors.length) throw new Error(`Newsletter temporal validation failed after rewrite: ${finalTemporalErrors.join('; ')}`);
 
   const imagePlan = await buildSundayImagePlan({
     draft,
@@ -576,6 +585,8 @@ async function generate(opts: GenerateOpts): Promise<string> {
 - ${closer.instruction}
 
 TIME PRECISION:
+- Use the supplied temporalReference weekday/date pairs for UTC forecast days. Never invent a weekday from memory. Explicit weekday/date contradictions block publication.
+- For an entire SPC report-day log, prefer exact UTC report-time bounds. A saved local-clock summary covers only unambiguous statewide time zones; unknown or split-zone states require UTC. Do not call a whole log "all morning" or "all afternoon" unless its complete clock evidence supports that assertion. Report timestamps do not establish bulletin publication times.
 - The data block uses UTC timestamps. When you describe an event in prose, convert to the affected region's local time-of-day before choosing words like "morning", "afternoon", "evening", or "overnight". A 19:57Z warning in Pennsylvania is afternoon EDT, not evening. A 02:00Z warning in Mississippi is late evening CDT, not morning.
 - Do not group temporally-distinct or geographically-distinct convective rounds into a single "later that evening" narrative unless they actually occurred together.`);
 

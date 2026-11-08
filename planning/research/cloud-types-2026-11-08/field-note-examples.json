@@ -1,0 +1,566 @@
+[
+  {
+    "state": "supported-type",
+    "synthetic": false,
+    "selected_coordinate": {
+      "id": "manaus",
+      "name": "Manaus, Brazil",
+      "latitude": -3.119,
+      "longitude": -60.0217,
+      "reference_elevation_m": 90,
+      "geography": "equatorial inland rainforest"
+    },
+    "source_product": "DWD international SYNOP/BUFR",
+    "source_product_version": {
+      "edition": 4,
+      "master_table": 28,
+      "local_table": 0,
+      "centre": 43
+    },
+    "evidence_kind": "reported_genus_nearby",
+    "raw_cloud_type_codes": [
+      30,
+      20,
+      12
+    ],
+    "accepted_genera": [
+      "Cirrus"
+    ],
+    "alternatives": [],
+    "optional_genera": [],
+    "geometry": {
+      "station_id": "82-332",
+      "station_name": "MANAUS-AEROPORTO",
+      "latitude": -3.1333300000000004,
+      "longitude": -59.96667000000001,
+      "elevation_m": 84.0,
+      "station_type": 1
+    },
+    "geometry_kind": "station_point",
+    "distance_km": 6.314,
+    "observed_at_utc": "2026-11-08T00:00:00+00:00",
+    "source_receipt_at_utc": null,
+    "feed_publication_proxy_utc": "2026-11-08T00:19:05Z",
+    "retrieved_at_utc": "2026-11-08T20:18:19.703568+00:00",
+    "quality_and_method_fields": {
+      "#1#cloudCoverTotal": [
+        75
+      ],
+      "#1#verticalSignificanceSurfaceObservations": [
+        0
+      ],
+      "#1#cloudAmount": [
+        0
+      ],
+      "#1#cloudType": [
+        30
+      ],
+      "#2#cloudType": [
+        20
+      ],
+      "#3#cloudType": [
+        12
+      ],
+      "#2#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#2#cloudAmount": [
+        null
+      ],
+      "#4#cloudType": [
+        null
+      ],
+      "#3#verticalSignificanceSurfaceObservations": [
+        7
+      ],
+      "#4#verticalSignificanceSurfaceObservations": [
+        8
+      ],
+      "#5#verticalSignificanceSurfaceObservations": [
+        9
+      ],
+      "#6#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#5#cloudType": [
+        null
+      ],
+      "#1#instrumentationForWindMeasurement": [
+        12
+      ],
+      "#1#typeOfInstrumentationForEvaporationMeasurement": [
+        null
+      ]
+    },
+    "mapping_version": "wmo-020012-conservative-v1-2026-11-08",
+    "provenance": {
+      "file": "Z__C_EDZW_20261108001404_bda01,synop_bufr_999999_999999__MW_657.bin",
+      "message_index": 37,
+      "subset": 4,
+      "source_sha256": "8cc0b1e8b9453ab7efc650dad21628a989778adc2b4e88d4c1bbdb05f5edff10"
+    }
+  },
+  {
+    "state": "multiple-types",
+    "synthetic": false,
+    "selected_coordinate": {
+      "id": "nairobi",
+      "name": "Nairobi, Kenya",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "reference_elevation_m": 1795,
+      "geography": "equatorial inland plateau"
+    },
+    "source_product": "DWD international SYNOP/BUFR",
+    "source_product_version": {
+      "edition": 4,
+      "master_table": 18,
+      "local_table": 0,
+      "centre": 14
+    },
+    "evidence_kind": "reported_genus_nearby",
+    "raw_cloud_type_codes": [
+      32,
+      23,
+      10,
+      6
+    ],
+    "accepted_genera": [
+      "Altocumulus",
+      "Cumulus",
+      "Stratocumulus"
+    ],
+    "alternatives": [],
+    "optional_genera": [
+      {
+        "raw_code": 32,
+        "not_confirmed": [
+          "Stratocumulus"
+        ]
+      }
+    ],
+    "geometry": {
+      "station_id": "63-740",
+      "station_name": "NAIROBI/JOMO KENYATT",
+      "latitude": -1.31,
+      "longitude": 36.93,
+      "elevation_m": 1624.0,
+      "station_type": 1
+    },
+    "geometry_kind": "station_point",
+    "distance_km": 12.181,
+    "observed_at_utc": "2026-11-08T00:00:00+00:00",
+    "source_receipt_at_utc": null,
+    "feed_publication_proxy_utc": "2026-11-08T00:34:14Z",
+    "retrieved_at_utc": "2026-11-08T20:18:21.077602+00:00",
+    "quality_and_method_fields": {
+      "#1#cloudCoverTotal": [
+        50
+      ],
+      "#1#verticalSignificanceSurfaceObservations": [
+        7
+      ],
+      "#1#cloudAmount": [
+        3
+      ],
+      "#1#cloudType": [
+        32
+      ],
+      "#2#cloudType": [
+        23
+      ],
+      "#3#cloudType": [
+        10
+      ],
+      "#2#verticalSignificanceSurfaceObservations": [
+        1
+      ],
+      "#2#cloudAmount": [
+        3
+      ],
+      "#4#cloudType": [
+        6
+      ],
+      "#3#verticalSignificanceSurfaceObservations": [
+        7
+      ],
+      "#4#verticalSignificanceSurfaceObservations": [
+        8
+      ],
+      "#5#verticalSignificanceSurfaceObservations": [
+        9
+      ],
+      "#6#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#5#cloudType": [
+        null
+      ],
+      "#1#instrumentationForWindMeasurement": [
+        12
+      ],
+      "#1#typeOfInstrumentationForEvaporationMeasurement": [
+        null
+      ]
+    },
+    "mapping_version": "wmo-020012-conservative-v1-2026-11-08",
+    "provenance": {
+      "file": "Z__C_EDZW_20261108002905_bda01,synop_bufr_999999_999999__MW_660.bin",
+      "message_index": 17,
+      "subset": 2,
+      "source_sha256": "f72d4d26066455d63e9c399129dd8a6e5761d15a17afd23836b876d28e2a4e1a"
+    }
+  },
+  {
+    "state": "ambiguous-type",
+    "synthetic": false,
+    "selected_coordinate": {
+      "id": "tromso",
+      "name": "Tromso, Norway",
+      "latitude": 69.6492,
+      "longitude": 18.9553,
+      "reference_elevation_m": 20,
+      "geography": "high latitude coastal mountains"
+    },
+    "source_product": "DWD international SYNOP/BUFR",
+    "source_product_version": {
+      "edition": 4,
+      "master_table": 31,
+      "local_table": 0,
+      "centre": 88
+    },
+    "evidence_kind": "reported_genus_nearby",
+    "raw_cloud_type_codes": [
+      37,
+      61,
+      60
+    ],
+    "accepted_genera": [],
+    "alternatives": [
+      {
+        "raw_code": 37,
+        "one_or_both": true,
+        "genera": [
+          "Stratus",
+          "Cumulus"
+        ]
+      }
+    ],
+    "optional_genera": [],
+    "geometry": {
+      "station_id": "1-26",
+      "station_name": "TROMSO",
+      "latitude": 69.6537,
+      "longitude": 18.9368,
+      "elevation_m": 100.0,
+      "station_type": 1
+    },
+    "geometry_kind": "station_point",
+    "distance_km": 0.873,
+    "observed_at_utc": "2026-11-07T21:00:00+00:00",
+    "source_receipt_at_utc": null,
+    "feed_publication_proxy_utc": "2026-11-07T21:22:08Z",
+    "retrieved_at_utc": "2026-11-08T20:18:06.239510+00:00",
+    "quality_and_method_fields": {
+      "#1#cloudCoverTotal": [
+        100
+      ],
+      "#1#verticalSignificanceSurfaceObservations": [
+        7
+      ],
+      "#1#cloudAmount": [
+        8
+      ],
+      "#1#cloudType": [
+        37
+      ],
+      "#2#cloudType": [
+        61
+      ],
+      "#3#cloudType": [
+        60
+      ],
+      "#2#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#1#instrumentationForWindMeasurement": [
+        8
+      ],
+      "#1#typeOfInstrumentationForEvaporationMeasurement": [
+        null
+      ]
+    },
+    "mapping_version": "wmo-020012-conservative-v1-2026-11-08",
+    "provenance": {
+      "file": "Z__C_EDZW_20261107211706_bda01,synop_bufr_999999_999999__MW_628.bin",
+      "message_index": 6,
+      "subset": 1,
+      "source_sha256": "7f9c94cebd36d0a734e059f4c4cab20f2cebd45fbe8b757fc82c870ef2b062ef"
+    }
+  },
+  {
+    "state": "nearby-only",
+    "restatement_of_state": "supported-type",
+    "restatement_explanation": "This restates the same captured Manaus report used by supported-type to emphasize station-to-selected-point representativeness. It is not an independent observation or an additional measured success; the nearby station reports its own sky, not clouds overhead at the selected point.",
+    "synthetic": false,
+    "selected_coordinate": {
+      "id": "manaus",
+      "name": "Manaus, Brazil",
+      "latitude": -3.119,
+      "longitude": -60.0217,
+      "reference_elevation_m": 90,
+      "geography": "equatorial inland rainforest"
+    },
+    "source_product": "DWD international SYNOP/BUFR",
+    "source_product_version": {
+      "edition": 4,
+      "master_table": 28,
+      "local_table": 0,
+      "centre": 43
+    },
+    "evidence_kind": "reported_genus_nearby",
+    "raw_cloud_type_codes": [
+      30,
+      20,
+      12
+    ],
+    "accepted_genera": [
+      "Cirrus"
+    ],
+    "alternatives": [],
+    "optional_genera": [],
+    "geometry": {
+      "station_id": "82-332",
+      "station_name": "MANAUS-AEROPORTO",
+      "latitude": -3.1333300000000004,
+      "longitude": -59.96667000000001,
+      "elevation_m": 84.0,
+      "station_type": 1
+    },
+    "geometry_kind": "station_point",
+    "distance_km": 6.314,
+    "observed_at_utc": "2026-11-08T00:00:00+00:00",
+    "source_receipt_at_utc": null,
+    "feed_publication_proxy_utc": "2026-11-08T00:19:05Z",
+    "retrieved_at_utc": "2026-11-08T20:18:19.703568+00:00",
+    "quality_and_method_fields": {
+      "#1#cloudCoverTotal": [
+        75
+      ],
+      "#1#verticalSignificanceSurfaceObservations": [
+        0
+      ],
+      "#1#cloudAmount": [
+        0
+      ],
+      "#1#cloudType": [
+        30
+      ],
+      "#2#cloudType": [
+        20
+      ],
+      "#3#cloudType": [
+        12
+      ],
+      "#2#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#2#cloudAmount": [
+        null
+      ],
+      "#4#cloudType": [
+        null
+      ],
+      "#3#verticalSignificanceSurfaceObservations": [
+        7
+      ],
+      "#4#verticalSignificanceSurfaceObservations": [
+        8
+      ],
+      "#5#verticalSignificanceSurfaceObservations": [
+        9
+      ],
+      "#6#verticalSignificanceSurfaceObservations": [
+        null
+      ],
+      "#5#cloudType": [
+        null
+      ],
+      "#1#instrumentationForWindMeasurement": [
+        12
+      ],
+      "#1#typeOfInstrumentationForEvaporationMeasurement": [
+        null
+      ]
+    },
+    "mapping_version": "wmo-020012-conservative-v1-2026-11-08",
+    "provenance": {
+      "file": "Z__C_EDZW_20261108001404_bda01,synop_bufr_999999_999999__MW_657.bin",
+      "message_index": 37,
+      "subset": 4,
+      "source_sha256": "8cc0b1e8b9453ab7efc650dad21628a989778adc2b4e88d4c1bbdb05f5edff10"
+    }
+  },
+  {
+    "state": "cloud-free-within-source-limits",
+    "synthetic": false,
+    "excluded_from_selected_slot_availability": true,
+    "selected_coordinate": {
+      "latitude": 52.123870000000004,
+      "longitude": 0.9573400000000001,
+      "place": "Wattisham station point (outside the declared coordinate sample)"
+    },
+    "evidence": {
+      "station_id": "3-590",
+      "station_name": "WATTISHAM AUTOMATIC",
+      "latitude": 52.123870000000004,
+      "longitude": 0.9573400000000001,
+      "elevation_m": 89.0,
+      "station_type": 0,
+      "observed_at_utc": "2026-11-07T21:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T21:07:03Z",
+      "fetched_at_utc": "2026-11-08T20:18:04.820340+00:00",
+      "file": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+      "message_index": 54,
+      "subset": 29,
+      "source_sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+      "master_table_version": 36,
+      "local_table_version": 0,
+      "centre": 74,
+      "subcentre": 0,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [],
+      "total_cloud_cover": 0,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          0
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#cloudAmount": [
+          0
+        ],
+        "#1#cloudType": [
+          null
+        ],
+        "#2#cloudType": [
+          null
+        ],
+        "#3#cloudType": [
+          null
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#3#verticalSignificanceSurfaceObservations": [
+          8
+        ],
+        "#4#verticalSignificanceSurfaceObservations": [
+          9
+        ],
+        "#5#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#4#cloudType": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          12
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "cloud_free_within_source_limits",
+      "accepted_genera": [],
+      "alternatives": [],
+      "optional_genera": [],
+      "obscured_codes": [],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  },
+  {
+    "state": "broader-satellite-category",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "provider": "Meteomatics",
+      "parameter": "sat_cloud_type:idx",
+      "raw_category": 5,
+      "satellite_footprint": null
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  },
+  {
+    "state": "obscured",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "raw_cloud_type_code": 59
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  },
+  {
+    "state": "stale",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "age_minutes": 120,
+      "proposed_cutoff_minutes": 90
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  },
+  {
+    "state": "unsupported-location",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "selected_coordinate": {
+        "id": "san-ramon",
+        "name": "San Ramon, California",
+        "latitude": 37.7799,
+        "longitude": -121.978,
+        "reference_elevation_m": 150,
+        "geography": "inland valley near coast; coastal ranges"
+      },
+      "status": "unsupported"
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  },
+  {
+    "state": "conflicting-evidence",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "station_code": 35,
+      "satellite_category": 0,
+      "co_location_and_time_match": false
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  },
+  {
+    "state": "provider-failure",
+    "synthetic": true,
+    "excluded_from_availability_and_accuracy_metrics": true,
+    "template_fields": {
+      "http_status": 503
+    },
+    "observed_at_utc": null,
+    "source_receipt_at_utc": null,
+    "caption": "Contract example only; actual times and geometry must come from real source evidence."
+  }
+]

@@ -110,6 +110,12 @@ Both newsletter workflows run a hard post gate before opening a PR:
 npx tsx scripts/newsletter/validate-post.ts content/blog/<post>.md --audit
 ```
 
+Sunday generation also checks explicit calendar consistency before selecting images or writing a post. `temporalReference` supplies deterministic UTC forecast dates/weekdays and compact clock summaries for every validated SPC report, including reports outside the prompt's 20-example cap. Aggregate local-clock summaries use IANA daylight-saving rules only for unambiguous statewide zones; split-zone or unsupported states remain unknown. The original report timestamp is not a bulletin publication timestamp.
+
+The temporal gate rejects supported explicit forms such as `Wednesday into Thursday (November 12–13)` when the edition's dated evidence implies Thursday–Friday. It also rejects an entire dated SPC report log described as all morning/afternoon when its complete saved clock evidence disagrees or cannot support that assertion. Prefer exact UTC report-time bounds. Contradictions enter the existing two-retry correction budget; exhaustion or a contradictory similarity rewrite fails generation. Changed Sunday posts and the publication CLI repeat the check, so a refreshed receipt does not bypass it.
+
+This is a bounded consistency check, **not a general factual verifier**. It recognizes full weekday/month names with explicit date pairs and qualified aggregate SPC clock claims; it does not validate every narrative time phrase, weather mechanism, numerical forecast or historical claim. An unqualified year is inferred from the closest edition calendar date; historical claims should state their year. Quoted lines, fenced examples, comments and the immutable source disclosure are excluded. Existing historical posts are not silently rewritten or exempted by a new receipt.
+
 The validator rejects placeholder images, disallowed image hosts, `images_used` mismatches, and missing `image_audit` metadata when a generated post embeds catalog images. Sunday also checks for obvious narrative/image mismatches such as solar or drought imagery in a tornado/earthquake-led post.
 
 

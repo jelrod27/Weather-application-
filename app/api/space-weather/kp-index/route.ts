@@ -10,7 +10,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
-import { parseKpForecast, parsePlanetaryKpIndex } from '@/lib/services/swpc-kp';
+import { parseKpForecast, parseCurrentKpIndex } from '@/lib/services/swpc-kp';
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -19,7 +20,7 @@ export interface KpIndexData {
   current: {
     value: number;
     timeTag: string;
-  };
+  } | null;
   recent: Array<{
     timeTag: string;
     kp: number;
@@ -52,12 +53,12 @@ export async function GET(request: NextRequest) {
     let upstreamOk = false;
 
     if (kpResponse.status === 'fulfilled') {
-      const parsed = parsePlanetaryKpIndex(kpResponse.value);
-      if (parsed.current) {
+      const parsed = parseCurrentKpIndex(kpResponse.value);
+      if (parsed.current && isCurrentObservation(parsed.current.timeTag, CURRENT_MAX_AGE_MS.kp)) {
         upstreamOk = true;
         currentKp = parsed.current.kp;
         currentTimeTag = parsed.current.timeTag;
-        recentKp = parsed.recent;
+        recentKp = parsed.recent.filter(sample => isCurrentObservation(sample.timeTag, 24 * 60 * 60_000));
       }
     }
 
@@ -72,10 +73,7 @@ export async function GET(request: NextRequest) {
 
     const result: KpIndexData = {
       timestamp: new Date().toISOString(),
-      current: {
-        value: currentKp,
-        timeTag: currentTimeTag,
-      },
+      current: upstreamOk ? { value: currentKp, timeTag: currentTimeTag } : null,
       recent: recentKp,
       forecast,
     };
@@ -105,7 +103,7 @@ export async function GET(request: NextRequest) {
       {
         data: {
           timestamp: new Date().toISOString(),
-          current: { value: 0, timeTag: '' },
+          current: null,
           recent: [],
           forecast: null,
         },

@@ -19,8 +19,8 @@ export interface SolarWindData {
   recent: Array<{
     timeTag: string
     speed: number
-    density: number
-    bz: number
+    density: number | null
+    bz: number | null
   }>
 }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 60 },
     })
 
-    const parsed = parseRtswSolarWind(windJson, magJson)
+    const parsed = parseRtswSolarWind(windJson, magJson, Date.now())
 
     const result: SolarWindData = {
       timestamp: new Date().toISOString(),
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     if (!parsed.available) {
       return NextResponse.json(
         {
-          data: result,
+          data: null,
           source: 'NOAA Space Weather Prediction Center (RTSW)',
           error: 'Unable to fetch live solar wind data',
         },
@@ -64,12 +64,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        data: {
-          timestamp: new Date().toISOString(),
-          current: { timeTag: '', speed: 0, density: null, temperature: null, bz: null, bt: null },
-          trend: 'stable' as const,
-          recent: [],
-        },
+        data: null,
         source: 'NOAA Space Weather Prediction Center',
         error: 'Unable to fetch live data',
       },

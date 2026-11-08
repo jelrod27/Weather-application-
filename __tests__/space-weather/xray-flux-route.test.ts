@@ -9,7 +9,8 @@ import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 const fetchMock = jest.mocked(fetchSwpcJson)
 
 describe('GOES X-ray flux route', () => {
-  afterEach(() => jest.clearAllMocks())
+  beforeEach(() => jest.useFakeTimers().setSystemTime(new Date('2026-10-10T15:03:00Z')))
+  afterEach(() => {jest.useRealTimers(); jest.clearAllMocks()})
 
   it('uses every 1–8 angstrom sample for the peak and current value', async () => {
     const payload = [

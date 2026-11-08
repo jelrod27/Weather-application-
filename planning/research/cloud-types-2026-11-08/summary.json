@@ -1,0 +1,1009 @@
+{
+  "requested_denominator_per_source_policy": 2016,
+  "shortened_window_start": "2026-11-07T21:00:00+00:00",
+  "shortened_window_end": "2026-11-08T19:00:00+00:00",
+  "denominators_include_failures": true,
+  "groups": [
+    {
+      "source": "dwd",
+      "policy": "baseline",
+      "window": "requested",
+      "n": 2016,
+      "counts": {
+        "explicit_genus": 7,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 47,
+        "missing": 1840,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.35,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.35,
+        "missing": 91.27,
+        "obscured": 0.0,
+        "stale": 2.33,
+        "unclassified": 0.0,
+        "unsupported": 5.7
+      },
+      "age_minutes": {
+        "n": 147,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "missing": 811,
+          "unsupported": 52,
+          "stale": 26,
+          "ambiguous_type": 1,
+          "explicit_genus": 3
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 83,
+          "stale": 2,
+          "ambiguous_type": 1,
+          "explicit_genus": 1
+        },
+        "night": {
+          "missing": 946,
+          "unsupported": 58,
+          "stale": 19,
+          "ambiguous_type": 5,
+          "explicit_genus": 3
+        }
+      },
+      "distance_km": {
+        "n": 147,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 22.567
+      },
+      "per_location": {
+        "san-ramon": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 168
+        },
+        "london": {
+          "missing": 167,
+          "stale": 1
+        },
+        "athens": {
+          "missing": 154,
+          "stale": 14
+        },
+        "tromso": {
+          "missing": 160,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 149,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "kathmandu": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "tokyo": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 168
+        },
+        "manaus": {
+          "missing": 149,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "la-paz": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "honolulu": {
+          "missing": 145,
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "dwd",
+      "policy": "baseline",
+      "window": "shortened",
+      "n": 276,
+      "counts": {
+        "explicit_genus": 7,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 47,
+        "missing": 100,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 2.54,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 2.54,
+        "missing": 36.23,
+        "obscured": 0.0,
+        "stale": 17.03,
+        "unclassified": 0.0,
+        "unsupported": 41.67
+      },
+      "age_minutes": {
+        "n": 147,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 52,
+          "missing": 39,
+          "stale": 26,
+          "ambiguous_type": 1,
+          "explicit_genus": 3
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 5,
+          "stale": 2,
+          "ambiguous_type": 1,
+          "explicit_genus": 1
+        },
+        "night": {
+          "unsupported": 58,
+          "missing": 56,
+          "stale": 19,
+          "ambiguous_type": 5,
+          "explicit_genus": 3
+        }
+      },
+      "distance_km": {
+        "n": 147,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 22.567
+      },
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 23
+        },
+        "london": {
+          "missing": 22,
+          "stale": 1
+        },
+        "athens": {
+          "missing": 9,
+          "stale": 14
+        },
+        "tromso": {
+          "missing": 15,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 4,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "kathmandu": {
+          "unsupported": 23
+        },
+        "tokyo": {
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 23
+        },
+        "manaus": {
+          "missing": 4,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "la-paz": {
+          "unsupported": 23
+        },
+        "honolulu": {
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "dwd",
+      "policy": "relaxed",
+      "window": "requested",
+      "n": 2016,
+      "counts": {
+        "explicit_genus": 15,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 28,
+        "missing": 1851,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.35,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.74,
+        "missing": 91.82,
+        "obscured": 0.0,
+        "stale": 1.39,
+        "unclassified": 0.0,
+        "unsupported": 5.7
+      },
+      "age_minutes": {
+        "n": 148,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "missing": 818,
+          "unsupported": 52,
+          "ambiguous_type": 1,
+          "stale": 15,
+          "explicit_genus": 7
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 84,
+          "ambiguous_type": 1,
+          "explicit_genus": 2
+        },
+        "night": {
+          "missing": 949,
+          "unsupported": 58,
+          "stale": 13,
+          "ambiguous_type": 5,
+          "explicit_genus": 6
+        }
+      },
+      "distance_km": {
+        "n": 148,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 91.93
+      },
+      "per_location": {
+        "san-ramon": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 168
+        },
+        "london": {
+          "missing": 168
+        },
+        "athens": {
+          "missing": 164,
+          "stale": 4
+        },
+        "tromso": {
+          "missing": 160,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 149,
+          "explicit_genus": 7,
+          "stale": 12
+        },
+        "kathmandu": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "tokyo": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 168
+        },
+        "manaus": {
+          "missing": 149,
+          "explicit_genus": 7,
+          "stale": 12
+        },
+        "la-paz": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "honolulu": {
+          "missing": 145,
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "dwd",
+      "policy": "relaxed",
+      "window": "shortened",
+      "n": 276,
+      "counts": {
+        "explicit_genus": 15,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 28,
+        "missing": 111,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 2.54,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 5.43,
+        "missing": 40.22,
+        "obscured": 0.0,
+        "stale": 10.14,
+        "unclassified": 0.0,
+        "unsupported": 41.67
+      },
+      "age_minutes": {
+        "n": 148,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 52,
+          "missing": 46,
+          "ambiguous_type": 1,
+          "stale": 15,
+          "explicit_genus": 7
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 6,
+          "ambiguous_type": 1,
+          "explicit_genus": 2
+        },
+        "night": {
+          "unsupported": 58,
+          "missing": 59,
+          "stale": 13,
+          "ambiguous_type": 5,
+          "explicit_genus": 6
+        }
+      },
+      "distance_km": {
+        "n": 148,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 91.93
+      },
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 23
+        },
+        "london": {
+          "missing": 23
+        },
+        "athens": {
+          "missing": 19,
+          "stale": 4
+        },
+        "tromso": {
+          "missing": 15,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 4,
+          "explicit_genus": 7,
+          "stale": 12
+        },
+        "kathmandu": {
+          "unsupported": 23
+        },
+        "tokyo": {
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 23
+        },
+        "manaus": {
+          "missing": 4,
+          "explicit_genus": 7,
+          "stale": 12
+        },
+        "la-paz": {
+          "unsupported": 23
+        },
+        "honolulu": {
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "dwd",
+      "policy": "strict",
+      "window": "requested",
+      "n": 2016,
+      "counts": {
+        "explicit_genus": 7,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 47,
+        "missing": 1840,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.35,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.35,
+        "missing": 91.27,
+        "obscured": 0.0,
+        "stale": 2.33,
+        "unclassified": 0.0,
+        "unsupported": 5.7
+      },
+      "age_minutes": {
+        "n": 147,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "missing": 811,
+          "unsupported": 52,
+          "stale": 26,
+          "ambiguous_type": 1,
+          "explicit_genus": 3
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 83,
+          "stale": 2,
+          "ambiguous_type": 1,
+          "explicit_genus": 1
+        },
+        "night": {
+          "missing": 946,
+          "unsupported": 58,
+          "stale": 19,
+          "ambiguous_type": 5,
+          "explicit_genus": 3
+        }
+      },
+      "distance_km": {
+        "n": 147,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 22.567
+      },
+      "per_location": {
+        "san-ramon": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 168
+        },
+        "london": {
+          "missing": 167,
+          "stale": 1
+        },
+        "athens": {
+          "missing": 154,
+          "stale": 14
+        },
+        "tromso": {
+          "missing": 160,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 149,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "kathmandu": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "tokyo": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 168
+        },
+        "manaus": {
+          "missing": 149,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "la-paz": {
+          "missing": 145,
+          "unsupported": 23
+        },
+        "honolulu": {
+          "missing": 145,
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "dwd",
+      "policy": "strict",
+      "window": "shortened",
+      "n": 276,
+      "counts": {
+        "explicit_genus": 7,
+        "ambiguous_type": 7,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 47,
+        "missing": 100,
+        "unsupported": 115,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 2.54,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 2.54,
+        "missing": 36.23,
+        "obscured": 0.0,
+        "stale": 17.03,
+        "unclassified": 0.0,
+        "unsupported": 41.67
+      },
+      "age_minutes": {
+        "n": 147,
+        "min": 30.0,
+        "median": 60.0,
+        "p90": 360.0,
+        "p95": 540.0,
+        "max": 720.0
+      },
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 52,
+          "missing": 39,
+          "stale": 26,
+          "ambiguous_type": 1,
+          "explicit_genus": 3
+        },
+        "twilight": {
+          "unsupported": 5,
+          "missing": 5,
+          "stale": 2,
+          "ambiguous_type": 1,
+          "explicit_genus": 1
+        },
+        "night": {
+          "unsupported": 58,
+          "missing": 56,
+          "stale": 19,
+          "ambiguous_type": 5,
+          "explicit_genus": 3
+        }
+      },
+      "distance_km": {
+        "n": 147,
+        "min": 0.372,
+        "median": 6.314,
+        "p90": 10.818,
+        "p95": 10.818,
+        "max": 22.567
+      },
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 23
+        },
+        "hamburg": {
+          "missing": 23
+        },
+        "london": {
+          "missing": 22,
+          "stale": 1
+        },
+        "athens": {
+          "missing": 9,
+          "stale": 14
+        },
+        "tromso": {
+          "missing": 15,
+          "ambiguous_type": 7,
+          "explicit_genus": 1
+        },
+        "nairobi": {
+          "missing": 4,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "kathmandu": {
+          "unsupported": 23
+        },
+        "tokyo": {
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "missing": 23
+        },
+        "manaus": {
+          "missing": 4,
+          "explicit_genus": 3,
+          "stale": 16
+        },
+        "la-paz": {
+          "unsupported": 23
+        },
+        "honolulu": {
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "meteoblue",
+      "policy": "baseline",
+      "window": "requested",
+      "n": 2016,
+      "counts": {
+        "explicit_genus": 0,
+        "ambiguous_type": 0,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 0,
+        "missing": 0,
+        "unsupported": 2016,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.0,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.0,
+        "missing": 0.0,
+        "obscured": 0.0,
+        "stale": 0.0,
+        "unclassified": 0.0,
+        "unsupported": 100.0
+      },
+      "age_minutes": null,
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 893
+        },
+        "twilight": {
+          "unsupported": 92
+        },
+        "night": {
+          "unsupported": 1031
+        }
+      },
+      "distance_km": null,
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 168
+        },
+        "hamburg": {
+          "unsupported": 168
+        },
+        "london": {
+          "unsupported": 168
+        },
+        "athens": {
+          "unsupported": 168
+        },
+        "tromso": {
+          "unsupported": 168
+        },
+        "nairobi": {
+          "unsupported": 168
+        },
+        "kathmandu": {
+          "unsupported": 168
+        },
+        "tokyo": {
+          "unsupported": 168
+        },
+        "alice-springs": {
+          "unsupported": 168
+        },
+        "manaus": {
+          "unsupported": 168
+        },
+        "la-paz": {
+          "unsupported": 168
+        },
+        "honolulu": {
+          "unsupported": 168
+        }
+      }
+    },
+    {
+      "source": "meteoblue",
+      "policy": "baseline",
+      "window": "shortened",
+      "n": 276,
+      "counts": {
+        "explicit_genus": 0,
+        "ambiguous_type": 0,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 0,
+        "missing": 0,
+        "unsupported": 276,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.0,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.0,
+        "missing": 0.0,
+        "obscured": 0.0,
+        "stale": 0.0,
+        "unclassified": 0.0,
+        "unsupported": 100.0
+      },
+      "age_minutes": null,
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 121
+        },
+        "twilight": {
+          "unsupported": 14
+        },
+        "night": {
+          "unsupported": 141
+        }
+      },
+      "distance_km": null,
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 23
+        },
+        "hamburg": {
+          "unsupported": 23
+        },
+        "london": {
+          "unsupported": 23
+        },
+        "athens": {
+          "unsupported": 23
+        },
+        "tromso": {
+          "unsupported": 23
+        },
+        "nairobi": {
+          "unsupported": 23
+        },
+        "kathmandu": {
+          "unsupported": 23
+        },
+        "tokyo": {
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "unsupported": 23
+        },
+        "manaus": {
+          "unsupported": 23
+        },
+        "la-paz": {
+          "unsupported": 23
+        },
+        "honolulu": {
+          "unsupported": 23
+        }
+      }
+    },
+    {
+      "source": "meteomatics",
+      "policy": "baseline",
+      "window": "requested",
+      "n": 2016,
+      "counts": {
+        "explicit_genus": 0,
+        "ambiguous_type": 0,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 0,
+        "missing": 0,
+        "unsupported": 2016,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.0,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.0,
+        "missing": 0.0,
+        "obscured": 0.0,
+        "stale": 0.0,
+        "unclassified": 0.0,
+        "unsupported": 100.0
+      },
+      "age_minutes": null,
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 893
+        },
+        "twilight": {
+          "unsupported": 92
+        },
+        "night": {
+          "unsupported": 1031
+        }
+      },
+      "distance_km": null,
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 168
+        },
+        "hamburg": {
+          "unsupported": 168
+        },
+        "london": {
+          "unsupported": 168
+        },
+        "athens": {
+          "unsupported": 168
+        },
+        "tromso": {
+          "unsupported": 168
+        },
+        "nairobi": {
+          "unsupported": 168
+        },
+        "kathmandu": {
+          "unsupported": 168
+        },
+        "tokyo": {
+          "unsupported": 168
+        },
+        "alice-springs": {
+          "unsupported": 168
+        },
+        "manaus": {
+          "unsupported": 168
+        },
+        "la-paz": {
+          "unsupported": 168
+        },
+        "honolulu": {
+          "unsupported": 168
+        }
+      }
+    },
+    {
+      "source": "meteomatics",
+      "policy": "baseline",
+      "window": "shortened",
+      "n": 276,
+      "counts": {
+        "explicit_genus": 0,
+        "ambiguous_type": 0,
+        "cloud_free_within_source_limits": 0,
+        "obscured": 0,
+        "stale": 0,
+        "missing": 0,
+        "unsupported": 276,
+        "unclassified": 0
+      },
+      "percent": {
+        "ambiguous_type": 0.0,
+        "cloud_free_within_source_limits": 0.0,
+        "explicit_genus": 0.0,
+        "missing": 0.0,
+        "obscured": 0.0,
+        "stale": 0.0,
+        "unclassified": 0.0,
+        "unsupported": 100.0
+      },
+      "age_minutes": null,
+      "solar_period_counts": {
+        "day": {
+          "unsupported": 121
+        },
+        "twilight": {
+          "unsupported": 14
+        },
+        "night": {
+          "unsupported": 141
+        }
+      },
+      "distance_km": null,
+      "per_location": {
+        "san-ramon": {
+          "unsupported": 23
+        },
+        "hamburg": {
+          "unsupported": 23
+        },
+        "london": {
+          "unsupported": 23
+        },
+        "athens": {
+          "unsupported": 23
+        },
+        "tromso": {
+          "unsupported": 23
+        },
+        "nairobi": {
+          "unsupported": 23
+        },
+        "kathmandu": {
+          "unsupported": 23
+        },
+        "tokyo": {
+          "unsupported": 23
+        },
+        "alice-springs": {
+          "unsupported": 23
+        },
+        "manaus": {
+          "unsupported": 23
+        },
+        "la-paz": {
+          "unsupported": 23
+        },
+        "honolulu": {
+          "unsupported": 23
+        }
+      }
+    }
+  ],
+  "publication_delay_proxy_minutes": {
+    "n": 1515,
+    "min": 1.2,
+    "median": 10.066666666666666,
+    "p90": 17.066666666666666,
+    "p95": 26.066666666666666,
+    "max": 6362.033333333334
+  },
+  "observed_intervals_minutes": {
+    "n": 1390,
+    "min": 30.0,
+    "median": 60.0,
+    "p90": 60.0,
+    "p95": 60.0,
+    "max": 6120.0
+  }
+}

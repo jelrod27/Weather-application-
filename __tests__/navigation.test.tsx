@@ -7,12 +7,15 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 // All mocks must be declared before the component import.
-jest.mock('next/navigation', () => ({ usePathname: () => '/' }));
+let mockPathname = '/';
+jest.mock('next/navigation', () => ({ usePathname: () => mockPathname }));
 jest.mock('@/components/auth/auth-button', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/components/wis-badge', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/components/alerts/alert-bell', () => ({ __esModule: true, default: () => null }));
 
 import Navigation from '@/components/navigation';
+
+afterEach(() => { mockPathname = '/'; });
 
 describe('Navigation', () => {
   it('shows formatted location and rounded temperature in the header', () => {
@@ -70,3 +73,15 @@ describe('Navigation', () => {
     expect(screen.getAllByText(/Dublin, CA/).length).toBeGreaterThan(0)
   });
 });
+
+ it.each(['/space-weather/aurora','/space-weather/solar-activity'])('keeps SPACE active on its child %s',path=>{
+ mockPathname=path
+ render(<Navigation/>)
+ expect(screen.getByRole('button',{name:'Weather'})).toHaveClass('font-bold')
+ fireEvent.click(screen.getByRole('button',{name:'Weather'}))
+ expect(screen.getByRole('link',{name:'SPACE'})).toHaveClass('bg-secondary')
+ })
+ it('does not activate SPACE on a neighboring prefix',()=>{
+ mockPathname='/space-weather-other';render(<Navigation/>)
+ expect(screen.getByRole('button',{name:'Weather'})).not.toHaveClass('font-bold')
+ })

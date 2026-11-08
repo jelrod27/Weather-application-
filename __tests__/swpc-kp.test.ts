@@ -162,3 +162,19 @@ describe('parseKpForecast window edges', () => {
     expect(parseKpForecast(payload, now)?.maxExpected).toBe(4);
   });
 });
+
+it('bounds the outlook to dated, unique blocks within the coming day', () => {
+ const now = new Date('2026-11-08T12:00:00Z')
+ expect(parseKpForecast([
+  {time_tag:'2026-11-08T12:00:00Z',kp:2},
+  {time_tag:'2026-11-08T12:00:00Z',kp:2},
+  {time_tag:'2026-11-08T15:00:00Z',kp:4},
+  {time_tag:'2026-11-12T12:00:00Z',kp:9},
+ ],now)).toEqual({expected:3,maxExpected:4,blocks:2})
+})
+it('does not let conflicting forecast duplicates choose an arbitrary outlook',()=>{
+ const now=new Date('2026-11-08T12:00:00Z')
+ const rows=[{time_tag:'2026-11-08T15:00:00Z',kp:2},{time_tag:'2026-11-08T15:00:00Z',kp:9}]
+ expect(parseKpForecast(rows,now)).toBeNull()
+ expect(parseKpForecast([...rows].reverse(),now)).toBeNull()
+})
