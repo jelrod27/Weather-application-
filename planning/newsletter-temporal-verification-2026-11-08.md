@@ -15,6 +15,8 @@ Explicit supported weekday/date contradictions and unsupported all-morning/all-a
 - Source evidence regression: removing the new audit snapshot caused the full-report clock test to fail; restoring it passed. Twenty afternoon examples plus a twenty-first morning report correctly retain both local hours even though the model receives only twenty examples.
 - Existing newsletter collection/publication tests pass with the new clock metadata. Full integrated checks and independent review are recorded in the PR.
 - After review corrections, all 303 newsletter tests across 22 suites passed, as did the expanded test TypeScript project. Forced lint of the normally ignored scripts reported no errors and ten existing console-statement warnings.
+- PR #708 review reproduced comment removal joining surrounding tokens and collapsing quote boundaries. Comments are now masked with spaces while retaining line breaks, which also avoids recreating HTML comment delimiters (CodeQL #335). Two regressions failed before the correction and pass after it.
+- CodeRabbit also reproduced numeric weather asides such as `Friday, November 13 — 5 percent chance` being mistaken for invalid date ranges. A spaced em-dash aside now requires an additional weekday, month or year qualifier to establish a range end. Calendar separators such as en dashes and `through` still validate bare endpoints. Both aside cases failed before the correction; independent review added three bare-range regressions against an initially overbroad qualifier rule. All six invalid-range cases remain rejected, and all **313 newsletter tests / 22 suites** pass after these changes; focused forced lint is clean.
 
 ## Limits
 

@@ -43,10 +43,23 @@ describe('supported explicit temporal claims', () => {
   it('rejects calendar rollover masquerading as a valid date', () => {
     expect(temporalClaimErrors('Monday (February 30, 2026) brings rain.', audit()).join(' ')).toMatch(/Invalid date/);
   });
+  it.each(['Friday, November 13 — 5 percent chance of rain.', 'Thursday, November 12 — 40 mph gusts.'])('accepts a dated forecast followed by a numeric aside: %s', prose => {
+    expect(temporalClaimErrors(prose, audit())).toEqual([]);
+  });
+  it.each(['Thursday–Friday (November 12–40).', 'Thursday (November 12–November 5).', 'Thursday (November 12–5, 2026).', 'Thursday (November 12–40).', 'Thursday, November 12 through 40.', 'Thursday (November 12–5).'])('still rejects an explicitly identified invalid range end: %s', prose => {
+    expect(temporalClaimErrors(prose, audit()).join(' ')).toContain('Invalid date');
+  });
   it('ignores quoted examples, fenced code, comments and the immutable source disclosure', () => {
     const context = audit();
     context.sources[0].label = 'Wednesday (November 12)';
     expect(temporalClaimErrors('> Wednesday (November 12) is a quoted error.\n\n```text\nWednesday (November 12)\n```\n<!-- Wednesday (November 12) -->\n' + coverageDisclosure(context), context)).toEqual([]);
+  });
+  it('keeps comments as prose boundaries instead of joining surrounding tokens', () => {
+    expect(temporalClaimErrors('Wednes<!-- editorial note -->day (November 12).', audit())).toEqual([]);
+    expect(temporalClaimErrors('Forecast<!-- editorial note -->Wednesday (November 12).', audit()).join(' ')).toContain('expected Thursday');
+  });
+  it('preserves line boundaries inside comments before excluding quoted examples', () => {
+    expect(temporalClaimErrors('Visible prose<!-- editorial\nnote -->> Wednesday (November 12).', audit())).toEqual([]);
   });
   it('still checks article prose after an earlier source-coverage heading', () => {
     const context = audit();

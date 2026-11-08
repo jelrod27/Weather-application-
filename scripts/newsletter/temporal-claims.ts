@@ -64,7 +64,9 @@ function proseOnly(markdown: string, audit: CoverageAudit): string {
   const disclosure = coverageDisclosure(audit);
   const trimmed = markdown.trimEnd();
   const article = trimmed.endsWith(disclosure) ? trimmed.slice(0, -disclosure.length) : markdown;
-  return article.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/).filter(line => {
+  // Mask comments without joining surrounding tokens or recreating delimiters.
+  // Preserve newlines so quote/fence boundaries keep their original meaning.
+  return article.replace(/<!--[\s\S]*?-->/g, comment => comment.replace(/[^\r\n]/g, ' ')).split(/\r?\n/).filter(line => {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
     if (marker) {
       if (!fence) fence = marker[0];
@@ -93,16 +95,21 @@ export function temporalClaimErrors(markdown: string, audit: CoverageAudit): str
   const reference = new Date(audit.generatedAt);
   if (!Number.isFinite(reference.getTime())) return ['Temporal validation requires a valid edition timestamp'];
   const errors: string[] = [];
-  const pair = new RegExp(`\\b(${WEEKDAY_PATTERN})(?:\\s*(?:through|into|to|and|[–—/-])\\s*(${WEEKDAY_PATTERN}))?\\s*(?:[,\\(]\\s*)?(${MONTH_PATTERN})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?(?:\\s*(?:through|to|[–—-])\\s*(?:(${MONTH_PATTERN})\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?)?\\b`, 'gi');
+  const pair = new RegExp(`\\b(${WEEKDAY_PATTERN})(?:\\s*(?:through|into|to|and|[–—/-])\\s*(${WEEKDAY_PATTERN}))?\\s*(?:[,\\(]\\s*)?(${MONTH_PATTERN})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?(?:\\s*(through|to|[–—-])\\s*(?:(${MONTH_PATTERN})\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?)?\\b`, 'gi');
   for (const match of prose.matchAll(pair)) {
-    const [, startWeekday, endWeekday, startMonth, startDay, startYear, endMonth, endDay, endYear] = match;
+    const [, startWeekday, endWeekday, startMonth, startDay, startYear, rangeSeparator, endMonth, endDay, endYear] = match;
     const month = MONTHS.findIndex(name => name.toLowerCase() === startMonth.toLowerCase());
     const lastMonth = endMonth ? MONTHS.findIndex(name => name.toLowerCase() === endMonth.toLowerCase()) : month;
     const rollsYear = lastMonth < month ? 1 : 0;
     const year = startYear ? Number(startYear) : endYear ? Number(endYear) - rollsYear : inferYear(month, Number(startDay), reference);
     const start = validDate(year, month, Number(startDay));
-    const end = endDay ? validDate(endYear ? Number(endYear) : year + rollsYear, lastMonth, Number(endDay)) : null;
-    if (!start || (endDay && (!end || end < start))) {
+    // A spaced em dash introduces a prose aside unless another calendar
+    // qualifier identifies its number as a range end. Keep validating bare
+    // endpoints after calendar separators such as en dashes and "through".
+    const proseAside = rangeSeparator === '—' && /\s—\s/.test(match[0]);
+    const hasRangeEnd = Boolean(endDay && (!proseAside || endWeekday || endMonth || endYear));
+    const end = hasRangeEnd ? validDate(endYear ? Number(endYear) : year + rollsYear, lastMonth, Number(endDay)) : null;
+    if (!start || (hasRangeEnd && (!end || end < start))) {
       errors.push(`Invalid date in explicit calendar claim: ${match[0]}`);
       continue;
     }
