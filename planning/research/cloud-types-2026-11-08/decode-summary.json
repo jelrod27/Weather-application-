@@ -1,0 +1,99 @@
+{
+  "counts": {
+    "messages": 10218,
+    "subsets": 84260,
+    "table_31": 25714,
+    "table_28": 6026,
+    "no_geometry": 7020,
+    "table_21": 1047,
+    "table_30": 3692,
+    "table_32": 8968,
+    "table_13": 4659,
+    "table_22": 3977,
+    "table_19": 1926,
+    "table_17": 2885,
+    "table_14": 9328,
+    "table_38": 2228,
+    "table_18": 3192,
+    "table_29": 813,
+    "table_36": 3225,
+    "table_15": 112,
+    "table_35": 4351,
+    "table_43": 2,
+    "table_34": 569,
+    "table_37": 427,
+    "table_33": 825,
+    "table_23": 24,
+    "table_16": 262,
+    "table_39": 8
+  },
+  "retained_reports": 1515,
+  "failures": [
+    {
+      "file": "Z__C_EDZW_20261107210704_bda01,synop_bufr_999999_999999__MW_626.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108000904_bda01,synop_bufr_999999_999999__MW_656.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108031000_bda01,synop_bufr_999999_999999__MW_687.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108060903_bda01,synop_bufr_999999_999999__MW_717.bin",
+      "message": 61,
+      "stage": "unpack",
+      "error": "Decoding invalid"
+    },
+    {
+      "file": "Z__C_EDZW_20261108060903_bda01,synop_bufr_999999_999999__MW_717.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108090801_bda01,synop_bufr_999999_999999__MW_750.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108120702_bda01,synop_bufr_999999_999999__MW_779.bin",
+      "message": 62,
+      "stage": "unpack",
+      "error": "Decoding invalid"
+    },
+    {
+      "file": "Z__C_EDZW_20261108120702_bda01,synop_bufr_999999_999999__MW_779.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108150601_bda01,synop_bufr_999999_999999__MW_811.bin",
+      "message": 32,
+      "stage": "unpack",
+      "error": "Decoding invalid"
+    },
+    {
+      "file": "Z__C_EDZW_20261108150601_bda01,synop_bufr_999999_999999__MW_811.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    },
+    {
+      "file": "Z__C_EDZW_20261108180703_bda01,synop_bufr_999999_999999__MW_843.bin",
+      "message": 40,
+      "stage": "unpack",
+      "error": "Decoding invalid"
+    },
+    {
+      "file": "Z__C_EDZW_20261108180703_bda01,synop_bufr_999999_999999__MW_843.bin",
+      "stage": "message",
+      "error": "Edition not supported."
+    }
+  ],
+  "eccodes_engine_version": "2.50.0",
+  "eccodes_python_distribution_version": "2.45.0"
+}

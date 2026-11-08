@@ -1,0 +1,2492 @@
+[
+  {
+    "name": "Z__C_EDZW_20261107201504_bda01,synop_bufr_999999_999999__MW_617.bin",
+    "href": "Z__C_EDZW_20261107201504_bda01%2Csynop_bufr_999999_999999__MW_617.bin",
+    "listing_modified_utc": "2026-11-07T20:20:08Z",
+    "bytes": 105891,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107201504_bda01%2Csynop_bufr_999999_999999__MW_617.bin",
+    "sha256": "f11558f8ca13e70bf18ece022da8f96b1915985fcc231bbe12f27e737a062e11",
+    "fetched_bytes": 105891,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107202102_bda01,synop_bufr_999999_999999__MW_618.bin",
+    "href": "Z__C_EDZW_20261107202102_bda01%2Csynop_bufr_999999_999999__MW_618.bin",
+    "listing_modified_utc": "2026-11-07T20:26:03Z",
+    "bytes": 37317,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107202102_bda01%2Csynop_bufr_999999_999999__MW_618.bin",
+    "sha256": "363d1844b75f83112bcc808521a1e2b397c3b8d92ceb617632653f995cee7674",
+    "fetched_bytes": 37317,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107202602_bda01,synop_bufr_999999_999999__MW_619.bin",
+    "href": "Z__C_EDZW_20261107202602_bda01%2Csynop_bufr_999999_999999__MW_619.bin",
+    "listing_modified_utc": "2026-11-07T20:31:07Z",
+    "bytes": 2136,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107202602_bda01%2Csynop_bufr_999999_999999__MW_619.bin",
+    "sha256": "9a5b0655eff7a1f36d5ce4f45870ff964b3b919803b287bb0e519d97d5a9b760",
+    "fetched_bytes": 2136,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107203202_bda01,synop_bufr_999999_999999__MW_620.bin",
+    "href": "Z__C_EDZW_20261107203202_bda01%2Csynop_bufr_999999_999999__MW_620.bin",
+    "listing_modified_utc": "2026-11-07T20:37:04Z",
+    "bytes": 14660,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107203202_bda01%2Csynop_bufr_999999_999999__MW_620.bin",
+    "sha256": "56f64ad4e01400e98389f48155d99e9e3e7ecb9cb8606b3a7ad53a30ab4edee1",
+    "fetched_bytes": 14660,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107203704_bda01,synop_bufr_999999_999999__MW_621.bin",
+    "href": "Z__C_EDZW_20261107203704_bda01%2Csynop_bufr_999999_999999__MW_621.bin",
+    "listing_modified_utc": "2026-11-07T20:43:45Z",
+    "bytes": 1760,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107203704_bda01%2Csynop_bufr_999999_999999__MW_621.bin",
+    "sha256": "2685e196e797199dd0723917b12d1d4f60bddf3d8a49cfe14a6a5195cbf5184c",
+    "fetched_bytes": 1760,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107204400_bda01,synop_bufr_999999_999999__MW_622.bin",
+    "href": "Z__C_EDZW_20261107204400_bda01%2Csynop_bufr_999999_999999__MW_622.bin",
+    "listing_modified_utc": "2026-11-07T20:49:07Z",
+    "bytes": 1188,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107204400_bda01%2Csynop_bufr_999999_999999__MW_622.bin",
+    "sha256": "67df34e5b193ec483db8ac74e93abe930463a2af714ae2a64a85ffb1b80450d5",
+    "fetched_bytes": 1188,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107205105_bda01,synop_bufr_999999_999999__MW_623.bin",
+    "href": "Z__C_EDZW_20261107205105_bda01%2Csynop_bufr_999999_999999__MW_623.bin",
+    "listing_modified_utc": "2026-11-07T20:56:21Z",
+    "bytes": 818,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107205105_bda01%2Csynop_bufr_999999_999999__MW_623.bin",
+    "sha256": "10149f5b51ab84e715534dc7315d7b4330a3b1328923e85e3acf05dd06150a62",
+    "fetched_bytes": 818,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107205700_bda01,synop_bufr_999999_999999__MW_624.bin",
+    "href": "Z__C_EDZW_20261107205700_bda01%2Csynop_bufr_999999_999999__MW_624.bin",
+    "listing_modified_utc": "2026-11-07T21:02:02Z",
+    "bytes": 56081,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107205700_bda01%2Csynop_bufr_999999_999999__MW_624.bin",
+    "sha256": "95d121f07fae6e610e15800d254bd6cd26849a8a8ab0bc8ef17b3f9a3f51d268",
+    "fetched_bytes": 56081,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+    "href": "Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "listing_modified_utc": "2026-11-07T21:07:03Z",
+    "bytes": 59084,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+    "fetched_bytes": 59084,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107210704_bda01,synop_bufr_999999_999999__MW_626.bin",
+    "href": "Z__C_EDZW_20261107210704_bda01%2Csynop_bufr_999999_999999__MW_626.bin",
+    "listing_modified_utc": "2026-11-07T21:12:06Z",
+    "bytes": 330511,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210704_bda01%2Csynop_bufr_999999_999999__MW_626.bin",
+    "sha256": "b675827d9c22c56a9e3aa8008ed4fb873e9075e49d63115f21cb75f24bd40756",
+    "fetched_bytes": 330511,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107211204_bda01,synop_bufr_999999_999999__MW_627.bin",
+    "href": "Z__C_EDZW_20261107211204_bda01%2Csynop_bufr_999999_999999__MW_627.bin",
+    "listing_modified_utc": "2026-11-07T21:17:05Z",
+    "bytes": 90258,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107211204_bda01%2Csynop_bufr_999999_999999__MW_627.bin",
+    "sha256": "6fc50fdb4560b410923404af371b2f49decd71c42c446b37205587134d0c8b7c",
+    "fetched_bytes": 90258,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107211706_bda01,synop_bufr_999999_999999__MW_628.bin",
+    "href": "Z__C_EDZW_20261107211706_bda01%2Csynop_bufr_999999_999999__MW_628.bin",
+    "listing_modified_utc": "2026-11-07T21:22:08Z",
+    "bytes": 61356,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107211706_bda01%2Csynop_bufr_999999_999999__MW_628.bin",
+    "sha256": "7f9c94cebd36d0a734e059f4c4cab20f2cebd45fbe8b757fc82c870ef2b062ef",
+    "fetched_bytes": 61356,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107212210_bda01,synop_bufr_999999_999999__MW_629.bin",
+    "href": "Z__C_EDZW_20261107212210_bda01%2Csynop_bufr_999999_999999__MW_629.bin",
+    "listing_modified_utc": "2026-11-07T21:27:13Z",
+    "bytes": 42705,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107212210_bda01%2Csynop_bufr_999999_999999__MW_629.bin",
+    "sha256": "b0654adc198b781811389834d60619be508649737d0cd7aa741dca57bc6a5108",
+    "fetched_bytes": 42705,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107212800_bda01,synop_bufr_999999_999999__MW_630.bin",
+    "href": "Z__C_EDZW_20261107212800_bda01%2Csynop_bufr_999999_999999__MW_630.bin",
+    "listing_modified_utc": "2026-11-07T21:33:30Z",
+    "bytes": 42396,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107212800_bda01%2Csynop_bufr_999999_999999__MW_630.bin",
+    "sha256": "612cd46cc822c5dbfc150a2723c388330036f87a59c4d0b2e294982d47b10412",
+    "fetched_bytes": 42396,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107213301_bda01,synop_bufr_999999_999999__MW_631.bin",
+    "href": "Z__C_EDZW_20261107213301_bda01%2Csynop_bufr_999999_999999__MW_631.bin",
+    "listing_modified_utc": "2026-11-07T21:38:04Z",
+    "bytes": 10332,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107213301_bda01%2Csynop_bufr_999999_999999__MW_631.bin",
+    "sha256": "3fdfd9002b6ecad44692d595f7603c9bcbcb6ccf35509611bad74252684234ca",
+    "fetched_bytes": 10332,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107213904_bda01,synop_bufr_999999_999999__MW_632.bin",
+    "href": "Z__C_EDZW_20261107213904_bda01%2Csynop_bufr_999999_999999__MW_632.bin",
+    "listing_modified_utc": "2026-11-07T21:44:05Z",
+    "bytes": 18063,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107213904_bda01%2Csynop_bufr_999999_999999__MW_632.bin",
+    "sha256": "fa5bcfc1110653a0d2f2de50edbae92ea0c744d74dfa3dc46a0560bf081d7a96",
+    "fetched_bytes": 18063,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107214502_bda01,synop_bufr_999999_999999__MW_633.bin",
+    "href": "Z__C_EDZW_20261107214502_bda01%2Csynop_bufr_999999_999999__MW_633.bin",
+    "listing_modified_utc": "2026-11-07T21:50:10Z",
+    "bytes": 15447,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107214502_bda01%2Csynop_bufr_999999_999999__MW_633.bin",
+    "sha256": "e202bad1571e5ce3732af19499472054bce5f0ad679ebaf4340449c5e1bd53cb",
+    "fetched_bytes": 15447,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107215102_bda01,synop_bufr_999999_999999__MW_634.bin",
+    "href": "Z__C_EDZW_20261107215102_bda01%2Csynop_bufr_999999_999999__MW_634.bin",
+    "listing_modified_utc": "2026-11-07T21:56:07Z",
+    "bytes": 16531,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107215102_bda01%2Csynop_bufr_999999_999999__MW_634.bin",
+    "sha256": "dd30117fefb4ec8da5d4d127303920b51a90cd983ecb8ece2d05a0162ba49875",
+    "fetched_bytes": 16531,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107220000_bda01,synop_bufr_999999_999999__MW_635.bin",
+    "href": "Z__C_EDZW_20261107220000_bda01%2Csynop_bufr_999999_999999__MW_635.bin",
+    "listing_modified_utc": "2026-11-07T22:05:02Z",
+    "bytes": 90135,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107220000_bda01%2Csynop_bufr_999999_999999__MW_635.bin",
+    "sha256": "3742c9936852b3264de0b4f6bdec699c380709baed2fbe8b2fe5d35f23a9c98a",
+    "fetched_bytes": 90135,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107220500_bda01,synop_bufr_999999_999999__MW_636.bin",
+    "href": "Z__C_EDZW_20261107220500_bda01%2Csynop_bufr_999999_999999__MW_636.bin",
+    "listing_modified_utc": "2026-11-07T22:10:04Z",
+    "bytes": 151029,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107220500_bda01%2Csynop_bufr_999999_999999__MW_636.bin",
+    "sha256": "5b49daf818d224b2b2e5bbd02a5abd028ed0f459833e8359eed418fc3147d988",
+    "fetched_bytes": 151029,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107221003_bda01,synop_bufr_999999_999999__MW_637.bin",
+    "href": "Z__C_EDZW_20261107221003_bda01%2Csynop_bufr_999999_999999__MW_637.bin",
+    "listing_modified_utc": "2026-11-07T22:15:04Z",
+    "bytes": 197764,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107221003_bda01%2Csynop_bufr_999999_999999__MW_637.bin",
+    "sha256": "b2c6098f81ad3df9ad3c1f42b112895ff572a6ecb8885a6d9ca94f26d56a688d",
+    "fetched_bytes": 197764,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107221503_bda01,synop_bufr_999999_999999__MW_638.bin",
+    "href": "Z__C_EDZW_20261107221503_bda01%2Csynop_bufr_999999_999999__MW_638.bin",
+    "listing_modified_utc": "2026-11-07T22:20:06Z",
+    "bytes": 111467,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107221503_bda01%2Csynop_bufr_999999_999999__MW_638.bin",
+    "sha256": "baaa8ca4d041c82a5d4b03f2626da3dd482ed7977a555810f514c05ef24f74a1",
+    "fetched_bytes": 111467,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107222003_bda01,synop_bufr_999999_999999__MW_639.bin",
+    "href": "Z__C_EDZW_20261107222003_bda01%2Csynop_bufr_999999_999999__MW_639.bin",
+    "listing_modified_utc": "2026-11-07T22:25:08Z",
+    "bytes": 29926,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107222003_bda01%2Csynop_bufr_999999_999999__MW_639.bin",
+    "sha256": "8d3f84cd56fa0b6e1d1ef997a6f299cba065c50cdbb5401935add5cc9702bc0b",
+    "fetched_bytes": 29926,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107222702_bda01,synop_bufr_999999_999999__MW_640.bin",
+    "href": "Z__C_EDZW_20261107222702_bda01%2Csynop_bufr_999999_999999__MW_640.bin",
+    "listing_modified_utc": "2026-11-07T22:32:19Z",
+    "bytes": 3320,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107222702_bda01%2Csynop_bufr_999999_999999__MW_640.bin",
+    "sha256": "b89e661109a907aa80f033c9dbaff21b6146b2416e0789cae8e0a3db98a7f2bf",
+    "fetched_bytes": 3320,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107223202_bda01,synop_bufr_999999_999999__MW_641.bin",
+    "href": "Z__C_EDZW_20261107223202_bda01%2Csynop_bufr_999999_999999__MW_641.bin",
+    "listing_modified_utc": "2026-11-07T22:37:03Z",
+    "bytes": 19178,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107223202_bda01%2Csynop_bufr_999999_999999__MW_641.bin",
+    "sha256": "f95f65f15ccb7cd3bd4a7e8ffb25d7eb0380644e0031c661b19de643430c9c9b",
+    "fetched_bytes": 19178,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107223704_bda01,synop_bufr_999999_999999__MW_642.bin",
+    "href": "Z__C_EDZW_20261107223704_bda01%2Csynop_bufr_999999_999999__MW_642.bin",
+    "listing_modified_utc": "2026-11-07T22:42:09Z",
+    "bytes": 1488,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107223704_bda01%2Csynop_bufr_999999_999999__MW_642.bin",
+    "sha256": "945dc653641464b685f2334f5a3d22618d60d434804455c48345c150aaa358f3",
+    "fetched_bytes": 1488,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107224602_bda01,synop_bufr_999999_999999__MW_643.bin",
+    "href": "Z__C_EDZW_20261107224602_bda01%2Csynop_bufr_999999_999999__MW_643.bin",
+    "listing_modified_utc": "2026-11-07T22:51:09Z",
+    "bytes": 6188,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107224602_bda01%2Csynop_bufr_999999_999999__MW_643.bin",
+    "sha256": "296270cc116d5cd0498b38d7658bc0e1e095387aefff46d0affc001a446f08f1",
+    "fetched_bytes": 6188,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107230000_bda01,synop_bufr_999999_999999__MW_644.bin",
+    "href": "Z__C_EDZW_20261107230000_bda01%2Csynop_bufr_999999_999999__MW_644.bin",
+    "listing_modified_utc": "2026-11-07T23:05:02Z",
+    "bytes": 94432,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107230000_bda01%2Csynop_bufr_999999_999999__MW_644.bin",
+    "sha256": "7a210d7a4f02c8660bba6a981b67a23cc80edcbfb4155469690dfc14e4261849",
+    "fetched_bytes": 94432,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107230501_bda01,synop_bufr_999999_999999__MW_645.bin",
+    "href": "Z__C_EDZW_20261107230501_bda01%2Csynop_bufr_999999_999999__MW_645.bin",
+    "listing_modified_utc": "2026-11-07T23:10:07Z",
+    "bytes": 189623,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107230501_bda01%2Csynop_bufr_999999_999999__MW_645.bin",
+    "sha256": "68f3d89fb8b4ee907bb32fc0b89a3e98ded8dca07aa82ec73bd2c46cbd1c9f74",
+    "fetched_bytes": 189623,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107231001_bda01,synop_bufr_999999_999999__MW_646.bin",
+    "href": "Z__C_EDZW_20261107231001_bda01%2Csynop_bufr_999999_999999__MW_646.bin",
+    "listing_modified_utc": "2026-11-07T23:15:03Z",
+    "bytes": 153212,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107231001_bda01%2Csynop_bufr_999999_999999__MW_646.bin",
+    "sha256": "614bf1c4eef8f78c6cc45d56d306d2dbd6b200d26b71bb3b91c08d43cad327d3",
+    "fetched_bytes": 153212,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107231502_bda01,synop_bufr_999999_999999__MW_647.bin",
+    "href": "Z__C_EDZW_20261107231502_bda01%2Csynop_bufr_999999_999999__MW_647.bin",
+    "listing_modified_utc": "2026-11-07T23:20:03Z",
+    "bytes": 105212,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107231502_bda01%2Csynop_bufr_999999_999999__MW_647.bin",
+    "sha256": "3eae5b1f5adbd867cc2db548d743bd61f3475575d7947cc77929d0548ea7e095",
+    "fetched_bytes": 105212,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107232102_bda01,synop_bufr_999999_999999__MW_648.bin",
+    "href": "Z__C_EDZW_20261107232102_bda01%2Csynop_bufr_999999_999999__MW_648.bin",
+    "listing_modified_utc": "2026-11-07T23:26:05Z",
+    "bytes": 34684,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107232102_bda01%2Csynop_bufr_999999_999999__MW_648.bin",
+    "sha256": "e6bb2334e5fd010185330cba8fb9f0682cc86c537b16dec9b668ffe312221931",
+    "fetched_bytes": 34684,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107232702_bda01,synop_bufr_999999_999999__MW_649.bin",
+    "href": "Z__C_EDZW_20261107232702_bda01%2Csynop_bufr_999999_999999__MW_649.bin",
+    "listing_modified_utc": "2026-11-07T23:32:07Z",
+    "bytes": 1195,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107232702_bda01%2Csynop_bufr_999999_999999__MW_649.bin",
+    "sha256": "777e878e4dd21dad85fee1fea4086d4b40584522fddd158a587979f6870710ab",
+    "fetched_bytes": 1195,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107233202_bda01,synop_bufr_999999_999999__MW_650.bin",
+    "href": "Z__C_EDZW_20261107233202_bda01%2Csynop_bufr_999999_999999__MW_650.bin",
+    "listing_modified_utc": "2026-11-07T23:37:04Z",
+    "bytes": 15208,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107233202_bda01%2Csynop_bufr_999999_999999__MW_650.bin",
+    "sha256": "7869b337107d37c1d861fe960792c9742b64b786aea7d5928328df1b6f310f38",
+    "fetched_bytes": 15208,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107233705_bda01,synop_bufr_999999_999999__MW_651.bin",
+    "href": "Z__C_EDZW_20261107233705_bda01%2Csynop_bufr_999999_999999__MW_651.bin",
+    "listing_modified_utc": "2026-11-07T23:42:08Z",
+    "bytes": 8552,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107233705_bda01%2Csynop_bufr_999999_999999__MW_651.bin",
+    "sha256": "5b8bae6db43bafaab7ad1c5f64e8ce355909f2245473af6bc958bfd8e50620ab",
+    "fetched_bytes": 8552,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107234402_bda01,synop_bufr_999999_999999__MW_652.bin",
+    "href": "Z__C_EDZW_20261107234402_bda01%2Csynop_bufr_999999_999999__MW_652.bin",
+    "listing_modified_utc": "2026-11-07T23:49:04Z",
+    "bytes": 3495,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107234402_bda01%2Csynop_bufr_999999_999999__MW_652.bin",
+    "sha256": "1f2710ef9cbde5348cb2dab824d4e8ee10177018486217a9611665998f7bf7b6",
+    "fetched_bytes": 3495,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107235203_bda01,synop_bufr_999999_999999__MW_653.bin",
+    "href": "Z__C_EDZW_20261107235203_bda01%2Csynop_bufr_999999_999999__MW_653.bin",
+    "listing_modified_utc": "2026-11-07T23:57:15Z",
+    "bytes": 1407,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107235203_bda01%2Csynop_bufr_999999_999999__MW_653.bin",
+    "sha256": "d92302e68495302704e59edf3c91237c0f22fe88b98ed49930986fcfa9520e35",
+    "fetched_bytes": 1407,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261107235902_bda01,synop_bufr_999999_999999__MW_654.bin",
+    "href": "Z__C_EDZW_20261107235902_bda01%2Csynop_bufr_999999_999999__MW_654.bin",
+    "listing_modified_utc": "2026-11-08T00:04:04Z",
+    "bytes": 75736,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107235902_bda01%2Csynop_bufr_999999_999999__MW_654.bin",
+    "sha256": "4db7b55c8aead1b3796613394d241630e0b9156e1934dcef9130f9f3af2c8473",
+    "fetched_bytes": 75736,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108000404_bda01,synop_bufr_999999_999999__MW_655.bin",
+    "href": "Z__C_EDZW_20261108000404_bda01%2Csynop_bufr_999999_999999__MW_655.bin",
+    "listing_modified_utc": "2026-11-08T00:09:05Z",
+    "bytes": 172848,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108000404_bda01%2Csynop_bufr_999999_999999__MW_655.bin",
+    "sha256": "115ebaa2247fb5d18dc537a08d5ea2147587ae1027b7321453d25331a9073e6e",
+    "fetched_bytes": 172848,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108000904_bda01,synop_bufr_999999_999999__MW_656.bin",
+    "href": "Z__C_EDZW_20261108000904_bda01%2Csynop_bufr_999999_999999__MW_656.bin",
+    "listing_modified_utc": "2026-11-08T00:14:05Z",
+    "bytes": 217018,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108000904_bda01%2Csynop_bufr_999999_999999__MW_656.bin",
+    "sha256": "77909b5055f69ef1dee691d2d87e8850dba79f90ef0e6e9a9e5e48799348c5bf",
+    "fetched_bytes": 217018,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108001404_bda01,synop_bufr_999999_999999__MW_657.bin",
+    "href": "Z__C_EDZW_20261108001404_bda01%2Csynop_bufr_999999_999999__MW_657.bin",
+    "listing_modified_utc": "2026-11-08T00:19:05Z",
+    "bytes": 88270,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108001404_bda01%2Csynop_bufr_999999_999999__MW_657.bin",
+    "sha256": "8cc0b1e8b9453ab7efc650dad21628a989778adc2b4e88d4c1bbdb05f5edff10",
+    "fetched_bytes": 88270,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108001904_bda01,synop_bufr_999999_999999__MW_658.bin",
+    "href": "Z__C_EDZW_20261108001904_bda01%2Csynop_bufr_999999_999999__MW_658.bin",
+    "listing_modified_utc": "2026-11-08T00:24:06Z",
+    "bytes": 181105,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108001904_bda01%2Csynop_bufr_999999_999999__MW_658.bin",
+    "sha256": "761a113520b6a5c2d299991f6bb9aad811897e4659cb8a387161950f74ea3f13",
+    "fetched_bytes": 181105,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108002404_bda01,synop_bufr_999999_999999__MW_659.bin",
+    "href": "Z__C_EDZW_20261108002404_bda01%2Csynop_bufr_999999_999999__MW_659.bin",
+    "listing_modified_utc": "2026-11-08T00:29:05Z",
+    "bytes": 67066,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108002404_bda01%2Csynop_bufr_999999_999999__MW_659.bin",
+    "sha256": "7d30d37ebff9f884b9cdc213a44d0c8f450b1d03312735b8dd2c1686dcc5c10e",
+    "fetched_bytes": 67066,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108002905_bda01,synop_bufr_999999_999999__MW_660.bin",
+    "href": "Z__C_EDZW_20261108002905_bda01%2Csynop_bufr_999999_999999__MW_660.bin",
+    "listing_modified_utc": "2026-11-08T00:34:14Z",
+    "bytes": 37470,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108002905_bda01%2Csynop_bufr_999999_999999__MW_660.bin",
+    "sha256": "f72d4d26066455d63e9c399129dd8a6e5761d15a17afd23836b876d28e2a4e1a",
+    "fetched_bytes": 37470,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108003500_bda01,synop_bufr_999999_999999__MW_661.bin",
+    "href": "Z__C_EDZW_20261108003500_bda01%2Csynop_bufr_999999_999999__MW_661.bin",
+    "listing_modified_utc": "2026-11-08T00:40:06Z",
+    "bytes": 9746,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108003500_bda01%2Csynop_bufr_999999_999999__MW_661.bin",
+    "sha256": "87a099e8e9cb4373e3195071ef6d05321766b785e2be47a537bad614c6ff61b8",
+    "fetched_bytes": 9746,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108004104_bda01,synop_bufr_999999_999999__MW_662.bin",
+    "href": "Z__C_EDZW_20261108004104_bda01%2Csynop_bufr_999999_999999__MW_662.bin",
+    "listing_modified_utc": "2026-11-08T00:46:13Z",
+    "bytes": 41476,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108004104_bda01%2Csynop_bufr_999999_999999__MW_662.bin",
+    "sha256": "82929393d5544700c2bae50e2bfe31a07adb304af9bc3b10aa98123d000a846c",
+    "fetched_bytes": 41476,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108004702_bda01,synop_bufr_999999_999999__MW_663.bin",
+    "href": "Z__C_EDZW_20261108004702_bda01%2Csynop_bufr_999999_999999__MW_663.bin",
+    "listing_modified_utc": "2026-11-08T00:52:06Z",
+    "bytes": 24424,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108004702_bda01%2Csynop_bufr_999999_999999__MW_663.bin",
+    "sha256": "bdad16f707f5c2040f417bbf986d5276f02274796d88ba16c77617365a264c70",
+    "fetched_bytes": 24424,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108005203_bda01,synop_bufr_999999_999999__MW_664.bin",
+    "href": "Z__C_EDZW_20261108005203_bda01%2Csynop_bufr_999999_999999__MW_664.bin",
+    "listing_modified_utc": "2026-11-08T00:57:14Z",
+    "bytes": 14820,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108005203_bda01%2Csynop_bufr_999999_999999__MW_664.bin",
+    "sha256": "0915fd2fdfe71f7466934d33fc2c35d25cab3a259148b4c5285cc056b083f567",
+    "fetched_bytes": 14820,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108005803_bda01,synop_bufr_999999_999999__MW_665.bin",
+    "href": "Z__C_EDZW_20261108005803_bda01%2Csynop_bufr_999999_999999__MW_665.bin",
+    "listing_modified_utc": "2026-11-08T01:03:05Z",
+    "bytes": 102819,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108005803_bda01%2Csynop_bufr_999999_999999__MW_665.bin",
+    "sha256": "c7d95c12b173da0e8cf1ff9ea392a6bdccc65f100e74b761a4f2d453c7763163",
+    "fetched_bytes": 102819,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108010400_bda01,synop_bufr_999999_999999__MW_666.bin",
+    "href": "Z__C_EDZW_20261108010400_bda01%2Csynop_bufr_999999_999999__MW_666.bin",
+    "listing_modified_utc": "2026-11-08T01:09:04Z",
+    "bytes": 151029,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108010400_bda01%2Csynop_bufr_999999_999999__MW_666.bin",
+    "sha256": "bf173e697b32632df2c5cef485fb2427ac4fbb2fcbac3f09f67da8a4886aeedc",
+    "fetched_bytes": 151029,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108010901_bda01,synop_bufr_999999_999999__MW_667.bin",
+    "href": "Z__C_EDZW_20261108010901_bda01%2Csynop_bufr_999999_999999__MW_667.bin",
+    "listing_modified_utc": "2026-11-08T01:14:03Z",
+    "bytes": 211737,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108010901_bda01%2Csynop_bufr_999999_999999__MW_667.bin",
+    "sha256": "f9cf651ef8a588b9ce6b5ad92ac2b1b9dc13434c6eb9691d0a5de69ef3f7aa9c",
+    "fetched_bytes": 211737,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108011501_bda01,synop_bufr_999999_999999__MW_668.bin",
+    "href": "Z__C_EDZW_20261108011501_bda01%2Csynop_bufr_999999_999999__MW_668.bin",
+    "listing_modified_utc": "2026-11-08T01:20:06Z",
+    "bytes": 111295,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108011501_bda01%2Csynop_bufr_999999_999999__MW_668.bin",
+    "sha256": "0b04579d81e4da0d8b12e2c04242ebf7ab603031cba139a62aec6a818915027f",
+    "fetched_bytes": 111295,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108012100_bda01,synop_bufr_999999_999999__MW_669.bin",
+    "href": "Z__C_EDZW_20261108012100_bda01%2Csynop_bufr_999999_999999__MW_669.bin",
+    "listing_modified_utc": "2026-11-08T01:26:04Z",
+    "bytes": 28158,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108012100_bda01%2Csynop_bufr_999999_999999__MW_669.bin",
+    "sha256": "a751c893bb37c209d9f99dc979742e5589e9c61dc73f260fd0fbfeac951bded8",
+    "fetched_bytes": 28158,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108012702_bda01,synop_bufr_999999_999999__MW_670.bin",
+    "href": "Z__C_EDZW_20261108012702_bda01%2Csynop_bufr_999999_999999__MW_670.bin",
+    "listing_modified_utc": "2026-11-08T01:32:15Z",
+    "bytes": 19748,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108012702_bda01%2Csynop_bufr_999999_999999__MW_670.bin",
+    "sha256": "7ad8a4e98d2de42cb27ea2b6ee638deb251f5606688a95e19d724597ee79b484",
+    "fetched_bytes": 19748,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108013203_bda01,synop_bufr_999999_999999__MW_671.bin",
+    "href": "Z__C_EDZW_20261108013203_bda01%2Csynop_bufr_999999_999999__MW_671.bin",
+    "listing_modified_utc": "2026-11-08T01:37:06Z",
+    "bytes": 26569,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108013203_bda01%2Csynop_bufr_999999_999999__MW_671.bin",
+    "sha256": "6e4788f6e156cbfa110815ce5b2889bb2bced8959747a93b7626b475080ec455",
+    "fetched_bytes": 26569,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108013704_bda01,synop_bufr_999999_999999__MW_672.bin",
+    "href": "Z__C_EDZW_20261108013704_bda01%2Csynop_bufr_999999_999999__MW_672.bin",
+    "listing_modified_utc": "2026-11-08T01:42:05Z",
+    "bytes": 6861,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108013704_bda01%2Csynop_bufr_999999_999999__MW_672.bin",
+    "sha256": "a59dda4a7f702c8b4bf52ebf545ca195b894716452ad731a3719988ee7a0de33",
+    "fetched_bytes": 6861,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108014502_bda01,synop_bufr_999999_999999__MW_673.bin",
+    "href": "Z__C_EDZW_20261108014502_bda01%2Csynop_bufr_999999_999999__MW_673.bin",
+    "listing_modified_utc": "2026-11-08T01:50:04Z",
+    "bytes": 1778,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108014502_bda01%2Csynop_bufr_999999_999999__MW_673.bin",
+    "sha256": "a283f7d15f1428ea903d44d445d4a1cee0d722f630e7c61cad2493a7d4643b06",
+    "fetched_bytes": 1778,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108015002_bda01,synop_bufr_999999_999999__MW_674.bin",
+    "href": "Z__C_EDZW_20261108015002_bda01%2Csynop_bufr_999999_999999__MW_674.bin",
+    "listing_modified_utc": "2026-11-08T01:55:08Z",
+    "bytes": 7303,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108015002_bda01%2Csynop_bufr_999999_999999__MW_674.bin",
+    "sha256": "0513f5c36337f9aea792a3b45d5f4df1bfe2ee193223404edc1a83f44e9cf5e7",
+    "fetched_bytes": 7303,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108015701_bda01,synop_bufr_999999_999999__MW_675.bin",
+    "href": "Z__C_EDZW_20261108015701_bda01%2Csynop_bufr_999999_999999__MW_675.bin",
+    "listing_modified_utc": "2026-11-08T02:02:03Z",
+    "bytes": 50601,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108015701_bda01%2Csynop_bufr_999999_999999__MW_675.bin",
+    "sha256": "a503dd84f0e6c5def6add37042e18ef882fa74f88b1627763405b591a52dff94",
+    "fetched_bytes": 50601,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108020202_bda01,synop_bufr_999999_999999__MW_676.bin",
+    "href": "Z__C_EDZW_20261108020202_bda01%2Csynop_bufr_999999_999999__MW_676.bin",
+    "listing_modified_utc": "2026-11-08T02:07:04Z",
+    "bytes": 74120,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108020202_bda01%2Csynop_bufr_999999_999999__MW_676.bin",
+    "sha256": "4e4be0f86bfe32b8a67844f78784c80683b2bc66f2c9402b43e48e5230cbf3dd",
+    "fetched_bytes": 74120,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108020702_bda01,synop_bufr_999999_999999__MW_677.bin",
+    "href": "Z__C_EDZW_20261108020702_bda01%2Csynop_bufr_999999_999999__MW_677.bin",
+    "listing_modified_utc": "2026-11-08T02:12:03Z",
+    "bytes": 280753,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108020702_bda01%2Csynop_bufr_999999_999999__MW_677.bin",
+    "sha256": "e5662fc4683b24a2771abd42912df6a0b5aed9e59314260b769b68d260f46563",
+    "fetched_bytes": 280753,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108021202_bda01,synop_bufr_999999_999999__MW_678.bin",
+    "href": "Z__C_EDZW_20261108021202_bda01%2Csynop_bufr_999999_999999__MW_678.bin",
+    "listing_modified_utc": "2026-11-08T02:17:03Z",
+    "bytes": 148477,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108021202_bda01%2Csynop_bufr_999999_999999__MW_678.bin",
+    "sha256": "82dd9bbb3fdff9460f893e1cbab3941fa81223091065e8c12862ac59aa3886cf",
+    "fetched_bytes": 148477,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108021803_bda01,synop_bufr_999999_999999__MW_679.bin",
+    "href": "Z__C_EDZW_20261108021803_bda01%2Csynop_bufr_999999_999999__MW_679.bin",
+    "listing_modified_utc": "2026-11-08T02:23:04Z",
+    "bytes": 29864,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108021803_bda01%2Csynop_bufr_999999_999999__MW_679.bin",
+    "sha256": "bfecb2f4dc0cf19043919d87d55221a25d246415fa394abc21343936dc4c6209",
+    "fetched_bytes": 29864,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108022304_bda01,synop_bufr_999999_999999__MW_680.bin",
+    "href": "Z__C_EDZW_20261108022304_bda01%2Csynop_bufr_999999_999999__MW_680.bin",
+    "listing_modified_utc": "2026-11-08T02:28:07Z",
+    "bytes": 9665,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108022304_bda01%2Csynop_bufr_999999_999999__MW_680.bin",
+    "sha256": "e2a2e3109c63b17de53d05db2c529cf4b8c2081d2c84d0f406e5fa24170eff8b",
+    "fetched_bytes": 9665,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108023000_bda01,synop_bufr_999999_999999__MW_681.bin",
+    "href": "Z__C_EDZW_20261108023000_bda01%2Csynop_bufr_999999_999999__MW_681.bin",
+    "listing_modified_utc": "2026-11-08T02:35:06Z",
+    "bytes": 17105,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108023000_bda01%2Csynop_bufr_999999_999999__MW_681.bin",
+    "sha256": "c2ff05fdf5b5af8c61740f5888cd6c6b6397bc52717652953cb61ce35bf8e66c",
+    "fetched_bytes": 17105,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108023705_bda01,synop_bufr_999999_999999__MW_682.bin",
+    "href": "Z__C_EDZW_20261108023705_bda01%2Csynop_bufr_999999_999999__MW_682.bin",
+    "listing_modified_utc": "2026-11-08T02:42:10Z",
+    "bytes": 2986,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108023705_bda01%2Csynop_bufr_999999_999999__MW_682.bin",
+    "sha256": "2e316c702014579c78df0aeede897a71ee4a4bf8b6da4be36952c15a3b158d87",
+    "fetched_bytes": 2986,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108024602_bda01,synop_bufr_999999_999999__MW_683.bin",
+    "href": "Z__C_EDZW_20261108024602_bda01%2Csynop_bufr_999999_999999__MW_683.bin",
+    "listing_modified_utc": "2026-11-08T02:51:11Z",
+    "bytes": 1204,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108024602_bda01%2Csynop_bufr_999999_999999__MW_683.bin",
+    "sha256": "ebe4a6a94e8c6df96ae7f52ad894e5d17f8457d1ee41d2b985f4fd1eea2e958a",
+    "fetched_bytes": 1204,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108025402_bda01,synop_bufr_999999_999999__MW_684.bin",
+    "href": "Z__C_EDZW_20261108025402_bda01%2Csynop_bufr_999999_999999__MW_684.bin",
+    "listing_modified_utc": "2026-11-08T03:00:39Z",
+    "bytes": 316,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108025402_bda01%2Csynop_bufr_999999_999999__MW_684.bin",
+    "sha256": "347f170d2d7278d1fd7b4c592ad57e542df191326e97904334be704332fbf942",
+    "fetched_bytes": 316,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108030000_bda01,synop_bufr_999999_999999__MW_685.bin",
+    "href": "Z__C_EDZW_20261108030000_bda01%2Csynop_bufr_999999_999999__MW_685.bin",
+    "listing_modified_utc": "2026-11-08T03:05:18Z",
+    "bytes": 84190,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108030000_bda01%2Csynop_bufr_999999_999999__MW_685.bin",
+    "sha256": "6ed302daac32e6353bcffd546178c7ef41d7c6d69f93eb5314a8495ce29babb1",
+    "fetched_bytes": 84190,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108030500_bda01,synop_bufr_999999_999999__MW_686.bin",
+    "href": "Z__C_EDZW_20261108030500_bda01%2Csynop_bufr_999999_999999__MW_686.bin",
+    "listing_modified_utc": "2026-11-08T03:10:39Z",
+    "bytes": 182098,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108030500_bda01%2Csynop_bufr_999999_999999__MW_686.bin",
+    "sha256": "36cde1f839d3fe533c2629a6d220e3d9f436ee55ed4a0fc6ec496722db522b0c",
+    "fetched_bytes": 182098,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108031000_bda01,synop_bufr_999999_999999__MW_687.bin",
+    "href": "Z__C_EDZW_20261108031000_bda01%2Csynop_bufr_999999_999999__MW_687.bin",
+    "listing_modified_utc": "2026-11-08T03:15:09Z",
+    "bytes": 182501,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108031000_bda01%2Csynop_bufr_999999_999999__MW_687.bin",
+    "sha256": "519a81cf1dc0f5fe454f76560b3f9f9381d69e7683bd9bcc25f9c1f3a609643d",
+    "fetched_bytes": 182501,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108031501_bda01,synop_bufr_999999_999999__MW_688.bin",
+    "href": "Z__C_EDZW_20261108031501_bda01%2Csynop_bufr_999999_999999__MW_688.bin",
+    "listing_modified_utc": "2026-11-08T03:23:03Z",
+    "bytes": 79469,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108031501_bda01%2Csynop_bufr_999999_999999__MW_688.bin",
+    "sha256": "826bce04cdd3a5704bffaca3b1c9b6070b1db53717a496ac878eeba41708b8c5",
+    "fetched_bytes": 79469,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108032003_bda01,synop_bufr_999999_999999__MW_689.bin",
+    "href": "Z__C_EDZW_20261108032003_bda01%2Csynop_bufr_999999_999999__MW_689.bin",
+    "listing_modified_utc": "2026-11-08T03:25:04Z",
+    "bytes": 131277,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108032003_bda01%2Csynop_bufr_999999_999999__MW_689.bin",
+    "sha256": "175718c52914b14db2220abe80e75e6ff13bf1506662b345361dec45f7d3b894",
+    "fetched_bytes": 131277,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108032604_bda01,synop_bufr_999999_999999__MW_690.bin",
+    "href": "Z__C_EDZW_20261108032604_bda01%2Csynop_bufr_999999_999999__MW_690.bin",
+    "listing_modified_utc": "2026-11-08T03:31:06Z",
+    "bytes": 42409,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108032604_bda01%2Csynop_bufr_999999_999999__MW_690.bin",
+    "sha256": "675b3605dc28d2b366db6ef07140d8ba2894a102df341ecbf6f3e9d1d07db07a",
+    "fetched_bytes": 42409,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108033112_bda01,synop_bufr_999999_999999__MW_691.bin",
+    "href": "Z__C_EDZW_20261108033112_bda01%2Csynop_bufr_999999_999999__MW_691.bin",
+    "listing_modified_utc": "2026-11-08T03:36:23Z",
+    "bytes": 38078,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108033112_bda01%2Csynop_bufr_999999_999999__MW_691.bin",
+    "sha256": "ccf166228e5e434416f493387aaa9d23b0f8eeb1b473a6bd08e0a1ff78531bfd",
+    "fetched_bytes": 38078,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108033704_bda01,synop_bufr_999999_999999__MW_692.bin",
+    "href": "Z__C_EDZW_20261108033704_bda01%2Csynop_bufr_999999_999999__MW_692.bin",
+    "listing_modified_utc": "2026-11-08T03:42:13Z",
+    "bytes": 25798,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108033704_bda01%2Csynop_bufr_999999_999999__MW_692.bin",
+    "sha256": "31d23b74d58f81a926a57a9032705051f227fecfbff41bbe4a102a3619d68cb7",
+    "fetched_bytes": 25798,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108034304_bda01,synop_bufr_999999_999999__MW_693.bin",
+    "href": "Z__C_EDZW_20261108034304_bda01%2Csynop_bufr_999999_999999__MW_693.bin",
+    "listing_modified_utc": "2026-11-08T03:48:14Z",
+    "bytes": 21248,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108034304_bda01%2Csynop_bufr_999999_999999__MW_693.bin",
+    "sha256": "10dbfb64dbe81e5ee6ddb73dc0259d353e426e0b02a2df1b5bf31a17742582cd",
+    "fetched_bytes": 21248,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108035102_bda01,synop_bufr_999999_999999__MW_694.bin",
+    "href": "Z__C_EDZW_20261108035102_bda01%2Csynop_bufr_999999_999999__MW_694.bin",
+    "listing_modified_utc": "2026-11-08T03:56:19Z",
+    "bytes": 35403,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108035102_bda01%2Csynop_bufr_999999_999999__MW_694.bin",
+    "sha256": "78d4716c01600b88d802f97636b8fa2a35ae011ea147c0da699cd77a8405dad1",
+    "fetched_bytes": 35403,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108035903_bda01,synop_bufr_999999_999999__MW_695.bin",
+    "href": "Z__C_EDZW_20261108035903_bda01%2Csynop_bufr_999999_999999__MW_695.bin",
+    "listing_modified_utc": "2026-11-08T04:04:06Z",
+    "bytes": 150910,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108035903_bda01%2Csynop_bufr_999999_999999__MW_695.bin",
+    "sha256": "9c5114ba61c2cbfeae8fc1e38a327118284b1a92c464907130f2bc1c8756846a",
+    "fetched_bytes": 150910,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108040403_bda01,synop_bufr_999999_999999__MW_696.bin",
+    "href": "Z__C_EDZW_20261108040403_bda01%2Csynop_bufr_999999_999999__MW_696.bin",
+    "listing_modified_utc": "2026-11-08T04:09:05Z",
+    "bytes": 127018,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108040403_bda01%2Csynop_bufr_999999_999999__MW_696.bin",
+    "sha256": "63052d69f2f1bf4138900d71ff5889107dde64dae8f7ecc129a0804f96c92bf2",
+    "fetched_bytes": 127018,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108040903_bda01,synop_bufr_999999_999999__MW_697.bin",
+    "href": "Z__C_EDZW_20261108040903_bda01%2Csynop_bufr_999999_999999__MW_697.bin",
+    "listing_modified_utc": "2026-11-08T04:14:05Z",
+    "bytes": 231709,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108040903_bda01%2Csynop_bufr_999999_999999__MW_697.bin",
+    "sha256": "345ede6d5ef44717f6bcefbb8eaa8ca07b4f83ee0ef76660faae5e293fa99e2b",
+    "fetched_bytes": 231709,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108041502_bda01,synop_bufr_999999_999999__MW_698.bin",
+    "href": "Z__C_EDZW_20261108041502_bda01%2Csynop_bufr_999999_999999__MW_698.bin",
+    "listing_modified_utc": "2026-11-08T04:20:04Z",
+    "bytes": 109106,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108041502_bda01%2Csynop_bufr_999999_999999__MW_698.bin",
+    "sha256": "af9a69ed761674a9e4190ecdd0e80e254deef6d490906e918607dc5411b7fc0d",
+    "fetched_bytes": 109106,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108042102_bda01,synop_bufr_999999_999999__MW_699.bin",
+    "href": "Z__C_EDZW_20261108042102_bda01%2Csynop_bufr_999999_999999__MW_699.bin",
+    "listing_modified_utc": "2026-11-08T04:26:05Z",
+    "bytes": 48192,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108042102_bda01%2Csynop_bufr_999999_999999__MW_699.bin",
+    "sha256": "7bf422a593061dccef3e3b7078811d60e4e8243c97f18d08a1d1a5d6615419a8",
+    "fetched_bytes": 48192,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108042603_bda01,synop_bufr_999999_999999__MW_700.bin",
+    "href": "Z__C_EDZW_20261108042603_bda01%2Csynop_bufr_999999_999999__MW_700.bin",
+    "listing_modified_utc": "2026-11-08T04:31:08Z",
+    "bytes": 3435,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108042603_bda01%2Csynop_bufr_999999_999999__MW_700.bin",
+    "sha256": "dda8e3954f5e0310ef17b86ac6b5f02dfe9fadde066d76d426911d584b171325",
+    "fetched_bytes": 3435,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108043201_bda01,synop_bufr_999999_999999__MW_701.bin",
+    "href": "Z__C_EDZW_20261108043201_bda01%2Csynop_bufr_999999_999999__MW_701.bin",
+    "listing_modified_utc": "2026-11-08T04:37:08Z",
+    "bytes": 26840,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108043201_bda01%2Csynop_bufr_999999_999999__MW_701.bin",
+    "sha256": "816292bbfed05271b8adde98ca96e76526253a36214ca3499ddbaec4fd69a3be",
+    "fetched_bytes": 26840,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108043704_bda01,synop_bufr_999999_999999__MW_702.bin",
+    "href": "Z__C_EDZW_20261108043704_bda01%2Csynop_bufr_999999_999999__MW_702.bin",
+    "listing_modified_utc": "2026-11-08T04:42:08Z",
+    "bytes": 2878,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108043704_bda01%2Csynop_bufr_999999_999999__MW_702.bin",
+    "sha256": "5841ea4f49d35dbacd79e7da6b0c041a0212e6c5e3889a80c7271a63558d09ee",
+    "fetched_bytes": 2878,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108044401_bda01,synop_bufr_999999_999999__MW_703.bin",
+    "href": "Z__C_EDZW_20261108044401_bda01%2Csynop_bufr_999999_999999__MW_703.bin",
+    "listing_modified_utc": "2026-11-08T04:49:03Z",
+    "bytes": 1427,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108044401_bda01%2Csynop_bufr_999999_999999__MW_703.bin",
+    "sha256": "7cb922926a181fa4770d48349177be4feda0c4504dcccb8c4af7091d96f0ed11",
+    "fetched_bytes": 1427,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108045302_bda01,synop_bufr_999999_999999__MW_704.bin",
+    "href": "Z__C_EDZW_20261108045302_bda01%2Csynop_bufr_999999_999999__MW_704.bin",
+    "listing_modified_utc": "2026-11-08T04:58:04Z",
+    "bytes": 897,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108045302_bda01%2Csynop_bufr_999999_999999__MW_704.bin",
+    "sha256": "8b5ae2224b0f11d5b6aa99d2638f4c867a5146e74c9dc8b5a9e71398a99aeed8",
+    "fetched_bytes": 897,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108050000_bda01,synop_bufr_999999_999999__MW_705.bin",
+    "href": "Z__C_EDZW_20261108050000_bda01%2Csynop_bufr_999999_999999__MW_705.bin",
+    "listing_modified_utc": "2026-11-08T05:05:02Z",
+    "bytes": 106564,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108050000_bda01%2Csynop_bufr_999999_999999__MW_705.bin",
+    "sha256": "14a7e9b64ee113e10e5c43376354607e4aad8cfca031cfe821ed05f75cf3c992",
+    "fetched_bytes": 106564,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108050600_bda01,synop_bufr_999999_999999__MW_706.bin",
+    "href": "Z__C_EDZW_20261108050600_bda01%2Csynop_bufr_999999_999999__MW_706.bin",
+    "listing_modified_utc": "2026-11-08T05:11:01Z",
+    "bytes": 234635,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108050600_bda01%2Csynop_bufr_999999_999999__MW_706.bin",
+    "sha256": "c89d3062080a48bfdacd58a7a6f4b701b68b034e5af95b43e05d892fb775fd41",
+    "fetched_bytes": 234635,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108051100_bda01,synop_bufr_999999_999999__MW_707.bin",
+    "href": "Z__C_EDZW_20261108051100_bda01%2Csynop_bufr_999999_999999__MW_707.bin",
+    "listing_modified_utc": "2026-11-08T05:16:02Z",
+    "bytes": 158974,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108051100_bda01%2Csynop_bufr_999999_999999__MW_707.bin",
+    "sha256": "7c818a04430e971ae53da0f0cf4de1dc97fedbd3af0a3da7a12c3f4cdc317694",
+    "fetched_bytes": 158974,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108051602_bda01,synop_bufr_999999_999999__MW_708.bin",
+    "href": "Z__C_EDZW_20261108051602_bda01%2Csynop_bufr_999999_999999__MW_708.bin",
+    "listing_modified_utc": "2026-11-08T05:21:05Z",
+    "bytes": 118936,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108051602_bda01%2Csynop_bufr_999999_999999__MW_708.bin",
+    "sha256": "567a30fc7164a2e26a3a52beadc5b19b6706760595b8af87aa9eee717c04b3ba",
+    "fetched_bytes": 118936,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108052202_bda01,synop_bufr_999999_999999__MW_709.bin",
+    "href": "Z__C_EDZW_20261108052202_bda01%2Csynop_bufr_999999_999999__MW_709.bin",
+    "listing_modified_utc": "2026-11-08T05:27:03Z",
+    "bytes": 25833,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108052202_bda01%2Csynop_bufr_999999_999999__MW_709.bin",
+    "sha256": "9b437163517f9bbf23f2eae648ae484e935181be66f9ef58d46c6975c68afff7",
+    "fetched_bytes": 25833,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108052702_bda01,synop_bufr_999999_999999__MW_710.bin",
+    "href": "Z__C_EDZW_20261108052702_bda01%2Csynop_bufr_999999_999999__MW_710.bin",
+    "listing_modified_utc": "2026-11-08T05:32:07Z",
+    "bytes": 1175,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108052702_bda01%2Csynop_bufr_999999_999999__MW_710.bin",
+    "sha256": "4537c000afa0978ce4c3f61b241cb0f91d0487cc708164d71f06f092bb3ca05a",
+    "fetched_bytes": 1175,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108053202_bda01,synop_bufr_999999_999999__MW_711.bin",
+    "href": "Z__C_EDZW_20261108053202_bda01%2Csynop_bufr_999999_999999__MW_711.bin",
+    "listing_modified_utc": "2026-11-08T05:37:04Z",
+    "bytes": 13710,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108053202_bda01%2Csynop_bufr_999999_999999__MW_711.bin",
+    "sha256": "aa0f3337cacd918fd8bd9fd6fc7371a01faf0b835f866b1d9d840a513e98ec42",
+    "fetched_bytes": 13710,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108053705_bda01,synop_bufr_999999_999999__MW_712.bin",
+    "href": "Z__C_EDZW_20261108053705_bda01%2Csynop_bufr_999999_999999__MW_712.bin",
+    "listing_modified_utc": "2026-11-08T05:42:17Z",
+    "bytes": 1722,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108053705_bda01%2Csynop_bufr_999999_999999__MW_712.bin",
+    "sha256": "d1ee80ab2b4b9324f526e504d6d41fa06d8294fce0bcc39ee9a11c240c620157",
+    "fetched_bytes": 1722,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108054402_bda01,synop_bufr_999999_999999__MW_713.bin",
+    "href": "Z__C_EDZW_20261108054402_bda01%2Csynop_bufr_999999_999999__MW_713.bin",
+    "listing_modified_utc": "2026-11-08T05:49:09Z",
+    "bytes": 1287,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108054402_bda01%2Csynop_bufr_999999_999999__MW_713.bin",
+    "sha256": "e18f4b1c3c51cf7dba07ab5ddf0180dadde96a3e296ecb6242e8de361a994085",
+    "fetched_bytes": 1287,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108055400_bda01,synop_bufr_999999_999999__MW_714.bin",
+    "href": "Z__C_EDZW_20261108055400_bda01%2Csynop_bufr_999999_999999__MW_714.bin",
+    "listing_modified_utc": "2026-11-08T05:59:01Z",
+    "bytes": 1796,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108055400_bda01%2Csynop_bufr_999999_999999__MW_714.bin",
+    "sha256": "57975fd208e5fbf4084bd9cad31d66fcef3fb8e7de8f683058b0b60101786b3e",
+    "fetched_bytes": 1796,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108055901_bda01,synop_bufr_999999_999999__MW_715.bin",
+    "href": "Z__C_EDZW_20261108055901_bda01%2Csynop_bufr_999999_999999__MW_715.bin",
+    "listing_modified_utc": "2026-11-08T06:04:02Z",
+    "bytes": 75308,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108055901_bda01%2Csynop_bufr_999999_999999__MW_715.bin",
+    "sha256": "cd0f976ece6499eee5ff3a5b9fc6713c040d9237683383a075e04e9815a688a6",
+    "fetched_bytes": 75308,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108060402_bda01,synop_bufr_999999_999999__MW_716.bin",
+    "href": "Z__C_EDZW_20261108060402_bda01%2Csynop_bufr_999999_999999__MW_716.bin",
+    "listing_modified_utc": "2026-11-08T06:09:04Z",
+    "bytes": 138423,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108060402_bda01%2Csynop_bufr_999999_999999__MW_716.bin",
+    "sha256": "7490769cee442a1a9365e9a2058d7e781ced5aee12d1c4a0ca9af541d36a4231",
+    "fetched_bytes": 138423,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108060903_bda01,synop_bufr_999999_999999__MW_717.bin",
+    "href": "Z__C_EDZW_20261108060903_bda01%2Csynop_bufr_999999_999999__MW_717.bin",
+    "listing_modified_utc": "2026-11-08T06:14:06Z",
+    "bytes": 253908,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108060903_bda01%2Csynop_bufr_999999_999999__MW_717.bin",
+    "sha256": "f450e0a7447f22db9b59c4b5ac942c16927e009ad89cdbb60244a946888f808a",
+    "fetched_bytes": 253908,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108061502_bda01,synop_bufr_999999_999999__MW_718.bin",
+    "href": "Z__C_EDZW_20261108061502_bda01%2Csynop_bufr_999999_999999__MW_718.bin",
+    "listing_modified_utc": "2026-11-08T06:20:07Z",
+    "bytes": 93436,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108061502_bda01%2Csynop_bufr_999999_999999__MW_718.bin",
+    "sha256": "ea03f64bd1e1a1f05e6c22508914bd7703926cdada90cf7a1941df19d05536a3",
+    "fetched_bytes": 93436,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108062002_bda01,synop_bufr_999999_999999__MW_719.bin",
+    "href": "Z__C_EDZW_20261108062002_bda01%2Csynop_bufr_999999_999999__MW_719.bin",
+    "listing_modified_utc": "2026-11-08T06:25:03Z",
+    "bytes": 168516,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108062002_bda01%2Csynop_bufr_999999_999999__MW_719.bin",
+    "sha256": "b3a84f5e37234c9b3884080d1bb02cca777d27ef378d45a10b5d94b4746618c0",
+    "fetched_bytes": 168516,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108062503_bda01,synop_bufr_999999_999999__MW_720.bin",
+    "href": "Z__C_EDZW_20261108062503_bda01%2Csynop_bufr_999999_999999__MW_720.bin",
+    "listing_modified_utc": "2026-11-08T06:30:06Z",
+    "bytes": 41381,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108062503_bda01%2Csynop_bufr_999999_999999__MW_720.bin",
+    "sha256": "acd17056e7a39dbb8c0f803d3704f2e24713b122021e1c296fec7dedbbc39c4d",
+    "fetched_bytes": 41381,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108063004_bda01,synop_bufr_999999_999999__MW_721.bin",
+    "href": "Z__C_EDZW_20261108063004_bda01%2Csynop_bufr_999999_999999__MW_721.bin",
+    "listing_modified_utc": "2026-11-08T06:35:08Z",
+    "bytes": 43378,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108063004_bda01%2Csynop_bufr_999999_999999__MW_721.bin",
+    "sha256": "3a636f689d93b451249fb80e7671bd99c1f4e166de23ddc3ea6523db4be7b211",
+    "fetched_bytes": 43378,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108063604_bda01,synop_bufr_999999_999999__MW_722.bin",
+    "href": "Z__C_EDZW_20261108063604_bda01%2Csynop_bufr_999999_999999__MW_722.bin",
+    "listing_modified_utc": "2026-11-08T06:41:07Z",
+    "bytes": 9602,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108063604_bda01%2Csynop_bufr_999999_999999__MW_722.bin",
+    "sha256": "6f4c5df6b1e02ad04eea183ccf9b21fadd4ff222547e8c23ed575cd8d3963a72",
+    "fetched_bytes": 9602,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108064104_bda01,synop_bufr_999999_999999__MW_723.bin",
+    "href": "Z__C_EDZW_20261108064104_bda01%2Csynop_bufr_999999_999999__MW_723.bin",
+    "listing_modified_utc": "2026-11-08T06:46:06Z",
+    "bytes": 31207,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108064104_bda01%2Csynop_bufr_999999_999999__MW_723.bin",
+    "sha256": "4b8fa114e368b602f8c110816ba980a82804870696dbbfcccf9a3787b9a80c62",
+    "fetched_bytes": 31207,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108064705_bda01,synop_bufr_999999_999999__MW_724.bin",
+    "href": "Z__C_EDZW_20261108064705_bda01%2Csynop_bufr_999999_999999__MW_724.bin",
+    "listing_modified_utc": "2026-11-08T06:52:17Z",
+    "bytes": 5528,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108064705_bda01%2Csynop_bufr_999999_999999__MW_724.bin",
+    "sha256": "e93877c1f0511f89caa28d68bc10a2581ce10e33bbe695f4eccb3c99feefd72a",
+    "fetched_bytes": 5528,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108065300_bda01,synop_bufr_999999_999999__MW_725.bin",
+    "href": "Z__C_EDZW_20261108065300_bda01%2Csynop_bufr_999999_999999__MW_725.bin",
+    "listing_modified_utc": "2026-11-08T06:58:02Z",
+    "bytes": 4054,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108065300_bda01%2Csynop_bufr_999999_999999__MW_725.bin",
+    "sha256": "470b2e7388cdb5e0103d3d108d9bfc6e9abaa0924e77c85ca0d95657229aacc8",
+    "fetched_bytes": 4054,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108065800_bda01,synop_bufr_999999_999999__MW_726.bin",
+    "href": "Z__C_EDZW_20261108065800_bda01%2Csynop_bufr_999999_999999__MW_726.bin",
+    "listing_modified_utc": "2026-11-08T07:03:05Z",
+    "bytes": 63269,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108065800_bda01%2Csynop_bufr_999999_999999__MW_726.bin",
+    "sha256": "a36c6816c876a3df09c1653765ec73562f22cedc10cec901027c43951d7b06cf",
+    "fetched_bytes": 63269,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108070301_bda01,synop_bufr_999999_999999__MW_727.bin",
+    "href": "Z__C_EDZW_20261108070301_bda01%2Csynop_bufr_999999_999999__MW_727.bin",
+    "listing_modified_utc": "2026-11-08T07:08:02Z",
+    "bytes": 88711,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108070301_bda01%2Csynop_bufr_999999_999999__MW_727.bin",
+    "sha256": "ccfb7b5f2439c18d6ab7f3650539359e98441c23a9858991690968386ad0d5b0",
+    "fetched_bytes": 88711,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108070801_bda01,synop_bufr_999999_999999__MW_728.bin",
+    "href": "Z__C_EDZW_20261108070801_bda01%2Csynop_bufr_999999_999999__MW_728.bin",
+    "listing_modified_utc": "2026-11-08T07:13:01Z",
+    "bytes": 276134,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108070801_bda01%2Csynop_bufr_999999_999999__MW_728.bin",
+    "sha256": "b551ad144355b8478cea282f411e6370977c9317d27f8b380e0ba7eb31408991",
+    "fetched_bytes": 276134,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108071301_bda01,synop_bufr_999999_999999__MW_729.bin",
+    "href": "Z__C_EDZW_20261108071301_bda01%2Csynop_bufr_999999_999999__MW_729.bin",
+    "listing_modified_utc": "2026-11-08T07:18:03Z",
+    "bytes": 127718,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108071301_bda01%2Csynop_bufr_999999_999999__MW_729.bin",
+    "sha256": "9bf5ffa32003928c682a36694e4463f3c618bc11b85bfc489ad3aedd23cf79f8",
+    "fetched_bytes": 127718,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108071802_bda01,synop_bufr_999999_999999__MW_730.bin",
+    "href": "Z__C_EDZW_20261108071802_bda01%2Csynop_bufr_999999_999999__MW_730.bin",
+    "listing_modified_utc": "2026-11-08T07:23:02Z",
+    "bytes": 14521,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108071802_bda01%2Csynop_bufr_999999_999999__MW_730.bin",
+    "sha256": "b1bae10bc42cd3c9d997a54b97f81d71b6274035c8dfc4c866ae7582464976be",
+    "fetched_bytes": 14521,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108072302_bda01,synop_bufr_999999_999999__MW_731.bin",
+    "href": "Z__C_EDZW_20261108072302_bda01%2Csynop_bufr_999999_999999__MW_731.bin",
+    "listing_modified_utc": "2026-11-08T07:28:04Z",
+    "bytes": 18907,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108072302_bda01%2Csynop_bufr_999999_999999__MW_731.bin",
+    "sha256": "31f759aa07c055bebf0a036c1e576682d739a783c91715f21143ca6c94a0f780",
+    "fetched_bytes": 18907,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108072802_bda01,synop_bufr_999999_999999__MW_732.bin",
+    "href": "Z__C_EDZW_20261108072802_bda01%2Csynop_bufr_999999_999999__MW_732.bin",
+    "listing_modified_utc": "2026-11-08T07:33:06Z",
+    "bytes": 18370,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108072802_bda01%2Csynop_bufr_999999_999999__MW_732.bin",
+    "sha256": "561637ce4d75f58d47ac33d2aebda9f3992e235cec94fe1940a03bad97597f5b",
+    "fetched_bytes": 18370,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108073303_bda01,synop_bufr_999999_999999__MW_733.bin",
+    "href": "Z__C_EDZW_20261108073303_bda01%2Csynop_bufr_999999_999999__MW_733.bin",
+    "listing_modified_utc": "2026-11-08T07:38:08Z",
+    "bytes": 3328,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108073303_bda01%2Csynop_bufr_999999_999999__MW_733.bin",
+    "sha256": "d5a0f1cd687321bff59a5c12529eddaec5e3947f670e9ebf3c2a85151063fc3c",
+    "fetched_bytes": 3328,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108073901_bda01,synop_bufr_999999_999999__MW_734.bin",
+    "href": "Z__C_EDZW_20261108073901_bda01%2Csynop_bufr_999999_999999__MW_734.bin",
+    "listing_modified_utc": "2026-11-08T07:44:06Z",
+    "bytes": 7286,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108073901_bda01%2Csynop_bufr_999999_999999__MW_734.bin",
+    "sha256": "77009ff3f781460dd2dbfaf0ea4cad489dfeb1098c9e0dbabbcc547cac717b52",
+    "fetched_bytes": 7286,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108074501_bda01,synop_bufr_999999_999999__MW_735.bin",
+    "href": "Z__C_EDZW_20261108074501_bda01%2Csynop_bufr_999999_999999__MW_735.bin",
+    "listing_modified_utc": "2026-11-08T07:50:03Z",
+    "bytes": 1875,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108074501_bda01%2Csynop_bufr_999999_999999__MW_735.bin",
+    "sha256": "82be73c094502f3f1f43dc59f9c0c5be5dcaeda3f7dcc86a2be758b6439c8938",
+    "fetched_bytes": 1875,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108075103_bda01,synop_bufr_999999_999999__MW_736.bin",
+    "href": "Z__C_EDZW_20261108075103_bda01%2Csynop_bufr_999999_999999__MW_736.bin",
+    "listing_modified_utc": "2026-11-08T07:56:05Z",
+    "bytes": 4027,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108075103_bda01%2Csynop_bufr_999999_999999__MW_736.bin",
+    "sha256": "228ce9caf95052c706d9e9847047778bd551b7f24f35199d3dd371d80365057b",
+    "fetched_bytes": 4027,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108075702_bda01,synop_bufr_999999_999999__MW_737.bin",
+    "href": "Z__C_EDZW_20261108075702_bda01%2Csynop_bufr_999999_999999__MW_737.bin",
+    "listing_modified_utc": "2026-11-08T08:02:05Z",
+    "bytes": 45054,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108075702_bda01%2Csynop_bufr_999999_999999__MW_737.bin",
+    "sha256": "1166d7b61cac633766a24507a28df43e98427a6e83773e136f18cf21e0c4689f",
+    "fetched_bytes": 45054,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108080203_bda01,synop_bufr_999999_999999__MW_738.bin",
+    "href": "Z__C_EDZW_20261108080203_bda01%2Csynop_bufr_999999_999999__MW_738.bin",
+    "listing_modified_utc": "2026-11-08T08:07:05Z",
+    "bytes": 63508,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108080203_bda01%2Csynop_bufr_999999_999999__MW_738.bin",
+    "sha256": "009c8aa24d5caa6b89f77280f07a7bb18f588039c4a6f876b48c3e146715b868",
+    "fetched_bytes": 63508,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108080703_bda01,synop_bufr_999999_999999__MW_739.bin",
+    "href": "Z__C_EDZW_20261108080703_bda01%2Csynop_bufr_999999_999999__MW_739.bin",
+    "listing_modified_utc": "2026-11-08T08:12:04Z",
+    "bytes": 297102,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108080703_bda01%2Csynop_bufr_999999_999999__MW_739.bin",
+    "sha256": "fb427d8cbf21cfb41eedec86122e70ce41f30fb26c8d4f8a8bb7ed1ffd2a2893",
+    "fetched_bytes": 297102,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108081203_bda01,synop_bufr_999999_999999__MW_740.bin",
+    "href": "Z__C_EDZW_20261108081203_bda01%2Csynop_bufr_999999_999999__MW_740.bin",
+    "listing_modified_utc": "2026-11-08T08:17:04Z",
+    "bytes": 144512,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108081203_bda01%2Csynop_bufr_999999_999999__MW_740.bin",
+    "sha256": "5d12043c672e2d7fc52c1dec22e8de9f0c261f3462bc5fca0a204149d5253dfc",
+    "fetched_bytes": 144512,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108081802_bda01,synop_bufr_999999_999999__MW_741.bin",
+    "href": "Z__C_EDZW_20261108081802_bda01%2Csynop_bufr_999999_999999__MW_741.bin",
+    "listing_modified_utc": "2026-11-08T08:23:04Z",
+    "bytes": 30592,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108081802_bda01%2Csynop_bufr_999999_999999__MW_741.bin",
+    "sha256": "61f5e1758c8097ea2fa9b53372fcb0dca6c3055259de7ca5287f2f6e5e1db87e",
+    "fetched_bytes": 30592,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108082304_bda01,synop_bufr_999999_999999__MW_742.bin",
+    "href": "Z__C_EDZW_20261108082304_bda01%2Csynop_bufr_999999_999999__MW_742.bin",
+    "listing_modified_utc": "2026-11-08T08:28:06Z",
+    "bytes": 8781,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108082304_bda01%2Csynop_bufr_999999_999999__MW_742.bin",
+    "sha256": "01649616b5e5624117dd900dff907ded4d7ed457d77a5970992066b0f8ffd140",
+    "fetched_bytes": 8781,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108082804_bda01,synop_bufr_999999_999999__MW_743.bin",
+    "href": "Z__C_EDZW_20261108082804_bda01%2Csynop_bufr_999999_999999__MW_743.bin",
+    "listing_modified_utc": "2026-11-08T08:33:09Z",
+    "bytes": 15064,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108082804_bda01%2Csynop_bufr_999999_999999__MW_743.bin",
+    "sha256": "6b666649df03a200f2f39e133afd73cbb71d29af69349558aac125857b5be5e5",
+    "fetched_bytes": 15064,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108083304_bda01,synop_bufr_999999_999999__MW_744.bin",
+    "href": "Z__C_EDZW_20261108083304_bda01%2Csynop_bufr_999999_999999__MW_744.bin",
+    "listing_modified_utc": "2026-11-08T08:38:13Z",
+    "bytes": 1727,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108083304_bda01%2Csynop_bufr_999999_999999__MW_744.bin",
+    "sha256": "013d7f3498c6776ef6550eddcee95046954ef8587f31c9ccf3b17ba448351c2a",
+    "fetched_bytes": 1727,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108083900_bda01,synop_bufr_999999_999999__MW_745.bin",
+    "href": "Z__C_EDZW_20261108083900_bda01%2Csynop_bufr_999999_999999__MW_745.bin",
+    "listing_modified_utc": "2026-11-08T08:44:03Z",
+    "bytes": 2473,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108083900_bda01%2Csynop_bufr_999999_999999__MW_745.bin",
+    "sha256": "9a20c02ea4965d0aa5562a26f75710bce4e000d5797c4fb8480e0348da432765",
+    "fetched_bytes": 2473,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108084501_bda01,synop_bufr_999999_999999__MW_746.bin",
+    "href": "Z__C_EDZW_20261108084501_bda01%2Csynop_bufr_999999_999999__MW_746.bin",
+    "listing_modified_utc": "2026-11-08T08:50:05Z",
+    "bytes": 4508,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108084501_bda01%2Csynop_bufr_999999_999999__MW_746.bin",
+    "sha256": "7d4bd14ba3cdd165a9e992ce4a8bb33680d37dfdf59cfeaafa402021b5c95409",
+    "fetched_bytes": 4508,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108085003_bda01,synop_bufr_999999_999999__MW_747.bin",
+    "href": "Z__C_EDZW_20261108085003_bda01%2Csynop_bufr_999999_999999__MW_747.bin",
+    "listing_modified_utc": "2026-11-08T08:55:33Z",
+    "bytes": 1439,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108085003_bda01%2Csynop_bufr_999999_999999__MW_747.bin",
+    "sha256": "ebd56b09bc8a088f2fc10c39b97acae41430ad6e3a0be32cb396eae0d70158ea",
+    "fetched_bytes": 1439,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108085801_bda01,synop_bufr_999999_999999__MW_748.bin",
+    "href": "Z__C_EDZW_20261108085801_bda01%2Csynop_bufr_999999_999999__MW_748.bin",
+    "listing_modified_utc": "2026-11-08T09:03:20Z",
+    "bytes": 47041,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108085801_bda01%2Csynop_bufr_999999_999999__MW_748.bin",
+    "sha256": "58ed5a917ee331825f1ccf85bcb56680aaac8eda96e460a90b4e2bbda9665b57",
+    "fetched_bytes": 47041,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108090301_bda01,synop_bufr_999999_999999__MW_749.bin",
+    "href": "Z__C_EDZW_20261108090301_bda01%2Csynop_bufr_999999_999999__MW_749.bin",
+    "listing_modified_utc": "2026-11-08T09:08:03Z",
+    "bytes": 102141,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108090301_bda01%2Csynop_bufr_999999_999999__MW_749.bin",
+    "sha256": "b78027ad4f317d6b2331e03f0f1ee6a64b940a29db951f480b1b5c167842fdb9",
+    "fetched_bytes": 102141,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108090801_bda01,synop_bufr_999999_999999__MW_750.bin",
+    "href": "Z__C_EDZW_20261108090801_bda01%2Csynop_bufr_999999_999999__MW_750.bin",
+    "listing_modified_utc": "2026-11-08T09:13:04Z",
+    "bytes": 329592,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108090801_bda01%2Csynop_bufr_999999_999999__MW_750.bin",
+    "sha256": "fbb50c0fd51ab9687e6fc7a66e86fc3b0c9dee46d2c7e36ae75ae4e0fb959ae0",
+    "fetched_bytes": 329592,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108091302_bda01,synop_bufr_999999_999999__MW_751.bin",
+    "href": "Z__C_EDZW_20261108091302_bda01%2Csynop_bufr_999999_999999__MW_751.bin",
+    "listing_modified_utc": "2026-11-08T09:18:04Z",
+    "bytes": 79490,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108091302_bda01%2Csynop_bufr_999999_999999__MW_751.bin",
+    "sha256": "3420baedd3075dee8915e5226f30e604e4be85c83059f21c055f3846b5ae13d3",
+    "fetched_bytes": 79490,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108091802_bda01,synop_bufr_999999_999999__MW_752.bin",
+    "href": "Z__C_EDZW_20261108091802_bda01%2Csynop_bufr_999999_999999__MW_752.bin",
+    "listing_modified_utc": "2026-11-08T09:23:03Z",
+    "bytes": 101620,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108091802_bda01%2Csynop_bufr_999999_999999__MW_752.bin",
+    "sha256": "99801c7dea4a9c833122c7c3bde3191b3f8890a3fb7e8600a44525268b2bffdd",
+    "fetched_bytes": 101620,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108092302_bda01,synop_bufr_999999_999999__MW_753.bin",
+    "href": "Z__C_EDZW_20261108092302_bda01%2Csynop_bufr_999999_999999__MW_753.bin",
+    "listing_modified_utc": "2026-11-08T09:28:03Z",
+    "bytes": 56335,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108092302_bda01%2Csynop_bufr_999999_999999__MW_753.bin",
+    "sha256": "1b3390c5e9124cb4605533ad3035759bdc9c9d72d6ad23e8bce68f3bdcdeedbe",
+    "fetched_bytes": 56335,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108092805_bda01,synop_bufr_999999_999999__MW_754.bin",
+    "href": "Z__C_EDZW_20261108092805_bda01%2Csynop_bufr_999999_999999__MW_754.bin",
+    "listing_modified_utc": "2026-11-08T09:33:11Z",
+    "bytes": 64774,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108092805_bda01%2Csynop_bufr_999999_999999__MW_754.bin",
+    "sha256": "b7c4cc32b4d8685bafb8f32559ec06621cd10911ca7102817bc73919ae631fb6",
+    "fetched_bytes": 64774,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108093403_bda01,synop_bufr_999999_999999__MW_755.bin",
+    "href": "Z__C_EDZW_20261108093403_bda01%2Csynop_bufr_999999_999999__MW_755.bin",
+    "listing_modified_utc": "2026-11-08T09:39:07Z",
+    "bytes": 5287,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108093403_bda01%2Csynop_bufr_999999_999999__MW_755.bin",
+    "sha256": "0a5e5569fe16b8ec17a9cbcfdac58700fc13f26be8f8f64d70cf4f8b8317488f",
+    "fetched_bytes": 5287,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108094503_bda01,synop_bufr_999999_999999__MW_756.bin",
+    "href": "Z__C_EDZW_20261108094503_bda01%2Csynop_bufr_999999_999999__MW_756.bin",
+    "listing_modified_utc": "2026-11-08T09:50:16Z",
+    "bytes": 16099,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108094503_bda01%2Csynop_bufr_999999_999999__MW_756.bin",
+    "sha256": "85153410185fe54ae3403654e38ba33f2d75f7d445e8e69ec65f00e300f39b07",
+    "fetched_bytes": 16099,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108095202_bda01,synop_bufr_999999_999999__MW_757.bin",
+    "href": "Z__C_EDZW_20261108095202_bda01%2Csynop_bufr_999999_999999__MW_757.bin",
+    "listing_modified_utc": "2026-11-08T09:57:04Z",
+    "bytes": 36339,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108095202_bda01%2Csynop_bufr_999999_999999__MW_757.bin",
+    "sha256": "e06b8a729c8dd1d539e5cf6ad0a63dbd9b46f35d50b681b737dcfcb395180f46",
+    "fetched_bytes": 36339,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108095903_bda01,synop_bufr_999999_999999__MW_758.bin",
+    "href": "Z__C_EDZW_20261108095903_bda01%2Csynop_bufr_999999_999999__MW_758.bin",
+    "listing_modified_utc": "2026-11-08T10:04:04Z",
+    "bytes": 94787,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108095903_bda01%2Csynop_bufr_999999_999999__MW_758.bin",
+    "sha256": "5f7b1c9017e0cfb4688fd0e9c76056a56643192272b9d35130dc9572314f51e3",
+    "fetched_bytes": 94787,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108100403_bda01,synop_bufr_999999_999999__MW_759.bin",
+    "href": "Z__C_EDZW_20261108100403_bda01%2Csynop_bufr_999999_999999__MW_759.bin",
+    "listing_modified_utc": "2026-11-08T10:09:05Z",
+    "bytes": 135944,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108100403_bda01%2Csynop_bufr_999999_999999__MW_759.bin",
+    "sha256": "667404c8840d37daafcca645b582bbefad30cdcbddd7dd0db034d320b1e205bc",
+    "fetched_bytes": 135944,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108100904_bda01,synop_bufr_999999_999999__MW_760.bin",
+    "href": "Z__C_EDZW_20261108100904_bda01%2Csynop_bufr_999999_999999__MW_760.bin",
+    "listing_modified_utc": "2026-11-08T10:14:05Z",
+    "bytes": 228581,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108100904_bda01%2Csynop_bufr_999999_999999__MW_760.bin",
+    "sha256": "c27fec6f35dbd761f0ff77b820004c1afd710160c937a1a1560ce9bf61e053d8",
+    "fetched_bytes": 228581,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108101503_bda01,synop_bufr_999999_999999__MW_761.bin",
+    "href": "Z__C_EDZW_20261108101503_bda01%2Csynop_bufr_999999_999999__MW_761.bin",
+    "listing_modified_utc": "2026-11-08T10:20:05Z",
+    "bytes": 108529,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108101503_bda01%2Csynop_bufr_999999_999999__MW_761.bin",
+    "sha256": "a4dcd9b6906cfbe39b7bf216b45af9ed17ad8dfd4dca28003b33681f68eaab51",
+    "fetched_bytes": 108529,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108102102_bda01,synop_bufr_999999_999999__MW_762.bin",
+    "href": "Z__C_EDZW_20261108102102_bda01%2Csynop_bufr_999999_999999__MW_762.bin",
+    "listing_modified_utc": "2026-11-08T10:26:06Z",
+    "bytes": 35829,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108102102_bda01%2Csynop_bufr_999999_999999__MW_762.bin",
+    "sha256": "b3c2e5d6acb5d2631db773741adaa5e2b533e036226c6539f69cf3b065cc7675",
+    "fetched_bytes": 35829,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108102603_bda01,synop_bufr_999999_999999__MW_763.bin",
+    "href": "Z__C_EDZW_20261108102603_bda01%2Csynop_bufr_999999_999999__MW_763.bin",
+    "listing_modified_utc": "2026-11-08T10:31:07Z",
+    "bytes": 1183,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108102603_bda01%2Csynop_bufr_999999_999999__MW_763.bin",
+    "sha256": "99b8497a0c9d2eb8507c4c132cd76677bf4842c5fe9d59f2b43314133aa449b0",
+    "fetched_bytes": 1183,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108103201_bda01,synop_bufr_999999_999999__MW_764.bin",
+    "href": "Z__C_EDZW_20261108103201_bda01%2Csynop_bufr_999999_999999__MW_764.bin",
+    "listing_modified_utc": "2026-11-08T10:37:08Z",
+    "bytes": 27183,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108103201_bda01%2Csynop_bufr_999999_999999__MW_764.bin",
+    "sha256": "013887f9d7251fbd27b23d808d371ade3dd2d3752b0144f1dd1f3e99d2ff29f0",
+    "fetched_bytes": 27183,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108103705_bda01,synop_bufr_999999_999999__MW_765.bin",
+    "href": "Z__C_EDZW_20261108103705_bda01%2Csynop_bufr_999999_999999__MW_765.bin",
+    "listing_modified_utc": "2026-11-08T10:42:15Z",
+    "bytes": 3930,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108103705_bda01%2Csynop_bufr_999999_999999__MW_765.bin",
+    "sha256": "fa295c3f3e1be3a57c53e863cbe65da5d69a60e38d198553c0aca6c3bc2f593f",
+    "fetched_bytes": 3930,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108104602_bda01,synop_bufr_999999_999999__MW_766.bin",
+    "href": "Z__C_EDZW_20261108104602_bda01%2Csynop_bufr_999999_999999__MW_766.bin",
+    "listing_modified_utc": "2026-11-08T10:51:09Z",
+    "bytes": 1018,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108104602_bda01%2Csynop_bufr_999999_999999__MW_766.bin",
+    "sha256": "6c23c636dc080d89e3ecf55bf8df682b52e5befc089aed7c6771f4800ab4e340",
+    "fetched_bytes": 1018,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108105800_bda01,synop_bufr_999999_999999__MW_767.bin",
+    "href": "Z__C_EDZW_20261108105800_bda01%2Csynop_bufr_999999_999999__MW_767.bin",
+    "listing_modified_utc": "2026-11-08T11:03:01Z",
+    "bytes": 55177,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108105800_bda01%2Csynop_bufr_999999_999999__MW_767.bin",
+    "sha256": "ad4b206e3949229e72130b6fa457d02f95b1d59112e5734a70d5d832312e7d32",
+    "fetched_bytes": 55177,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108110302_bda01,synop_bufr_999999_999999__MW_768.bin",
+    "href": "Z__C_EDZW_20261108110302_bda01%2Csynop_bufr_999999_999999__MW_768.bin",
+    "listing_modified_utc": "2026-11-08T11:08:04Z",
+    "bytes": 103095,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108110302_bda01%2Csynop_bufr_999999_999999__MW_768.bin",
+    "sha256": "81f7d74b6c7b15bf4c1a3541d7c2cac58ff49c387d9bc6e93059e8363fac912f",
+    "fetched_bytes": 103095,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108110802_bda01,synop_bufr_999999_999999__MW_769.bin",
+    "href": "Z__C_EDZW_20261108110802_bda01%2Csynop_bufr_999999_999999__MW_769.bin",
+    "listing_modified_utc": "2026-11-08T11:13:04Z",
+    "bytes": 350014,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108110802_bda01%2Csynop_bufr_999999_999999__MW_769.bin",
+    "sha256": "95607a51815167177606ad8b987270342189e26b0cd8c7d986f7b06f567df7e6",
+    "fetched_bytes": 350014,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108111302_bda01,synop_bufr_999999_999999__MW_770.bin",
+    "href": "Z__C_EDZW_20261108111302_bda01%2Csynop_bufr_999999_999999__MW_770.bin",
+    "listing_modified_utc": "2026-11-08T11:18:04Z",
+    "bytes": 130112,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108111302_bda01%2Csynop_bufr_999999_999999__MW_770.bin",
+    "sha256": "fccd2e8269b60e7b2f189e8e7791f69c23fcc5b905d6277a586993efcfd5e6fc",
+    "fetched_bytes": 130112,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108111804_bda01,synop_bufr_999999_999999__MW_771.bin",
+    "href": "Z__C_EDZW_20261108111804_bda01%2Csynop_bufr_999999_999999__MW_771.bin",
+    "listing_modified_utc": "2026-11-08T11:23:05Z",
+    "bytes": 21164,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108111804_bda01%2Csynop_bufr_999999_999999__MW_771.bin",
+    "sha256": "0522bcaa7d5f8d4b70fb61fe2a73b2d18d105cf873bf8966840067dd4516fe5f",
+    "fetched_bytes": 21164,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108112305_bda01,synop_bufr_999999_999999__MW_772.bin",
+    "href": "Z__C_EDZW_20261108112305_bda01%2Csynop_bufr_999999_999999__MW_772.bin",
+    "listing_modified_utc": "2026-11-08T11:28:07Z",
+    "bytes": 6560,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108112305_bda01%2Csynop_bufr_999999_999999__MW_772.bin",
+    "sha256": "78e113b6358e3f15061a08ab3b33a11fe85d7506f99b0ae933c96b78603ce766",
+    "fetched_bytes": 6560,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108113000_bda01,synop_bufr_999999_999999__MW_773.bin",
+    "href": "Z__C_EDZW_20261108113000_bda01%2Csynop_bufr_999999_999999__MW_773.bin",
+    "listing_modified_utc": "2026-11-08T11:35:08Z",
+    "bytes": 14798,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108113000_bda01%2Csynop_bufr_999999_999999__MW_773.bin",
+    "sha256": "cd55df5b7a34a9005b3699e4f54499cc462ecd82dd34e7f40aeeb1f54f3c48c4",
+    "fetched_bytes": 14798,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108113600_bda01,synop_bufr_999999_999999__MW_774.bin",
+    "href": "Z__C_EDZW_20261108113600_bda01%2Csynop_bufr_999999_999999__MW_774.bin",
+    "listing_modified_utc": "2026-11-08T11:41:11Z",
+    "bytes": 1660,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108113600_bda01%2Csynop_bufr_999999_999999__MW_774.bin",
+    "sha256": "679c3b9a16d43679097731412be29b3bdf6ce21f2e268231cbf85a007cfb436a",
+    "fetched_bytes": 1660,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108114202_bda01,synop_bufr_999999_999999__MW_775.bin",
+    "href": "Z__C_EDZW_20261108114202_bda01%2Csynop_bufr_999999_999999__MW_775.bin",
+    "listing_modified_utc": "2026-11-08T11:47:11Z",
+    "bytes": 1399,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108114202_bda01%2Csynop_bufr_999999_999999__MW_775.bin",
+    "sha256": "c388e4e3c078fd366f1b12ffe9dc5b2b95e94c20d673da2e4b31d6db15a44c26",
+    "fetched_bytes": 1399,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108114804_bda01,synop_bufr_999999_999999__MW_776.bin",
+    "href": "Z__C_EDZW_20261108114804_bda01%2Csynop_bufr_999999_999999__MW_776.bin",
+    "listing_modified_utc": "2026-11-08T11:53:11Z",
+    "bytes": 611,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108114804_bda01%2Csynop_bufr_999999_999999__MW_776.bin",
+    "sha256": "7deef9dc20b7f2b05de3c578b52a8004fe8e106f58dc7c01ab11a58f53d1c981",
+    "fetched_bytes": 611,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108115702_bda01,synop_bufr_999999_999999__MW_777.bin",
+    "href": "Z__C_EDZW_20261108115702_bda01%2Csynop_bufr_999999_999999__MW_777.bin",
+    "listing_modified_utc": "2026-11-08T12:02:04Z",
+    "bytes": 47824,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108115702_bda01%2Csynop_bufr_999999_999999__MW_777.bin",
+    "sha256": "0ac378b6aefcf927d5acd7c4f173f54000ef85331eabdc72c0c1d63109645d13",
+    "fetched_bytes": 47824,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108120202_bda01,synop_bufr_999999_999999__MW_778.bin",
+    "href": "Z__C_EDZW_20261108120202_bda01%2Csynop_bufr_999999_999999__MW_778.bin",
+    "listing_modified_utc": "2026-11-08T12:07:03Z",
+    "bytes": 78773,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108120202_bda01%2Csynop_bufr_999999_999999__MW_778.bin",
+    "sha256": "364d47e44add85992dc9ad6daa13bf9cb12c6e06060aa5a176288ae290474f32",
+    "fetched_bytes": 78773,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108120702_bda01,synop_bufr_999999_999999__MW_779.bin",
+    "href": "Z__C_EDZW_20261108120702_bda01%2Csynop_bufr_999999_999999__MW_779.bin",
+    "listing_modified_utc": "2026-11-08T12:12:03Z",
+    "bytes": 327416,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108120702_bda01%2Csynop_bufr_999999_999999__MW_779.bin",
+    "sha256": "b70424c8e7076a2e041eec025d905fe058c5e1f91902a4e100dfbd4cb4621284",
+    "fetched_bytes": 327416,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108121203_bda01,synop_bufr_999999_999999__MW_780.bin",
+    "href": "Z__C_EDZW_20261108121203_bda01%2Csynop_bufr_999999_999999__MW_780.bin",
+    "listing_modified_utc": "2026-11-08T12:17:05Z",
+    "bytes": 78427,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108121203_bda01%2Csynop_bufr_999999_999999__MW_780.bin",
+    "sha256": "c85fd2b6ecade99cf8cf833b6d597b9b90a78d244d613616ddde811f979fc253",
+    "fetched_bytes": 78427,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108121703_bda01,synop_bufr_999999_999999__MW_781.bin",
+    "href": "Z__C_EDZW_20261108121703_bda01%2Csynop_bufr_999999_999999__MW_781.bin",
+    "listing_modified_utc": "2026-11-08T12:22:05Z",
+    "bytes": 106639,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108121703_bda01%2Csynop_bufr_999999_999999__MW_781.bin",
+    "sha256": "0c6fea929a165671661f16ce85d94662a3982462cdaccc6b274838d80590ca36",
+    "fetched_bytes": 106639,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108122203_bda01,synop_bufr_999999_999999__MW_782.bin",
+    "href": "Z__C_EDZW_20261108122203_bda01%2Csynop_bufr_999999_999999__MW_782.bin",
+    "listing_modified_utc": "2026-11-08T12:27:05Z",
+    "bytes": 145453,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108122203_bda01%2Csynop_bufr_999999_999999__MW_782.bin",
+    "sha256": "ec1368bb42fbdb82a628959a549a28ca5a165f64c1c4bf5a1576a90ee68f1a15",
+    "fetched_bytes": 145453,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108122703_bda01,synop_bufr_999999_999999__MW_783.bin",
+    "href": "Z__C_EDZW_20261108122703_bda01%2Csynop_bufr_999999_999999__MW_783.bin",
+    "listing_modified_utc": "2026-11-08T12:32:06Z",
+    "bytes": 34941,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108122703_bda01%2Csynop_bufr_999999_999999__MW_783.bin",
+    "sha256": "233528575c140990696bee70ab2ccfd8cd5466902b0bf14308d04bea479fc317",
+    "fetched_bytes": 34941,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108123204_bda01,synop_bufr_999999_999999__MW_784.bin",
+    "href": "Z__C_EDZW_20261108123204_bda01%2Csynop_bufr_999999_999999__MW_784.bin",
+    "listing_modified_utc": "2026-11-08T12:37:09Z",
+    "bytes": 26833,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108123204_bda01%2Csynop_bufr_999999_999999__MW_784.bin",
+    "sha256": "3aa2d03d897bcac5df348118c116ec3107d4ba7970a1e2b21a0ba259ab729a6a",
+    "fetched_bytes": 26833,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108123704_bda01,synop_bufr_999999_999999__MW_785.bin",
+    "href": "Z__C_EDZW_20261108123704_bda01%2Csynop_bufr_999999_999999__MW_785.bin",
+    "listing_modified_utc": "2026-11-08T12:42:09Z",
+    "bytes": 27822,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108123704_bda01%2Csynop_bufr_999999_999999__MW_785.bin",
+    "sha256": "02cd015828fcd02967cfa01eac66d7c0525a2649bd855501bf7774a809c1b963",
+    "fetched_bytes": 27822,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108124204_bda01,synop_bufr_999999_999999__MW_786.bin",
+    "href": "Z__C_EDZW_20261108124204_bda01%2Csynop_bufr_999999_999999__MW_786.bin",
+    "listing_modified_utc": "2026-11-08T12:47:09Z",
+    "bytes": 35284,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108124204_bda01%2Csynop_bufr_999999_999999__MW_786.bin",
+    "sha256": "ed7d96c87daf20b6e6f12e63aa30baae70a06e0d12e64be0aa8f9f0f5eb75b85",
+    "fetched_bytes": 35284,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108124704_bda01,synop_bufr_999999_999999__MW_787.bin",
+    "href": "Z__C_EDZW_20261108124704_bda01%2Csynop_bufr_999999_999999__MW_787.bin",
+    "listing_modified_utc": "2026-11-08T12:52:09Z",
+    "bytes": 16277,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108124704_bda01%2Csynop_bufr_999999_999999__MW_787.bin",
+    "sha256": "f97877b084384545281e876303bdfcb059e5e5d8a2044fb18ba5ccac5e56699e",
+    "fetched_bytes": 16277,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108125301_bda01,synop_bufr_999999_999999__MW_788.bin",
+    "href": "Z__C_EDZW_20261108125301_bda01%2Csynop_bufr_999999_999999__MW_788.bin",
+    "listing_modified_utc": "2026-11-08T12:58:05Z",
+    "bytes": 13577,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108125301_bda01%2Csynop_bufr_999999_999999__MW_788.bin",
+    "sha256": "e2c47b433708927064318d1e932a8dcab908e280b3516b538ce4faceaa98eb76",
+    "fetched_bytes": 13577,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108125903_bda01,synop_bufr_999999_999999__MW_789.bin",
+    "href": "Z__C_EDZW_20261108125903_bda01%2Csynop_bufr_999999_999999__MW_789.bin",
+    "listing_modified_utc": "2026-11-08T13:04:05Z",
+    "bytes": 136321,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108125903_bda01%2Csynop_bufr_999999_999999__MW_789.bin",
+    "sha256": "ce773f6f7dd214e073652b1cb4010ef925a1ffbb326640950fecd55bd35e9aec",
+    "fetched_bytes": 136321,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108130403_bda01,synop_bufr_999999_999999__MW_790.bin",
+    "href": "Z__C_EDZW_20261108130403_bda01%2Csynop_bufr_999999_999999__MW_790.bin",
+    "listing_modified_utc": "2026-11-08T13:09:04Z",
+    "bytes": 137700,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108130403_bda01%2Csynop_bufr_999999_999999__MW_790.bin",
+    "sha256": "6b1b6d5ece5c707c716c04ee1a5731a79d1d75752db4e6e51551c7ce381ba63a",
+    "fetched_bytes": 137700,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108130903_bda01,synop_bufr_999999_999999__MW_791.bin",
+    "href": "Z__C_EDZW_20261108130903_bda01%2Csynop_bufr_999999_999999__MW_791.bin",
+    "listing_modified_utc": "2026-11-08T13:14:03Z",
+    "bytes": 177010,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108130903_bda01%2Csynop_bufr_999999_999999__MW_791.bin",
+    "sha256": "b0ea2d5a49bbea4e6b0e7dd372d169ec1d3de4d973b60943f11e6909320f82d3",
+    "fetched_bytes": 177010,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108131403_bda01,synop_bufr_999999_999999__MW_792.bin",
+    "href": "Z__C_EDZW_20261108131403_bda01%2Csynop_bufr_999999_999999__MW_792.bin",
+    "listing_modified_utc": "2026-11-08T13:19:05Z",
+    "bytes": 120531,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108131403_bda01%2Csynop_bufr_999999_999999__MW_792.bin",
+    "sha256": "8eabecdcac6fcac939650bc7a0a9124a07bbd434cafa001ed63e636312179f5a",
+    "fetched_bytes": 120531,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108131904_bda01,synop_bufr_999999_999999__MW_793.bin",
+    "href": "Z__C_EDZW_20261108131904_bda01%2Csynop_bufr_999999_999999__MW_793.bin",
+    "listing_modified_utc": "2026-11-08T13:24:05Z",
+    "bytes": 48110,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108131904_bda01%2Csynop_bufr_999999_999999__MW_793.bin",
+    "sha256": "b43a293ea3e6d16394194623b8a6aaf4fc1670f760b12f5c3481d9cc12e08186",
+    "fetched_bytes": 48110,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108132603_bda01,synop_bufr_999999_999999__MW_794.bin",
+    "href": "Z__C_EDZW_20261108132603_bda01%2Csynop_bufr_999999_999999__MW_794.bin",
+    "listing_modified_utc": "2026-11-08T13:31:07Z",
+    "bytes": 2362,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108132603_bda01%2Csynop_bufr_999999_999999__MW_794.bin",
+    "sha256": "41e15505e23e93b1cc359a3671647570e58e6290f7509e9def6bf6ec5725a8e3",
+    "fetched_bytes": 2362,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108133201_bda01,synop_bufr_999999_999999__MW_795.bin",
+    "href": "Z__C_EDZW_20261108133201_bda01%2Csynop_bufr_999999_999999__MW_795.bin",
+    "listing_modified_utc": "2026-11-08T13:37:05Z",
+    "bytes": 28053,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108133201_bda01%2Csynop_bufr_999999_999999__MW_795.bin",
+    "sha256": "6d4ffd7edac52e6c5d6e29bba022f408d972d55a816f831a4988156e916ebb88",
+    "fetched_bytes": 28053,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108133705_bda01,synop_bufr_999999_999999__MW_796.bin",
+    "href": "Z__C_EDZW_20261108133705_bda01%2Csynop_bufr_999999_999999__MW_796.bin",
+    "listing_modified_utc": "2026-11-08T13:42:07Z",
+    "bytes": 29798,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108133705_bda01%2Csynop_bufr_999999_999999__MW_796.bin",
+    "sha256": "a0470403bdcc1169c4ce8f2e4bf028c315ac05f5eb824d41e78c9f00f226059e",
+    "fetched_bytes": 29798,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108134602_bda01,synop_bufr_999999_999999__MW_797.bin",
+    "href": "Z__C_EDZW_20261108134602_bda01%2Csynop_bufr_999999_999999__MW_797.bin",
+    "listing_modified_utc": "2026-11-08T13:51:11Z",
+    "bytes": 2176,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108134602_bda01%2Csynop_bufr_999999_999999__MW_797.bin",
+    "sha256": "87a5dea9358fc857ce2c45331cd67666dc478b4cbe1a3e49195987b82b96dfc1",
+    "fetched_bytes": 2176,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108135203_bda01,synop_bufr_999999_999999__MW_798.bin",
+    "href": "Z__C_EDZW_20261108135203_bda01%2Csynop_bufr_999999_999999__MW_798.bin",
+    "listing_modified_utc": "2026-11-08T13:57:04Z",
+    "bytes": 2449,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108135203_bda01%2Csynop_bufr_999999_999999__MW_798.bin",
+    "sha256": "7d0aaf3ce0adea3346569db6c8bde3ed3c62994f6e68fd9a339760022c808f1f",
+    "fetched_bytes": 2449,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108135900_bda01,synop_bufr_999999_999999__MW_799.bin",
+    "href": "Z__C_EDZW_20261108135900_bda01%2Csynop_bufr_999999_999999__MW_799.bin",
+    "listing_modified_utc": "2026-11-08T14:04:02Z",
+    "bytes": 82162,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108135900_bda01%2Csynop_bufr_999999_999999__MW_799.bin",
+    "sha256": "6eb2a0eb5a4ab53c910e5825730f143898529bacf717b4092f808a409b2c3f2c",
+    "fetched_bytes": 82162,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108140400_bda01,synop_bufr_999999_999999__MW_800.bin",
+    "href": "Z__C_EDZW_20261108140400_bda01%2Csynop_bufr_999999_999999__MW_800.bin",
+    "listing_modified_utc": "2026-11-08T14:09:02Z",
+    "bytes": 161412,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108140400_bda01%2Csynop_bufr_999999_999999__MW_800.bin",
+    "sha256": "da0d40a5a37ee61a5aa3020d92a809cae5e1b52f1a9cada75e3a0d4a9236b4c1",
+    "fetched_bytes": 161412,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108140903_bda01,synop_bufr_999999_999999__MW_801.bin",
+    "href": "Z__C_EDZW_20261108140903_bda01%2Csynop_bufr_999999_999999__MW_801.bin",
+    "listing_modified_utc": "2026-11-08T14:14:05Z",
+    "bytes": 201448,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108140903_bda01%2Csynop_bufr_999999_999999__MW_801.bin",
+    "sha256": "6615ff12bf2989098a78f7fd0c2ac420026b8bf025b4cdc3401504a43b653e26",
+    "fetched_bytes": 201448,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108141403_bda01,synop_bufr_999999_999999__MW_802.bin",
+    "href": "Z__C_EDZW_20261108141403_bda01%2Csynop_bufr_999999_999999__MW_802.bin",
+    "listing_modified_utc": "2026-11-08T14:19:04Z",
+    "bytes": 110724,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108141403_bda01%2Csynop_bufr_999999_999999__MW_802.bin",
+    "sha256": "e4061b95d69a8b44fc0276ce8bb30f6b9870854872c33176f6da7c4919e3aa85",
+    "fetched_bytes": 110724,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108142002_bda01,synop_bufr_999999_999999__MW_803.bin",
+    "href": "Z__C_EDZW_20261108142002_bda01%2Csynop_bufr_999999_999999__MW_803.bin",
+    "listing_modified_utc": "2026-11-08T14:25:03Z",
+    "bytes": 32227,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108142002_bda01%2Csynop_bufr_999999_999999__MW_803.bin",
+    "sha256": "1b1d9c73463e29c826f867130ac83c18c3fe1dbe69ee8ef722b9d87ac9a0bb65",
+    "fetched_bytes": 32227,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108142601_bda01,synop_bufr_999999_999999__MW_804.bin",
+    "href": "Z__C_EDZW_20261108142601_bda01%2Csynop_bufr_999999_999999__MW_804.bin",
+    "listing_modified_utc": "2026-11-08T14:31:01Z",
+    "bytes": 3881,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108142601_bda01%2Csynop_bufr_999999_999999__MW_804.bin",
+    "sha256": "b777808f120e34124509abe1a789259c7ef98e6d53611f0fde3328da0e286e71",
+    "fetched_bytes": 3881,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108143200_bda01,synop_bufr_999999_999999__MW_805.bin",
+    "href": "Z__C_EDZW_20261108143200_bda01%2Csynop_bufr_999999_999999__MW_805.bin",
+    "listing_modified_utc": "2026-11-08T14:37:07Z",
+    "bytes": 14545,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108143200_bda01%2Csynop_bufr_999999_999999__MW_805.bin",
+    "sha256": "18e59299e77bab42757038c4d84e4e839db1bc30138362c519739d2de7852267",
+    "fetched_bytes": 14545,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108143704_bda01,synop_bufr_999999_999999__MW_806.bin",
+    "href": "Z__C_EDZW_20261108143704_bda01%2Csynop_bufr_999999_999999__MW_806.bin",
+    "listing_modified_utc": "2026-11-08T14:42:12Z",
+    "bytes": 1577,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108143704_bda01%2Csynop_bufr_999999_999999__MW_806.bin",
+    "sha256": "9c01a326c8b6c198d734706ba7c9a78820ba0ce2ef1592f24d5dbfc197b281cd",
+    "fetched_bytes": 1577,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108144502_bda01,synop_bufr_999999_999999__MW_807.bin",
+    "href": "Z__C_EDZW_20261108144502_bda01%2Csynop_bufr_999999_999999__MW_807.bin",
+    "listing_modified_utc": "2026-11-08T14:52:01Z",
+    "bytes": 1569,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108144502_bda01%2Csynop_bufr_999999_999999__MW_807.bin",
+    "sha256": "0d02e94253f3e7d1cbcc2abd72f329f9580e624faef5f45e9105607549eae810",
+    "fetched_bytes": 1569,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108145100_bda01,synop_bufr_999999_999999__MW_808.bin",
+    "href": "Z__C_EDZW_20261108145100_bda01%2Csynop_bufr_999999_999999__MW_808.bin",
+    "listing_modified_utc": "2026-11-08T14:56:01Z",
+    "bytes": 289,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108145100_bda01%2Csynop_bufr_999999_999999__MW_808.bin",
+    "sha256": "1acf5c0acabc552f52376bb70853b6b1cec6f92decab1b6a2cc79311cef7bb59",
+    "fetched_bytes": 289,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108145600_bda01,synop_bufr_999999_999999__MW_809.bin",
+    "href": "Z__C_EDZW_20261108145600_bda01%2Csynop_bufr_999999_999999__MW_809.bin",
+    "listing_modified_utc": "2026-11-08T15:01:12Z",
+    "bytes": 45460,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108145600_bda01%2Csynop_bufr_999999_999999__MW_809.bin",
+    "sha256": "26d6296c45bdd066204eb5f638a57d365d7980102c34d7cfb0c98ccaf139d859",
+    "fetched_bytes": 45460,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108150100_bda01,synop_bufr_999999_999999__MW_810.bin",
+    "href": "Z__C_EDZW_20261108150100_bda01%2Csynop_bufr_999999_999999__MW_810.bin",
+    "listing_modified_utc": "2026-11-08T15:06:50Z",
+    "bytes": 55089,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108150100_bda01%2Csynop_bufr_999999_999999__MW_810.bin",
+    "sha256": "e8e432c6bbcb49ade08f360dc8e9e541484904b3b5df0d35141ec86f8ab0b350",
+    "fetched_bytes": 55089,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108150601_bda01,synop_bufr_999999_999999__MW_811.bin",
+    "href": "Z__C_EDZW_20261108150601_bda01%2Csynop_bufr_999999_999999__MW_811.bin",
+    "listing_modified_utc": "2026-11-08T15:11:32Z",
+    "bytes": 210333,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108150601_bda01%2Csynop_bufr_999999_999999__MW_811.bin",
+    "sha256": "4be3e5e0cf07fdf9d9ae2dd15b87f47ca9cb2115c7e23fb94a13ed6d47d7490d",
+    "fetched_bytes": 210333,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108151101_bda01,synop_bufr_999999_999999__MW_812.bin",
+    "href": "Z__C_EDZW_20261108151101_bda01%2Csynop_bufr_999999_999999__MW_812.bin",
+    "listing_modified_utc": "2026-11-08T15:16:04Z",
+    "bytes": 177561,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108151101_bda01%2Csynop_bufr_999999_999999__MW_812.bin",
+    "sha256": "09d7a4e348b9f42e5a5474bbbfba26154549efcdc526bc7658c82994c0a354de",
+    "fetched_bytes": 177561,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108151602_bda01,synop_bufr_999999_999999__MW_813.bin",
+    "href": "Z__C_EDZW_20261108151602_bda01%2Csynop_bufr_999999_999999__MW_813.bin",
+    "listing_modified_utc": "2026-11-08T15:21:10Z",
+    "bytes": 98735,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108151602_bda01%2Csynop_bufr_999999_999999__MW_813.bin",
+    "sha256": "d0e3d39200eea81cfecfb4ca9b20aeec4283f4f9f894831fbf76498af341b86e",
+    "fetched_bytes": 98735,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108152102_bda01,synop_bufr_999999_999999__MW_814.bin",
+    "href": "Z__C_EDZW_20261108152102_bda01%2Csynop_bufr_999999_999999__MW_814.bin",
+    "listing_modified_utc": "2026-11-08T15:26:04Z",
+    "bytes": 97877,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108152102_bda01%2Csynop_bufr_999999_999999__MW_814.bin",
+    "sha256": "765ee06b008a6469c8e4893480facc806777912678caece1f7d157822dfbc21a",
+    "fetched_bytes": 97877,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108152602_bda01,synop_bufr_999999_999999__MW_815.bin",
+    "href": "Z__C_EDZW_20261108152602_bda01%2Csynop_bufr_999999_999999__MW_815.bin",
+    "listing_modified_utc": "2026-11-08T15:31:03Z",
+    "bytes": 11855,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108152602_bda01%2Csynop_bufr_999999_999999__MW_815.bin",
+    "sha256": "558e0273c038a51f34b5781ddc8693948fd54dfd13999b31c60f16b626bfdee6",
+    "fetched_bytes": 11855,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108153102_bda01,synop_bufr_999999_999999__MW_816.bin",
+    "href": "Z__C_EDZW_20261108153102_bda01%2Csynop_bufr_999999_999999__MW_816.bin",
+    "listing_modified_utc": "2026-11-08T15:36:08Z",
+    "bytes": 55040,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108153102_bda01%2Csynop_bufr_999999_999999__MW_816.bin",
+    "sha256": "8aabc8ea97f891ed2099df5ec9234dc8a56cde48c6126e53df743dd5f9759cbe",
+    "fetched_bytes": 55040,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108153603_bda01,synop_bufr_999999_999999__MW_817.bin",
+    "href": "Z__C_EDZW_20261108153603_bda01%2Csynop_bufr_999999_999999__MW_817.bin",
+    "listing_modified_utc": "2026-11-08T15:41:10Z",
+    "bytes": 14719,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108153603_bda01%2Csynop_bufr_999999_999999__MW_817.bin",
+    "sha256": "13e2fdd7c9b6208060e4d2789a35e5371c8ec6e641977e2781285408f7bc0560",
+    "fetched_bytes": 14719,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108154200_bda01,synop_bufr_999999_999999__MW_818.bin",
+    "href": "Z__C_EDZW_20261108154200_bda01%2Csynop_bufr_999999_999999__MW_818.bin",
+    "listing_modified_utc": "2026-11-08T15:47:05Z",
+    "bytes": 15697,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108154200_bda01%2Csynop_bufr_999999_999999__MW_818.bin",
+    "sha256": "ecc9f4691c6e9cbf5ee5e3b861d6338a5d56b9f36c0e47e58509aa87e78294d4",
+    "fetched_bytes": 15697,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108154702_bda01,synop_bufr_999999_999999__MW_819.bin",
+    "href": "Z__C_EDZW_20261108154702_bda01%2Csynop_bufr_999999_999999__MW_819.bin",
+    "listing_modified_utc": "2026-11-08T15:52:09Z",
+    "bytes": 1633,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108154702_bda01%2Csynop_bufr_999999_999999__MW_819.bin",
+    "sha256": "21c11d08d2ca447c3b82c106a42f7bfa83f2662aa4530e785b19ce9e3fc8feb1",
+    "fetched_bytes": 1633,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108155202_bda01,synop_bufr_999999_999999__MW_820.bin",
+    "href": "Z__C_EDZW_20261108155202_bda01%2Csynop_bufr_999999_999999__MW_820.bin",
+    "listing_modified_utc": "2026-11-08T15:57:07Z",
+    "bytes": 1913,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108155202_bda01%2Csynop_bufr_999999_999999__MW_820.bin",
+    "sha256": "b3d1f63ce22d4fbe6c07de5fea89d044e48256d06b7db0bd36c048eda2d0d19b",
+    "fetched_bytes": 1913,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108160000_bda01,synop_bufr_999999_999999__MW_821.bin",
+    "href": "Z__C_EDZW_20261108160000_bda01%2Csynop_bufr_999999_999999__MW_821.bin",
+    "listing_modified_utc": "2026-11-08T16:05:05Z",
+    "bytes": 90805,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108160000_bda01%2Csynop_bufr_999999_999999__MW_821.bin",
+    "sha256": "3b1ca32b6aa4b4b5cbbb75641dbf511c126fff31c2ff634a89609a1b1bde578f",
+    "fetched_bytes": 90805,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108160501_bda01,synop_bufr_999999_999999__MW_822.bin",
+    "href": "Z__C_EDZW_20261108160501_bda01%2Csynop_bufr_999999_999999__MW_822.bin",
+    "listing_modified_utc": "2026-11-08T16:10:08Z",
+    "bytes": 197450,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108160501_bda01%2Csynop_bufr_999999_999999__MW_822.bin",
+    "sha256": "f9cae5f99ae61872396a7f1d9319e4ac121fc32f0e5c533298def012654149df",
+    "fetched_bytes": 197450,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108161001_bda01,synop_bufr_999999_999999__MW_823.bin",
+    "href": "Z__C_EDZW_20261108161001_bda01%2Csynop_bufr_999999_999999__MW_823.bin",
+    "listing_modified_utc": "2026-11-08T16:15:04Z",
+    "bytes": 150533,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108161001_bda01%2Csynop_bufr_999999_999999__MW_823.bin",
+    "sha256": "1a89b96e4dd3142b282f3f114fe39fedf0322dc7db6f6d163a91ed474776e66f",
+    "fetched_bytes": 150533,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108161504_bda01,synop_bufr_999999_999999__MW_824.bin",
+    "href": "Z__C_EDZW_20261108161504_bda01%2Csynop_bufr_999999_999999__MW_824.bin",
+    "listing_modified_utc": "2026-11-08T16:20:05Z",
+    "bytes": 108911,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108161504_bda01%2Csynop_bufr_999999_999999__MW_824.bin",
+    "sha256": "aba085fa913b9db1e44538813f24a3dab430cadf0fdf5079e4bd1a299f7822de",
+    "fetched_bytes": 108911,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108162104_bda01,synop_bufr_999999_999999__MW_825.bin",
+    "href": "Z__C_EDZW_20261108162104_bda01%2Csynop_bufr_999999_999999__MW_825.bin",
+    "listing_modified_utc": "2026-11-08T16:26:06Z",
+    "bytes": 21571,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108162104_bda01%2Csynop_bufr_999999_999999__MW_825.bin",
+    "sha256": "ae51f65cc7e9f6d0591c48fd8d7c026fb0b62cc6024829cf44967bb1fb738893",
+    "fetched_bytes": 21571,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108162702_bda01,synop_bufr_999999_999999__MW_826.bin",
+    "href": "Z__C_EDZW_20261108162702_bda01%2Csynop_bufr_999999_999999__MW_826.bin",
+    "listing_modified_utc": "2026-11-08T16:32:04Z",
+    "bytes": 1716,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108162702_bda01%2Csynop_bufr_999999_999999__MW_826.bin",
+    "sha256": "5d57566ffb53bd8a976cad439b107f5ca40b9319af7f931fe1864b21608ade6b",
+    "fetched_bytes": 1716,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108163202_bda01,synop_bufr_999999_999999__MW_827.bin",
+    "href": "Z__C_EDZW_20261108163202_bda01%2Csynop_bufr_999999_999999__MW_827.bin",
+    "listing_modified_utc": "2026-11-08T16:37:06Z",
+    "bytes": 19396,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108163202_bda01%2Csynop_bufr_999999_999999__MW_827.bin",
+    "sha256": "c141d6da41de4633700403557449ac0926a62d1de560eba7e890444a9cdae10e",
+    "fetched_bytes": 19396,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108163705_bda01,synop_bufr_999999_999999__MW_828.bin",
+    "href": "Z__C_EDZW_20261108163705_bda01%2Csynop_bufr_999999_999999__MW_828.bin",
+    "listing_modified_utc": "2026-11-08T16:42:06Z",
+    "bytes": 6540,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108163705_bda01%2Csynop_bufr_999999_999999__MW_828.bin",
+    "sha256": "9973cd8575a5f07436d937efd53f50ca41ddbb3bf46b85d5a9d6851fd74a47bf",
+    "fetched_bytes": 6540,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108164403_bda01,synop_bufr_999999_999999__MW_829.bin",
+    "href": "Z__C_EDZW_20261108164403_bda01%2Csynop_bufr_999999_999999__MW_829.bin",
+    "listing_modified_utc": "2026-11-08T16:49:04Z",
+    "bytes": 1466,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108164403_bda01%2Csynop_bufr_999999_999999__MW_829.bin",
+    "sha256": "eabfc749cf8ab7ed776a51cd17c3ef3c30ca51056e722acac08c17f572c1f0d9",
+    "fetched_bytes": 1466,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108165302_bda01,synop_bufr_999999_999999__MW_830.bin",
+    "href": "Z__C_EDZW_20261108165302_bda01%2Csynop_bufr_999999_999999__MW_830.bin",
+    "listing_modified_utc": "2026-11-08T16:58:03Z",
+    "bytes": 622,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108165302_bda01%2Csynop_bufr_999999_999999__MW_830.bin",
+    "sha256": "f72bc55380535319c9b899f244ef904c5a2998aff1ad1b87dd8c8dec8c1408ca",
+    "fetched_bytes": 622,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108165802_bda01,synop_bufr_999999_999999__MW_831.bin",
+    "href": "Z__C_EDZW_20261108165802_bda01%2Csynop_bufr_999999_999999__MW_831.bin",
+    "listing_modified_utc": "2026-11-08T17:03:03Z",
+    "bytes": 73291,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108165802_bda01%2Csynop_bufr_999999_999999__MW_831.bin",
+    "sha256": "f7e2bfb9a4372038fa65f214ed6589fc59f91a7625d583c95fcbf9b6f11525ff",
+    "fetched_bytes": 73291,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108170304_bda01,synop_bufr_999999_999999__MW_832.bin",
+    "href": "Z__C_EDZW_20261108170304_bda01%2Csynop_bufr_999999_999999__MW_832.bin",
+    "listing_modified_utc": "2026-11-08T17:08:06Z",
+    "bytes": 126645,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108170304_bda01%2Csynop_bufr_999999_999999__MW_832.bin",
+    "sha256": "8428b4fd9573a52e8ae620dbc0e3c144fc6df2271a0b8c319c77b015afe6ed80",
+    "fetched_bytes": 126645,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108170900_bda01,synop_bufr_999999_999999__MW_833.bin",
+    "href": "Z__C_EDZW_20261108170900_bda01%2Csynop_bufr_999999_999999__MW_833.bin",
+    "listing_modified_utc": "2026-11-08T17:14:03Z",
+    "bytes": 241747,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108170900_bda01%2Csynop_bufr_999999_999999__MW_833.bin",
+    "sha256": "6be25fa8911c6a939e4100e16da5a1257932fc903020cc990a89afbe7124cb28",
+    "fetched_bytes": 241747,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108171502_bda01,synop_bufr_999999_999999__MW_834.bin",
+    "href": "Z__C_EDZW_20261108171502_bda01%2Csynop_bufr_999999_999999__MW_834.bin",
+    "listing_modified_utc": "2026-11-08T17:20:03Z",
+    "bytes": 109634,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108171502_bda01%2Csynop_bufr_999999_999999__MW_834.bin",
+    "sha256": "e94fa4509f7fa9bc6cdf95d9f219d233e898c16e564198ec5a4b5bc6c80c869e",
+    "fetched_bytes": 109634,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108172103_bda01,synop_bufr_999999_999999__MW_835.bin",
+    "href": "Z__C_EDZW_20261108172103_bda01%2Csynop_bufr_999999_999999__MW_835.bin",
+    "listing_modified_utc": "2026-11-08T17:26:04Z",
+    "bytes": 34449,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108172103_bda01%2Csynop_bufr_999999_999999__MW_835.bin",
+    "sha256": "be56d4b1696f0f6e15b84978627ad3878e4338f53540b2afe5cf31bfe783ec61",
+    "fetched_bytes": 34449,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108172604_bda01,synop_bufr_999999_999999__MW_836.bin",
+    "href": "Z__C_EDZW_20261108172604_bda01%2Csynop_bufr_999999_999999__MW_836.bin",
+    "listing_modified_utc": "2026-11-08T17:31:07Z",
+    "bytes": 2289,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108172604_bda01%2Csynop_bufr_999999_999999__MW_836.bin",
+    "sha256": "0815d9d86062c3ab6e3126bbfea0802c5e0dad610f59a9362888a8fd47650a1e",
+    "fetched_bytes": 2289,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108173202_bda01,synop_bufr_999999_999999__MW_837.bin",
+    "href": "Z__C_EDZW_20261108173202_bda01%2Csynop_bufr_999999_999999__MW_837.bin",
+    "listing_modified_utc": "2026-11-08T17:37:07Z",
+    "bytes": 14824,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108173202_bda01%2Csynop_bufr_999999_999999__MW_837.bin",
+    "sha256": "d9e5603ebbc6669afdd56b3dd0c7d9e94a87a356785244c332effab1818c3331",
+    "fetched_bytes": 14824,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108173704_bda01,synop_bufr_999999_999999__MW_838.bin",
+    "href": "Z__C_EDZW_20261108173704_bda01%2Csynop_bufr_999999_999999__MW_838.bin",
+    "listing_modified_utc": "2026-11-08T17:42:05Z",
+    "bytes": 2336,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108173704_bda01%2Csynop_bufr_999999_999999__MW_838.bin",
+    "sha256": "10964f39842759ed0c4e8461a0852df90cb6c331dcb6fa62fa439b69796f97d0",
+    "fetched_bytes": 2336,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108174403_bda01,synop_bufr_999999_999999__MW_839.bin",
+    "href": "Z__C_EDZW_20261108174403_bda01%2Csynop_bufr_999999_999999__MW_839.bin",
+    "listing_modified_utc": "2026-11-08T17:49:13Z",
+    "bytes": 1914,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108174403_bda01%2Csynop_bufr_999999_999999__MW_839.bin",
+    "sha256": "a563f33b0b8e5f4a6e9437f402126d4f3c79b969b426d22529779edefe9d989c",
+    "fetched_bytes": 1914,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108175103_bda01,synop_bufr_999999_999999__MW_840.bin",
+    "href": "Z__C_EDZW_20261108175103_bda01%2Csynop_bufr_999999_999999__MW_840.bin",
+    "listing_modified_utc": "2026-11-08T17:56:11Z",
+    "bytes": 10859,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108175103_bda01%2Csynop_bufr_999999_999999__MW_840.bin",
+    "sha256": "75dcb869bb28a53afa85a4c8e9322d53b56a71883728c4c1913cb915fdf9d12d",
+    "fetched_bytes": 10859,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108175702_bda01,synop_bufr_999999_999999__MW_841.bin",
+    "href": "Z__C_EDZW_20261108175702_bda01%2Csynop_bufr_999999_999999__MW_841.bin",
+    "listing_modified_utc": "2026-11-08T18:02:03Z",
+    "bytes": 45920,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108175702_bda01%2Csynop_bufr_999999_999999__MW_841.bin",
+    "sha256": "2f51f728f421632d21e6fdbac66a9b730449c32bd3b2e08181fa86dbb3aa6fca",
+    "fetched_bytes": 45920,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108180202_bda01,synop_bufr_999999_999999__MW_842.bin",
+    "href": "Z__C_EDZW_20261108180202_bda01%2Csynop_bufr_999999_999999__MW_842.bin",
+    "listing_modified_utc": "2026-11-08T18:07:04Z",
+    "bytes": 79548,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108180202_bda01%2Csynop_bufr_999999_999999__MW_842.bin",
+    "sha256": "2e7c29ad64161b2bd7080ecd51360b4cf0e002acf8a2acdd09df31180b9bb17e",
+    "fetched_bytes": 79548,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108180703_bda01,synop_bufr_999999_999999__MW_843.bin",
+    "href": "Z__C_EDZW_20261108180703_bda01%2Csynop_bufr_999999_999999__MW_843.bin",
+    "listing_modified_utc": "2026-11-08T18:12:04Z",
+    "bytes": 330350,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108180703_bda01%2Csynop_bufr_999999_999999__MW_843.bin",
+    "sha256": "7592e76bb300ef6263d2cbf9161809d157514bf84d22539845fe96ccefc2b1f3",
+    "fetched_bytes": 330350,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108181203_bda01,synop_bufr_999999_999999__MW_844.bin",
+    "href": "Z__C_EDZW_20261108181203_bda01%2Csynop_bufr_999999_999999__MW_844.bin",
+    "listing_modified_utc": "2026-11-08T18:17:04Z",
+    "bytes": 87110,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108181203_bda01%2Csynop_bufr_999999_999999__MW_844.bin",
+    "sha256": "73492ee8defe81d1f996c9ef5328d56c8f51ac215de8b608b0ed8496a5c4d712",
+    "fetched_bytes": 87110,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108181704_bda01,synop_bufr_999999_999999__MW_845.bin",
+    "href": "Z__C_EDZW_20261108181704_bda01%2Csynop_bufr_999999_999999__MW_845.bin",
+    "listing_modified_utc": "2026-11-08T18:22:06Z",
+    "bytes": 126861,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108181704_bda01%2Csynop_bufr_999999_999999__MW_845.bin",
+    "sha256": "5e9cee0b7ca7127f50a8efe29259bbd7b4bd9dda1c1a458fd86c1da34b6ea32c",
+    "fetched_bytes": 126861,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108182204_bda01,synop_bufr_999999_999999__MW_846.bin",
+    "href": "Z__C_EDZW_20261108182204_bda01%2Csynop_bufr_999999_999999__MW_846.bin",
+    "listing_modified_utc": "2026-11-08T18:27:06Z",
+    "bytes": 119816,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108182204_bda01%2Csynop_bufr_999999_999999__MW_846.bin",
+    "sha256": "d0e7ebbb3df8d0df3e3c5903c9e58dcfd041e62add23e2834ef9d1917cae1ebc",
+    "fetched_bytes": 119816,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108182800_bda01,synop_bufr_999999_999999__MW_847.bin",
+    "href": "Z__C_EDZW_20261108182800_bda01%2Csynop_bufr_999999_999999__MW_847.bin",
+    "listing_modified_utc": "2026-11-08T18:33:03Z",
+    "bytes": 56719,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108182800_bda01%2Csynop_bufr_999999_999999__MW_847.bin",
+    "sha256": "f69b0d7b50a2ae39e80d02e5d9fa9074132f3bf6f36e383c89c32fc1c40e9f39",
+    "fetched_bytes": 56719,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108183303_bda01,synop_bufr_999999_999999__MW_848.bin",
+    "href": "Z__C_EDZW_20261108183303_bda01%2Csynop_bufr_999999_999999__MW_848.bin",
+    "listing_modified_utc": "2026-11-08T18:38:06Z",
+    "bytes": 10840,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108183303_bda01%2Csynop_bufr_999999_999999__MW_848.bin",
+    "sha256": "270968d145c8c910fb581955f8c4ee4b42bc6cf65bf571bbe7315da9109626cb",
+    "fetched_bytes": 10840,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108183804_bda01,synop_bufr_999999_999999__MW_849.bin",
+    "href": "Z__C_EDZW_20261108183804_bda01%2Csynop_bufr_999999_999999__MW_849.bin",
+    "listing_modified_utc": "2026-11-08T18:43:12Z",
+    "bytes": 18193,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108183804_bda01%2Csynop_bufr_999999_999999__MW_849.bin",
+    "sha256": "7e7c3463e014c7285977bc7a89b02b73bbf6ca190af2e5b625d15c327ca9694b",
+    "fetched_bytes": 18193,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108184304_bda01,synop_bufr_999999_999999__MW_850.bin",
+    "href": "Z__C_EDZW_20261108184304_bda01%2Csynop_bufr_999999_999999__MW_850.bin",
+    "listing_modified_utc": "2026-11-08T18:48:05Z",
+    "bytes": 20163,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108184304_bda01%2Csynop_bufr_999999_999999__MW_850.bin",
+    "sha256": "e3824ca2ea014670154cabaa31ccaec864115e41420b53900348884a590ada2d",
+    "fetched_bytes": 20163,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108184804_bda01,synop_bufr_999999_999999__MW_851.bin",
+    "href": "Z__C_EDZW_20261108184804_bda01%2Csynop_bufr_999999_999999__MW_851.bin",
+    "listing_modified_utc": "2026-11-08T18:53:06Z",
+    "bytes": 1329,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108184804_bda01%2Csynop_bufr_999999_999999__MW_851.bin",
+    "sha256": "227f5a7ab6f89cdf8c1ae38c91e4f24e82950a8384cb665360715d1a81d22dc2",
+    "fetched_bytes": 1329,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108185403_bda01,synop_bufr_999999_999999__MW_852.bin",
+    "href": "Z__C_EDZW_20261108185403_bda01%2Csynop_bufr_999999_999999__MW_852.bin",
+    "listing_modified_utc": "2026-11-08T18:59:05Z",
+    "bytes": 1274,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108185403_bda01%2Csynop_bufr_999999_999999__MW_852.bin",
+    "sha256": "48e52f4151e9c6fd44bf9c7841d3d46133dcb75809c4a19a3442eebd3680b7cc",
+    "fetched_bytes": 1274,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108190000_bda01,synop_bufr_999999_999999__MW_853.bin",
+    "href": "Z__C_EDZW_20261108190000_bda01%2Csynop_bufr_999999_999999__MW_853.bin",
+    "listing_modified_utc": "2026-11-08T19:05:06Z",
+    "bytes": 97021,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108190000_bda01%2Csynop_bufr_999999_999999__MW_853.bin",
+    "sha256": "aa1fd1d02386cd85cbe2af1bec3539a73913fba87d2415776bdd6ae3b11dc445",
+    "fetched_bytes": 97021,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108190500_bda01,synop_bufr_999999_999999__MW_854.bin",
+    "href": "Z__C_EDZW_20261108190500_bda01%2Csynop_bufr_999999_999999__MW_854.bin",
+    "listing_modified_utc": "2026-11-08T19:10:07Z",
+    "bytes": 178849,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108190500_bda01%2Csynop_bufr_999999_999999__MW_854.bin",
+    "sha256": "e88ad9e30518d03b884c80fd53c722a8c7220b68a4f36db26566420f10dacc2c",
+    "fetched_bytes": 178849,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108191001_bda01,synop_bufr_999999_999999__MW_855.bin",
+    "href": "Z__C_EDZW_20261108191001_bda01%2Csynop_bufr_999999_999999__MW_855.bin",
+    "listing_modified_utc": "2026-11-08T19:15:02Z",
+    "bytes": 136190,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108191001_bda01%2Csynop_bufr_999999_999999__MW_855.bin",
+    "sha256": "cc348e7027c5e5a1de03c733a2b4a54233be225e45092879cd6e0b78bf5a36aa",
+    "fetched_bytes": 136190,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108191501_bda01,synop_bufr_999999_999999__MW_856.bin",
+    "href": "Z__C_EDZW_20261108191501_bda01%2Csynop_bufr_999999_999999__MW_856.bin",
+    "listing_modified_utc": "2026-11-08T19:20:07Z",
+    "bytes": 109411,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108191501_bda01%2Csynop_bufr_999999_999999__MW_856.bin",
+    "sha256": "868c393e812b19edef571163058d1d42ed7c6a4dcf29fc9d0b844754f90d6f99",
+    "fetched_bytes": 109411,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108192102_bda01,synop_bufr_999999_999999__MW_857.bin",
+    "href": "Z__C_EDZW_20261108192102_bda01%2Csynop_bufr_999999_999999__MW_857.bin",
+    "listing_modified_utc": "2026-11-08T19:26:04Z",
+    "bytes": 66838,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108192102_bda01%2Csynop_bufr_999999_999999__MW_857.bin",
+    "sha256": "f1d7fff8cc2e5bb2f92c5341eadbacb84c110422f632ad13546fd0fb81b6f4c8",
+    "fetched_bytes": 66838,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108192603_bda01,synop_bufr_999999_999999__MW_858.bin",
+    "href": "Z__C_EDZW_20261108192603_bda01%2Csynop_bufr_999999_999999__MW_858.bin",
+    "listing_modified_utc": "2026-11-08T19:31:10Z",
+    "bytes": 1909,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108192603_bda01%2Csynop_bufr_999999_999999__MW_858.bin",
+    "sha256": "a717dac112fed811520ce50ccf9b3fb919f8138060c53813e982f5ae875254a3",
+    "fetched_bytes": 1909,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108193202_bda01,synop_bufr_999999_999999__MW_859.bin",
+    "href": "Z__C_EDZW_20261108193202_bda01%2Csynop_bufr_999999_999999__MW_859.bin",
+    "listing_modified_utc": "2026-11-08T19:37:14Z",
+    "bytes": 17551,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108193202_bda01%2Csynop_bufr_999999_999999__MW_859.bin",
+    "sha256": "55848156130984452c992a4cffe62c932c0b8c7c7e49a3d91de65bcd912589a8",
+    "fetched_bytes": 17551,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108193704_bda01,synop_bufr_999999_999999__MW_860.bin",
+    "href": "Z__C_EDZW_20261108193704_bda01%2Csynop_bufr_999999_999999__MW_860.bin",
+    "listing_modified_utc": "2026-11-08T19:42:08Z",
+    "bytes": 7363,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108193704_bda01%2Csynop_bufr_999999_999999__MW_860.bin",
+    "sha256": "fafc5c6481884c27f75109c9063e22866fce8af590ce92b5a17eebeec2c9cf3f",
+    "fetched_bytes": 7363,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108194305_bda01,synop_bufr_999999_999999__MW_861.bin",
+    "href": "Z__C_EDZW_20261108194305_bda01%2Csynop_bufr_999999_999999__MW_861.bin",
+    "listing_modified_utc": "2026-11-08T19:48:06Z",
+    "bytes": 3002,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108194305_bda01%2Csynop_bufr_999999_999999__MW_861.bin",
+    "sha256": "0c4cd11a2297cae23f8842b39d947787967126732d4913b80ac2caa016a8f104",
+    "fetched_bytes": 3002,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108195402_bda01,synop_bufr_999999_999999__MW_862.bin",
+    "href": "Z__C_EDZW_20261108195402_bda01%2Csynop_bufr_999999_999999__MW_862.bin",
+    "listing_modified_utc": "2026-11-08T19:59:03Z",
+    "bytes": 316,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108195402_bda01%2Csynop_bufr_999999_999999__MW_862.bin",
+    "sha256": "82b34574138d1700b1b517e7317bd95a99b09b05d3af79aedd0ce274da5e7329",
+    "fetched_bytes": 316,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108200000_bda01,synop_bufr_999999_999999__MW_863.bin",
+    "href": "Z__C_EDZW_20261108200000_bda01%2Csynop_bufr_999999_999999__MW_863.bin",
+    "listing_modified_utc": "2026-11-08T20:05:02Z",
+    "bytes": 91444,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108200000_bda01%2Csynop_bufr_999999_999999__MW_863.bin",
+    "sha256": "95facc6e428c3b94b44b0391e277bab75617494ee5624708fc8b23f36a073675",
+    "fetched_bytes": 91444,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108200501_bda01,synop_bufr_999999_999999__MW_864.bin",
+    "href": "Z__C_EDZW_20261108200501_bda01%2Csynop_bufr_999999_999999__MW_864.bin",
+    "listing_modified_utc": "2026-11-08T20:10:07Z",
+    "bytes": 188799,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108200501_bda01%2Csynop_bufr_999999_999999__MW_864.bin",
+    "sha256": "ee8cd10097e2a1c18a9dc5696d72c5d263b45caa7787ba717dd6b8a2f8bcdcbf",
+    "fetched_bytes": 188799,
+    "status": "ok"
+  },
+  {
+    "name": "Z__C_EDZW_20261108201004_bda01,synop_bufr_999999_999999__MW_865.bin",
+    "href": "Z__C_EDZW_20261108201004_bda01%2Csynop_bufr_999999_999999__MW_865.bin",
+    "listing_modified_utc": "2026-11-08T20:15:06Z",
+    "bytes": 157204,
+    "url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261108201004_bda01%2Csynop_bufr_999999_999999__MW_865.bin",
+    "sha256": "de0b5956096fd304cf599c7b25da27a92e3b282e4c2e5bcb0d1e68bc72845532",
+    "fetched_bytes": 157204,
+    "status": "ok"
+  }
+]

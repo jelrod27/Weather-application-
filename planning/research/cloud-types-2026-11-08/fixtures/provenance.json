@@ -1,0 +1,448 @@
+[
+  {
+    "label": "single-genus",
+    "file": "single-genus.bufr",
+    "fixture_sha256": "977aeeb060f48776a0576e1a3418d092b9ecff9e4e7cc5a3f9d205d443f6575d",
+    "synthetic": false,
+    "source_url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "expected": {
+      "station_id": "10-238",
+      "station_name": "Bergen",
+      "latitude": 52.81523000000001,
+      "longitude": 9.92481,
+      "elevation_m": 68.5,
+      "station_type": 1,
+      "observed_at_utc": "2026-11-07T21:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T21:07:03Z",
+      "fetched_at_utc": "2026-11-08T20:18:04.820340+00:00",
+      "file": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+      "message_index": 8,
+      "subset": 8,
+      "source_sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+      "master_table_version": 31,
+      "local_table_version": 0,
+      "centre": 78,
+      "subcentre": 64,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [
+        35,
+        61,
+        60,
+        6
+      ],
+      "total_cloud_cover": 88,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          88
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#1#cloudAmount": [
+          7
+        ],
+        "#1#cloudType": [
+          35
+        ],
+        "#2#cloudType": [
+          61
+        ],
+        "#3#cloudType": [
+          60
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          1
+        ],
+        "#2#cloudAmount": [
+          7
+        ],
+        "#4#cloudType": [
+          6
+        ],
+        "#3#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          8
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ],
+        "#1#methodOfSnowDepthMeasurement": [
+          null
+        ],
+        "#1#methodOfWaterTemperatureAndOrOrSalinityMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "explicit_genus",
+      "accepted_genera": [
+        "Stratocumulus"
+      ],
+      "alternatives": [],
+      "optional_genera": [],
+      "obscured_codes": [
+        60,
+        61
+      ],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  },
+  {
+    "label": "multiple-genera",
+    "file": "multiple-genera.bufr",
+    "fixture_sha256": "977aeeb060f48776a0576e1a3418d092b9ecff9e4e7cc5a3f9d205d443f6575d",
+    "synthetic": false,
+    "source_url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "expected": {
+      "station_id": "10-136",
+      "station_name": "Nordholz",
+      "latitude": 53.764720000000004,
+      "longitude": 8.658330000000001,
+      "elevation_m": 24.200000000000003,
+      "station_type": 1,
+      "observed_at_utc": "2026-11-07T21:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T21:07:03Z",
+      "fetched_at_utc": "2026-11-08T20:18:04.820340+00:00",
+      "file": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+      "message_index": 8,
+      "subset": 6,
+      "source_sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+      "master_table_version": 31,
+      "local_table_version": 0,
+      "centre": 78,
+      "subcentre": 64,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [
+        35,
+        61,
+        60,
+        7,
+        6,
+        6
+      ],
+      "total_cloud_cover": 100,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          100
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#1#cloudAmount": [
+          7
+        ],
+        "#1#cloudType": [
+          35
+        ],
+        "#2#cloudType": [
+          61
+        ],
+        "#3#cloudType": [
+          60
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          1
+        ],
+        "#2#cloudAmount": [
+          4
+        ],
+        "#4#cloudType": [
+          7
+        ],
+        "#3#verticalSignificanceSurfaceObservations": [
+          2
+        ],
+        "#3#cloudAmount": [
+          4
+        ],
+        "#5#cloudType": [
+          6
+        ],
+        "#4#verticalSignificanceSurfaceObservations": [
+          3
+        ],
+        "#4#cloudAmount": [
+          7
+        ],
+        "#6#cloudType": [
+          6
+        ],
+        "#5#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          8
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ],
+        "#1#methodOfSnowDepthMeasurement": [
+          null
+        ],
+        "#1#methodOfWaterTemperatureAndOrOrSalinityMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "explicit_genus",
+      "accepted_genera": [
+        "Stratocumulus",
+        "Stratus"
+      ],
+      "alternatives": [],
+      "optional_genera": [],
+      "obscured_codes": [
+        60,
+        61
+      ],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  },
+  {
+    "label": "ambiguous",
+    "file": "ambiguous.bufr",
+    "fixture_sha256": "61fa5c9b6b5ec0e00d366c9cf008e57f9e76f3d9bd44d920b17fc72ee722e0d2",
+    "synthetic": false,
+    "source_url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "expected": {
+      "station_id": "1-26",
+      "station_name": "TROMSO",
+      "latitude": 69.6537,
+      "longitude": 18.9368,
+      "elevation_m": 100.0,
+      "station_type": 1,
+      "observed_at_utc": "2026-11-07T21:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T21:07:03Z",
+      "fetched_at_utc": "2026-11-08T20:18:04.820340+00:00",
+      "file": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+      "message_index": 52,
+      "subset": 4,
+      "source_sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+      "master_table_version": 31,
+      "local_table_version": 0,
+      "centre": 88,
+      "subcentre": 0,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [
+        37,
+        61,
+        60
+      ],
+      "total_cloud_cover": 100,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          100
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#1#cloudAmount": [
+          8
+        ],
+        "#1#cloudType": [
+          37
+        ],
+        "#2#cloudType": [
+          61
+        ],
+        "#3#cloudType": [
+          60
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          8
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "ambiguous_type",
+      "accepted_genera": [],
+      "alternatives": [
+        {
+          "raw_code": 37,
+          "one_or_both": true,
+          "genera": [
+            "Stratus",
+            "Cumulus"
+          ]
+        }
+      ],
+      "optional_genera": [],
+      "obscured_codes": [
+        60,
+        61
+      ],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  },
+  {
+    "label": "cloud-free",
+    "file": "cloud-free.bufr",
+    "fixture_sha256": "caeb8c8f41bd0a81f6d58d01b6cadf8aa05ab5c24651c8fc733ec59a4ae13875",
+    "synthetic": false,
+    "source_url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107210202_bda01%2Csynop_bufr_999999_999999__MW_625.bin",
+    "expected": {
+      "station_id": "3-590",
+      "station_name": "WATTISHAM AUTOMATIC",
+      "latitude": 52.123870000000004,
+      "longitude": 0.9573400000000001,
+      "elevation_m": 89.0,
+      "station_type": 0,
+      "observed_at_utc": "2026-11-07T21:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T21:07:03Z",
+      "fetched_at_utc": "2026-11-08T20:18:04.820340+00:00",
+      "file": "Z__C_EDZW_20261107210202_bda01,synop_bufr_999999_999999__MW_625.bin",
+      "message_index": 54,
+      "subset": 29,
+      "source_sha256": "fb591e12d0cebf8c66edd98667674c0f7d0f2f172da5f8080bc820831ec1f1cd",
+      "master_table_version": 36,
+      "local_table_version": 0,
+      "centre": 74,
+      "subcentre": 0,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [],
+      "total_cloud_cover": 0,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          0
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#cloudAmount": [
+          0
+        ],
+        "#1#cloudType": [
+          null
+        ],
+        "#2#cloudType": [
+          null
+        ],
+        "#3#cloudType": [
+          null
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#3#verticalSignificanceSurfaceObservations": [
+          8
+        ],
+        "#4#verticalSignificanceSurfaceObservations": [
+          9
+        ],
+        "#5#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#4#cloudType": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          12
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "cloud_free_within_source_limits",
+      "accepted_genera": [],
+      "alternatives": [],
+      "optional_genera": [],
+      "obscured_codes": [],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  },
+  {
+    "label": "missing",
+    "file": "missing.bufr",
+    "fixture_sha256": "6265d94f2f2482c51286d81c91595fd395fdd718a39d957e0618c1d6ce1f6edf",
+    "synthetic": false,
+    "source_url": "https://opendata.dwd.de/weather/weather_reports/synoptic/international/Z__C_EDZW_20261107201504_bda01%2Csynop_bufr_999999_999999__MW_617.bin",
+    "expected": {
+      "station_id": "94-326",
+      "station_name": "ALICE SPRINGS AIRPO",
+      "latitude": -23.795,
+      "longitude": 133.88889,
+      "elevation_m": 546.0,
+      "station_type": 0,
+      "observed_at_utc": "2026-11-07T20:00:00+00:00",
+      "source_receipt_at_utc": null,
+      "feed_modified_at_utc": "2026-11-07T20:20:08Z",
+      "fetched_at_utc": "2026-11-08T20:18:02.292765+00:00",
+      "file": "Z__C_EDZW_20261107201504_bda01,synop_bufr_999999_999999__MW_617.bin",
+      "message_index": 3,
+      "subset": 41,
+      "source_sha256": "f11558f8ca13e70bf18ece022da8f96b1915985fcc231bbe12f27e737a062e11",
+      "master_table_version": 31,
+      "local_table_version": 0,
+      "centre": 1,
+      "subcentre": 0,
+      "edition": 4,
+      "update_sequence": 0,
+      "raw_codes": [],
+      "total_cloud_cover": null,
+      "raw_fields": {
+        "#1#cloudCoverTotal": [
+          null
+        ],
+        "#1#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#1#cloudAmount": [
+          null
+        ],
+        "#1#cloudType": [
+          null
+        ],
+        "#2#cloudType": [
+          null
+        ],
+        "#3#cloudType": [
+          null
+        ],
+        "#2#verticalSignificanceSurfaceObservations": [
+          7
+        ],
+        "#3#verticalSignificanceSurfaceObservations": [
+          8
+        ],
+        "#4#verticalSignificanceSurfaceObservations": [
+          9
+        ],
+        "#5#verticalSignificanceSurfaceObservations": [
+          null
+        ],
+        "#4#cloudType": [
+          null
+        ],
+        "#1#instrumentationForWindMeasurement": [
+          12
+        ],
+        "#1#typeOfInstrumentationForEvaporationMeasurement": [
+          null
+        ]
+      },
+      "observed_method": "stationType retained; cloud-specific method unavailable unless raw_fields provides it",
+      "status": "missing",
+      "accepted_genera": [],
+      "alternatives": [],
+      "optional_genera": [],
+      "obscured_codes": [],
+      "mapping_version": "wmo-020012-conservative-v1-2026-11-08"
+    }
+  }
+]

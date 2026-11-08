@@ -6,8 +6,13 @@ This index separates current proposals from shipped specifications and historica
 
 | Document | Status | Current scope / next step |
 |---|---|---|
-| Read your sky: scientific cloud types | **Source-feasibility research — [issue #666](https://github.com/jelrod27/Weather-application-/issues/666)** | The cloud-cover experience shipped in #665. Research whether observations can support scientific cloud names; a positive result does not authorize production implementation. The issue defines the evidence, sampling, source-rights and go/no-go deliverables. |
 | [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | **Expansion proposal** | The US advisory slice shipped in #658. Broader North America forecasting and optional trip comparison remain proposals with source feasibility gates. |
+
+## Completed research
+
+| Document | Decision | Evidence / next step |
+|---|---|---|
+| [Read your sky: scientific cloud types](./PRD-read-your-sky-cloud-types.md) | **Research complete — no-go for production, November 8, 2026** · [issue #666](https://github.com/jelrod27/Weather-application-/issues/666) | [Source audit and reproducible evidence](../research/cloud-types-source-audit-2026-11-08.md). The limited station sample and unresolved accuracy/rights gates do not support launch. Any later station-only prototype or commercial access needs a separately approved scope; the shipped cloud-cover experience remains available. |
 
 ## Shipped
 
@@ -36,6 +41,7 @@ These documents remain in place for historical context. They are not current imp
 
 - **Active proposal:** idea is retained for consideration; it is not implementation approval.
 - **Active — approved:** scope has explicit approval and implementation is not complete. Record the approval and originating issue/PR when available.
+- **Research complete:** link the dated decision and source evidence. A substantiated no-go completes research without authorizing production implementation.
 - **Shipped:** link the implementation PR and its merge commit. Link follow-up work separately rather than leaving the original implementation status open.
 - **Stale / archived:** record why the design is no longer current and link to its replacement or current source of truth when one exists.
 - Keep each PRD in this directory for now. If a document is later moved, update inbound relative links and this index in the same change.
