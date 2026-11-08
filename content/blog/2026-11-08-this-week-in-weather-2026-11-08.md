@@ -56,7 +56,7 @@ The first round developed overnight into November 2 and November 3 (local time).
 
 The second and more geographically focused round struck the North Carolina coastal plain on the afternoon and evening of November 6 local time. Four tornado warnings were issued in rapid succession by WFOs Wilmington (ILM) and Raleigh (RAH), beginning at 1:00 p.m. local time in Bladen County and progressing northeast through Sampson and Wayne counties over roughly 90 minutes. The tight clustering of those four warnings across adjacent coastal-plain counties is consistent with a single organized convective system tracking northeast.
 
-November 4 and November 5 produced no SPC preliminary reports in the validated data. The November 3 SPC log recorded only a brief three-hour window of reports, all in the afternoon hours local time, suggesting a rapidly diminishing convective environment after the overnight outbreak.
+November 4 and November 5 produced no SPC preliminary reports in the validated data. The November 3 SPC log recorded six preliminary reports with listed report times spanning 16:10–19:08 UTC (10:10 a.m.–1:08 p.m. CST).
 
 On the space weather side, planetary Kp reached 5.33 during the 18:00–21:00 UTC window on November 7 — a G1-class geomagnetic storm threshold — and a second interval at Kp 5.0 followed during the 00:00–03:00 UTC window on November 8. An M3.6 solar flare was recorded by GOES primary X-ray instrumentation at 18:33 UTC on November 5. GOES coverage was partial (9,735 of 10,080 expected one-minute samples), so the M3.6 designation applies to observed intervals only. No X-ray data from the 345 missing minutes is available.
 
@@ -77,9 +77,9 @@ WPC does not issue CONUS discussions covering Alaska or Hawaii. No data for thos
 
 **Lower 48 pattern, November 11–15:** The WPC extended discussion describes a more amplified upper-level pattern developing through the second half of the week. A ridge building from the southern Plains into central Canada will keep the central and northern Plains well above normal — highs potentially 10–20°F above mid-November averages. The eastern U.S. tells a different story: an amplifying trough over the Great Lakes and Midwest is expected to spawn a surface low near the Mid-Atlantic by Thursday, with the system potentially tracking offshore as a nor'easter by Friday. WPC notes increasing precipitation prospects east of the Appalachians, with early-season snow possible across interior portions of the Northeast and into Pennsylvania. Uncertainty in track and intensity remains. The Pacific Northwest faces multiple rounds of rainfall from a developing northeast Pacific trough, with a more organized system potentially reaching northern California by the weekend. The CMC model is tracking a weaker solution for the East Coast storm than the GFS and ECMWF; WPC's blend leans toward the stronger guidance but ensemble means were increased to 40–50% weight by next Sunday to account for spread.
 
-**City point forecasts (Open-Meteo; these are point samples, not regional conditions):**
+**City point forecasts (Open-Meteo; dates are UTC forecast days; these are point samples, not regional conditions):**
 
-*New York City area* — Sunday through Tuesday dry, highs 55–62°F. Rain arrives Wednesday into Thursday (November 12–13), with precipitation probability reaching 74% on the 13th and totals potentially exceeding 1 inch that day alone. A cold exit by November 14, high near 51°F.
+*New York City area* — Sunday through Wednesday dry, highs 55–62°F. Rain is forecast Thursday into Friday (November 12–13), with precipitation probability reaching 74% on the 13th and totals potentially exceeding 1 inch that day alone. A cold exit by November 14, high near 51°F.
 
 *Atlanta area* — Dry and mild through mid-week, highs near 73°F. A notable temperature drop by November 13–14, with highs falling to 53°F and 51°F respectively, consistent with the WPC-described trough passage.
 
