@@ -3,7 +3,8 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { fetchRtswFeeds } from '@/lib/services/swpc-solar-wind'
+import { fetchRtswFeeds, selectRtswWindSeries } from '@/lib/services/swpc-solar-wind'
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 import { SPACE_WEATHER_CACHE } from '@/lib/space-weather/series-route'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -28,23 +29,17 @@ const RANGE_MS: Record<string, number> = {
   '7d': 7 * 24 * 60 * 60 * 1000,
 }
 
-type WindRow = {
-  time_tag?: string
-  active?: boolean
-  proton_speed?: number | null
-  proton_density?: number | null
-  proton_temperature?: number | null
-}
-
 type MagRow = {
   time_tag?: string
+  source?: string
+  active?: boolean
   bx_gsm?: number | null
   by_gsm?: number | null
   bz_gsm?: number | null
   bt?: number | null
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { searchParams } = request.nextUrl
@@ -60,12 +55,24 @@ export async function GET(request: NextRequest) {
 
     const { windJson, magJson } = await fetchRtswFeeds()
 
-    const magMap = new Map<string, { bx: number; by: number; bz: number; bt: number }>()
+    const now = Date.now()
+    const cutoff = now - rangeMs
+    const boundedWind = Array.isArray(windJson) ? windJson.filter(row => {
+      const time = swpcTimeTagMs(row?.time_tag)
+      return time >= cutoff && time <= now
+    }) : []
+    const windRows = selectRtswWindSeries(boundedWind)
+    const reference = windRows.at(-1)
+    const magMap = new Map<number, { bx: number; by: number; bz: number; bt: number }>()
 
     if (Array.isArray(magJson)) {
       for (const row of magJson as MagRow[]) {
-        const timeTag = row.time_tag
-        if (!timeTag) continue
+        if (!row || !reference) continue
+        const sameSource = reference.source
+          ? row.source === reference.source
+          : !row.source && Boolean(row.active) === Boolean(reference.active)
+        const time = swpcTimeTagMs(row.time_tag)
+        if (!sameSource || !Number.isFinite(time)) continue
         const bx = row.bx_gsm
         const by = row.by_gsm
         const bz = row.bz_gsm
@@ -74,24 +81,18 @@ export async function GET(request: NextRequest) {
           typeof bx !== 'number' ||
           typeof by !== 'number' ||
           typeof bz !== 'number' ||
-          typeof bt !== 'number'
+          typeof bt !== 'number' ||
+          ![bx, by, bz, bt].every(Number.isFinite)
         ) {
           continue
         }
-        magMap.set(timeTag, { bx, by, bz, bt })
+        magMap.set(time, { bx, by, bz, bt })
       }
     }
 
     const series: PlasmaEntry[] = []
-    const now = Date.now()
-    const cutoff = now - rangeMs
-
-    if (Array.isArray(windJson)) {
-      for (const row of windJson as WindRow[]) {
-        const timeTag = row.time_tag
-        if (!timeTag) continue
-        const entryTime = new Date(timeTag).getTime()
-        if (Number.isNaN(entryTime) || entryTime < cutoff) continue
+    for (const row of windRows) {
+        const entryTime = swpcTimeTagMs(row.time_tag)
 
         const speed = row.proton_speed
         const density = row.proton_density
@@ -100,14 +101,15 @@ export async function GET(request: NextRequest) {
           typeof speed !== 'number' ||
           typeof density !== 'number' ||
           typeof temperature !== 'number' ||
-          speed <= 0
+          speed <= 0 ||
+          ![speed, density, temperature].every(Number.isFinite)
         ) {
           continue
         }
 
-        const mag = magMap.get(timeTag)
+        const mag = magMap.get(entryTime)
         series.push({
-          time: timeTag,
+          time: new Date(entryTime).toISOString(),
           speed: Math.round(speed),
           density: Math.round(density * 100) / 100,
           temperature: Math.round(temperature),
@@ -116,7 +118,6 @@ export async function GET(request: NextRequest) {
           bx: mag ? Math.round(mag.bx * 100) / 100 : null,
           bt: mag ? Math.round(mag.bt * 100) / 100 : null,
         })
-      }
     }
 
     if (series.length === 0) {
@@ -131,7 +132,8 @@ export async function GET(request: NextRequest) {
         data: series,
         range,
         source: 'NOAA Space Weather Prediction Center (RTSW)',
-        magneticAvailable: magMap.size > 0,
+        spacecraft: reference?.source ?? null,
+        magneticAvailable: series.some(row => row.bz !== null),
       },
       {
         headers: {

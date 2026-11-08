@@ -166,6 +166,19 @@ describe('SpaceWeatherCharts renders live values from real route envelopes', () 
   const tag = (minutesAgo: number) =>
     new Date(Date.now() - minutesAgo * 60_000).toISOString().slice(0, 19);
 
+  it('uses the newest observation for the headline even if points arrive newest first', async () => {
+    mockFetch.mockImplementation((url: string) => Promise.resolve({
+      ok: true,
+      json: async () => url.includes('plasma') ? {
+        data: [{ time: tag(1), speed: 706 }, { time: tag(90), speed: 680 }],
+        spacecraft: 'SOLAR1',
+      } : { data: [] },
+    }));
+    render(<SpaceWeatherCharts />);
+    expect(await screen.findByText('706 km/s')).toBeInTheDocument();
+    expect(screen.queryByText('680 km/s')).not.toBeInTheDocument();
+  });
+
   const respondWithRealEnvelopes = () => {
     const points = [tag(3), tag(2), tag(1)];
     const plasma = {

@@ -118,7 +118,10 @@ export default function SpaceWeatherClient() {
           currentKp: auroraWrapper.kpIndex ?? kpWrapper?.data?.current?.value ?? null,
         } : null,
       });
-      setError(null);
+      const hasAnyData = scalesWrapper?.scales || kpWrapper?.data || windWrapper?.data
+        || sunspotsWrapper?.data || xrayWrapper?.data || auroraWrapper?.data
+        || Array.isArray(alertsWrapper?.alerts);
+      setError(hasAnyData ? null : 'Unable to load space weather data. Please try again later.');
     } catch (err) {
       console.error('[SpaceWeatherClient]', err);
       setError('Unable to load space weather data. Please try again later.');
@@ -173,7 +176,7 @@ export default function SpaceWeatherClient() {
 
         {/* Error Display */}
         {error && (
-          <div className={cn(
+          <div role="alert" className={cn(
             'mb-6 p-4 border-4 border-red-500 bg-red-500/10 font-mono text-sm',
             'text-red-500'
           )}>
