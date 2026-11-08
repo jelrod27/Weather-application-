@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { createTtlCache } from '@/lib/cache/ttl-cache'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
@@ -17,6 +18,13 @@ const TILE_PATH =
 interface CachedTile {
   body: ArrayBuffer
   contentType: string
+}
+
+class RainViewerTileHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`RainViewer tile fetch failed: ${status}`)
+    this.name = 'RainViewerTileHttpError'
+  }
 }
 
 // The stale window and the size bound are the cache's own concerns; the route
@@ -61,7 +69,7 @@ async function fetchTileFromRainViewer(joined: string): Promise<CachedTile> {
       // past the stale ceiling. Throwing hands the stale fallback to the GET
       // handler's catch, which serves it via getStale (no re-stamp) with the
       // weaker cache-control it deserves.
-      throw new Error(`RainViewer tile fetch failed: ${response.status}`)
+      throw new RainViewerTileHttpError(response.status)
     }
 
     return {
@@ -76,7 +84,7 @@ async function fetchTileFromRainViewer(joined: string): Promise<CachedTile> {
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
-) {
+): Promise<NextResponse> {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const { path } = await context.params
@@ -100,6 +108,23 @@ export async function GET(
       )
     } catch (error) {
       const stale = tileCache.getStale(joined)
+      const upstreamStatus = error instanceof RainViewerTileHttpError ? error.status : undefined
+      const missing = upstreamStatus === 404
+      const diagnostics = { tile: joined, upstreamStatus, staleFallback: Boolean(stale) }
+
+      if (missing) {
+        // A missing upstream image is not evidence of an expired frame or an
+        // application defect. Keep the failure visible without inventing pixels.
+        Sentry.addBreadcrumb({
+          category: 'radar.tile',
+          level: 'warning',
+          message: 'RainViewer tile unavailable',
+          data: diagnostics,
+        })
+      } else {
+        logRouteError('radar-tile', error, diagnostics)
+      }
+
       if (stale) {
         return tileResponse(
           stale.body,
@@ -108,8 +133,10 @@ export async function GET(
           rateLimitHeaders,
         )
       }
-      logRouteError('radar-tile', error, { tile: joined })
-      return NextResponse.json({ error: 'Failed to fetch radar tile' }, { status: 502 })
+      return NextResponse.json(
+        { error: missing ? 'Radar tile unavailable' : 'Failed to fetch radar tile' },
+        { status: missing ? 404 : 502, headers: { ...rateLimitHeaders, 'Cache-Control': 'no-store' } },
+      )
     }
   } catch (error) {
     logRouteError('radar-tile', error)

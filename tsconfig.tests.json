@@ -9,6 +9,7 @@
     ]
   },
   "include": [
+    "__tests__/radar-tile-route.test.ts",
     "__tests__/useRadarOverlayLoader.test.tsx",
     "__tests__/space-weather/flares-route.test.ts",
     "__tests__/space-weather/plasma-route.test.ts",
