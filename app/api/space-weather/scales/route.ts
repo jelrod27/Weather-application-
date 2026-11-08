@@ -82,9 +82,16 @@ export async function GET(request: NextRequest) {
       throw new Error('No current scale data available');
     }
 
-    const rScale = parseInt(current.R?.Scale || '0', 10);
-    const sScale = parseInt(current.S?.Scale || '0', 10);
-    const gScale = parseInt(current.G?.Scale || '0', 10);
+    // Missing or malformed observations cannot establish a quiet zero.
+    const parseScale = (value: unknown): number => {
+      if (typeof value !== 'string' || !/^[0-5]$/.test(value)) {
+        throw new Error('Invalid NOAA scale observation');
+      }
+      return Number(value);
+    };
+    const rScale = parseScale(current.R?.Scale);
+    const sScale = parseScale(current.S?.Scale);
+    const gScale = parseScale(current.G?.Scale);
 
     const scales: SpaceWeatherScales = {
       timestamp: new Date().toISOString(),

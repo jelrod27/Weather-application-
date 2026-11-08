@@ -10,7 +10,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -92,33 +92,43 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
   const [summary, setSummary] = useState<FlareSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const activeRequest = useRef<AbortController | null>(null);
 
-  const fetchFlares = async () => {
+  const fetchFlares = useCallback(async () => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    // The server allows two four-second attempts. Leave room for transit,
+    // but never let a stalled response keep the timeline loading forever.
+    const timeout = setTimeout(() => controller.abort(), 12_000);
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/space-weather/flares');
+      const response = await fetch('/api/space-weather/flares', { signal: controller.signal });
+      if (!response.ok) throw new Error('Flare catalog unavailable');
       const data: FlareApiResponse = await response.json();
-
-      if (data.error && data.events.length === 0) {
-        setError(data.error);
+      if (data.error || !Array.isArray(data.events) || !data.summary) {
+        throw new Error('Invalid flare catalog response');
       }
-
-      setEvents(data.events || []);
-      setSummary(data.summary || null);
-    } catch (err) {
-      console.error('[SolarFlareTimeline] Failed to fetch flare data:', err);
-      setError('Failed to load solar flare data');
-      setEvents([]);
-      setSummary(null);
+      if (activeRequest.current !== controller) return;
+      setEvents(data.events);
+      setSummary(data.summary);
+    } catch {
+      if (activeRequest.current !== controller) return;
+      setError('NASA flare catalog temporarily unavailable. Please try again.');
     } finally {
-      setIsLoading(false);
+      clearTimeout(timeout);
+      if (activeRequest.current === controller) setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchFlares();
-  }, []);
+    void fetchFlares();
+    return () => {
+      activeRequest.current?.abort();
+      activeRequest.current = null;
+    };
+  }, [fetchFlares]);
 
   return (
     <Card className={cn('container-primary', themeClasses.background, className)} data-testid="flare-timeline">
@@ -136,7 +146,9 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
           <Button
             variant="ghost"
             size="sm"
-            onClick={fetchFlares}
+            onClick={() => void fetchFlares()}
+            disabled={isLoading}
+            aria-label="Refresh solar flare catalog"
             className="font-mono text-xs"
             title="Refresh"
           >
@@ -159,16 +171,17 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
         )}
 
         {/* Error state */}
-        {!isLoading && error && events.length === 0 && (
-          <div className={cn('text-center font-mono text-sm py-6', themeClasses.text, 'opacity-70')}>
+        {!isLoading && error && (
+          <div role="alert" className={cn('text-center font-mono text-sm py-6', themeClasses.text, 'opacity-70')}>
             {error}
+            {events.length > 0 && <p>Showing previously loaded catalog events.</p>}
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && !error && events.length === 0 && (
           <div className={cn('text-center font-mono text-sm py-6', themeClasses.text, 'opacity-70')}>
-            No flare activity detected
+            No cataloged flares in the last 7 days
           </div>
         )}
 

@@ -10,6 +10,13 @@
   },
   "include": [
     "__tests__/useRadarOverlayLoader.test.tsx",
+    "__tests__/space-weather/flares-route.test.ts",
+    "__tests__/space-weather/plasma-route.test.ts",
+    "__tests__/space-weather/scales-route.test.ts",
+    "__tests__/space-weather-status.test.tsx",
+    "__tests__/space-weather-charts.test.tsx",
+    "__tests__/solar-flare-timeline.test.tsx",
+    "tests/e2e/space-weather.spec.ts",
     "__tests__/severe-alert-recipient-loading.test.ts",
     "__tests__/push-delivery-security.test.ts",
     "__tests__/cron-semantic-monitoring.test.ts",

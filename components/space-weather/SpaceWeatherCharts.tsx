@@ -221,7 +221,7 @@ function extractTimeSeries(
       timestamp: time.getTime(),
       value: val !== null && !isNaN(val as number) ? (val as number) : null,
     };
-  });
+  }).sort((a, b) => a.timestamp - b.timestamp);
 }
 
 function getStats(points: DataPoint[]): { current: number | null; max: number | null; min: number | null } {

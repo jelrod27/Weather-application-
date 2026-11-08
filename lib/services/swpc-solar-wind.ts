@@ -182,6 +182,24 @@ export function pickLatestWind(rows: WindRow[]): WindRow | null {
   );
 }
 
+/** One spacecraft, valid UTC tags, unique instants, oldest first for charts. */
+export function selectRtswWindSeries(payload: unknown): WindRow[] {
+  const rows = asWindRows(payload).filter(row => row && hasSpeed(row)
+    && Number.isFinite(row.proton_speed) && Number.isFinite(rowTimeMs(row)));
+  const reference = pickLatestWind(rows);
+  if (!reference) return [];
+  const selected = reference.source
+    ? rows.filter(row => row.source === reference.source)
+    : rows.filter(row => !row.source && Boolean(row.active) === Boolean(reference.active));
+  const unique = new Map<number, WindRow>();
+  for (const row of selected) {
+    const time = rowTimeMs(row);
+    // Prefer the active record if the source repeats an instant.
+    if (!unique.has(time) || row.active) unique.set(time, row);
+  }
+  return oldestFirst([...unique.values()]);
+}
+
 export function pickLatestMag(rows: MagRow[]): MagRow | null {
   const hasField = (row: MagRow) =>
     typeof row.bz_gsm === 'number' && typeof row.bt === 'number';

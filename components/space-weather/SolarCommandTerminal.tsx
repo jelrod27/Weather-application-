@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { Sun, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import SpaceWeatherNav, { type SpaceWeatherTabId } from './SpaceWeatherNav';
@@ -95,16 +96,25 @@ export default function SolarCommandTerminal({
   const formatLocalTime = (date: Date) => date.toLocaleTimeString('en-US', { hour12: false });
 
   const getOverallStatus = () => {
-    const kp = kpIndex?.current?.value ?? 0;
-    const rScale = scales?.R?.scale ?? 0;
-    const sScale = scales?.S?.scale ?? 0;
-    const gScale = scales?.G?.scale ?? 0;
+    const neutral = { color: 'text-muted-foreground', bgColor: 'bg-muted/20' };
+    if (isLoading) return { text: 'LOADING', ...neutral };
 
-    const hasStorm = kp >= 5 || rScale >= 3 || sScale >= 3 || gScale >= 3;
-    const hasActivity = kp >= 4 || rScale >= 1 || sScale >= 1 || gScale >= 1;
+    const kp = kpIndex?.current?.value;
+    const kpAvailable = typeof kp === 'number' && Number.isFinite(kp) && kp >= 0 && kp <= 9
+      && Number.isFinite(swpcTimeTagMs(kpIndex?.current?.timeTag));
+    const scaleValues = [scales?.R?.scale, scales?.S?.scale, scales?.G?.scale]
+      .filter((value): value is number => typeof value === 'number'
+        && Number.isInteger(value) && value >= 0 && value <= 5);
+
+    // Preserve known activity even during a partial outage. Missing readings
+    // can never establish quiet conditions.
+    const hasStorm = (kpAvailable && kp >= 5) || scaleValues.some(value => value >= 3);
+    const hasActivity = (kpAvailable && kp >= 4) || scaleValues.some(value => value >= 1);
 
     if (hasStorm) return { text: 'STORM CONDITIONS', color: 'text-red-500', bgColor: 'bg-red-500/20' };
     if (hasActivity) return { text: 'ACTIVE', color: 'text-yellow-500', bgColor: 'bg-yellow-500/20' };
+    if (!kpAvailable && scaleValues.length === 0) return { text: 'UNAVAILABLE', ...neutral };
+    if (!kpAvailable || scaleValues.length < 3) return { text: 'PARTIAL DATA', ...neutral };
     return { text: 'QUIET', color: 'text-green-500', bgColor: 'bg-green-500/20' };
   };
 
@@ -126,7 +136,7 @@ export default function SolarCommandTerminal({
             <CardTitle className={cn('text-xl font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
               <Sun className="w-6 h-6 text-yellow-500" />
               SOLAR COMMAND TERMINAL
-              <span className={cn('text-xs px-2 py-0.5 border-2', status.bgColor, status.color, 'border-current')}>
+              <span role="status" aria-label="Space weather status" className={cn('text-xs px-2 py-0.5 border-2', status.bgColor, status.color, 'border-current')}>
                 {status.text}
               </span>
             </CardTitle>
