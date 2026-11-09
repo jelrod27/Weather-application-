@@ -40,16 +40,6 @@ function getBzColor(bz: number): string {
   return 'text-red-500';
 }
 
-function getPhaseLabel(phase: string): string {
-  switch (phase) {
-    case 'rising': return 'RISING';
-    case 'maximum': return 'MAXIMUM';
-    case 'declining': return 'DECLINING';
-    case 'minimum': return 'MINIMUM';
-    default: return phase.toUpperCase();
-  }
-}
-
 function TrendArrow({ trend }: { trend: string }) {
   switch (trend) {
     case 'increasing':
@@ -72,19 +62,18 @@ export default function CurrentConditions({
 
   const kp = isValidKp(kpIndex?.current?.value) ? kpIndex.current.value : null;
   const kpStatus = kp == null ? { text: 'Unavailable', color: 'text-muted-foreground' } : getKpLabel(kp);
-  const windSpeed = solarWind?.current?.speed ?? 0;
+  const windSpeed = solarWind?.current?.speed ?? '--';
   const bz = solarWind?.current?.bz ?? null;
   const bzColor = bz == null ? 'text-gray-400' : getBzColor(bz);
   const classification =
     xrayFlux?.current?.flareClass
     ?? xrayFlux?.current?.classification
-    ?? 'A';
+    ?? null;
   const subClass = xrayFlux?.current?.subClass
     ?? (xrayFlux?.current?.classNumber
       ? parseFloat(xrayFlux.current.classNumber.replace(/^[A-Z]/i, '')) || 0
       : 0);
-  const sunspotCount = sunspots?.current?.sunspotNumber ?? 0;
-  const cyclePhase = sunspots?.solarCycle?.phase ?? 'unknown';
+  const sunspotCount = sunspots?.current?.sunspotNumber ?? '--';
   const viewline = viewlineFor(auroraForecast?.currentKp ?? kp, auroraForecast?.hemisphere);
   const viewLatitude = viewline?.latitude;
   const hemisphere = auroraForecast?.hemisphere === 'south' ? 'S' : 'N';
@@ -151,7 +140,7 @@ export default function CurrentConditions({
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono', themeClasses.accentText)}>
-            {classification}{subClass.toFixed(1)}
+            {classification ? `${classification}${subClass.toFixed(1)}` : '--'}
           </span>
           {xrayFlux?.peak24h && (
             <span className={cn('text-xs font-mono', themeClasses.text)}>
@@ -165,14 +154,14 @@ export default function CurrentConditions({
       <div className="p-3 card-inner rounded">
         <div className={cn('flex items-center gap-1 mb-1', themeClasses.text)}>
           <Sun className="w-3 h-3" aria-hidden="true" />
-          <span className="text-xs font-mono uppercase">Sunspots</span>
+          <span className="text-xs font-mono uppercase">Monthly Sunspots</span>
         </div>
         <div className="flex items-baseline gap-2">
           <span className={cn('text-2xl font-bold font-mono text-yellow-500')}>
             {sunspotCount}
           </span>
           <span className={cn('text-xs font-mono', themeClasses.text)}>
-            {getPhaseLabel(cyclePhase)}
+            {sunspots?.current.date ?? 'Unavailable'}
           </span>
         </div>
       </div>

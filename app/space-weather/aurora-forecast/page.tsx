@@ -83,8 +83,7 @@ export default async function AuroraForecastPage() {
               </p>
               {outlook ? (
                 <p className="mt-2 text-weather-text">
-                  NOAA expects Kp near {outlook.expected.toFixed(1)} over the next {outlook.hours}{' '}
-                  hours, peaking around Kp {outlook.maxExpected.toFixed(1)} (
+                  NOAA expects Kp near {outlook.expected.toFixed(1)} across {outlook.blocks} available three-hour blocks in the coming day, peaking around Kp {outlook.maxExpected.toFixed(1)} (
                   {kpLevel(outlook.maxExpected).storm}).
                 </p>
               ) : null}

@@ -30,7 +30,6 @@ interface EnlilModelViewerProps {
 }
 
 interface EnlilFrame {
-  timestamp: string;
   url: string;
 }
 
@@ -48,6 +47,10 @@ type PlaybackSpeed = 0.5 | 1 | 2 | 4;
 
 const SPEED_OPTIONS: PlaybackSpeed[] = [0.5, 1, 2, 4];
 const BASE_INTERVAL_MS = 500;
+const ENLIL_IMAGE = /^https:\/\/services\.swpc\.noaa\.gov\/images\/animations\/enlil\/(?:latest|enlil_com2_\d+_\d{8}T\d{6})\.jpg$/;
+function isImageUrl(url: unknown): url is string {
+  return typeof url === 'string' && ENLIL_IMAGE.test(url);
+}
 
 export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
   const themeClasses = themeTokens.weather;
@@ -60,42 +63,54 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
   const [latestImage, setLatestImage] = useState<string>('');
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const preloadRef = useRef<HTMLImageElement[]>([]);
+  const requestIdRef = useRef(0);
 
   // Fetch frames from API
   const fetchFrames = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
+    setImageFailed(false);
+    setImageLoaded(false);
+    setLatestImage('');
+    setFrames([]);
+    setIsPlaying(false);
+    setRefreshKey(key => key + 1);
     try {
       const response = await fetch('/api/space-weather/enlil');
       const data: EnlilApiResponse = await response.json();
+      if (requestId !== requestIdRef.current) return;
 
-      if (data.data) {
-        const frameObjects = (data.data.frames || []).map((url: string, i: number) => ({
-          timestamp: `Frame ${i + 1}`,
-          url,
-        }));
+      if (response.ok && data.data && Array.isArray(data.data.frames)
+        && data.data.frames.every(isImageUrl)
+        && (data.data.frames.length > 0 || isImageUrl(data.data.latest) || isImageUrl(data.data.fallback))) {
+        const frameObjects = data.data.frames.map((url: string) => ({ url }));
         setFrames(frameObjects);
-        setLatestImage(data.data.latest || data.data.fallback || '');
+        setLatestImage(isImageUrl(data.data.latest) ? data.data.latest : isImageUrl(data.data.fallback) ? data.data.fallback : '');
         setCurrentFrameIndex(0);
       } else {
         setFrames([]);
         setError('ENLIL model data unavailable');
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('[EnlilModelViewer] Failed to fetch ENLIL frames:', err);
       setFrames([]);
       setError('Failed to load ENLIL model data');
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   }, []);
 
   // Fetch on mount
   useEffect(() => {
-    fetchFrames();
+    void fetchFrames();
+    return () => { requestIdRef.current += 1; };
   }, [fetchFrames]);
 
   // Preload nearby frames for smooth playback
@@ -179,10 +194,13 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
   };
 
   const handleImageError = () => {
-    setImageLoaded(true);
+    setImageLoaded(false);
+    setImageFailed(true);
+    setIsPlaying(false);
+    setError('ENLIL model image unavailable. Refresh to retry.');
   };
 
-  const hasFrames = frames.length > 0;
+  const hasFrames = frames.length > 0 && !imageFailed;
 
   return (
     <Card className={cn('container-primary', themeClasses.background, className)} data-testid="enlil-viewer">
@@ -213,7 +231,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
         {/* Model Image Display */}
         <div className="relative aspect-square bg-black rounded-lg overflow-hidden border-2 border-gray-700">
           {/* Loading skeleton */}
-          {(isLoading || !imageLoaded) && (
+          {(isLoading || (!imageLoaded && !error)) && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
               <div className={cn('text-sm font-mono text-center', themeClasses.text)}>
                 <div className="animate-pulse mb-2">ACQUIRING ENLIL MODEL DATA...</div>
@@ -223,10 +241,10 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
           )}
 
           {/* Image */}
-          {getCurrentImageUrl() && (
+          {getCurrentImageUrl() && !imageFailed && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              key={`enlil-${currentFrameIndex}`}
+              key={`enlil-${currentFrameIndex}-${refreshKey}`}
               src={getCurrentImageUrl()}
               alt="WSA-ENLIL Solar Wind Propagation Model"
               className={cn(
@@ -246,7 +264,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
           )}>
             {hasFrames
               ? `${currentFrameIndex + 1} / ${frames.length}`
-              : latestImage ? 'LATEST' : '--'}
+              : !imageFailed && latestImage ? 'LATEST' : '--'}
           </div>
 
           {/* Playing indicator */}
@@ -257,17 +275,12 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
             </div>
           )}
 
-          {/* Frame timestamp */}
-          {hasFrames && currentFrameIndex < frames.length && frames[currentFrameIndex].timestamp && (
-            <div className="absolute bottom-2 left-2 text-xs font-mono px-2 py-1 bg-black/70 rounded text-white">
-              {new Date(frames[currentFrameIndex].timestamp).toLocaleTimeString()}
-            </div>
-          )}
+
         </div>
 
         {/* Error message */}
         {error && (
-          <div className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-orange-400">
+          <div role="alert" className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-orange-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>

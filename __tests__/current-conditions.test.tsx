@@ -14,7 +14,7 @@ describe('CurrentConditions', () => {
         kpIndex={{ current: { value: 3, timeTag: '2025-01-01' }, forecast: null }}
         solarWind={{ current: { speed: 450, density: 5, temperature: 100000, bz: -2, bt: 6 }, trend: 'stable' }}
         xrayFlux={{ current: { shortWave: 1e-7, longWave: 1e-6, classification: 'C', subClass: 1.7, timestamp: '' }, peak24h: { classification: 'M', subClass: 2.1, timestamp: '' }, background: 'B5.0', trend: 'stable' }}
-        sunspots={{ current: { sunspotNumber: 120, observedF107: 150, date: '' }, solarCycle: { cycleNumber: 25, phase: 'maximum', percentComplete: 60 }, monthlySmoothed: 110, trend: 'increasing' }}
+        sunspots={{ current: { sunspotNumber: 120, observedF107: 150, date: '' }, monthlySmoothed: 110 }}
         auroraForecast={{ currentKp: 3, viewline: { latitude: 55, description: 'Northern US states' }, hemisphere: 'north', updatedAt: '' }}
       />
     );
@@ -33,7 +33,7 @@ describe('CurrentConditions', () => {
         kpIndex={{ current: { value: 5, timeTag: '2025-01-01' }, forecast: null }}
         solarWind={{ current: { speed: 620, density: 5, temperature: 100000, bz: -8, bt: 6 }, trend: 'increasing' }}
         xrayFlux={{ current: { shortWave: 1e-7, longWave: 1e-6, classification: 'M', subClass: 2.1, timestamp: '' }, peak24h: { classification: 'X', subClass: 1.0, timestamp: '' }, background: 'B5.0', trend: 'stable' }}
-        sunspots={{ current: { sunspotNumber: 145, observedF107: 150, date: '' }, solarCycle: { cycleNumber: 25, phase: 'maximum', percentComplete: 60 }, monthlySmoothed: 110, trend: 'increasing' }}
+        sunspots={{ current: { sunspotNumber: 145, observedF107: 150, date: '' }, monthlySmoothed: 110 }}
         auroraForecast={{ currentKp: 5, viewline: { latitude: 50, description: 'Oregon, Wisconsin' }, hemisphere: 'north', updatedAt: '' }}
       />
     );
@@ -68,3 +68,10 @@ describe('CurrentConditions', () => {
     expect(southLabel.className).toContain('text-red');
   });
 });
+
+it('does not invent current zero wind, sunspots or A0 X-rays when feeds are missing', () => {
+ render(<CurrentConditions kpIndex={null} solarWind={null} xrayFlux={null} sunspots={null} auroraForecast={null}/>)
+ expect(screen.queryAllByText('0')).toHaveLength(0)
+ expect(screen.queryByText('A0.0')).not.toBeInTheDocument()
+ expect(screen.getByText('Monthly Sunspots')).toBeInTheDocument()
+})

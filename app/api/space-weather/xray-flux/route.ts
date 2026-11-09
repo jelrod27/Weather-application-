@@ -10,6 +10,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
+import { swpcTimeTagMs } from '@/lib/space-weather/time-tag'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -36,6 +38,12 @@ interface XRayReading {
   energy?: unknown;
   flux?: unknown;
   time_tag?: unknown;
+}
+
+function isLongWavelengthReading(entry: XRayReading): entry is XRayReading & { flux: number; time_tag: string } {
+  return entry?.energy === '0.1-0.8nm' &&
+    typeof entry.flux === 'number' && Number.isFinite(entry.flux) && entry.flux > 0 &&
+    typeof entry.time_tag === 'string';
 }
 
 // Convert flux value to flare classification
@@ -66,7 +74,8 @@ export async function GET(request: NextRequest) {
     const data = await fetchSwpcJson<XRayReading[]>('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 60 }, // Cache for 1 minute
-    });
+    }, payload => Array.isArray(payload) && payload.some(entry =>
+      isLongWavelengthReading(entry) && isCurrentObservation(entry.time_tag, CURRENT_MAX_AGE_MS.xray)));
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No X-ray flux data available');
@@ -75,15 +84,16 @@ export async function GET(request: NextRequest) {
     // SWPC returns both 0.05–0.4 nm and 0.1–0.8 nm values interleaved by
     // timestamp. NOAA's flare classes use the 0.1–0.8 nm band. Keep the
     // short-wavelength channel out of both the chart and flare summaries.
+    const now = Date.now();
     const longWavelengthReadings = data.filter(
       (entry): entry is XRayReading & { flux: number; time_tag: string } =>
-        entry?.energy === '0.1-0.8nm' &&
-        typeof entry.flux === 'number' &&
-        Number.isFinite(entry.flux) &&
-        entry.flux > 0 &&
-        typeof entry.time_tag === 'string' &&
-        Number.isFinite(Date.parse(entry.time_tag)),
-    );
+        isLongWavelengthReading(entry) &&
+        isCurrentObservation(entry.time_tag, 24 * 60 * 60_000, now),
+    ).sort((a, b) => swpcTimeTagMs(a.time_tag) - swpcTimeTagMs(b.time_tag));
+    const latest = longWavelengthReadings.at(-1);
+    if (!latest || !isCurrentObservation(latest.time_tag, CURRENT_MAX_AGE_MS.xray, now)) {
+      throw new Error('No fresh X-ray observation');
+    }
 
     const recentData: XRayFluxData['recent'] = [];
     for (let i = 0; i < longWavelengthReadings.length; i += 15) {
@@ -130,12 +140,7 @@ export async function GET(request: NextRequest) {
     logRouteError('space-weather/xray-flux', error);
 
     return NextResponse.json({
-      data: {
-        timestamp: new Date().toISOString(),
-        current: { flux: 0, flareClass: 'A', classNumber: 'A0.0' },
-        recent: [],
-        peakLast24h: null,
-      },
+      data: null,
       source: 'NOAA Space Weather Prediction Center',
       error: 'Unable to fetch live data',
     }, { status: 500 });

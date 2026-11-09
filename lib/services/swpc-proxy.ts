@@ -31,12 +31,15 @@ export async function fetchSwpc(
 
 /**
  * Fetch and parse JSON from a NOAA SWPC endpoint. If a cached response body is
- * malformed, retry once without Next's persistent cache so a truncated body is
- * not served repeatedly for the full revalidation window.
+ * malformed or fails the caller's observation validator, retry once without
+ * Next's persistent cache. A valid JSON body can still contain stale data.
+ * The recovery request is bounded to four seconds with no transport retries;
+ * its payload must pass the same validator before it can be used.
  */
 export async function fetchSwpcJson<T = unknown>(
   url: string,
   options: FetchWithTimeoutOptions = {},
+  isUsable?: (payload: T) => boolean,
 ): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
@@ -46,14 +49,22 @@ export async function fetchSwpcJson<T = unknown>(
   if (!response.ok) throw new Error(`NOAA SWPC request failed: ${response.status}`);
 
   try {
-    return await response.json() as T;
+    const payload = await response.json() as T;
+    if (!isUsable || isUsable(payload)) return payload;
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
-
-    const retryOptions: FetchWithTimeoutOptions = { ...requestOptions, cache: 'no-store' };
-    delete retryOptions.next;
-    const retry = await fetchSwpc(url, retryOptions);
-    if (!retry.ok) throw new Error(`NOAA SWPC retry failed: ${retry.status}`);
-    return await retry.json() as T;
   }
+
+  const retryOptions: FetchWithTimeoutOptions = {
+    ...requestOptions,
+    cache: 'no-store',
+    timeoutMs: Math.min(options.timeoutMs ?? 4_000, 4_000),
+    maxRetries: 0,
+  };
+  delete retryOptions.next;
+  const retry = await fetchSwpc(url, retryOptions);
+  if (!retry.ok) throw new Error(`NOAA SWPC retry failed: ${retry.status}`);
+  const payload = await retry.json() as T;
+  if (isUsable && !isUsable(payload)) throw new Error('NOAA SWPC response contains no usable observations');
+  return payload;
 }

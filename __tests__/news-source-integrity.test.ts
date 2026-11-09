@@ -19,7 +19,7 @@ function rss(count = 1): string {
   return '<rss><channel><title>Example</title>' + Array.from({ length: count }, (_, n) => '<item><title>Article ' + n + '</title><link>https://example.com/' + n + '</link><pubDate>Sun, 11 Oct 2026 22:00:00 GMT</pubDate></item>').join('') + '</channel></rss>';
 }
 describe('news source integrity', () => {
-  beforeEach(() => { clearFeedSnapshots(); jest.useFakeTimers({ now: NOW }); });
+  beforeEach(() => { clearFeedSnapshots(); jest.useFakeTimers({ now: NOW, doNotFake: ['setTimeout', 'clearTimeout'] }); });
   afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
   it('keeps USGS occurrence time separate from a two-day-later update', () => {

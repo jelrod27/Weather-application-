@@ -164,7 +164,7 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
         {data?.forecast && (
           <div className={'p-3 card-inner rounded'}>
             <div className={cn('text-xs font-mono font-bold mb-1', themeClasses.headerText)}>
-              {(data.forecast.blocks ?? 8) * 3}H FORECAST
+              NEXT 24H OUTLOOK · {data.forecast.blocks ?? 8} THREE-HOUR BLOCKS
             </div>
             <div className="flex justify-between items-center">
               <div className={cn('text-xs font-mono', themeClasses.text)}>

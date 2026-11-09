@@ -45,3 +45,21 @@ describe('SpaceWeatherNav', () => {
     expect(activeButton.className).toContain('border-cyan-400');
   });
 });
+
+it('moves tab focus with arrows, Home and End and uses one tab stop', () => {
+ const change = jest.fn()
+ render(<SpaceWeatherNav activeTab="command" onTabChange={change} />)
+ const tabs = screen.getAllByRole('tab')
+ expect(tabs.map(tab => tab.tabIndex)).toEqual([0,-1,-1,-1,-1])
+ tabs[0].focus()
+ fireEvent.keyDown(tabs[0],{key:'ArrowRight'})
+ expect(document.activeElement).toBe(tabs[1]); expect(change).toHaveBeenLastCalledWith('solar')
+ fireEvent.keyDown(tabs[1],{key:'End'})
+ expect(document.activeElement).toBe(tabs[4]); expect(change).toHaveBeenLastCalledWith('alerts')
+ fireEvent.keyDown(tabs[4],{key:'ArrowRight'})
+ expect(document.activeElement).toBe(tabs[0])
+ fireEvent.keyDown(tabs[0],{key:'ArrowLeft'})
+ expect(document.activeElement).toBe(tabs[4])
+ fireEvent.keyDown(tabs[4],{key:'Home'})
+ expect(document.activeElement).toBe(tabs[0])
+})

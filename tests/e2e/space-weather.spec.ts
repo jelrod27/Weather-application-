@@ -71,3 +71,53 @@ test('recovers the flare timeline after an upstream failure', async ({ page }) =
   await expect(timeline.getByText('No cataloged flares in the last 7 days')).toBeVisible();
   await expect(timeline.getByRole('alert')).toHaveCount(0);
 });
+
+test('navigates space weather tabs with arrows, Home and End', async ({ page }) => {
+  const command = page.getByRole('tab', { name: /Command Center/i });
+  await command.focus();
+  await command.press('ArrowRight');
+  const solar = page.getByRole('tab', { name: /Solar Activity/i });
+  await expect(solar).toBeFocused();
+  await expect(solar).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toHaveAttribute('id', 'panel-solar');
+  await solar.press('End');
+  const alerts = page.getByRole('tab', { name: /Alerts/i });
+  await expect(alerts).toBeFocused();
+  await expect(alerts).toHaveAttribute('tabindex', '0');
+  await alerts.press('Home');
+  await expect(command).toBeFocused();
+});
+
+test('shows monthly sunspots with an observation month and no invented cycle progress', async ({ page }) => {
+  await page.route('**/api/space-weather/sunspots', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ data: {
+      current: { sunspotNumber: 70.4, observedF107: 125.6, date: '2026-10', period: 'monthly' },
+      monthlySmoothed: 93.2, smoothedDate: '2026-03',
+    } }),
+  }));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('status', { name: 'Space weather status' })).toHaveText('UNAVAILABLE');
+  await page.getByRole('tab', { name: /Solar Activity/i }).click();
+  const panel = page.getByRole('tabpanel');
+  await expect(panel.getByText('Monthly Sunspot Number')).toBeVisible();
+  await expect(panel.getByText('Observation month: 2026-10')).toBeVisible();
+  await expect(panel.getByText('NOAA 13-Month Smoothed (2026-03)')).toBeVisible();
+  await expect(panel.getByText(/Daily Sunspot Number|RISING|DECLINING/)).toHaveCount(0);
+});
+
+test('keeps future chart readings out of current conditions and labels actual coverage', async ({ page }) => {
+  await page.route('**/api/space-weather/plasma?*', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ data: [
+      { time: new Date(Date.now() - 60_000).toISOString(), speed: 706 },
+      { time: new Date(Date.now() + 60_000).toISOString(), speed: 999 },
+    ] }),
+  }));
+  await page.getByRole('tab', { name: /Geomagnetic/i }).click();
+  const panel = page.getByRole('tabpanel');
+  await expect(panel.getByText('706 km/s', { exact: true })).toBeVisible();
+  await expect(panel.getByText('999 km/s', { exact: true })).toHaveCount(0);
+  await expect(panel.getByText(/Observed UTC:/)).toBeVisible();
+  await expect(panel.getByText(/feeds may cover less than 24H or 7D/)).toBeVisible();
+});

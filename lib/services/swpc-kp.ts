@@ -4,6 +4,7 @@
  * `{ time_tag, Kp }` — support both so a format flip does not zero the UI.
  */
 
+import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness';
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
 
 export interface KpSample { timeTag: string; kp: number }
@@ -118,6 +119,14 @@ export function parsePlanetaryKpIndex(payload: unknown): {
   return { current, recent };
 }
 
+/** Strict availability boundary for headline/SEO current observations. */
+export function parseCurrentKpIndex(payload: unknown, now = Date.now()): { current: KpSample | null; recent: KpSample[] } {
+  const recent = parsePlanetaryKpSeries(payload).samples
+    .filter(sample => isCurrentObservation(sample.timeTag, 24 * 60 * 60_000, now)).slice(-8);
+  const latest = recent.at(-1);
+  return { current: latest && isCurrentObservation(latest.timeTag, CURRENT_MAX_AGE_MS.kp, now) ? latest : null, recent };
+}
+
 /**
  * Expected and peak Kp over the next 24 hours.
  *
@@ -146,11 +155,9 @@ export function parseKpForecast(
   // Allow the block already in progress: its tag is up to 3 hours behind now.
   const cutoff = now.getTime() - 3 * 60 * 60 * 1000;
 
-  const upcoming = dataRows(payload)
-    .map(readKpFromRow)
-    .filter((sample): sample is KpSample => sample !== null)
+  const upcoming = parsePlanetaryKpSeries(payload).samples
     .map((sample) => ({ sample, ms: swpcTimeTagMs(sample.timeTag) }))
-    .filter(({ ms }) => Number.isFinite(ms) && ms >= cutoff)
+    .filter(({ ms }) => Number.isFinite(ms) && ms > cutoff && ms <= now.getTime() + 24 * 60 * 60 * 1000)
     .sort((a, b) => a.ms - b.ms)
     .slice(0, 8)
     .map(({ sample }) => sample);

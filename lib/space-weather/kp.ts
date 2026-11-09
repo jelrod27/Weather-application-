@@ -10,7 +10,7 @@
 
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import { logRouteError } from '@/lib/error-utils'
-import { parseKpForecast, parsePlanetaryKpIndex, type KpSample } from '@/lib/services/swpc-kp'
+import { parseKpForecast, parseCurrentKpIndex, type KpSample } from '@/lib/services/swpc-kp'
 
 export const KP_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
 export const KP_FORECAST_URL =
@@ -24,8 +24,9 @@ const FORECAST_TTL_SECONDS = 900
 /** Current planetary Kp, or null when SWPC is unreachable. */
 export async function loadCurrentKp(context: string): Promise<KpSample | null> {
   try {
-    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } })
-    return parsePlanetaryKpIndex(payload).current
+    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } },
+      data => parseCurrentKpIndex(data).current !== null)
+    return parseCurrentKpIndex(payload).current
   } catch (error) {
     // logRouteError, not console.error: a bare console line never reaches
     // Sentry, so SWPC going down would quietly degrade four indexed pages to

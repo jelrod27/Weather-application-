@@ -7,6 +7,7 @@
 
 import { selectActiveAlerts } from '@/lib/warnings/active-alerts'
 import { captureError } from '@/lib/error-utils'
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 import { parseTimeMotLoc, type StormMotion } from '@/lib/bitwatch/motion'
 import { parseVtecFromParameters, provisionalWarningEventId } from '@/lib/bitwatch/vtec'
 import { HARM_WARNING_EVENTS } from '@/lib/services/severe-alert-filter'
@@ -259,8 +260,10 @@ async function fetchNwsFeatureCollection(url: string, timeoutMs = NWS_FETCH_TIME
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   let response: Response
   try {
-    response = await fetch(url, {
+    response = await fetchWithTimeout(url, {
       signal: controller.signal,
+      timeoutMs,
+      maxRetries: 1,
       headers: { 'User-Agent': NWS_USER_AGENT, Accept: NWS_ACCEPT },
       ...(noStore ? { cache: 'no-store' as const } : {}),
     })

@@ -5,7 +5,7 @@
  * Licensed under Fair Source License, Version 0.9
  *
  * Animated SOHO LASCO coronagraph viewer with frame-by-frame playback control
- * Primary mode: NASA animated GIFs (48-hour loops, always available)
+ * Primary mode: NASA provider animation; coverage and availability vary.
  * Secondary mode: Frame-by-frame control (when archive frames available)
  * Falls back to animated GIFs if individual frames unavailable
  */
@@ -58,14 +58,14 @@ interface ApiResponse {
   note?: string;
 }
 
-// SOHO provides pre-made animated GIFs showing the last 48 hours
+// SOHO provider animations; no fixed duration is inferred.
 const ANIMATED_URLS = {
   c2: {
-    full: 'https://soho.nascom.nasa.gov/data/realtime/c2/512/latest.gif',
+    full: 'https://soho.nascom.nasa.gov/data/LATEST/current_c2small.gif',
     small: 'https://soho.nascom.nasa.gov/data/LATEST/current_c2small.gif',
   },
   c3: {
-    full: 'https://soho.nascom.nasa.gov/data/realtime/c3/512/latest.gif',
+    full: 'https://soho.nascom.nasa.gov/data/LATEST/current_c3small.gif',
     small: 'https://soho.nascom.nasa.gov/data/LATEST/current_c3small.gif',
   },
 };
@@ -88,6 +88,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
   const [camera, setCamera] = useState<Camera>('c2');
   const [viewMode, setViewMode] = useState<ViewMode>('animated');
   const [isLoading, setIsLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   const [showFullsize, setShowFullsize] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -106,12 +107,13 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
   const preloadRef = useRef<HTMLImageElement[]>([]);
 
   // Fetch frames from API
-  const fetchFrames = useCallback(async (selectedCamera: Camera) => {
+  const fetchFrames = useCallback(async (selectedCamera: Camera, signal: AbortSignal) => {
     setIsLoadingFrames(true);
     setFrameLoadError(null);
     try {
-      const response = await fetch(`/api/space-weather/coronagraph?camera=${selectedCamera}&frames=12`);
+      const response = await fetch(`/api/space-weather/coronagraph?camera=${selectedCamera}&frames=12`, { signal });
       const data: ApiResponse = await response.json();
+      if (signal.aborted) return;
 
       if (data.success && data.data) {
         // Set all URLs from API response
@@ -127,19 +129,21 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
           setFrameLoadError('Individual frames may not be available. Using animated GIF as fallback.');
         }
       } else {
+        setFrameLoadError('Frame data unavailable. Using provider animation.');
         // Fall back to animated GIF
         setFrames([]);
         setFallbackGif(ANIMATED_URLS[selectedCamera].small);
         setLatestImage(LATEST_URLS[selectedCamera]);
       }
     } catch (error) {
+      if (signal.aborted) return;
       console.error('Failed to fetch coronagraph frames:', error);
       setFrames([]);
       setFallbackGif(ANIMATED_URLS[selectedCamera].small);
       setLatestImage(LATEST_URLS[selectedCamera]);
       setFrameLoadError('Failed to load frame data. Using animated GIF.');
     } finally {
-      setIsLoadingFrames(false);
+      if (!signal.aborted) setIsLoadingFrames(false);
     }
   }, [viewMode]);
 
@@ -168,9 +172,13 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
 
   // Fetch frames on mount and camera change
   useEffect(() => {
+    const controller = new AbortController();
     if (viewMode === 'frames') {
-      fetchFrames(camera);
+      void fetchFrames(camera, controller.signal);
+    } else {
+      setIsLoadingFrames(false);
     }
+    return () => controller.abort();
   }, [camera, viewMode, fetchFrames, refreshKey]);
 
   // Preload frames when index changes
@@ -235,22 +243,18 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
     return `${gifUrl}?t=${refreshKey}`;
   }, [camera, viewMode, refreshKey, frames, currentFrameIndex, failedFrames, fallbackGif, latestImage, shouldUseFallback]);
 
-  // Get full-size URL for modal
-  const getFullsizeUrl = useCallback(() => {
-    if (viewMode === 'animated' || viewMode === 'frames') {
-      return `${ANIMATED_URLS[camera].full}?t=${refreshKey}`;
-    }
-    return `${LATEST_URLS[camera]}?t=${refreshKey}`;
-  }, [camera, viewMode, refreshKey]);
+  // Expansion preserves the displayed animation or selected frame.
+  const getFullsizeUrl = getCurrentImageUrl;
 
   const handleImageLoad = () => {
     setIsLoading(false);
+    setImageError(false);
   };
 
   const handleImageError = () => {
     setIsLoading(false);
     // Mark current frame as failed
-    if (viewMode === 'frames' && frames.length > 0 && currentFrameIndex < frames.length) {
+    if (viewMode === 'frames' && frames.length > 0 && currentFrameIndex < frames.length && !failedFrames.has(frames[currentFrameIndex].url) && !shouldUseFallback()) {
       const frame = frames[currentFrameIndex];
       setFailedFrames((prev) => {
         const newFailed = new Set(prev).add(frame.url);
@@ -260,12 +264,20 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
         }
         return newFailed;
       });
+    } else {
+      setImageError(true);
+      setIsPlaying(false);
     }
   };
 
   const changeCamera = (newCamera: Camera) => {
+    if (newCamera === camera) return;
     setCamera(newCamera);
+    setFrames([]);
+    setFallbackGif('');
+    setLatestImage('');
     setIsLoading(true);
+    setImageError(false);
     setIsPlaying(false);
     setCurrentFrameIndex(0);
     setFrameLoadError(null);
@@ -278,6 +290,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
     const nextMode = modes[(currentIndex + 1) % modes.length];
     setViewMode(nextMode);
     setIsLoading(true);
+    setImageError(false);
     setIsPlaying(false);
     setCurrentFrameIndex(0);
     setFrameLoadError(null);
@@ -287,6 +300,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
   const refreshImage = () => {
     setRefreshKey(Date.now());
     setIsLoading(true);
+    setImageError(false);
     setCurrentFrameIndex(0);
     setLoadedFrameUrls(new Set());
     setFailedFrames(new Set());
@@ -324,7 +338,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
   const getViewModeText = () => {
     switch (viewMode) {
       case 'animated':
-        return 'ANIMATED (48hr)';
+        return 'ANIMATED LOOP';
       case 'frames':
         return 'FRAME CONTROL';
       case 'latest':
@@ -335,14 +349,14 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
   // Get status indicator text
   const getStatusText = () => {
     if (viewMode === 'animated') {
-      return { text: '48hr Loop', color: 'text-green-500' };
+      return { text: 'Provider loop', color: 'text-green-500' };
     }
     if (viewMode === 'frames') {
       if (isLoadingFrames || frames.length === 0) {
-        return { text: 'Loading...', color: 'text-yellow-500' };
+        return { text: isLoadingFrames ? 'Loading...' : 'Frames unavailable', color: 'text-yellow-500' };
       }
       // Show fallback indicator if using animated GIF due to failures
-      if (shouldUseFallback()) {
+      if (shouldUseFallback() || failedFrames.has(frames[currentFrameIndex]?.url)) {
         return { text: 'Fallback GIF', color: 'text-orange-500' };
       }
       return {
@@ -397,7 +411,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
                   <div className="animate-pulse mb-2">ACQUIRING CORONAGRAPH DATA...</div>
                   <div className="text-xs opacity-60">
                     {viewMode === 'animated'
-                      ? 'Loading 48-hour animation (~15MB)'
+                      ? 'Loading provider animation'
                       : viewMode === 'frames'
                         ? 'Loading individual frames'
                         : 'Loading latest image'}
@@ -414,6 +428,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
               alt={`LASCO ${camera.toUpperCase()} Coronagraph${viewMode === 'animated' ? ' Animation' : ''}`}
               className={cn(
                 'w-full h-full object-contain transition-opacity duration-300',
+                imageError && 'opacity-0',
                 (isLoading || isLoadingFrames) && 'opacity-0'
               )}
               onLoad={handleImageLoad}
@@ -432,7 +447,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
             </div>
 
             {/* Play indicator */}
-            {((viewMode === 'animated' && !isLoading) || (viewMode === 'frames' && isPlaying)) && (
+            {(!imageError && ((viewMode === 'animated' && !isLoading) || (viewMode === 'frames' && isPlaying))) && (
               <div className="absolute bottom-2 right-2 flex items-center gap-1 text-xs font-mono px-2 py-1 bg-black/70 rounded text-green-500">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 PLAYING
@@ -440,12 +455,14 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
             )}
 
             {/* Frame timestamp for frame mode */}
-            {viewMode === 'frames' && frames.length > 0 && currentFrameIndex < frames.length && (
+            {viewMode === 'frames' && frames.length > 0 && currentFrameIndex < frames.length && !failedFrames.has(frames[currentFrameIndex].url) && !shouldUseFallback() && !imageError && (
               <div className="absolute bottom-2 left-2 text-xs font-mono px-2 py-1 bg-black/70 rounded text-white">
                 {new Date(frames[currentFrameIndex].timestamp).toLocaleTimeString()}
               </div>
             )}
           </div>
+
+          {imageError && <div role="alert" className="text-xs font-mono text-orange-400">Coronagraph image unavailable. Refresh to retry.</div>}
 
           {/* Playback Controls (Frame Mode Only - hidden when using fallback GIF) */}
           {viewMode === 'frames' && frames.length > 0 && !shouldUseFallback() && (
@@ -565,7 +582,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
           {/* Info */}
           <div className={cn('text-xs font-mono text-center pt-2 border-t border-gray-700', themeClasses.text, 'opacity-70')}>
             SOHO LASCO coronagraph - CME detection. R☉ = Solar Radii.
-            {viewMode === 'frames' ? ' Use controls to step through frames.' : ' Animation shows last 48 hours.'}
+            {viewMode === 'frames' ? ' Use controls to step through frames.' : ' Provider animation duration varies.'}
           </div>
         </CardContent>
       </Card>
@@ -590,7 +607,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
               className="max-w-full max-h-[90vh] object-contain"
             />
             <div className="text-center mt-2 font-mono text-sm text-white">
-              SOHO LASCO {camera.toUpperCase()} - {viewMode === 'latest' ? 'Latest Image' : '48-Hour Animation'}
+              SOHO LASCO {camera.toUpperCase()} - {viewMode === 'latest' ? 'Latest Image' : 'Provider Animation'}
             </div>
           </div>
         </div>

@@ -22,8 +22,23 @@ export interface FetchWithTimeoutOptions extends RequestInit {
 
 const RETRYABLE_STATUSES = new Set([429, 502, 503]);
 
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function delay(ms: number, signal?: AbortSignal | null): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const onAbort = (): void => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 function backoffFor(attempt: number, base: number, max: number): number {
@@ -47,6 +62,7 @@ export async function fetchWithTimeout(
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    externalSignal?.throwIfAborted();
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
     const signal = externalSignal
       ? AbortSignal.any([externalSignal, timeoutSignal])
@@ -70,7 +86,7 @@ export async function fetchWithTimeout(
         // Drain the discarded body so the socket can return to the pool
         // promptly instead of waiting on GC finalization.
         await response.body?.cancel?.().catch(() => {});
-        await delay(wait);
+        await delay(wait, externalSignal);
         continue;
       }
 
@@ -80,10 +96,11 @@ export async function fetchWithTimeout(
       // Caller explicitly aborted — stop retrying so cleanup can happen fast.
       if (externalSignal?.aborted) break;
       if (attempt >= maxRetries) break;
-      await delay(backoffFor(attempt, baseBackoffMs, maxBackoffMs));
+      await delay(backoffFor(attempt, baseBackoffMs, maxBackoffMs), externalSignal);
     }
   }
 
+  externalSignal?.throwIfAborted();
   throw lastError instanceof Error
     ? lastError
     : new Error('fetchWithTimeout: request failed');

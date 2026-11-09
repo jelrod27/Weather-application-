@@ -11,7 +11,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Satellite } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -177,7 +177,39 @@ const TIME_RANGES: { label: string; value: TimeRange }[] = [
   { label: '7D', value: '7D' },
 ];
 
+const FEED_NAMES: Record<ChartConfig['source'], string> = {
+  plasma: 'Solar wind plasma',
+  proton: 'GOES proton flux',
+  magnetometer: 'GOES magnetometer',
+  xray: 'GOES X-ray flux',
+};
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Bound both response headers and JSON parsing, even if abort is ignored. */
+async function fetchChartData(url: string): Promise<unknown> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    // Finish before the next scheduled poll so one hung feed cannot stall it.
+    timer = setTimeout(() => {
+      reject(new Error('Space weather feed request timed out'));
+      controller.abort();
+    }, 30_000);
+  });
+
+  try {
+    return await Promise.race([
+      fetch(url, { signal: controller.signal }).then(response => {
+        if (!response.ok) throw new Error(`Space weather feed fetch failed: ${response.status}`);
+        return response.json();
+      }),
+      deadline,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function getMinutesForRange(range: TimeRange): number {
   switch (range) {
@@ -195,14 +227,15 @@ function filterByRange(
   range: TimeRange
 ): Record<string, unknown>[] {
   const minutes = getMinutesForRange(range);
-  const cutoff = Date.now() - minutes * 60 * 1000;
+  const now = Date.now();
+  const cutoff = now - minutes * 60 * 1000;
   return data.filter((d) => {
     // swpcTimeTagMs, not `new Date(tag)`: SWPC tags omit the zone but mean UTC,
     // and a bare parse resolves them in the *viewer's* timezone. East of UTC
     // that shifts every point earlier than it really is, so a reader in Berlin
     // picking the 30m range saw empty charts.
     const ms = swpcTimeTagMs(d.time);
-    return Number.isFinite(ms) && ms >= cutoff;
+    return Number.isFinite(ms) && ms >= cutoff && ms <= now;
   });
 }
 
@@ -219,7 +252,7 @@ function extractTimeSeries(
     return {
       time: time.toISOString(),
       timestamp: time.getTime(),
-      value: val !== null && !isNaN(val as number) ? (val as number) : null,
+      value: val !== null && Number.isFinite(val) ? (val as number) : null,
     };
   }).sort((a, b) => a.timestamp - b.timestamp);
 }
@@ -288,12 +321,15 @@ interface ChartCardProps {
   config: ChartConfig;
   data: DataPoint[];
   range: TimeRange;
+  sourceFailed: boolean;
 }
 
-function ChartCard({ config, data, range }: ChartCardProps) {
+function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
   const stats = useMemo(() => getStats(data), [data]);
   const { title, unit, color, zeroLine, logScale, colorWhenNegative } = config;
 
+  const observed = data.filter(point => point.value !== null);
+  const coverage = observed.length > 0 ? `${new Date(observed[0].timestamp).toISOString().slice(0, 16).replace('T', ' ')} – ${new Date(observed[observed.length - 1].timestamp).toISOString().slice(0, 16).replace('T', ' ')}` : null;
   const useAreaChart = !!colorWhenNegative && zeroLine;
 
   return (
@@ -320,11 +356,12 @@ function ChartCard({ config, data, range }: ChartCardProps) {
         </span>
       </div>
 
+      {coverage && <p className="text-[10px] text-gray-500 mb-2">Observed UTC: {coverage}</p>}
       {/* Chart */}
       <div className="h-40">
-        {data.length === 0 ? (
+        {observed.length === 0 ? (
           <div className="flex items-center justify-center h-full text-xs text-gray-600">
-            No data available
+            {sourceFailed ? 'Feed unavailable' : 'No data available'}
           </div>
         ) : useAreaChart ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -357,7 +394,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
                 stroke={color}
                 strokeWidth={1.5}
                 fill={`url(#grad-${config.id}-pos)`}
-                connectNulls
+                connectNulls={false}
                 dot={false}
                 activeDot={{ r: 3, fill: color }}
                 isAnimationActive={false}
@@ -392,7 +429,7 @@ function ChartCard({ config, data, range }: ChartCardProps) {
                 stroke={color}
                 strokeWidth={1.5}
                 dot={false}
-                connectNulls
+                connectNulls={false}
                 activeDot={{ r: 3, fill: color }}
                 isAnimationActive={false}
               />
@@ -418,31 +455,35 @@ export default function SpaceWeatherCharts() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedSources, setFailedSources] = useState<ChartConfig['source'][]>([]);
 
-  const fetchData = useCallback(async (selectedRange: TimeRange) => {
-    setIsLoading(true);
-    setError(null);
+  const fetchGeneration = useRef(0);
+  const fetchPending = useRef(false);
+  const fetchData = useCallback(async (selectedRange: TimeRange, background = false) => {
+    // A slow foreground load must finish before polling can supersede it.
+    // Foreground range changes can still replace an in-flight background fetch.
+    if (background && fetchPending.current) return;
+    const generation = ++fetchGeneration.current;
+    fetchPending.current = true;
+    if (!background) {
+      setIsLoading(true);
+      setError(null);
+    }
 
     try {
       const results = await Promise.allSettled([
-        fetch(`/api/space-weather/plasma?range=${selectedRange.toLowerCase()}`).then((r) => {
-          if (!r.ok) throw new Error(`Plasma fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/proton-flux').then((r) => {
-          if (!r.ok) throw new Error(`Proton flux fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/magnetometer').then((r) => {
-          if (!r.ok) throw new Error(`Magnetometer fetch failed: ${r.status}`);
-          return r.json();
-        }),
-        fetch('/api/space-weather/xray-flux').then((r) => {
-          if (!r.ok) throw new Error(`X-ray flux fetch failed: ${r.status}`);
-          return r.json();
-        }),
+        fetchChartData(`/api/space-weather/plasma?range=${selectedRange.toLowerCase()}`),
+        fetchChartData('/api/space-weather/proton-flux'),
+        fetchChartData('/api/space-weather/magnetometer'),
+        fetchChartData('/api/space-weather/xray-flux'),
       ]);
 
+      if (generation !== fetchGeneration.current) return;
+      const allFailed = results.every((r) => r.status === 'rejected');
+      if (background && allFailed) {
+        setError('Failed to refresh space weather data. Any previous observations shown may be out of date.');
+        return;
+      }
       // Each route answers with a `{ data, source }` envelope, so the series
       // has to be unwrapped rather than read off the response body.
       setDatasets({
@@ -452,21 +493,32 @@ export default function SpaceWeatherCharts() {
         xray: xrayChartSeries(results[3]),
       });
 
-      const allFailed = results.every((r) => r.status === 'rejected');
-      if (allFailed) {
-        setError('Failed to fetch space weather data. Please try again.');
-      }
+      const sources: ChartConfig['source'][] = ['plasma', 'proton', 'magnetometer', 'xray'];
+      const failed = sources.filter((_, index) => results[index].status === 'rejected');
+      setFailedSources(failed);
+      setError(allFailed
+        ? 'Failed to fetch space weather data. Please try again.'
+        : failed.length > 0
+          ? `Space weather feeds unavailable: ${failed.map(source => FEED_NAMES[source]).join(', ')}. Other available feeds are shown.`
+          : null);
     } catch (err) {
+      if (generation !== fetchGeneration.current) return;
       console.error('[SpaceWeatherCharts]', err);
       setError('An unexpected error occurred while fetching data.');
     } finally {
-      setIsLoading(false);
+      if (generation === fetchGeneration.current) {
+        fetchPending.current = false;
+        setIsLoading(false);
+      }
     }
   }, []);
 
+  const invalidateFetch = useCallback(() => { fetchGeneration.current++; }, []);
   useEffect(() => {
-    fetchData(range);
-  }, [range, fetchData]);
+    void fetchData(range);
+    const timer = setInterval(() => { void fetchData(range, true); }, 60_000);
+    return () => { clearInterval(timer); invalidateFetch(); };
+  }, [range, fetchData, invalidateFetch]);
 
   const chartDataMap = useMemo(() => {
     const map: Record<string, DataPoint[]> = {};
@@ -509,10 +561,11 @@ export default function SpaceWeatherCharts() {
         </div>
       </div>
 
+      <p className="text-xs font-mono text-gray-500">Selected range is a display limit. Each chart shows its available observation window; feeds may cover less than 24H or 7D.</p>
       {/* Earth position marker */}
       <div className="text-[10px] font-mono text-gray-500 flex items-center gap-1.5">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500" />
-        Earth ~72min propagation from DSCOVR at L1
+        Solar wind at L1: Earth arrival depends on wind speed and propagation
       </div>
 
       {/* Loading state */}
@@ -533,7 +586,7 @@ export default function SpaceWeatherCharts() {
 
       {/* Error state */}
       {error && !isLoading && (
-        <div className="border border-red-500/50 rounded bg-red-500/10 p-4 text-center">
+        <div role="alert" className="border border-red-500/50 rounded bg-red-500/10 p-4 text-center">
           <div className="text-red-400 font-mono text-sm">{error}</div>
           <button
             onClick={() => fetchData(range)}
@@ -553,6 +606,7 @@ export default function SpaceWeatherCharts() {
               config={config}
               data={chartDataMap[config.id] ?? []}
               range={range}
+              sourceFailed={failedSources.includes(config.source)}
             />
           ))}
         </div>
@@ -564,7 +618,7 @@ export default function SpaceWeatherCharts() {
         themeClasses.text,
         'opacity-60'
       )}>
-        DATA: NOAA SWPC DSCOVR, GOES MAGNETOMETER, GOES X-RAY SENSOR, GOES PROTON SENSOR
+        DATA: NOAA SWPC RTSW, GOES MAGNETOMETER, GOES X-RAY SENSOR, GOES PROTON SENSOR
       </div>
     </div>
   );

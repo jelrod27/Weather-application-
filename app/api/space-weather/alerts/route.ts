@@ -30,24 +30,23 @@ export interface SpaceWeatherAlert {
 }
 
 // Parse alert type from product_id
-function parseAlertType(productId: string): SpaceWeatherAlert['type'] {
-  const upper = productId.toUpperCase();
-  if (upper.includes('WATCH')) return 'watch';
-  if (upper.includes('WARNING')) return 'warning';
-  if (upper.includes('ALERT')) return 'alert';
-  if (upper.includes('SUMMARY')) return 'summary';
-  return 'message';
+function parseAlertType(productId: string, message: string): SpaceWeatherAlert['type'] {
+  // NOAA's short product IDs do not contain English type names. Prefer its
+  // dedicated message code, then an anchored headline; unknowns stay neutral.
+  const code = message.match(/^Space Weather Message Code:\s*(\w+)/im)?.[1] ?? productId;
+  if (/^(WAT|WATCH)/i.test(code)) return 'watch';
+  if (/^(WAR|WARNING)/i.test(code)) return 'warning';
+  if (/^(ALT|ALERT)/i.test(code)) return 'alert';
+  if (/^(SUM|SUMMARY)/i.test(code)) return 'summary';
+  const headline = message.match(/^(WATCH|WARNING|ALERT|SUMMARY):/im)?.[1];
+  return headline ? headline.toLowerCase() as SpaceWeatherAlert['type'] : 'message';
 }
 
-// Determine severity from message content
 function parseSeverity(message: string): SpaceWeatherAlert['severity'] {
-  const upper = message.toUpperCase();
-  if (upper.includes('EXTREME') || upper.includes('G5') || upper.includes('S5') || upper.includes('R5')) return 'extreme';
-  if (upper.includes('SEVERE') || upper.includes('G4') || upper.includes('S4') || upper.includes('R4')) return 'severe';
-  if (upper.includes('STRONG') || upper.includes('G3') || upper.includes('S3') || upper.includes('R3')) return 'strong';
-  if (upper.includes('MODERATE') || upper.includes('G2') || upper.includes('S2') || upper.includes('R2')) return 'moderate';
-  if (upper.includes('MINOR') || upper.includes('G1') || upper.includes('S1') || upper.includes('R1')) return 'minor';
-  return 'info';
+  const declared = [...message.matchAll(/^NOAA Scale(?:s)?:[^\n]*?\b[GRS]([1-5])\b/gim)]
+    .map(match => Number(match[1]));
+  const maximum = Math.max(0, ...declared);
+  return (['info', 'minor', 'moderate', 'strong', 'severe', 'extreme'] as const)[maximum];
 }
 
 // Extract title from message
@@ -123,7 +122,7 @@ export async function GET(request: NextRequest) {
     const alerts: SpaceWeatherAlert[] = data
       .map((alert, index) => ({
         id: `${alert.product_id || "message"}-${alert.issue_datetime || index}`,
-        type: parseAlertType(alert.product_id || ''),
+        type: parseAlertType(alert.product_id || '', alert.message || ''),
         severity: parseSeverity(alert.message || ''),
         title: extractTitle(alert.message || '', alert.product_id || ''),
         issuedAt: alert.issue_datetime ? (/Z$|[+-]\d{2}:?\d{2}$/.test(alert.issue_datetime) ? alert.issue_datetime : alert.issue_datetime.replace(' ', 'T') + 'Z') : '',
