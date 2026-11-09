@@ -24,7 +24,8 @@ const FORECAST_TTL_SECONDS = 900
 /** Current planetary Kp, or null when SWPC is unreachable. */
 export async function loadCurrentKp(context: string): Promise<KpSample | null> {
   try {
-    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } })
+    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } },
+      data => parseCurrentKpIndex(data).current !== null)
     return parseCurrentKpIndex(payload).current
   } catch (error) {
     // logRouteError, not console.error: a bare console line never reaches

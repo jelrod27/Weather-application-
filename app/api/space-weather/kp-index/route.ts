@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 300 },
-      }),
+      }, payload => parseCurrentKpIndex(payload).current !== null),
       fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
         headers: { Accept: 'application/json' },
         next: { revalidate: 900 },

@@ -93,7 +93,9 @@ export function parseLatestXrayFlux(payload: unknown): FlareReading | null {
 /** Current long-band reading, or null when SWPC is unreachable. */
 export async function loadCurrentFlare(): Promise<FlareReading | null> {
   try {
-    const payload = await fetchSwpcJson(GOES_XRAY_URL, { next: { revalidate: 300 } })
+    const payload = await fetchSwpcJson(GOES_XRAY_URL, { next: { revalidate: 300 } }, data =>
+      Array.isArray(data) && parseLatestXrayFlux(data.filter(row => row
+        && isCurrentObservation(row.time_tag, CURRENT_MAX_AGE_MS.xray))) !== null)
     const dated = Array.isArray(payload) ? payload.filter(row => row
       && isCurrentObservation(row.time_tag, CURRENT_MAX_AGE_MS.xray)) : []
     return parseLatestXrayFlux(dated)

@@ -40,6 +40,12 @@ interface XRayReading {
   time_tag?: unknown;
 }
 
+function isLongWavelengthReading(entry: XRayReading): entry is XRayReading & { flux: number; time_tag: string } {
+  return entry?.energy === '0.1-0.8nm' &&
+    typeof entry.flux === 'number' && Number.isFinite(entry.flux) && entry.flux > 0 &&
+    typeof entry.time_tag === 'string';
+}
+
 // Convert flux value to flare classification
 function getFlareClass(flux: number): { class: string; fullClass: string } {
   if (flux >= 1e-4) {
@@ -68,7 +74,8 @@ export async function GET(request: NextRequest) {
     const data = await fetchSwpcJson<XRayReading[]>('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 60 }, // Cache for 1 minute
-    });
+    }, payload => Array.isArray(payload) && payload.some(entry =>
+      isLongWavelengthReading(entry) && isCurrentObservation(entry.time_tag, CURRENT_MAX_AGE_MS.xray)));
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No X-ray flux data available');
@@ -80,11 +87,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const longWavelengthReadings = data.filter(
       (entry): entry is XRayReading & { flux: number; time_tag: string } =>
-        entry?.energy === '0.1-0.8nm' &&
-        typeof entry.flux === 'number' &&
-        Number.isFinite(entry.flux) &&
-        entry.flux > 0 &&
-        typeof entry.time_tag === 'string' &&
+        isLongWavelengthReading(entry) &&
         isCurrentObservation(entry.time_tag, 24 * 60 * 60_000, now),
     ).sort((a, b) => swpcTimeTagMs(a.time_tag) - swpcTimeTagMs(b.time_tag));
     const latest = longWavelengthReadings.at(-1);
