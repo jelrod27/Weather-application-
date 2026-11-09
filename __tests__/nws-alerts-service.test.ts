@@ -172,6 +172,39 @@ describe('Weather Intensity Score (WIS)', () => {
   });
 
   describe('fetchActiveAlerts', () => {
+    it('keeps both attempts inside the original alert request deadline', async () => {
+      jest.useFakeTimers()
+      let attempts = 0
+      global.fetch = jest.fn(async (_url, options) => {
+        attempts++
+        if (attempts === 1) throw new TypeError('fetch failed')
+        return new Promise<Response>((_resolve, reject) => {
+          options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        })
+      })
+      try {
+        const result = expect(fetchActiveAlerts()).rejects.toMatchObject({ name: 'AbortError' })
+        await jest.advanceTimersByTimeAsync(25_000)
+        await result
+        expect(attempts).toBe(2)
+      } finally { jest.useRealTimers() }
+    })
+
+    it('recovers an alert collection after a transient transport failure', async () => {
+      global.fetch = jest.fn()
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+          type: 'FeatureCollection', features: [{ type: 'Feature', geometry: null, properties: {
+            id: 'test-warning', event: 'Tornado Warning', severity: 'Extreme',
+            urgency: 'Immediate', expires: '2099-01-01T00:00:00Z', areaDesc: 'Test county',
+          } }],
+        }) })
+
+      const result = await fetchActiveAlerts()
+      expect(result).toHaveLength(1)
+      expect(result[0]).toMatchObject({ id: 'test-warning', event: 'Tornado Warning' })
+    })
+
     it('should report alerts unavailable when API fails', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 

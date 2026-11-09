@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const kpData = await fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 300 }, // Cache for 5 minutes
-    });
+    }, payload => parseCurrentKpIndex(payload).current !== null);
 
     const current = parseCurrentKpIndex(kpData).current;
     const viewline = viewlineFor(current?.kp);

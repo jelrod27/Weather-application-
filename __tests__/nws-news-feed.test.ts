@@ -23,7 +23,7 @@ function page(features: unknown[], next?: string): Response {
   return Response.json({ type: 'FeatureCollection', features, ...(next ? { pagination: { next } } : {}) });
 }
 describe('NWS news evidence', () => {
-  beforeEach(() => { clearFeedSnapshots(); jest.useFakeTimers({ now: NOW }); });
+  beforeEach(() => { clearFeedSnapshots(); jest.useFakeTimers({ now: NOW, doNotFake: ['setTimeout', 'clearTimeout'] }); });
   afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
   it('uses supported national GeoJSON parameters and preserves structured warning facts', async () => {
