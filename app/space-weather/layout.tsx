@@ -1,3 +1,4 @@
+import { connection } from 'next/server'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -34,6 +35,10 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://www.16bitweather.co/space-weather' },
 }
 
-export default function SpaceWeatherLayout({ children }: { children: React.ReactNode }) {
+export default async function SpaceWeatherLayout({ children }: { children: React.ReactNode }): Promise<React.ReactNode> {
+  // NOAA loaders may recover stale or malformed cached data with no-store.
+  // Render every page at request time so that branch cannot switch a static
+  // route to dynamic during revalidation. Individual feed caches keep their TTLs.
+  await connection()
   return children
 }

@@ -12,6 +12,10 @@
  * detail, deep-sky object) are covered by their own builder tests.
  */
 
+// This suite reads metadata only. Keep request-time server APIs out of jsdom;
+// production rendering is checked against the built Next manifests separately.
+jest.mock('next/server', () => ({ connection: jest.fn().mockResolvedValue(undefined) }))
+
 import fs from 'fs'
 import path from 'path'
 import type { Metadata } from 'next'

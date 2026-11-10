@@ -148,6 +148,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           NEXT_PUBLIC_BASE_URL: http://localhost:3000
 
+      - name: Verify space-weather production rendering
+        run: npm run test:production:space-weather
+
   warm-playwright-cache:
     # PRs can only restore caches saved on main, and e2e-pr.yml never runs on
     # main, so without this job every PR re-downloads Chromium and saves a
