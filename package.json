@@ -16,6 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand",
+    "test:production:space-weather": "node --test tests/production/space-weather-rendering.test.mjs",
     "test:security-db": "node --test tests/database/*.test.mjs",
     "test:profile": "tsx scripts/test-profile-save.ts",
     "analyze": "ANALYZE=true npm run build",

@@ -71,9 +71,12 @@ const G_DESCRIPTIONS: Record<number, string> = {
 export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
-    const data: NOAAScalesResponse = await fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-scales.json', {
+    const data = await fetchSwpcJson<NOAAScalesResponse>('https://services.swpc.noaa.gov/products/noaa-scales.json', {
       headers: { Accept: 'application/json' },
       next: { revalidate: 300 }, // Cache for 5 minutes
+    }, payload => {
+      const current = payload?.['0'];
+      return !!current && isCurrentObservation(`${current.DateStamp}T${current.TimeStamp}Z`, CURRENT_MAX_AGE_MS.scales);
     });
 
     // Parse current scales (index '0' is current)
