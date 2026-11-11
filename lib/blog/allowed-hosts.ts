@@ -43,6 +43,13 @@ export const ALLOWED_BLOG_LINK_HOSTS: ReadonlySet<string> = new Set([
   'www.spc.noaa.gov',
   'www.nhc.noaa.gov',
 
+  // Aviation explainers and their source-coverage topic outline.
+  'volcanoes.usgs.gov',
+  'www.usgs.gov',
+  'forecast.weather.gov',
+  'aviationweather.gov',
+  'github.com',
+
   // Research and event reports cited by atmospheric-science explainers.
   'pmc.ncbi.nlm.nih.gov',
   'repository.library.noaa.gov',

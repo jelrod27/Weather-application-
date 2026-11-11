@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "d157d9bf6463ec2febe01582d4d105e33240e0f4e731a50029560f05ce77dbc4",
+  "auditSha256": "316429ed18bfb286552b1537d3f3625e5ca731b9f0972c5650ad677b0d323fd4",
+  "decision": "disclosed-partial",
+  "reviewer": "codex-editorial-review",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-11T22:05:49.259Z",
+  "gapDispositions": {
+    "news-headlines": "Headline aggregation remains partial and selected headlines were not retained. Checked the dated USGS volcano update, archived SPC Day 1 outlook, NWS Reno wind product, and USGS/AWC/NWS product definitions. Corrected the cited hazard descriptions and removed unsupported flight-impact claims. Source limitations remain disclosed to readers."
+  }
+}

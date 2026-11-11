@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "cadence": "wednesday_topic",
+  "generatedAt": "2026-11-11T18:56:52.296Z",
+  "window": {
+    "start": "2026-11-08T18:56:52.296Z",
+    "end": "2026-11-11T18:56:52.296Z"
+  },
+  "sources": [
+    {
+      "id": "editorial-topic",
+      "label": "Curated educational topic outline: Aviation Weather (not current observations)",
+      "url": "https://github.com/jelrod27/Weather-application-/blob/main/scripts/newsletter/topics.ts",
+      "retrievedAt": "2026-11-11T18:56:52.296Z",
+      "requested": {
+        "start": "2026-11-08T18:56:52.296Z",
+        "end": "2026-11-11T18:56:52.296Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-08T18:56:52.296Z",
+          "end": "2026-11-11T18:56:52.296Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 1,
+      "observationStart": null,
+      "observationEnd": null,
+      "unit": "curated topic outlines",
+      "reasons": []
+    },
+    {
+      "id": "news-headlines",
+      "label": "Recent headline sample (up to 40; original stories require review)",
+      "url": "https://www.16bitweather.co/api/news/rss?maxItems=40&maxAge=72",
+      "retrievedAt": "2026-11-11T18:56:53.475Z",
+      "requested": {
+        "start": "2026-11-08T18:56:52.296Z",
+        "end": "2026-11-11T18:56:52.296Z"
+      },
+      "covered": [],
+      "status": "partial",
+      "usable": true,
+      "records": 40,
+      "observationStart": "2026-11-10T18:37:00.000Z",
+      "observationEnd": "2026-11-11T18:41:00.000Z",
+      "unit": "sampled headlines",
+      "reasons": [
+        "Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals"
+      ]
+    }
+  ]
+}

@@ -17,6 +17,11 @@ describe('newsletter source links', () => {
     'https://arctic.noaa.gov/report-card/report-card-2023/greenland-ice-sheet-2023/',
     'https://galvestontx.gov/DocumentCenter/View/18247/City-of-Galveston-Hazard-Mitigation-Plan---2022-Update',
     'https://creativecommons.org/licenses/by-sa/3.0/',
+    'https://volcanoes.usgs.gov/hans-public/notice/DOI-USGS-HVO-2026-11-11T17:28:12+00:00',
+    'https://www.usgs.gov/programs/VHP/alert-level-system',
+    'https://forecast.weather.gov/product.php?issuedby=REV&product=NPW',
+    'https://aviationweather.gov/help/',
+    'https://github.com/jelrod27/Weather-application-/blob/main/scripts/newsletter/topics.ts',
   ])('allows an explainer citation without trusting lookalike hosts: %s', (url) => {
     expect(allowedBlogUrl(url)).toBe(url);
     expect(allowedBlogUrl(url.replace('https:', 'http:'))).toBeNull();
