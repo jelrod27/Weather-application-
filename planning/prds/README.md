@@ -6,6 +6,7 @@ This index separates current proposals from shipped specifications and historica
 
 | Document | Status | Current scope / next step |
 |---|---|---|
+| [PRD-winter-forecast-experience.md](./PRD-winter-forecast-experience.md) | **Active — approved, November 14, 2026** | Full CONUS Winter forecasting: national probability/impact maps, official local forecasts, timing, snow/ice accumulations, truthful source states and validation. |
 | [PRD-travel-turbulence-forecast.md](./PRD-travel-turbulence-forecast.md) | **Expansion proposal** | The US advisory slice shipped in #658. Broader North America forecasting and optional trip comparison remain proposals with source feasibility gates. |
 
 ## Completed research
