@@ -1,0 +1,179 @@
+{
+  "date": "2026-11-14",
+  "route": "/winter",
+  "beforeCommit": "3f90b9b",
+  "afterCommit": "53697aa",
+  "method": "Local Next production server; Lighthouse CLI desktop preset and default mobile; three runs per device per phase; default Clear Sky theme; real source requests; lab results, not field Core Web Vitals.",
+  "before": {
+    "desktop": {
+      "runs": [
+        {
+          "run": 1,
+          "fetchTime": "2026-11-14T17:31:59.482Z",
+          "performance": 82,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 708.0091999999999,
+          "cls": 0.3587802733148835
+        },
+        {
+          "run": 2,
+          "fetchTime": "2026-11-14T17:32:10.867Z",
+          "performance": 82,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 712.28535,
+          "cls": 0.3587802733148835
+        },
+        {
+          "run": 3,
+          "fetchTime": "2026-11-14T17:32:21.825Z",
+          "performance": 82,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 711.4454000000001,
+          "cls": 0.3587802733148835
+        }
+      ],
+      "median": {
+        "performance": 82,
+        "accessibility": 96,
+        "bestPractices": 96,
+        "seo": 100,
+        "lcpMs": 711.4454000000001,
+        "cls": 0.3587802733148835
+      }
+    },
+    "mobile": {
+      "runs": [
+        {
+          "run": 1,
+          "fetchTime": "2026-11-14T17:32:32.764Z",
+          "performance": 68,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3658.8806,
+          "cls": 0.5662211421628189
+        },
+        {
+          "run": 2,
+          "fetchTime": "2026-11-14T17:32:43.758Z",
+          "performance": 71,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3204.23105,
+          "cls": 0.5662211421628189
+        },
+        {
+          "run": 3,
+          "fetchTime": "2026-11-14T17:32:54.693Z",
+          "performance": 68,
+          "accessibility": 96,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3660.9336000000003,
+          "cls": 0.5662211421628189
+        }
+      ],
+      "median": {
+        "performance": 68,
+        "accessibility": 96,
+        "bestPractices": 96,
+        "seo": 100,
+        "lcpMs": 3658.8806,
+        "cls": 0.5662211421628189
+      }
+    }
+  },
+  "after": {
+    "desktop": {
+      "runs": [
+        {
+          "run": 1,
+          "fetchTime": "2026-11-14T17:50:39.389Z",
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 699.8914,
+          "cls": 0.003844800695420708
+        },
+        {
+          "run": 2,
+          "fetchTime": "2026-11-14T17:50:50.547Z",
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 700.3455500000001,
+          "cls": 0.003844800695420708
+        },
+        {
+          "run": 3,
+          "fetchTime": "2026-11-14T17:51:01.941Z",
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 697.6345,
+          "cls": 0.003844800695420708
+        }
+      ],
+      "median": {
+        "performance": 100,
+        "accessibility": 100,
+        "bestPractices": 96,
+        "seo": 100,
+        "lcpMs": 699.8914,
+        "cls": 0.003844800695420708
+      }
+    },
+    "mobile": {
+      "runs": [
+        {
+          "run": 1,
+          "fetchTime": "2026-11-14T17:51:13.255Z",
+          "performance": 89,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3757.9826999999996,
+          "cls": 0
+        },
+        {
+          "run": 2,
+          "fetchTime": "2026-11-14T17:51:24.268Z",
+          "performance": 89,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3756.61635,
+          "cls": 0
+        },
+        {
+          "run": 3,
+          "fetchTime": "2026-11-14T17:51:35.279Z",
+          "performance": 89,
+          "accessibility": 100,
+          "bestPractices": 96,
+          "seo": 100,
+          "lcpMs": 3756.5366999999997,
+          "cls": 0
+        }
+      ],
+      "median": {
+        "performance": 89,
+        "accessibility": 100,
+        "bestPractices": 96,
+        "seo": 100,
+        "lcpMs": 3756.61635,
+        "cls": 0
+      }
+    }
+  }
+}
