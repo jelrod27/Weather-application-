@@ -10,7 +10,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertTriangle, Info, Zap, Radio, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Info, Zap, Radio, Globe, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/lib/format-time-ago';
 import { themeTokens } from '@/lib/theme-tokens';
@@ -51,40 +51,26 @@ function getAlertIcon(type: SpaceWeatherAlert['type']) {
 function getSeverityColors(severity: SpaceWeatherAlert['severity']): string {
   switch (severity) {
     case 'extreme':
-      return 'text-purple-500 bg-purple-500/10 border-purple-500';
+      return 'text-[var(--sw-purple)] bg-purple-500/10 border-purple-500';
     case 'severe':
-      return 'text-terminal-accent-danger bg-terminal-accent-danger/10 border-terminal-accent-danger';
+      return 'text-[var(--sw-danger)] bg-red-500/10 border-red-500';
     case 'strong':
-      return 'text-orange-500 bg-orange-500/10 border-orange-500';
+      return 'text-[var(--sw-orange)] bg-orange-500/10 border-orange-500';
     case 'moderate':
-      return 'text-terminal-accent-warning bg-terminal-accent-warning/10 border-terminal-accent-warning';
+      return 'text-[var(--sw-warning)] bg-yellow-500/10 border-yellow-500';
     case 'minor':
-      return 'text-terminal-accent-warning bg-terminal-accent-warning/10 border-terminal-accent-warning';
+      return 'text-[var(--sw-warning)] bg-yellow-500/10 border-yellow-500';
     default:
-      return 'text-terminal-accent-info bg-terminal-accent-info/10 border-terminal-accent-info';
+      return 'text-[var(--sw-info)] bg-cyan-500/10 border-cyan-500';
   }
 }
 
-export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, unavailable = false }: SpaceWeatherAlertTickerProps) {
+export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, unavailable = false }: SpaceWeatherAlertTickerProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearResumeTimeout = () => {
-    if (resumeTimeoutRef.current) {
-      clearTimeout(resumeTimeoutRef.current);
-      resumeTimeoutRef.current = null;
-    }
-  };
-
-  const pauseAutoScrollTemporarily = () => {
-    setIsAutoScrolling(false);
-    clearResumeTimeout();
-    resumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 10000);
-  };
 
   // Initialize time on client mount and update every minute for "time ago" display
   useEffect(() => {
@@ -115,18 +101,14 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
     };
   }, [isAutoScrolling, alerts.length]);
 
-  useEffect(() => {
-    return () => clearResumeTimeout();
-  }, []);
-
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % alerts.length);
-    pauseAutoScrollTemporarily();
+    setIsAutoScrolling(false);
   };
 
   const goToPrev = () => {
     setCurrentIndex((prev) => (prev - 1 + alerts.length) % alerts.length);
-    pauseAutoScrollTemporarily();
+    setIsAutoScrolling(false);
   };
 
   if (isLoading) {
@@ -134,7 +116,7 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
       <Card className={cn('container-primary', themeClasses.background)}>
         <CardHeader className={'border-b border-subtle py-3'}>
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <AlertTriangle className="w-5 h-5 text-[var(--sw-warning)]" />
             RECENT NOAA MESSAGES
           </CardTitle>
         </CardHeader>
@@ -175,9 +157,9 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
   return (
     <Card className={cn('container-primary', themeClasses.background)} data-testid="alert-ticker">
       <CardHeader className={'border-b border-subtle py-3'}>
-        <div className="flex items-center justify-between">
-          <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <AlertTriangle className="w-5 h-5 text-yellow-500" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className={cn('text-lg font-mono font-bold flex flex-wrap items-center gap-2', themeClasses.headerText)}>
+            <AlertTriangle className="w-5 h-5 text-[var(--sw-warning)]" />
             RECENT NOAA MESSAGES
             <span className={cn('text-xs px-2 py-0.5 border', severityColors)}>
               {alerts.length} RECENT
@@ -185,13 +167,20 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
           </CardTitle>
           {alerts.length > 1 && (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={goToPrev}>
+              <Button variant="ghost" size="sm" onClick={goToPrev} aria-label="Previous NOAA message">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className={cn('text-xs font-mono', themeClasses.text)}>
                 {currentIndex + 1}/{alerts.length}
               </span>
-              <Button variant="ghost" size="sm" onClick={goToNext}>
+              <Button
+                variant="ghost" size="sm"
+                onClick={() => setIsAutoScrolling(value => !value)}
+                aria-label={isAutoScrolling ? 'Pause message rotation' : 'Resume message rotation'}
+              >
+                {isAutoScrolling ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={goToNext} aria-label="Next NOAA message">
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -199,7 +188,7 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        <div className={cn('p-4 border-2 transition-all duration-300', severityColors)}>
+        <div className={cn('p-4 border-2', severityColors)}>
           {/* Alert Header */}
           <div className="flex items-start justify-between gap-4 mb-2">
             <div className="flex items-center gap-2">
@@ -234,20 +223,23 @@ export default function SpaceWeatherAlertTicker({ alerts, isLoading = false, una
         </p>
         {/* Progress indicators */}
         {alerts.length > 1 && (
-          <div className="flex justify-center gap-1 mt-3">
+          <div className="flex flex-wrap justify-center gap-1 mt-3" aria-label="Choose NOAA message">
             {alerts.map((_, index) => (
               <button
                 key={index}
+                type="button"
+                aria-label={`Show NOAA message ${index + 1}`}
+                aria-current={index === currentIndex ? 'true' : undefined}
                 onClick={() => {
                   setCurrentIndex(index);
                   setIsAutoScrolling(false);
-                  setTimeout(() => setIsAutoScrolling(true), 10000);
                 }}
                 className={cn(
-                  'w-2 h-2 rounded-full transition-all duration-300',
-                  index === currentIndex ? 'bg-yellow-500 w-4' : 'bg-gray-600 hover:bg-gray-500'
+                  'flex h-11 w-11 items-center justify-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary hover:bg-muted'
                 )}
-              />
+              >
+                <span aria-hidden="true" className={cn('h-2 rounded-full', index === currentIndex ? 'bg-primary w-4' : 'bg-muted-foreground w-2')} />
+              </button>
             ))}
           </div>
         )}

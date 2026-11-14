@@ -28,14 +28,14 @@ interface SunspotDisplayProps {
 
 // Get sunspot activity level - using semantic terminal colors
 function getActivityLevel(count: number): { text: string; color: string } {
-  if (count < 30) return { text: 'QUIET', color: 'text-terminal-accent-info' };
-  if (count < 80) return { text: 'LOW', color: 'text-terminal-accent-success' };
-  if (count < 130) return { text: 'MODERATE', color: 'text-terminal-accent-warning' };
-  if (count < 180) return { text: 'HIGH', color: 'text-orange-500' };
-  return { text: 'VERY HIGH', color: 'text-terminal-accent-danger' };
+  if (count < 30) return { text: 'QUIET', color: 'text-[var(--sw-info)]' };
+  if (count < 80) return { text: 'LOW', color: 'text-[var(--sw-success)]' };
+  if (count < 130) return { text: 'MODERATE', color: 'text-[var(--sw-warning)]' };
+  if (count < 180) return { text: 'HIGH', color: 'text-[var(--sw-orange)]' };
+  return { text: 'VERY HIGH', color: 'text-[var(--sw-danger)]' };
 }
 
-export default function SunspotDisplay({ data, isLoading = false }: SunspotDisplayProps) {
+export default function SunspotDisplay({ data, isLoading = false }: SunspotDisplayProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   if (isLoading) {
     return (
@@ -56,13 +56,13 @@ export default function SunspotDisplay({ data, isLoading = false }: SunspotDispl
   }
 
   const sunspotCount = data?.current?.sunspotNumber ?? null;
-  const activity = sunspotCount === null ? { text: 'UNAVAILABLE', color: 'text-terminal-text-muted' } : getActivityLevel(sunspotCount);
+  const activity = sunspotCount === null ? { text: 'UNAVAILABLE', color: 'text-muted-foreground' } : getActivityLevel(sunspotCount);
 
   return (
     <Card className={cn('container-primary', themeClasses.background)}>
       <CardHeader className={'border-b border-subtle py-3'}>
         <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-          <Sun className="w-5 h-5 text-yellow-500" />
+          <Sun className="w-5 h-5 text-[var(--sw-warning)]" />
           SUNSPOTS
         </CardTitle>
       </CardHeader>
@@ -72,7 +72,7 @@ export default function SunspotDisplay({ data, isLoading = false }: SunspotDispl
           <div className="relative">
             <div className={cn(
               'w-20 h-20 flex items-center justify-center text-3xl font-bold font-mono rounded-full border-4',
-              'bg-yellow-500/20 border-yellow-500 text-yellow-500'
+              'bg-yellow-500/20 border-yellow-500 text-[var(--sw-warning)]'
             )}>
               {sunspotCount ?? '--'}
             </div>

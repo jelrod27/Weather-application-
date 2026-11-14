@@ -25,24 +25,22 @@ describe('CompactScales', () => {
     expect(screen.getByText('STRONG')).toBeDefined();
   });
 
-  it('should render nothing when data is null', () => {
-    const { container } = render(<CompactScales data={null} />);
-    expect(container.innerHTML).toBe('');
+  it('keeps all scale slots visible as unavailable when data is missing', () => {
+    render(<CompactScales data={null} />);
+    expect(screen.getAllByText('UNAVAILABLE')).toHaveLength(3);
+    expect(screen.queryByText('NONE')).not.toBeInTheDocument();
+    expect(screen.getByText('R:')).toBeInTheDocument();
+    expect(screen.getByText('S:')).toBeInTheDocument();
+    expect(screen.getByText('G:')).toBeInTheDocument();
   });
 
-  it('should apply color coding based on scale severity', () => {
-    const data = {
+  it('labels moderate and extreme conditions without relying on color', () => {
+    render(<CompactScales data={{
       R: { scale: 0, text: 'None', description: '' },
       S: { scale: 2, text: 'Moderate', description: '' },
       G: { scale: 5, text: 'Extreme', description: '' },
-    };
-
-    const { container } = render(<CompactScales data={data} />);
-
-    // Green for 0, yellow for 1-2, red for 4-5
-    const scaleItems = container.querySelectorAll('[data-scale]');
-    expect(scaleItems[0].className).toContain('text-green');
-    expect(scaleItems[1].className).toContain('text-yellow');
-    expect(scaleItems[2].className).toContain('text-red');
+    }} />);
+    expect(screen.getByText('MODERATE')).toBeInTheDocument();
+    expect(screen.getByText('EXTREME')).toBeInTheDocument();
   });
 });

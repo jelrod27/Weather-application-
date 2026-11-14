@@ -51,10 +51,10 @@ describe('CommandCenterTab', () => {
 
   it('shows unavailable recent messages when the alerts feed fails', async () => {
     const CommandCenterTab = (await import('@/components/space-weather/tabs/CommandCenterTab')).default;
-    const { container } = render(<CommandCenterTab {...mockProps} alertsAvailable={false} />);
+    render(<CommandCenterTab {...mockProps} alertsAvailable={false} />);
 
     expect(screen.getByText('Recent messages').previousElementSibling).toHaveTextContent('—');
-    expect(container.querySelector('[data-unavailable="true"]')).not.toBeNull();
+    expect(screen.getByText(/NOAA messages are temporarily unavailable/)).toBeInTheDocument();
   });
 });
 

@@ -40,13 +40,13 @@ const AURORA_IMAGES = {
 
 // Get color based on Kp level
 function getKpColor(kp: number): string {
-  if (kp < 3) return 'text-green-500';
-  if (kp < 5) return 'text-yellow-500';
-  if (kp < 7) return 'text-orange-500';
-  return 'text-red-500';
+  if (kp < 3) return 'text-[var(--sw-success)]';
+  if (kp < 5) return 'text-[var(--sw-warning)]';
+  if (kp < 7) return 'text-[var(--sw-orange)]';
+  return 'text-[var(--sw-danger)]';
 }
 
-export default function AuroraForecastMap({ data, isLoading = false }: AuroraForecastMapProps) {
+export default function AuroraForecastMap({ data, isLoading = false }: AuroraForecastMapProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const [hemisphere, setHemisphere] = useState<'north' | 'south'>(data?.hemisphere ?? 'north');
   const lastDataHemisphere = useRef(data?.hemisphere);
@@ -108,11 +108,11 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
       <CardHeader className={'border-b border-subtle py-3'}>
         <div className="flex items-center justify-between">
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <Sparkles className="w-5 h-5 text-green-400" />
+            <Sparkles className="w-5 h-5 text-[var(--sw-success)]" />
             AURORA FORECAST
             <span className={cn(
               'text-xs px-2 py-0.5 border border-current bg-current/10',
-              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-gray-400',
+              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-muted-foreground',
             )}>
               {currentKpDisplay != null ? `Kp ${currentKpDisplay}` : 'Kp --'}
             </span>
@@ -121,6 +121,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
             variant="ghost"
             size="sm"
             onClick={handleRefresh}
+            aria-label="Refresh aurora forecast image"
             className="font-mono text-xs"
           >
             <RefreshCw className="w-4 h-4" />
@@ -135,7 +136,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
             className={cn(
               'p-2 card-inner font-mono text-xs transition-all duration-200 rounded',
               hemisphere === 'north'
-                ? 'ring-2 ring-green-500/50 bg-green-500/20 text-green-500'
+                ? 'ring-2 ring-green-500/50 bg-green-500/20 text-[var(--sw-success)]'
                 : cn('hover:bg-gray-800', themeClasses.text)
             )}
           >
@@ -147,7 +148,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
             className={cn(
               'p-2 card-inner font-mono text-xs transition-all duration-200 rounded',
               hemisphere === 'south'
-                ? 'ring-2 ring-green-500/50 bg-green-500/20 text-green-500'
+                ? 'ring-2 ring-green-500/50 bg-green-500/20 text-[var(--sw-success)]'
                 : cn('hover:bg-gray-800', themeClasses.text)
             )}
           >
@@ -159,16 +160,16 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
         {/* Aurora Forecast Image */}
         <div className="relative aspect-square bg-black rounded-lg overflow-hidden" style={{ minHeight: '200px' }}>
           {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
-              <div className={cn('text-sm font-mono', themeClasses.text, 'animate-pulse')}>
+            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+              <div className={cn('text-sm font-mono', themeClasses.text)}>
                 LOADING AURORA DATA...
               </div>
             </div>
           )}
 
           {imageError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
-              <Sparkles className="w-12 h-12 text-gray-600 mb-2" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+              <Sparkles className="w-12 h-12 text-muted-foreground mb-2" />
               <div className={cn('text-sm font-mono', themeClasses.text)}>
                 Aurora image unavailable
               </div>
@@ -195,8 +196,8 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
-              <div className={cn('text-sm font-mono', themeClasses.text, 'animate-pulse')}>
+            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+              <div className={cn('text-sm font-mono', themeClasses.text)}>
                 LOADING AURORA DATA...
               </div>
             </div>
@@ -211,7 +212,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
         {/* Viewline Info */}
         <div className={'p-3 card-inner rounded'}>
           <div className="flex items-center gap-2 mb-2">
-            <MapPin className="w-4 h-4 text-green-400" />
+            <MapPin className="w-4 h-4 text-[var(--sw-success)]" />
             <span className={cn('text-xs font-mono font-bold uppercase', themeClasses.headerText)}>
               APPROXIMATE AURORA VIEWLINE
             </span>
@@ -222,7 +223,7 @@ export default function AuroraForecastMap({ data, isLoading = false }: AuroraFor
             </span>
             <span className={cn(
               'text-lg font-bold font-mono',
-              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-gray-400',
+              currentKpDisplay != null ? getKpColor(currentKpDisplay) : 'text-muted-foreground',
             )}>
               {viewlineLatitude == null
                 ? '--'

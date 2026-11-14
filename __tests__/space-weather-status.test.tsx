@@ -28,7 +28,7 @@ describe('Space Weather overall status', () => {
   it('shows unavailable when both condition feeds fail', () => {
     render(<SolarCommandTerminal {...props} />)
     expect(screen.queryByText('QUIET', { exact: true })).not.toBeInTheDocument()
-    expect(screen.getByText('UNAVAILABLE', { exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Space weather status' })).toHaveTextContent('UNAVAILABLE')
   })
 
   it.each([
@@ -75,6 +75,6 @@ describe('Space Weather dashboard failures', () => {
     fetchMock.mockResolvedValue({ ok: false, status: 503 })
     await act(async () => { jest.advanceTimersByTime(5 * 60_000) })
     expect(screen.queryByText('QUIET', { exact: true })).not.toBeInTheDocument()
-    expect(screen.getByText('UNAVAILABLE', { exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Space weather status' })).toHaveTextContent('UNAVAILABLE')
   })
 })

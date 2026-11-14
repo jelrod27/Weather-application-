@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useEffect, useState, Suspense, lazy, useCallback, startTransition } from 'react';
+import React, { useEffect, useState, useCallback, startTransition } from 'react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import PageWrapper from '@/components/page-wrapper';
@@ -22,8 +22,8 @@ import type { AuroraForecastData } from '@/components/space-weather/AuroraForeca
 import type { SpaceWeatherScalesData } from '@/components/space-weather/SpaceWeatherScales';
 import { ShareButtons } from '@/components/share-buttons';
 
-// Lazy load the heavy terminal component
-const SolarCommandTerminal = lazy(() => import('@/components/space-weather/SolarCommandTerminal'));
+import SolarCommandTerminal from '@/components/space-weather/SolarCommandTerminal';
+import styles from '@/components/space-weather/space-weather.module.css';
 
 interface SpaceWeatherData {
   scales: SpaceWeatherScalesData | null;
@@ -36,7 +36,7 @@ interface SpaceWeatherData {
   auroraForecast: AuroraForecastData | null;
 }
 
-export default function SpaceWeatherClient() {
+export default function SpaceWeatherClient({ children }: { children?: React.ReactNode }): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const [data, setData] = useState<SpaceWeatherData>({
     scales: null,
@@ -147,7 +147,7 @@ export default function SpaceWeatherClient() {
 
   return (
     <PageWrapper>
-      <div className={cn('container mx-auto px-4 py-8', themeClasses.background)}>
+      <div className={cn('container mx-auto px-4 py-8', themeClasses.background, styles.monitor)}>
         {/* Header Section */}
         <div className="mb-8">
           <h1
@@ -165,44 +165,39 @@ export default function SpaceWeatherClient() {
             ESA/NASA SOHO.
           </p>
         </div>
-          <ShareButtons
-            config={{
-              title: 'Space Weather Monitor — Solar Flare Tracker & Kp Index',
-              text: 'Live space weather tracker: solar flares, Kp index, solar wind, and aurora forecast at 16bitweather.co',
-              url: 'https://www.16bitweather.co/space-weather',
-            }}
-            className="mt-3"
-          />
+        <ShareButtons
+          config={{
+            title: 'Space Weather Monitor — Solar Flare Tracker & Kp Index',
+            text: 'Live space weather tracker: solar flares, Kp index, solar wind, and aurora forecast at 16bitweather.co',
+            url: 'https://www.16bitweather.co/space-weather',
+          }}
+          className="mt-3"
+        />
 
         {/* Error Display */}
         {error && (
           <div role="alert" className={cn(
             'mb-6 p-4 border-4 border-red-500 bg-red-500/10 font-mono text-sm',
-            'text-red-500'
+            'text-[var(--sw-danger)]'
           )}>
             {error}
           </div>
         )}
 
         {/* Main Terminal */}
-        <Suspense fallback={
-          <div className={cn('border-4 p-8 text-center font-mono', themeClasses.borderColor, themeClasses.background)}>
-            <div className="animate-pulse">Initializing Solar Command Terminal...</div>
-          </div>
-        }>
-          <SolarCommandTerminal
-            scales={data.scales}
-            alerts={data.alerts}
-            alertsAvailable={data.alertsAvailable}
-            kpIndex={data.kpIndex}
-            solarWind={data.solarWind}
-            sunspots={data.sunspots}
-            xrayFlux={data.xrayFlux}
-            auroraForecast={data.auroraForecast}
-            isLoading={isLoading}
-          />
-        </Suspense>
+        <SolarCommandTerminal
+          scales={data.scales}
+          alerts={data.alerts}
+          alertsAvailable={data.alertsAvailable}
+          kpIndex={data.kpIndex}
+          solarWind={data.solarWind}
+          sunspots={data.sunspots}
+          xrayFlux={data.xrayFlux}
+          auroraForecast={data.auroraForecast}
+          isLoading={isLoading}
+        />
       </div>
+      {children}
     </PageWrapper>
   );
 }

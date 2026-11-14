@@ -56,12 +56,12 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
       <main className="relative z-10">
         {children}
       </main>
-      {showFooter && <footer className="site-footer border-t border-border/40 bg-black/30 mt-16">
+      {showFooter && <footer className="site-footer border-t border-border/40 bg-card mt-16">
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm font-mono">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Weather</h3>
-              <nav className="flex flex-col gap-1.5">
+              <nav aria-label="Weather tools" className="flex flex-col gap-1.5">
                 <Link href="/radar" className="text-muted-foreground hover:text-foreground transition-colors">Radar</Link>
                 <Link href="/severe" className="text-muted-foreground hover:text-foreground transition-colors">Severe Weather</Link>
                 <Link href="/aviation" className="text-muted-foreground hover:text-foreground transition-colors">Aviation</Link>
@@ -88,7 +88,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
             </div>
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Tools</h3>
-              <nav className="flex flex-col gap-1.5">
+              <nav aria-label="Planning tools" className="flex flex-col gap-1.5">
                 <Link href="/warnings" className="text-muted-foreground hover:text-foreground transition-colors">Warnings</Link>
                 <Link href="/alerts" className="text-muted-foreground hover:text-foreground transition-colors">Weather Alerts</Link>
                 <Link href="/weather" className="text-muted-foreground hover:text-foreground transition-colors">City Climate Guides</Link>
@@ -99,7 +99,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
             </div>
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Learn</h3>
-              <nav className="flex flex-col gap-1.5">
+              <nav aria-label="Weather education" className="flex flex-col gap-1.5">
                 <Link href="/education" className="text-muted-foreground hover:text-foreground transition-colors">Education</Link>
                 <Link href="/education/glossary" className="text-muted-foreground hover:text-foreground transition-colors">Weather Glossary</Link>
                 <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
@@ -110,7 +110,7 @@ export default function PageWrapper({ children, weatherLocation, weatherTemperat
             </div>
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Site</h3>
-              <nav className="flex flex-col gap-1.5">
+              <nav aria-label="About this site" className="flex flex-col gap-1.5">
                 <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">About</Link>
                 <Link href="/weather-systems" className="text-muted-foreground hover:text-foreground transition-colors">Weather Systems</Link>
               </nav>

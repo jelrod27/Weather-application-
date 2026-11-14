@@ -33,43 +33,43 @@ interface SolarWindStatsProps {
 
 // Get speed status
 function getSpeedStatus(speed: number): { text: string; color: string } {
-  if (speed < 350) return { text: 'SLOW', color: 'text-green-500' };
-  if (speed < 450) return { text: 'NORMAL', color: 'text-green-400' };
-  if (speed < 550) return { text: 'ELEVATED', color: 'text-yellow-500' };
-  if (speed < 700) return { text: 'HIGH', color: 'text-orange-500' };
-  return { text: 'EXTREME', color: 'text-red-500' };
+  if (speed < 350) return { text: 'SLOW', color: 'text-[var(--sw-success)]' };
+  if (speed < 450) return { text: 'NORMAL', color: 'text-[var(--sw-success)]' };
+  if (speed < 550) return { text: 'ELEVATED', color: 'text-[var(--sw-warning)]' };
+  if (speed < 700) return { text: 'HIGH', color: 'text-[var(--sw-orange)]' };
+  return { text: 'EXTREME', color: 'text-[var(--sw-danger)]' };
 }
 
 // Get Bz status (negative = southward = geomagnetically active)
 function getBzStatus(bz: number): { text: string; color: string; isWarning: boolean } {
-  if (bz > 2) return { text: 'NORTH', color: 'text-green-500', isWarning: false };
-  if (bz > -2) return { text: 'NEUTRAL', color: 'text-gray-400', isWarning: false };
-  if (bz > -5) return { text: 'SOUTH', color: 'text-yellow-500', isWarning: true };
-  if (bz > -10) return { text: 'STRONG SOUTH', color: 'text-orange-500', isWarning: true };
-  return { text: 'EXTREME SOUTH', color: 'text-red-500', isWarning: true };
+  if (bz > 2) return { text: 'NORTH', color: 'text-[var(--sw-success)]', isWarning: false };
+  if (bz > -2) return { text: 'NEUTRAL', color: 'text-muted-foreground', isWarning: false };
+  if (bz > -5) return { text: 'SOUTH', color: 'text-[var(--sw-warning)]', isWarning: true };
+  if (bz > -10) return { text: 'STRONG SOUTH', color: 'text-[var(--sw-orange)]', isWarning: true };
+  return { text: 'EXTREME SOUTH', color: 'text-[var(--sw-danger)]', isWarning: true };
 }
 
 // Get density status
 function getDensityStatus(density: number): { text: string; color: string } {
-  if (density < 3) return { text: 'LOW', color: 'text-gray-400' };
-  if (density < 8) return { text: 'NORMAL', color: 'text-green-400' };
-  if (density < 15) return { text: 'ELEVATED', color: 'text-yellow-500' };
-  return { text: 'HIGH', color: 'text-orange-500' };
+  if (density < 3) return { text: 'LOW', color: 'text-muted-foreground' };
+  if (density < 8) return { text: 'NORMAL', color: 'text-[var(--sw-success)]' };
+  if (density < 15) return { text: 'ELEVATED', color: 'text-[var(--sw-warning)]' };
+  return { text: 'HIGH', color: 'text-[var(--sw-orange)]' };
 }
 
 // Get trend icon
 function TrendIcon({ trend }: { trend: SolarWindData['trend'] }) {
   switch (trend) {
     case 'increasing':
-      return <ArrowUp className="w-4 h-4 text-red-500" />;
+      return <ArrowUp className="w-4 h-4 text-[var(--sw-danger)]" />;
     case 'decreasing':
-      return <ArrowDown className="w-4 h-4 text-green-500" />;
+      return <ArrowDown className="w-4 h-4 text-[var(--sw-success)]" />;
     default:
-      return <Minus className="w-4 h-4 text-gray-500" />;
+      return <Minus className="w-4 h-4 text-muted-foreground" />;
   }
 }
 
-export default function SolarWindStats({ data, isLoading = false }: SolarWindStatsProps) {
+export default function SolarWindStats({ data, isLoading = false }: SolarWindStatsProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   if (isLoading) {
@@ -96,11 +96,11 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
   const bz = data?.current?.bz ?? null;
   const bt = data?.current?.bt ?? null;
 
-  const unavailable = { text: 'UNAVAILABLE', color: 'text-gray-400' };
+  const unavailable = { text: 'UNAVAILABLE', color: 'text-muted-foreground' };
   const speedStatus = speed === null ? unavailable : getSpeedStatus(speed);
   const bzStatus =
     bz == null
-      ? { text: 'UNAVAILABLE', color: 'text-gray-400', isWarning: false }
+      ? { text: 'UNAVAILABLE', color: 'text-muted-foreground', isWarning: false }
       : getBzStatus(bz);
   const densityStatus = density === null ? unavailable : getDensityStatus(density);
 
@@ -109,7 +109,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
       <CardHeader className={'border-b border-subtle py-3'}>
         <div className="flex items-center justify-between">
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <Wind className="w-5 h-5 text-cyan-500" />
+            <Wind className="w-5 h-5 text-[var(--sw-info)]" />
             SOLAR WIND
           </CardTitle>
           {data?.trend && (
@@ -167,7 +167,7 @@ export default function SolarWindStats({ data, isLoading = false }: SolarWindSta
           <div>
             <div className={cn('text-xs font-mono uppercase mb-1 flex items-center gap-1', themeClasses.text)}>
               Bz (IMF)
-              {bzStatus.isWarning && <AlertTriangle className="w-3 h-3 text-yellow-500" />}
+              {bzStatus.isWarning && <AlertTriangle className="w-3 h-3 text-[var(--sw-warning)]" />}
             </div>
             <div className="flex items-baseline gap-2">
               <span className={cn('text-2xl font-bold font-mono', bzStatus.color)}>

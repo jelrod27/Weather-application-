@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { safeJsonLd } from '@/lib/utils'
 import SpaceWeatherSeoContent, {
   buildSpaceWeatherAppJsonLd,
@@ -26,19 +25,12 @@ export default async function SpaceWeatherPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4 py-16 font-mono text-center text-weather-muted">
-            Loading space weather monitor…
-          </div>
-        }
-      >
-        <SpaceWeatherClient />
-      </Suspense>
-      <SpaceWeatherSeoContent
-        kp={kpSnapshot?.kp ?? null}
-        kpTimeTag={kpSnapshot?.timeTag ?? null}
-      />
+      <SpaceWeatherClient>
+        <SpaceWeatherSeoContent
+          kp={kpSnapshot?.kp ?? null}
+          kpTimeTag={kpSnapshot?.timeTag ?? null}
+        />
+      </SpaceWeatherClient>
     </>
   )
 }

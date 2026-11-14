@@ -82,7 +82,7 @@ const FRAME_INTERVAL = 500;
 // Maximum number of failed frames before falling back to animated GIF
 const MAX_FAILED_FRAMES = 3;
 
-export default function CoronagraphAnimation({ className }: CoronagraphAnimationProps) {
+export default function CoronagraphAnimation({ className }: CoronagraphAnimationProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   const [camera, setCamera] = useState<Camera>('c2');
@@ -406,10 +406,10 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
           {/* Coronagraph Image */}
           <div className="relative aspect-square bg-black rounded-lg overflow-hidden border-2 border-gray-700">
             {(isLoading || isLoadingFrames) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
                 <div className={cn('text-sm font-mono text-center', themeClasses.text)}>
-                  <div className="animate-pulse mb-2">ACQUIRING CORONAGRAPH DATA...</div>
-                  <div className="text-xs opacity-60">
+                  <div className="mb-2">ACQUIRING CORONAGRAPH DATA...</div>
+                  <div className="text-xs">
                     {viewMode === 'animated'
                       ? 'Loading provider animation'
                       : viewMode === 'frames'
@@ -462,7 +462,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
             )}
           </div>
 
-          {imageError && <div role="alert" className="text-xs font-mono text-orange-400">Coronagraph image unavailable. Refresh to retry.</div>}
+          {imageError && <div role="alert" className="text-xs font-mono text-[var(--sw-orange)]">Coronagraph image unavailable. Refresh to retry.</div>}
 
           {/* Playback Controls (Frame Mode Only - hidden when using fallback GIF) */}
           {viewMode === 'frames' && frames.length > 0 && !shouldUseFallback() && (
@@ -527,7 +527,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
 
           {/* Frame Load Error/Info Message */}
           {frameLoadError && viewMode === 'frames' && (
-            <div className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-orange-400">
+            <div className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-[var(--sw-orange)]">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{frameLoadError}</span>
             </div>
@@ -558,7 +558,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
               className={cn(
                 'p-2 card-inner font-mono text-xs transition-all duration-200 rounded',
                 camera === 'c2'
-                  ? 'ring-2 ring-cyan-500/50 bg-cyan-500/20 text-cyan-500'
+                  ? 'ring-2 ring-cyan-500/50 bg-cyan-500/20 text-[var(--sw-info)]'
                   : cn('hover:bg-gray-800', themeClasses.text)
               )}
             >
@@ -570,7 +570,7 @@ export default function CoronagraphAnimation({ className }: CoronagraphAnimation
               className={cn(
                 'p-2 card-inner font-mono text-xs transition-all duration-200 rounded',
                 camera === 'c3'
-                  ? 'ring-2 ring-cyan-500/50 bg-cyan-500/20 text-cyan-500'
+                  ? 'ring-2 ring-cyan-500/50 bg-cyan-500/20 text-[var(--sw-info)]'
                   : cn('hover:bg-gray-800', themeClasses.text)
               )}
             >

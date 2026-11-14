@@ -34,6 +34,8 @@
     "__tests__/solar-flare-timeline.test.tsx",
     "tests/e2e/space-weather.spec.ts",
     "tests/e2e/space-weather-rendering.spec.ts",
+    "tests/e2e/space-weather-accessibility.spec.ts",
+    "__tests__/space-weather-messages.test.tsx",
     "__tests__/space-weather/observation-recovery.test.ts",
     "__tests__/severe-alert-recipient-loading.test.ts",
     "__tests__/push-delivery-security.test.ts",

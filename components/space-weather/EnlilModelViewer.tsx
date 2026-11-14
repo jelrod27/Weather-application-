@@ -52,7 +52,7 @@ function isImageUrl(url: unknown): url is string {
   return typeof url === 'string' && ENLIL_IMAGE.test(url);
 }
 
-export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
+export default function EnlilModelViewer({ className }: EnlilModelViewerProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   const [frames, setFrames] = useState<EnlilFrame[]>([]);
@@ -232,10 +232,10 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
         <div className="relative aspect-square bg-black rounded-lg overflow-hidden border-2 border-gray-700">
           {/* Loading skeleton */}
           {(isLoading || (!imageLoaded && !error)) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
               <div className={cn('text-sm font-mono text-center', themeClasses.text)}>
-                <div className="animate-pulse mb-2">ACQUIRING ENLIL MODEL DATA...</div>
-                <div className="text-xs opacity-60">Loading solar wind propagation model</div>
+                <div className="mb-2">ACQUIRING ENLIL MODEL DATA...</div>
+                <div className="text-xs">Loading solar wind propagation model</div>
               </div>
             </div>
           )}
@@ -280,7 +280,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
 
         {/* Error message */}
         {error && (
-          <div role="alert" className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-orange-400">
+          <div role="alert" className="flex items-center gap-2 text-xs font-mono px-3 py-2 bg-orange-500/20 rounded text-[var(--sw-orange)]">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -292,6 +292,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
             {/* Slider / Progress Bar */}
             <input
               type="range"
+              aria-label="Solar wind model frame"
               min={0}
               max={frames.length - 1}
               value={currentFrameIndex}
@@ -315,6 +316,7 @@ export default function EnlilModelViewer({ className }: EnlilModelViewerProps) {
                 variant="outline"
                 size="sm"
                 onClick={togglePlayPause}
+                aria-label={isPlaying ? 'Pause solar wind model' : 'Play solar wind model'}
                 className={cn('font-mono text-xs px-4', isPlaying && 'bg-green-500/20 ring-2 ring-green-500')}
                 data-testid="enlil-play"
               >

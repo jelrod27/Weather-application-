@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface Wavelength {
   id: string;
@@ -103,7 +104,7 @@ interface SunImageViewerProps {
   className?: string;
 }
 
-export default function SunImageViewer({ className }: SunImageViewerProps) {
+export default function SunImageViewer({ className }: SunImageViewerProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const [selectedWavelength, setSelectedWavelength] = useState<Wavelength>(WAVELENGTHS[0]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,6 +112,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [imageError, setImageError] = useState(false);
   const [showFullsize, setShowFullsize] = useState(false);
+  const expandButtonRef = useRef<HTMLButtonElement>(null);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [imageUrl, setImageUrl] = useState('');
@@ -192,11 +194,11 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
     <>
       <Card className={cn('container-primary', themeClasses.background, className)}>
         <CardHeader className="border-b border-subtle py-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className={cn('text-lg font-mono font-bold flex flex-wrap items-center gap-2', themeClasses.headerText)}>
               <Sun className="w-5 h-5 text-orange-500" />
               SUN VIEWER
-              <span className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-500 rounded">
+              <span className="text-xs px-2 py-0.5 bg-primary/10 text-foreground rounded">
                 {imageSource || 'SOLAR IMAGERY'}
               </span>
             </CardTitle>
@@ -205,6 +207,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
+                aria-label="Refresh solar image"
                 disabled={isLoading}
                 className="font-mono text-xs"
               >
@@ -214,6 +217,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowFullsize(true)}
+                ref={expandButtonRef}
                 aria-label="Expand solar image"
                 className="font-mono text-xs"
               >
@@ -224,18 +228,18 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
         </CardHeader>
         <CardContent className="p-4 space-y-4">
           {/* Sun Image */}
-          <div className="relative aspect-square bg-black rounded-lg overflow-hidden">
+          <div className="relative aspect-square w-full max-w-md mx-auto bg-black rounded-lg overflow-hidden">
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                <div className={cn('text-sm font-mono', themeClasses.text, 'animate-pulse')}>
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <div className={cn('text-sm font-mono', themeClasses.text)}>
                   ACQUIRING SOLAR DATA...
                 </div>
               </div>
             )}
             {imageError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
                 <div className="text-center">
-                  <div className="text-red-500 font-mono text-sm">SIGNAL LOST</div>
+                  <div className="text-[var(--sw-danger)] font-mono text-sm">SIGNAL LOST</div>
                   <div className={cn('text-xs font-mono mt-1', themeClasses.text, 'opacity-60')}>
                     Solar imagery unavailable
                   </div>
@@ -253,6 +257,8 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {imageUrl && <img
               src={imageUrl}
+              width={1024}
+              height={1024}
               alt={`Sun in ${bandName}`}
               className={cn(
                 'w-full h-full object-contain',
@@ -268,7 +274,7 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
               <div className={cn('text-xs font-mono px-2 py-1 bg-black/70 rounded', selectedWavelength.color)}>
                 {bandName}
               </div>
-              <div className={cn('text-xs font-mono px-2 py-1 bg-black/70 rounded', themeClasses.text)}>
+              <div className="text-xs font-mono px-2 py-1 bg-black/70 rounded text-white">
                 {selectedWavelength.description}
               </div>
             </div>
@@ -279,6 +285,9 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
             {WAVELENGTHS.map((wavelength) => (
               <button
                 key={wavelength.id}
+                type="button"
+                aria-label={`View ${wavelength.id} solar image (${wavelength.name})`}
+                aria-pressed={selectedWavelength.id === wavelength.id}
                 onClick={() => {
                   setSelectedWavelength(wavelength);
                   setLastUpdate(new Date());
@@ -289,9 +298,9 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
                 className={cn(
                   'p-2 card-inner font-mono text-xs transition-all duration-200 rounded',
                   selectedWavelength.id === wavelength.id
-                    ? cn('ring-2 ring-current', 'bg-gray-800')
-                    : 'hover:bg-gray-800',
-                  wavelength.color
+                    ? 'ring-2 ring-primary bg-primary/10'
+                    : 'hover:bg-muted',
+                  'text-foreground'
                 )}
                 data-testid={`wavelength-${wavelength.id}`}
               >
@@ -308,36 +317,32 @@ export default function SunImageViewer({ className }: SunImageViewerProps) {
       </Card>
 
       {/* Fullsize Modal */}
-      {showFullsize && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setShowFullsize(false)}
+      <Dialog open={showFullsize} onOpenChange={setShowFullsize}>
+        <DialogContent
+          className="max-w-4xl max-h-[95vh] overflow-y-auto"
+          onCloseAutoFocus={event => {
+            event.preventDefault();
+            expandButtonRef.current?.focus();
+          }}
         >
-          <div className="relative max-w-4xl max-h-full">
-            <button
-              onClick={() => setShowFullsize(false)}
-              className="absolute top-2 right-2 z-10 p-2 bg-black/50 rounded text-white hover:bg-black/70"
-            >
-              Close
-            </button>
+          <DialogTitle>Solar image</DialogTitle>
+          <DialogDescription>{bandName} — {selectedWavelength.description}</DialogDescription>
             {imageUrl && !imageError ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={imageUrl}
                 alt={`Sun in ${bandName} (expanded)`}
-                className="max-w-full max-h-[90vh] object-contain"
+                width={1024}
+                height={1024}
+                className="w-full max-h-[70vh] object-contain"
               />
             ) : (
-              <div role="status" className="font-mono text-sm text-white">
+              <div role="status" className="font-mono text-sm text-foreground">
                 {imageError ? 'Solar imagery unavailable' : 'ACQUIRING SOLAR DATA...'}
               </div>
             )}
-            <div className={cn('text-center mt-2 font-mono text-sm', selectedWavelength.color)}>
-              {bandName} - {selectedWavelength.description}
-            </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

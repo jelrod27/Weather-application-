@@ -11,19 +11,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Sun, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { swpcTimeTagMs } from '@/lib/space-weather/time-tag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
 import SpaceWeatherNav, { type SpaceWeatherTabId } from './SpaceWeatherNav';
+import CommandCenterTab from './tabs/CommandCenterTab';
+
+import type { SpaceWeatherAlert } from './SpaceWeatherAlertTicker';
+import type { KpIndexData } from './KpIndexGauge';
+import type { SolarWindData } from './SolarWindStats';
+import type { SunspotData } from './SunspotDisplay';
+import type { XRayFluxData } from './XRayFluxChart';
+import type { AuroraForecastData } from './AuroraForecastMap';
+import type { SpaceWeatherScalesData } from './SpaceWeatherScales';
 
 // Lazy load tab panels
-const CommandCenterTab = dynamic(() => import('./tabs/CommandCenterTab'), {
-  loading: () => <TabSkeleton />,
-  ssr: false,
-});
 const SolarActivityTab = dynamic(() => import('./tabs/SolarActivityTab'), {
   loading: () => <TabSkeleton />,
   ssr: false,
@@ -51,14 +56,6 @@ function TabSkeleton() {
   );
 }
 
-import type { SpaceWeatherAlert } from './SpaceWeatherAlertTicker';
-import type { KpIndexData } from './KpIndexGauge';
-import type { SolarWindData } from './SolarWindStats';
-import type { SunspotData } from './SunspotDisplay';
-import type { XRayFluxData } from './XRayFluxChart';
-import type { AuroraForecastData } from './AuroraForecastMap';
-import type { SpaceWeatherScalesData } from './SpaceWeatherScales';
-
 interface SolarCommandTerminalProps {
   scales: SpaceWeatherScalesData | null;
   alerts: SpaceWeatherAlert[];
@@ -81,7 +78,7 @@ export default function SolarCommandTerminal({
   xrayFlux,
   auroraForecast,
   isLoading = false,
-}: SolarCommandTerminalProps) {
+}: SolarCommandTerminalProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<SpaceWeatherTabId>('command');
@@ -111,20 +108,20 @@ export default function SolarCommandTerminal({
     const hasStorm = (kpAvailable && kp >= 5) || scaleValues.some(value => value >= 3);
     const hasActivity = (kpAvailable && kp >= 4) || scaleValues.some(value => value >= 1);
 
-    if (hasStorm) return { text: 'STORM CONDITIONS', color: 'text-red-500', bgColor: 'bg-red-500/20' };
-    if (hasActivity) return { text: 'ACTIVE', color: 'text-yellow-500', bgColor: 'bg-yellow-500/20' };
+    if (hasStorm) return { text: 'STORM CONDITIONS', color: 'text-[var(--sw-danger)]', bgColor: 'bg-red-500/20' };
+    if (hasActivity) return { text: 'ACTIVE', color: 'text-[var(--sw-warning)]', bgColor: 'bg-yellow-500/20' };
     if (!kpAvailable && scaleValues.length === 0) return { text: 'UNAVAILABLE', ...neutral };
     if (!kpAvailable || scaleValues.length < 3) return { text: 'PARTIAL DATA', ...neutral };
-    return { text: 'QUIET', color: 'text-green-500', bgColor: 'bg-green-500/20' };
+    return { text: 'QUIET', color: 'text-[var(--sw-success)]', bgColor: 'bg-green-500/20' };
   };
 
   const status = getOverallStatus();
 
   const scaleColor = (val: number) => {
-    if (val >= 4) return 'text-red-500';
-    if (val >= 3) return 'text-orange-500';
-    if (val >= 1) return 'text-yellow-500';
-    return 'text-green-500';
+    if (val >= 4) return 'text-[var(--sw-danger)]';
+    if (val >= 3) return 'text-[var(--sw-orange)]';
+    if (val >= 1) return 'text-[var(--sw-warning)]';
+    return 'text-[var(--sw-success)]';
   };
 
   return (
@@ -133,12 +130,14 @@ export default function SolarCommandTerminal({
       <Card className={cn('container-primary', themeClasses.background)}>
         <CardHeader className="border-b border-subtle py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className={cn('text-xl font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-              <Sun className="w-6 h-6 text-yellow-500" />
+            <CardTitle>
+              <h2 className={cn('text-xl font-mono font-bold flex flex-wrap items-center gap-2', themeClasses.headerText)}>
+              <Sun className="w-6 h-6 text-[var(--sw-warning)]" />
               SOLAR COMMAND TERMINAL
-              <span role="status" aria-label="Space weather status" className={cn('text-xs px-2 py-0.5 border-2', status.bgColor, status.color, 'border-current')}>
+              <span role="status" aria-label="Space weather status" className={cn('min-w-[18ch] whitespace-nowrap text-center text-xs px-2 py-0.5 border-2', status.bgColor, status.color, 'border-current')}>
                 {status.text}
               </span>
+              </h2>
             </CardTitle>
             <div className="flex items-center gap-4 font-mono text-xs">
               <div className={cn('flex items-center gap-1', themeClasses.text)}>
@@ -155,8 +154,8 @@ export default function SolarCommandTerminal({
         <CardContent className="py-3">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <StatusCell label="Kp Index" value={kpIndex?.current?.value?.toFixed(0) ?? '—'} color={themeClasses.accentText} />
-            <StatusCell label="Sunspots" value={sunspots?.current?.sunspotNumber?.toString() ?? '—'} color="text-yellow-500" />
-            <StatusCell label="Wind km/s" value={solarWind?.current?.speed?.toString() ?? '—'} color="text-cyan-500" />
+            <StatusCell label="Sunspots" value={sunspots?.current?.sunspotNumber?.toString() ?? '—'} color="text-[var(--sw-warning)]" />
+            <StatusCell label="Wind km/s" value={solarWind?.current?.speed?.toString() ?? '—'} color="text-[var(--sw-info)]" />
             <StatusCell label="Messages" value={alertsAvailable ? alerts.length.toString() : '—'} color="text-muted-foreground" />
             <StatusCell label="R Scale" value={scales?.R?.scale?.toString() ?? '—'} color={scaleColor(scales?.R?.scale ?? 0)} />
             <StatusCell label="S Scale" value={scales?.S?.scale?.toString() ?? '—'} color={scaleColor(scales?.S?.scale ?? 0)} />

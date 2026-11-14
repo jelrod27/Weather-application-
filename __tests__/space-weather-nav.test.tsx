@@ -37,12 +37,12 @@ describe('SpaceWeatherNav', () => {
   });
 
   it('should apply terminal styling with font-mono and uppercase classes on active tab', () => {
-    const { container } = render(<SpaceWeatherNav activeTab="command" onTabChange={jest.fn()} />);
+    render(<SpaceWeatherNav activeTab="command" onTabChange={jest.fn()} />);
 
     const activeButton = screen.getByRole('tab', { name: /command center/i });
     expect(activeButton.className).toContain('font-mono');
     expect(activeButton.className).toContain('uppercase');
-    expect(activeButton.className).toContain('border-cyan-400');
+    expect(activeButton.className).toContain('border-primary');
   });
 });
 
