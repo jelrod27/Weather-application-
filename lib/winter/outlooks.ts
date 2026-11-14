@@ -158,7 +158,11 @@ async function readBoundedJson(response: Response): Promise<unknown> {
 export async function fetchWinterOutlook(selection: WinterMapSelection): Promise<WinterMapSnapshot> {
   const key = `${selection.product}:${selection.day}:${selection.threshold}`
   const cached = cache.get(key)
-  if (cached?.status === 'available' && winterOutlookCacheSeconds(cached) === 0) cache.delete(key)
+  const expired = cached?.status === 'available' && winterOutlookCacheSeconds(cached) === 0
+  // Retry overdue source cycles after one minute, without hammering NOAA on
+  // repeated requests while it is still serving the same stale publication.
+  const staleRetryDue = cached?.status === 'stale' && Date.now() - Date.parse(cached.fetchedAt) >= 60_000
+  if (expired || staleRetryDue) cache.delete(key)
   const snapshot = await cache.load(key, async () => {
     const response = await fetchWithTimeout(winterLayerUrl(selection), {
       timeoutMs: 12_000, maxRetries: 0, cache: 'no-store', redirect: 'error',

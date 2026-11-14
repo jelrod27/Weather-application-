@@ -69,6 +69,26 @@ it('fetches a newly published WSSI cycle as soon as the cached cycle reaches its
   expect(fetchMock).toHaveBeenCalledTimes(2)
 })
 
+it('retries a cached stale cycle after a one-minute backoff and recovers when NOAA publishes its replacement', async () => {
+  const body = collection()
+  Object.assign(body.features[0].properties, { issue_time: '2026-11-14 1101Z', impact: 'MINOR', idp_source: 'WSSI_OVERALL_Day_1' })
+  const replacement = { ...body, features: body.features.map(feature => ({ ...feature, properties: { ...feature.properties, issue_time: '2026-11-14 1702Z' } })) }
+  fetchMock.mockResolvedValueOnce(Response.json(body)).mockResolvedValueOnce(Response.json(body)).mockResolvedValueOnce(Response.json(replacement))
+  const { fetchWinterOutlook } = await import('@/lib/winter/outlooks')
+  const selection = { product: 'impacts', day: 1, threshold: 4 } as const
+  expect((await fetchWinterOutlook(selection)).status).toBe('available')
+  jest.setSystemTime(NOW + 60_000)
+  expect((await fetchWinterOutlook(selection)).status).toBe('stale')
+  jest.setSystemTime(NOW + 90_000)
+  expect((await fetchWinterOutlook(selection)).status).toBe('stale')
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+  jest.setSystemTime(NOW + 120_000)
+  const result = await fetchWinterOutlook(selection)
+  expect(result.status).toBe('available')
+  expect(result.issuedAt).toBe('2026-11-14T17:02:00.000Z')
+  expect(fetchMock).toHaveBeenCalledTimes(3)
+})
+
 it.each([
   ['non-OK', { status: 503 }],
   ['oversized header', { headers: { 'Content-Length': '2000001' } }],
