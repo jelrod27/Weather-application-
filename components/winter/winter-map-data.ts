@@ -1,7 +1,4 @@
-import type { Feature, FeatureCollection, MultiPolygon, Polygon } from 'geojson'
-import type { WinterContourProperties, WinterMapSnapshot } from '@/lib/winter/types'
-
-type WinterContours = FeatureCollection<Polygon | MultiPolygon, WinterContourProperties>
+import type { WinterContourFeature, WinterContours, WinterMapSnapshot } from '@/lib/winter/types'
 export type WinterMapStatus = 'available' | 'empty' | 'unavailable' | 'stale' | 'expired' | 'invalid'
 
 interface WinterMapState {
@@ -29,7 +26,7 @@ function isPolygonCoordinates(value: unknown): value is number[][][] {
   return Array.isArray(value) && value.length > 0 && value.every(isRing)
 }
 
-function isContour(value: unknown): value is Feature<Polygon | MultiPolygon, WinterContourProperties> {
+function isContour(value: unknown): value is WinterContourFeature {
   if (!isRecord(value) || value.type !== 'Feature' || !isRecord(value.geometry) || !isRecord(value.properties)) return false
   const { geometry, properties } = value
   const validGeometry = geometry.type === 'Polygon'

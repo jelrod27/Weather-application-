@@ -1,43 +1,28 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 
 export const metadata: Metadata = {
-  // The root layout's title template appends the brand.
-  title: 'Winter Weather Alerts & Blizzard Warnings',
-  description:
-    'Active NWS winter weather alerts: snow, ice, blizzard, freeze, and wind chill warnings. Filtered winter storm outlook for your region in retro terminal style.',
-  keywords:
-    'winter weather, snow alert, blizzard warning, ice storm, freeze warning, wind chill, NWS winter alerts, winter storm',
+  title: 'Winter Forecast: Snow, Ice & Storm Impacts',
+  description: 'Explore NWS snow and ice probabilities, winter impacts, local 72-hour forecasts, hourly conditions and winter alerts across the contiguous United States.',
+  keywords: 'winter forecast, snow forecast, ice forecast, WPC snow probability, winter storm impacts, NWS local forecast, winter weather alerts',
   openGraph: {
-    title: 'Winter Weather Alerts',
-    description: 'Snow, ice, blizzard, and freeze warnings from the National Weather Service.',
+    title: 'Winter Forecast: Snow, Ice & Storm Impacts',
+    description: 'Official snow and ice probabilities, winter impacts, local forecasts and alerts for the contiguous United States.',
     url: 'https://www.16bitweather.co/winter',
     siteName: '16 Bit Weather',
-    images: [
-      {
-        url: '/api/og?title=Winter+Weather&subtitle=NWS+Snow+%26+Ice+Alerts',
-        width: 1200,
-        height: 630,
-        alt: 'Winter Weather Alerts - 16 Bit Weather',
-      },
-    ],
+    images: [{ url: '/api/og?title=Winter+Forecast&subtitle=Snow+%26+Ice+%C2%B7+NWS+%2F+WPC', width: 1200, height: 630, alt: 'Winter Forecast - 16 Bit Weather' }],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Winter Weather Alerts',
-    description: 'Snow, ice, blizzard, and freeze warnings from the National Weather Service.',
-    images: ['/api/og?title=Winter+Weather&subtitle=NWS+Snow+%26+Ice+Alerts'],
+    title: 'Winter Forecast: Snow, Ice & Storm Impacts',
+    description: 'Official snow and ice probabilities, winter impacts, local forecasts and alerts for the contiguous United States.',
+    images: ['/api/og?title=Winter+Forecast&subtitle=Snow+%26+Ice+%C2%B7+NWS+%2F+WPC'],
   },
-  alternates: {
-    canonical: 'https://www.16bitweather.co/winter',
-  },
+  alternates: { canonical: 'https://www.16bitweather.co/winter' },
 }
 
-export default function WinterLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function WinterLayout({ children }: { children: ReactNode }): ReactNode {
   return children
 }

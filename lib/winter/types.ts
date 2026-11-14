@@ -1,5 +1,3 @@
-import type { FeatureCollection, MultiPolygon, Polygon } from 'geojson'
-
 export type WinterMapProduct = 'snow' | 'ice' | 'impacts'
 export type WinterDay = 1 | 2 | 3
 export type WinterSnowThreshold = 4 | 8 | 12
@@ -23,6 +21,22 @@ export interface WinterLegendItem {
   color: string
 }
 
+/** The only GeoJSON geometry types accepted from the winter outlook adapter. */
+export type WinterGeometry =
+  | { type: 'Polygon'; coordinates: number[][][] }
+  | { type: 'MultiPolygon'; coordinates: number[][][][] }
+
+export interface WinterContourFeature {
+  type: 'Feature'
+  geometry: WinterGeometry
+  properties: WinterContourProperties
+}
+
+export interface WinterContours {
+  type: 'FeatureCollection'
+  features: WinterContourFeature[]
+}
+
 /** Geometry and validity come from the same source query, never separate cycles. */
 export interface WinterMapSnapshot {
   selection: WinterMapSelection
@@ -36,7 +50,7 @@ export interface WinterMapSnapshot {
   fetchedAt: string
   message: string | null
   legend: WinterLegendItem[]
-  contours: FeatureCollection<Polygon | MultiPolygon, WinterContourProperties>
+  contours: WinterContours
 }
 
 export interface WinterPlace {

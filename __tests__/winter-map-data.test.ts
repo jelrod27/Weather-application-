@@ -1,10 +1,9 @@
 import { getWinterMapState, validateWinterContours } from '@/components/winter/winter-map-data'
-import type { WinterMapSnapshot, WinterContourProperties } from '@/lib/winter/types'
-import type { Feature, Polygon } from 'geojson'
+import type { WinterMapSnapshot, WinterContourFeature } from '@/lib/winter/types'
 
 const NOW = Date.parse('2026-11-14T16:00:00Z')
 
-function contour(rank = 1): Feature<Polygon, WinterContourProperties> {
+function contour(rank = 1): WinterContourFeature {
   return {
     type: 'Feature',
     properties: { category: String(rank), label: `${rank * 10}%`, color: '#3366cc', rank },

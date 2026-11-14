@@ -15,7 +15,6 @@ import { defaults as defaultControls } from 'ol/control'
 import { defaults as defaultInteractions } from 'ol/interaction'
 import { fromLonLat, transformExtent } from 'ol/proj'
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style'
-import { CARTO_VOYAGER_XYZ_URL } from '@/lib/maps/carto-basemap'
 import { getWinterMapState } from './winter-map-data'
 import type { WinterMapStatus } from './winter-map-data'
 import type { WinterMapSnapshot, WinterPlace } from '@/lib/winter/types'
@@ -124,9 +123,11 @@ export default function WinterMap({ snapshot, place }: WinterMapProps): ReactEle
         layers: [
           new TileLayer({
             source: new XYZ({
-              url: CARTO_VOYAGER_XYZ_URL,
+              // Key-free, public-domain USGS reference geography; do not show
+              // a CARTO authentication watermark when its optional key is absent.
+              url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
               crossOrigin: 'anonymous',
-              attributions: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              attributions: 'Map services and data available from <a href="https://www.usgs.gov/programs/national-geospatial-program">U.S. Geological Survey, National Geospatial Program</a>.',
             }),
           }),
           contoursLayer, boundaryLayer, placeLayer,
@@ -225,7 +226,7 @@ export default function WinterMap({ snapshot, place }: WinterMapProps): ReactEle
         <div className="flex gap-2" role="group" aria-label="Winter map controls">
           <button type="button" className={buttonClass} onClick={() => zoom(-1)} disabled={Boolean(mapError)} aria-label="Zoom out winter map">−</button>
           <button type="button" className={buttonClass} onClick={() => zoom(1)} disabled={Boolean(mapError)} aria-label="Zoom in winter map">+</button>
-          <button type="button" className={buttonClass} onClick={reset} disabled={Boolean(mapError)} aria-label="Reset winter map to national view">Reset view</button>
+          <button type="button" className={buttonClass} onClick={reset} disabled={Boolean(mapError)} aria-label="Reset view of winter map to national extent">Reset view</button>
         </div>
       </div>
       <div className="relative">

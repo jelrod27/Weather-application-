@@ -35,7 +35,7 @@ No notification subscriptions expansion; no promises about passable roads/school
 
 ## Architecture and ownership
 
-Use existing Next.js App Router, React, TypeScript, OpenLayers, geocoding API, timeout/cache/rate-limit helpers. No new dependencies. All forecast JSON goes through same-origin APIs; no CSP broadening. Shared map contract: `lib/winter/types.ts`; local contract: `lib/winter/local-types.ts`.
+Use existing Next.js App Router, React, TypeScript, OpenLayers, geocoding API, timeout/cache/rate-limit helpers. No new dependencies. All forecast JSON goes through same-origin APIs; no CSP broadening. Shared map contract: `lib/winter/types.ts`; local contract: `lib/winter/local-types.ts`. Winter uses the key-free USGS Topo reference basemap with visible National Geospatial Program attribution: local visual checks showed that the optional CARTO key was absent and its watermark hid geographic context. USGS documents its National Map services as public domain; source [service metadata](https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer), [terms](https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map).
 
 - National data: `lib/winter/outlooks.ts`, `/api/winter/outlook`, unit/route tests.
 - Local data: `lib/winter/local-*.ts`, `/api/winter/forecast`, interval/unit/route tests.
