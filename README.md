@@ -62,6 +62,42 @@ CI runs lint, both configured TypeScript checks, unit tests, and Knip; the build
 
 The site deploys on Vercel. The primary forecast provider is Open-Meteo. Other features use services including NOAA/NWS, RainViewer, AviationWeather.gov, USGS, NASA, and Google Pollen. See the relevant feature pages and `.env.example` for provider and credential details.
 
+### Analytics
+
+Vercel Analytics and Speed Insights remain enabled. PostHog adds anonymous
+pageviews, repeat-browser visits, and client-side navigation analytics. Its SDK
+loads after hydration, only for Vercel production builds with both
+`NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST` configured.
+The [Vercel Marketplace integration](https://posthog.com/docs/integrations/vercel-marketplace)
+supplies these variables. Keep Vercel's automatic system environment variables
+enabled so `NEXT_PUBLIC_VERCEL_ENV` is available at build time. Preview and local
+development do not send events, even when they share the production token.
+
+PostHog stores an anonymous browser identifier in local storage (with the SDK's
+cookie fallback when local storage is unavailable) to measure repeat visits.
+It respects Do Not Track for capture and identifier storage, does not identify Supabase users, and does not
+create person profiles. Session replay, form/click autocapture, surveys, flags,
+and additional error/performance collection are disabled. Events omit URL query
+strings, fragments, campaign parameters, and person properties; referrer domains
+and page paths remain available. PostHog can derive approximate geography from
+the request IP. Browser identifiers can still be personal data;
+include PostHog in the site's privacy disclosures and apply consent requirements
+appropriate to the audience before release.
+
+After deploying, open the production site in a browser without Do Not Track or
+an analytics blocker, navigate between pages, and check PostHog's live activity
+for `$pageview` events. Existing Vercel history is not imported into PostHog.
+
+The isolated browser regression uses a fixture token and intercepts all PostHog
+requests. Run it locally against a production build:
+
+```bash
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_local_verification NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com NEXT_PUBLIC_VERCEL_ENV=production npm run build
+npm run start -- --hostname 127.0.0.1 --port 3100
+# In another terminal:
+PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:3100 POSTHOG_E2E_PRODUCTION=true npx playwright test tests/e2e/posthog.spec.ts --project=chromium
+```
+
 The current calendar version is **2026.10.0**. Release history is recorded in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
