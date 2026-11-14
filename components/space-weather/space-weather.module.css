@@ -1,0 +1,26 @@
+/* Small status labels must remain readable on both light and dark surfaces. */
+.monitor {
+  --sw-success: #86efac;
+  --sw-warning: #fde047;
+  --sw-danger: #fca5a5;
+  --sw-orange: #fdba74;
+  --sw-info: #67e8f9;
+  --sw-purple: #d8b4fe;
+}
+
+:global(:root:not([data-theme])) .monitor,
+:global([data-theme='clear-sky']) .monitor,
+:global([data-theme='daybreak']) .monitor {
+  --sw-success: #166534;
+  --sw-warning: #854d0e;
+  --sw-danger: #991b1b;
+  --sw-orange: #9a3412;
+  --sw-info: #155e75;
+  --sw-purple: #6b21a8;
+}
+
+/* Daybreak's blue labels sit on tinted nested cards as well as paper. */
+:global([data-theme='daybreak']) .monitor {
+  --primary: 205 85% 34%;
+  --muted-foreground: 28 12% 32%;
+}

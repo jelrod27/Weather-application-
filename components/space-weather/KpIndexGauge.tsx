@@ -49,19 +49,28 @@ function getKpColor(kp: number): string {
   return 'bg-purple-500';
 }
 
-// Get activity level text
-function getActivityLevel(kp: number): { text: string; color: string } {
-  if (kp < 2) return { text: 'QUIET', color: 'text-green-500' };
-  if (kp < 4) return { text: 'UNSETTLED', color: 'text-green-400' };
-  if (kp < 5) return { text: 'ACTIVE', color: 'text-yellow-500' };
-  if (kp < 6) return { text: 'G1 MINOR STORM', color: 'text-orange-500' };
-  if (kp < 7) return { text: 'G2 MODERATE STORM', color: 'text-orange-600' };
-  if (kp < 8) return { text: 'G3 STRONG STORM', color: 'text-red-500' };
-  if (kp < 9) return { text: 'G4 SEVERE STORM', color: 'text-red-600' };
-  return { text: 'G5 EXTREME STORM', color: 'text-purple-500' };
+// Keep every class literal so Tailwind includes these readable value tiles.
+function getKpValueColor(kp: number): string {
+  if (kp < 4) return 'bg-green-800';
+  if (kp < 5) return 'bg-yellow-800';
+  if (kp < 6) return 'bg-orange-800';
+  if (kp < 8) return 'bg-red-800';
+  return 'bg-purple-800';
 }
 
-export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugeProps) {
+// Get activity level text
+function getActivityLevel(kp: number): { text: string; color: string } {
+  if (kp < 2) return { text: 'QUIET', color: 'text-[var(--sw-success)]' };
+  if (kp < 4) return { text: 'UNSETTLED', color: 'text-[var(--sw-success)]' };
+  if (kp < 5) return { text: 'ACTIVE', color: 'text-[var(--sw-warning)]' };
+  if (kp < 6) return { text: 'G1 MINOR STORM', color: 'text-[var(--sw-orange)]' };
+  if (kp < 7) return { text: 'G2 MODERATE STORM', color: 'text-[var(--sw-orange)]' };
+  if (kp < 8) return { text: 'G3 STRONG STORM', color: 'text-[var(--sw-danger)]' };
+  if (kp < 9) return { text: 'G4 SEVERE STORM', color: 'text-[var(--sw-danger)]' };
+  return { text: 'G5 EXTREME STORM', color: 'text-[var(--sw-purple)]' };
+}
+
+export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugeProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   if (isLoading) {
@@ -87,7 +96,6 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
   }
   const currentKp = data.current.value;
   const activity = getActivityLevel(currentKp);
-  const kpColor = getKpColor(currentKp);
   const viewline = viewlineFor(currentKp)!;
   const auroraVisibility = `Approx. ${viewline.latitude}°N — ${viewline.places}. Visibility depends on longitude, darkness and local conditions.`;
 
@@ -95,7 +103,7 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
     <Card className={cn('container-primary', themeClasses.background)}>
       <CardHeader className={'border-b border-subtle py-3'}>
         <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-          <Activity className="w-5 h-5 text-yellow-500" />
+          <Activity className="w-5 h-5 text-[var(--sw-warning)]" />
           Kp INDEX
           <span className={cn('text-xs px-2 py-0.5 border', activity.color, 'border-current bg-current/10')}>
             {activity.text}
@@ -105,9 +113,9 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
       <CardContent className="p-4 space-y-4">
         {/* Main Kp Value */}
         <div className="flex items-center gap-4">
-          <div className={cn(
+          <div data-testid="kp-current-value" className={cn(
             'w-20 h-20 flex items-center justify-center text-4xl font-bold font-mono rounded-lg border-4',
-            kpColor,
+            getKpValueColor(currentKp),
             'text-white border-white/30'
           )}>
             {currentKp.toFixed(0)}
@@ -141,16 +149,16 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
             ))}
           </div>
           <div className="flex justify-between text-xs font-mono">
-            <span className="text-green-500">Quiet</span>
-            <span className="text-yellow-500">Active</span>
-            <span className="text-red-500">Storm</span>
+            <span className="text-[var(--sw-success)]">Quiet</span>
+            <span className="text-[var(--sw-warning)]">Active</span>
+            <span className="text-[var(--sw-danger)]">Storm</span>
           </div>
         </div>
 
         {/* Aurora Visibility */}
         <div className={'p-3 card-inner rounded'}>
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-green-400" />
+            <Sparkles className="w-4 h-4 text-[var(--sw-success)]" />
             <span className={cn('text-xs font-mono font-bold', themeClasses.headerText)}>
               APPROXIMATE NORTHERN VIEWLINE
             </span>

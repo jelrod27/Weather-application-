@@ -53,15 +53,15 @@ interface FlareApiResponse {
 function getClassColors(classLetter: string): { text: string; bg: string; border: string } {
   switch (classLetter) {
     case 'X':
-      return { text: 'text-red-500', bg: 'bg-red-500/20', border: 'border-red-500' };
+      return { text: 'text-[var(--sw-danger)]', bg: 'bg-red-500/20', border: 'border-red-500' };
     case 'M':
-      return { text: 'text-orange-500', bg: 'bg-orange-500/20', border: 'border-orange-500' };
+      return { text: 'text-[var(--sw-orange)]', bg: 'bg-orange-500/20', border: 'border-orange-500' };
     case 'C':
-      return { text: 'text-cyan-500', bg: 'bg-cyan-500/20', border: 'border-cyan-500' };
+      return { text: 'text-[var(--sw-info)]', bg: 'bg-cyan-500/20', border: 'border-cyan-500' };
     case 'B':
     case 'A':
     default:
-      return { text: 'text-gray-400', bg: 'bg-gray-500/20', border: 'border-gray-500' };
+      return { text: 'text-muted-foreground', bg: 'bg-gray-500/20', border: 'border-gray-500' };
   }
 }
 
@@ -85,7 +85,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default function SolarFlareTimeline({ className }: SolarFlareTimelineProps) {
+export default function SolarFlareTimeline({ className }: SolarFlareTimelineProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   const [events, setEvents] = useState<FlareEvent[]>([]);
@@ -135,7 +135,7 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
       <CardHeader className="border-b border-subtle py-3">
         <div className="flex items-center justify-between">
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <Zap className="w-5 h-5 text-yellow-500" />
+            <Zap className="w-5 h-5 text-[var(--sw-warning)]" />
             RECENT SOLAR FLARES
             {summary && summary.total > 0 && (
               <span className={cn('text-xs px-2 py-0.5 border', themeClasses.borderColor, themeClasses.accentBg)}>
@@ -217,7 +217,7 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
                     <span className={cn(themeClasses.text)}>
                       {formatLocalTime(event.peakTime)}
                     </span>
-                    <span className={cn(themeClasses.text, 'opacity-60')}>
+                    <span className={cn(themeClasses.text, 'opacity-100')}>
                       {formatDate(event.peakTime)}
                     </span>
                   </div>
@@ -232,20 +232,20 @@ export default function SolarFlareTimeline({ className }: SolarFlareTimelineProp
           <div className={cn(
             'flex items-center justify-between mt-4 pt-3 border-t border-gray-700 font-mono text-xs',
             themeClasses.text,
-            'opacity-70'
+            'opacity-100'
           )}>
             <div className="flex items-center gap-3">
               {summary.byClass.X > 0 && (
-                <span className="text-red-500">X: {summary.byClass.X}</span>
+                <span className="text-[var(--sw-danger)]">X: {summary.byClass.X}</span>
               )}
               {summary.byClass.M > 0 && (
-                <span className="text-orange-500">M: {summary.byClass.M}</span>
+                <span className="text-[var(--sw-orange)]">M: {summary.byClass.M}</span>
               )}
               {summary.byClass.C > 0 && (
-                <span className="text-cyan-500">C: {summary.byClass.C}</span>
+                <span className="text-[var(--sw-info)]">C: {summary.byClass.C}</span>
               )}
               {summary.byClass.B > 0 && (
-                <span className="text-gray-400">B: {summary.byClass.B}</span>
+                <span className="text-muted-foreground">B: {summary.byClass.B}</span>
               )}
             </div>
             <span>Strongest: {summary.strongestFlare}</span>

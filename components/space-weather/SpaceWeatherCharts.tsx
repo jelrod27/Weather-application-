@@ -74,18 +74,18 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'bz',
     title: 'Bz Component',
     unit: 'nT',
-    color: '#06b6d4',
+    color: 'var(--sw-info)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'bz',
     zeroLine: true,
-    colorWhenNegative: '#ef4444',
+    colorWhenNegative: 'var(--sw-danger)',
   },
   {
     id: 'goes-hp',
     title: 'GOES Magnetometer Hp',
     unit: 'nT',
-    color: '#a855f7',
+    color: 'var(--sw-purple)',
     dataKey: 'value',
     source: 'magnetometer',
     fieldPath: 'hp',
@@ -94,7 +94,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'speed',
     title: 'Solar Wind Speed',
     unit: 'km/s',
-    color: '#22c55e',
+    color: 'var(--sw-success)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'speed',
@@ -103,7 +103,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'density',
     title: 'Proton Density',
     unit: 'p/cm\u00B3',
-    color: '#eab308',
+    color: 'var(--sw-warning)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'density',
@@ -112,7 +112,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'bx',
     title: 'Bx Component',
     unit: 'nT',
-    color: '#f97316',
+    color: 'var(--sw-orange)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'bx',
@@ -122,7 +122,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'by',
     title: 'By Component',
     unit: 'nT',
-    color: '#ec4899',
+    color: 'var(--sw-purple)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'by',
@@ -132,7 +132,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'bt',
     title: 'Bt Total Field',
     unit: 'nT',
-    color: '#06b6d4',
+    color: 'var(--sw-info)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'bt',
@@ -141,7 +141,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'temperature',
     title: 'Temperature',
     unit: 'K',
-    color: '#ef4444',
+    color: 'var(--sw-danger)',
     dataKey: 'value',
     source: 'plasma',
     fieldPath: 'temperature',
@@ -150,7 +150,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'xray',
     title: 'X-ray Flux',
     unit: 'W/m\u00B2',
-    color: '#eab308',
+    color: 'var(--sw-warning)',
     dataKey: 'value',
     source: 'xray',
     fieldPath: 'flux',
@@ -160,7 +160,7 @@ const CHART_CONFIGS: ChartConfig[] = [
     id: 'proton',
     title: 'Proton Flux',
     unit: 'pfu',
-    color: '#f97316',
+    color: 'var(--sw-orange)',
     dataKey: 'value',
     source: 'proton',
     fieldPath: 'flux',
@@ -306,9 +306,9 @@ function ChartTooltip({ active, payload, label, unit, logScale }: ChartTooltipPr
   const val = payload[0].value;
 
   return (
-    <div className="bg-gray-900 border border-gray-600 px-3 py-2 font-mono text-xs shadow-lg">
-      <div className="text-gray-400 mb-1">{timeStr}</div>
-      <div className="text-white font-bold">
+    <div className="bg-popover border border-border px-3 py-2 font-mono text-xs shadow-lg">
+      <div className="text-muted-foreground mb-1">{timeStr}</div>
+      <div className="text-popover-foreground font-bold">
         {formatValue(val, logScale)} {unit}
       </div>
     </div>
@@ -336,7 +336,7 @@ function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
     <div className="border border-border rounded bg-transparent p-3 font-mono">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
-        <div className="text-xs font-bold uppercase text-gray-300 truncate">
+        <div className="text-xs font-bold uppercase text-muted-foreground truncate">
           {title}
         </div>
         <div className="flex items-center gap-2 text-xs shrink-0">
@@ -347,20 +347,20 @@ function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
       </div>
 
       {/* Min / Max */}
-      <div className="flex gap-3 text-[10px] text-gray-500 mb-2">
+      <div className="flex gap-3 text-[10px] text-muted-foreground mb-2">
         <span>
-          MAX: <span className="text-gray-400">{formatValue(stats.max, logScale)}</span>
+          MAX: <span className="text-muted-foreground">{formatValue(stats.max, logScale)}</span>
         </span>
         <span>
-          MIN: <span className="text-gray-400">{formatValue(stats.min, logScale)}</span>
+          MIN: <span className="text-muted-foreground">{formatValue(stats.min, logScale)}</span>
         </span>
       </div>
 
-      {coverage && <p className="text-[10px] text-gray-500 mb-2">Observed UTC: {coverage}</p>}
+      {coverage && <p className="text-[10px] text-muted-foreground mb-2">Observed UTC: {coverage}</p>}
       {/* Chart */}
       <div className="h-40">
         {observed.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-xs text-gray-600">
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
             {sourceFailed ? 'Feed unavailable' : 'No data available'}
           </div>
         ) : useAreaChart ? (
@@ -372,18 +372,18 @@ function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
                   <stop offset="100%" stopColor={color} stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="timestamp"
                 type="number"
                 domain={['dataMin', 'dataMax']}
                 tickFormatter={(t: number) => formatTickTime(t, range)}
-                tick={{ fontSize: 9, fill: '#666' }}
-                stroke="#444"
+                tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
               />
               <YAxis
-                tick={{ fontSize: 9, fill: '#666' }}
-                stroke="#444"
+                tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
                 width={40}
               />
               <Tooltip content={<ChartTooltip unit={unit} logScale={logScale} />} />
@@ -404,18 +404,18 @@ function ChartCard({ config, data, range, sourceFailed }: ChartCardProps) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="timestamp"
                 type="number"
                 domain={['dataMin', 'dataMax']}
                 tickFormatter={(t: number) => formatTickTime(t, range)}
-                tick={{ fontSize: 9, fill: '#666' }}
-                stroke="#444"
+                tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
               />
               <YAxis
-                tick={{ fontSize: 9, fill: '#666' }}
-                stroke="#444"
+                tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                stroke="hsl(var(--border))"
                 width={40}
                 scale={logScale ? 'log' : 'auto'}
                 domain={logScale ? ['auto', 'auto'] : undefined}
@@ -534,7 +534,7 @@ export default function SpaceWeatherCharts() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Satellite className="w-5 h-5 text-cyan-500" />
+          <Satellite className="w-5 h-5 text-[var(--sw-info)]" />
           <h2 className={cn('text-lg font-mono font-bold uppercase', themeClasses.headerText)}>
             Space Weather Charts
           </h2>
@@ -549,8 +549,8 @@ export default function SpaceWeatherCharts() {
               className={cn(
                 'px-2.5 py-1.5 border transition-colors rounded-sm',
                 range === tr.value
-                  ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
-                  : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:text-gray-300'
+                  ? 'bg-cyan-500/20 border-cyan-500 text-[var(--sw-info)]'
+                  : 'border-gray-600 text-muted-foreground hover:border-gray-400 hover:text-muted-foreground'
               )}
               aria-pressed={range === tr.value}
               aria-label={`Set time range to ${tr.label}`}
@@ -561,9 +561,9 @@ export default function SpaceWeatherCharts() {
         </div>
       </div>
 
-      <p className="text-xs font-mono text-gray-500">Selected range is a display limit. Each chart shows its available observation window; feeds may cover less than 24H or 7D.</p>
+      <p className="text-xs font-mono text-muted-foreground">Selected range is a display limit. Each chart shows its available observation window; feeds may cover less than 24H or 7D.</p>
       {/* Earth position marker */}
-      <div className="text-[10px] font-mono text-gray-500 flex items-center gap-1.5">
+      <div className="text-[10px] font-mono text-muted-foreground flex items-center gap-1.5">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500" />
         Solar wind at L1: Earth arrival depends on wind speed and propagation
       </div>
@@ -576,7 +576,7 @@ export default function SpaceWeatherCharts() {
               key={i}
               className="border border-border rounded bg-transparent p-3 h-56 flex items-center justify-center"
             >
-              <div className="text-gray-500 font-mono text-xs animate-pulse">
+              <div className="text-muted-foreground font-mono text-xs animate-pulse">
                 Loading...
               </div>
             </div>
@@ -587,10 +587,10 @@ export default function SpaceWeatherCharts() {
       {/* Error state */}
       {error && !isLoading && (
         <div role="alert" className="border border-red-500/50 rounded bg-red-500/10 p-4 text-center">
-          <div className="text-red-400 font-mono text-sm">{error}</div>
+          <div className="text-[var(--sw-danger)] font-mono text-sm">{error}</div>
           <button
             onClick={() => fetchData(range)}
-            className="mt-2 text-xs font-mono text-cyan-400 hover:text-cyan-300 underline"
+            className="mt-2 text-xs font-mono text-[var(--sw-info)] hover:text-[var(--sw-info)] underline"
           >
             Retry
           </button>
@@ -616,7 +616,7 @@ export default function SpaceWeatherCharts() {
       <div className={cn(
         'text-center text-[10px] font-mono py-2 border-t border-gray-700',
         themeClasses.text,
-        'opacity-60'
+        'opacity-100'
       )}>
         DATA: NOAA SWPC RTSW, GOES MAGNETOMETER, GOES X-RAY SENSOR, GOES PROTON SENSOR
       </div>

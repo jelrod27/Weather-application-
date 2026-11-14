@@ -49,23 +49,23 @@ interface XRayFluxChartProps {
 // Get classification color
 function getClassificationColor(classification: string): string {
   switch (classification?.toUpperCase()) {
-    case 'X': return 'text-red-500';
-    case 'M': return 'text-orange-500';
-    case 'C': return 'text-yellow-500';
-    case 'B': return 'text-green-400';
-    case 'A': return 'text-green-500';
-    default: return 'text-gray-400';
+    case 'X': return 'text-[var(--sw-danger)]';
+    case 'M': return 'text-[var(--sw-orange)]';
+    case 'C': return 'text-[var(--sw-warning)]';
+    case 'B': return 'text-[var(--sw-success)]';
+    case 'A': return 'text-[var(--sw-success)]';
+    default: return 'text-muted-foreground';
   }
 }
 
 // Get classification background
 function getClassificationBg(classification: string): string {
   switch (classification?.toUpperCase()) {
-    case 'X': return 'bg-red-500';
-    case 'M': return 'bg-orange-500';
-    case 'C': return 'bg-yellow-500';
-    case 'B': return 'bg-green-400';
-    case 'A': return 'bg-green-500';
+    case 'X': return 'bg-red-800';
+    case 'M': return 'bg-orange-800';
+    case 'C': return 'bg-yellow-800';
+    case 'B': return 'bg-green-800';
+    case 'A': return 'bg-green-800';
     default: return 'bg-gray-500';
   }
 }
@@ -85,12 +85,12 @@ function getClassificationDescription(classification: string): string {
 // Get impact level
 function getImpactLevel(classification: string): { text: string; color: string; severity: number } {
   switch (classification?.toUpperCase()) {
-    case 'X': return { text: 'SEVERE', color: 'text-red-500', severity: 5 };
-    case 'M': return { text: 'MODERATE', color: 'text-orange-500', severity: 4 };
-    case 'C': return { text: 'MINOR', color: 'text-yellow-500', severity: 3 };
-    case 'B': return { text: 'MINIMAL', color: 'text-green-400', severity: 2 };
-    case 'A': return { text: 'NONE', color: 'text-green-500', severity: 1 };
-    default: return { text: 'UNKNOWN', color: 'text-gray-400', severity: 0 };
+    case 'X': return { text: 'SEVERE', color: 'text-[var(--sw-danger)]', severity: 5 };
+    case 'M': return { text: 'MODERATE', color: 'text-[var(--sw-orange)]', severity: 4 };
+    case 'C': return { text: 'MINOR', color: 'text-[var(--sw-warning)]', severity: 3 };
+    case 'B': return { text: 'MINIMAL', color: 'text-[var(--sw-success)]', severity: 2 };
+    case 'A': return { text: 'NONE', color: 'text-[var(--sw-success)]', severity: 1 };
+    default: return { text: 'UNKNOWN', color: 'text-muted-foreground', severity: 0 };
   }
 }
 
@@ -106,15 +106,15 @@ function formatFlux(value: number): string {
 function TrendIcon({ trend }: { trend: XRayFluxData['trend'] }) {
   switch (trend) {
     case 'increasing':
-      return <TrendingUp className="w-4 h-4 text-red-500" />;
+      return <TrendingUp className="w-4 h-4 text-[var(--sw-danger)]" />;
     case 'decreasing':
-      return <TrendingDown className="w-4 h-4 text-green-500" />;
+      return <TrendingDown className="w-4 h-4 text-[var(--sw-success)]" />;
     default:
-      return <Minus className="w-4 h-4 text-gray-500" />;
+      return <Minus className="w-4 h-4 text-muted-foreground" />;
   }
 }
 
-export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChartProps) {
+export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChartProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   if (isLoading) {
@@ -153,7 +153,6 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
         }
       : null
   );
-  const classColor = getClassificationColor(classification);
   const impact = getImpactLevel(classification);
   const description = getClassificationDescription(classification);
 
@@ -162,10 +161,10 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
       <CardHeader className={'border-b border-subtle py-3'}>
         <div className="flex items-center justify-between">
           <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
-            <Zap className="w-5 h-5 text-yellow-500" />
+            <Zap className="w-5 h-5 text-[var(--sw-warning)]" />
             X-RAY FLUX
             {impact.severity >= 4 && (
-              <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
+              <AlertTriangle className="w-4 h-4 text-[var(--sw-orange)] animate-pulse" />
             )}
           </CardTitle>
           {data?.trend && (
@@ -216,8 +215,8 @@ export default function XRayFluxChart({ data, isLoading = false }: XRayFluxChart
                   'flex-1 h-8 flex items-center justify-center font-mono font-bold text-sm transition-all duration-300',
                   getClassificationBg(cls),
                   classification === cls
-                    ? 'text-white ring-2 ring-white ring-offset-2 ring-offset-gray-900'
-                    : 'text-white/70 opacity-50'
+                    ? 'text-white ring-2 ring-primary ring-offset-2 ring-offset-background'
+                    : 'text-white'
                 )}
               >
                 {cls}

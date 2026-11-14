@@ -237,3 +237,11 @@ it.each([null, {}, {frames:'invalid'}, {frames:[null]}, {frames:['https://evil.e
  expect(screen.queryByAltText('WSA-ENLIL Solar Wind Propagation Model')).not.toBeInTheDocument()
  expect(screen.queryByText('ACQUIRING ENLIL MODEL DATA...')).not.toBeInTheDocument()
 })
+
+it('names the ENLIL frame slider and playback control', async () => {
+ jest.mocked(fetch).mockResolvedValue(jsonResponse(enlilPayload))
+ render(<EnlilModelViewer />)
+ expect(await screen.findByRole('slider', { name: 'Solar wind model frame' })).toBeInTheDocument()
+ fireEvent.click(screen.getByRole('button', { name: 'Play solar wind model' }))
+ expect(screen.getByRole('button', { name: 'Pause solar wind model' })).toBeInTheDocument()
+})

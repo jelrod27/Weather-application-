@@ -69,14 +69,14 @@ export default function SpaceWeatherNav({ activeTab, onTabChange }: SpaceWeather
                 'transition-all duration-200 whitespace-nowrap md:flex-1 md:justify-center',
                 'border-b-2 -mb-px',
                 isActive
-                  ? 'border-cyan-400 text-cyan-400 bg-cyan-500/10 font-bold'
+                  ? 'border-primary text-foreground bg-primary/10 font-bold'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-muted-foreground/50'
               )}
             >
               <Icon
                 className={cn(
                   'w-4 h-4 transition-colors',
-                  isActive ? 'text-cyan-400' : 'text-muted-foreground group-hover:text-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 )}
                 aria-hidden="true"
               />

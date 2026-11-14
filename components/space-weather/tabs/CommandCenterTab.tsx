@@ -15,7 +15,9 @@ import { viewlineFor } from '@/lib/space-weather/kp-scale';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
 import { Card, CardContent } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
+import SunImageViewer from '../SunImageViewer';
+import SpaceWeatherAlertTicker from '../SpaceWeatherAlertTicker';
+import CompactScales from '../CompactScales';
 
 import type { SpaceWeatherScalesData } from '../SpaceWeatherScales'; // used by CompactScales prop type
 import type { SpaceWeatherAlert } from '../SpaceWeatherAlertTicker';
@@ -25,35 +27,6 @@ import type { SunspotData } from '../SunspotDisplay';
 import type { XRayFluxData } from '../XRayFluxChart';
 import type { AuroraForecastData } from '../AuroraForecastMap';
 
-// Loading skeleton component
-function LoadingSkeleton({ height = '200px' }: { height?: string }) {
-  return (
-    <div
-      className="flex items-center justify-center bg-gray-900 border-2 border-dashed border-gray-600 rounded"
-      style={{ height }}
-    >
-      <div className="text-center text-gray-400 font-mono text-sm">
-        <div className="animate-pulse">Loading...</div>
-      </div>
-    </div>
-  );
-}
-
-// Dynamic imports for heavy components
-const SunImageViewer = dynamic(() => import('../SunImageViewer'), {
-  loading: () => <LoadingSkeleton height="350px" />,
-  ssr: false
-});
-
-const SpaceWeatherAlertTicker = dynamic(() => import('../SpaceWeatherAlertTicker'), {
-  loading: () => <LoadingSkeleton height="150px" />,
-  ssr: false
-});
-
-const CompactScales = dynamic(() => import('../CompactScales'), {
-  loading: () => <LoadingSkeleton height="60px" />,
-  ssr: false
-});
 
 interface CommandCenterTabProps {
   scales: SpaceWeatherScalesData | null;
@@ -77,7 +50,7 @@ export default function CommandCenterTab({
   xrayFlux,
   auroraForecast,
   isLoading = false
-}: CommandCenterTabProps) {
+}: CommandCenterTabProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
   const viewline = viewlineFor(auroraForecast?.currentKp ?? kpIndex?.current?.value, auroraForecast?.hemisphere);
 
@@ -86,13 +59,7 @@ export default function CommandCenterTab({
       {/* Main layout: 2-column on desktop, stacked on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Sun Image - left column on desktop */}
-        <Card className={cn('container-primary', themeClasses.background)}>
-          <CardContent className="p-4">
-            <div className="overflow-hidden max-h-[420px]">
-              <SunImageViewer />
-            </div>
-          </CardContent>
-        </Card>
+        <SunImageViewer />
 
         {/* Current Conditions - right column on desktop */}
         <Card className={cn('container-primary', themeClasses.background)}>
@@ -110,7 +77,7 @@ export default function CommandCenterTab({
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
-                <div className="text-2xl font-bold font-mono text-yellow-500">
+                <div className="text-2xl font-bold font-mono text-[var(--sw-warning)]">
                   {sunspots?.current?.sunspotNumber ?? '--'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
@@ -118,7 +85,7 @@ export default function CommandCenterTab({
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
-                <div className="text-2xl font-bold font-mono text-cyan-500">
+                <div className="text-2xl font-bold font-mono text-[var(--sw-info)]">
                   {solarWind?.current?.speed ?? '--'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
@@ -137,7 +104,7 @@ export default function CommandCenterTab({
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
-                <div className="text-2xl font-bold font-mono text-purple-500">
+                <div className="text-2xl font-bold font-mono text-[var(--sw-purple)]">
                   {xrayFlux?.current?.classNumber
                     ?? xrayFlux?.current?.flareClass
                     ?? xrayFlux?.current?.classification
@@ -148,7 +115,7 @@ export default function CommandCenterTab({
                 </div>
               </div>
               <div className={cn('text-center p-3 container-nested')}>
-                <div className="text-2xl font-bold font-mono text-green-400">
+                <div className="text-2xl font-bold font-mono text-[var(--sw-success)]">
                   {viewline ? `~${viewline.latitude}°${auroraForecast?.hemisphere === 'south' ? 'S' : 'N'}` : '--'}
                 </div>
                 <div className={cn('text-xs font-mono uppercase', themeClasses.text)}>
@@ -161,13 +128,11 @@ export default function CommandCenterTab({
       </div>
 
       {/* Alerts section also explains when the feed is unavailable. */}
-      {(alerts.length > 0 || !alertsAvailable) && (
-        <Card className={cn('container-primary', themeClasses.background)}>
-          <CardContent className="p-0">
-            <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} unavailable={!alertsAvailable} />
-          </CardContent>
-        </Card>
-      )}
+      <Card className={cn('container-primary', themeClasses.background)}>
+        <CardContent className="p-0">
+          <SpaceWeatherAlertTicker alerts={alerts} isLoading={isLoading} unavailable={!alertsAvailable} />
+        </CardContent>
+      </Card>
 
       {/* Compact NOAA Scales */}
       <CompactScales data={scales} />

@@ -81,7 +81,7 @@ export default function Navigation({ weatherLocation, weatherTemperature, weathe
 
   return (
     <>
-      <nav className={cn(
+      <nav aria-label="Main navigation" className={cn(
         "w-full sticky top-0 z-50 border-b backdrop-blur-md shadow-sm transition-all duration-300",
         "bg-background/80 border-border"
       )}>

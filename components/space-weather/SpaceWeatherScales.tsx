@@ -28,12 +28,12 @@ interface SpaceWeatherScalesProps {
 
 // Get color based on scale level
 function getScaleColor(scale: number): string {
-  if (scale === 0) return 'text-green-500 bg-green-500/20 border-green-500';
-  if (scale === 1) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500';
-  if (scale === 2) return 'text-yellow-500 bg-yellow-500/20 border-yellow-500';
-  if (scale === 3) return 'text-orange-500 bg-orange-500/20 border-orange-500';
-  if (scale === 4) return 'text-red-500 bg-red-500/20 border-red-500';
-  return 'text-purple-500 bg-purple-500/20 border-purple-500'; // 5 = Extreme
+  if (scale === 0) return 'text-[var(--sw-success)] bg-green-500/10 border-green-500';
+  if (scale === 1) return 'text-[var(--sw-warning)] bg-yellow-500/10 border-yellow-500';
+  if (scale === 2) return 'text-[var(--sw-warning)] bg-yellow-500/10 border-yellow-500';
+  if (scale === 3) return 'text-[var(--sw-orange)] bg-orange-500/10 border-orange-500';
+  if (scale === 4) return 'text-[var(--sw-danger)] bg-red-500/10 border-red-500';
+  return 'text-[var(--sw-purple)] bg-purple-500/10 border-purple-500'; // 5 = Extreme
 }
 
 // Get label for scale
@@ -46,7 +46,7 @@ function getScaleLabel(scale: number): string {
   return 'EXTREME';
 }
 
-export default function SpaceWeatherScales({ scales, isLoading = false }: SpaceWeatherScalesProps) {
+export default function SpaceWeatherScales({ scales, isLoading = false }: SpaceWeatherScalesProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
 
   if (isLoading) {
@@ -97,7 +97,7 @@ export default function SpaceWeatherScales({ scales, isLoading = false }: SpaceW
       <CardHeader className="border-b border-subtle py-3">
         <CardTitle className={cn('text-lg font-mono font-bold flex items-center gap-2', themeClasses.headerText)}>
           SPACE WEATHER SCALES
-          <span className={cn('text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded',
+          <span className={cn('text-xs px-2 py-0.5 bg-green-500/10 text-[var(--sw-success)] rounded',
             scales ? 'opacity-100' : 'opacity-50')}>
             {scales ? 'LIVE' : 'OFFLINE'}
           </span>
@@ -114,8 +114,7 @@ export default function SpaceWeatherScales({ scales, isLoading = false }: SpaceW
               <div
                 key={key}
                 className={cn(
-                  'p-4 card-inner transition-all duration-300',
-                  scale > 2 && 'animate-pulse'
+                  'p-4 card-inner'
                 )}
               >
                 {/* Scale Letter and Value */}
@@ -146,7 +145,7 @@ export default function SpaceWeatherScales({ scales, isLoading = false }: SpaceW
 
                 {/* Full description on hover/focus */}
                 {data?.description && (
-                  <div className={cn('text-xs font-mono mt-2 pt-2 border-t border-gray-700', themeClasses.text, 'opacity-70')}>
+                  <div className={cn('text-xs font-mono mt-2 pt-2 border-t border-gray-700', themeClasses.text)}>
                     {data.description}
                   </div>
                 )}

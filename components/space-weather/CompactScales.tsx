@@ -28,27 +28,25 @@ function getScaleLabel(scale: number): string {
 }
 
 function getScaleColor(scale: number): string {
-  if (scale === 0) return 'text-green-500';
-  if (scale <= 2) return 'text-yellow-500';
-  if (scale === 3) return 'text-orange-500';
-  return 'text-red-500';
+  if (scale === 0) return 'text-[var(--sw-success)]';
+  if (scale <= 2) return 'text-[var(--sw-warning)]';
+  if (scale === 3) return 'text-[var(--sw-orange)]';
+  return 'text-[var(--sw-danger)]';
 }
 
 const scaleKeys = ['R', 'S', 'G'] as const;
 
-export default function CompactScales({ data }: CompactScalesProps) {
+export default function CompactScales({ data }: CompactScalesProps): React.ReactElement {
   const themeClasses = themeTokens.weather;
-
-  if (!data) return null;
 
   return (
     <div className={cn(
-      'flex items-center gap-3 font-mono text-xs px-3 py-2 container-primary',
+      'flex flex-wrap items-center gap-3 font-mono text-xs px-3 py-2 container-primary',
       themeClasses.background
     )}>
       {scaleKeys.map((key, idx) => {
-        const scale = data[key].scale;
-        const color = getScaleColor(scale);
+        const scale = data?.[key].scale;
+        const color = scale == null ? 'text-muted-foreground' : getScaleColor(scale);
 
         return (
           <React.Fragment key={key}>
@@ -60,8 +58,8 @@ export default function CompactScales({ data }: CompactScalesProps) {
               className={cn('flex items-center gap-1', color)}
             >
               <span className={cn('font-bold', themeClasses.text)}>{key}:</span>
-              <span className="font-bold">{scale}</span>
-              <span>{getScaleLabel(scale)}</span>
+              <span className="font-bold">{scale ?? '—'}</span>
+              <span>{scale == null ? 'UNAVAILABLE' : getScaleLabel(scale)}</span>
             </span>
           </React.Fragment>
         );
