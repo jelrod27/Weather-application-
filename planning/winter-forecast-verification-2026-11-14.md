@@ -22,6 +22,12 @@ An architecture agent mapped existing patterns; separate workers owned local dat
 
 The final documentation commit records this evidence; it does not change the validated production code.
 
+### PR review follow-ups
+
+CodeRabbit's completed initial review of PR #716 identified seven source-validation and error-handling issues. The follow-up batch standardizes unavailable local forecasts as HTTP 502 `{ error }` responses, excludes timestamp-only weather rows from usable horizon coverage, rejects impossible local-source calendar dates, cancels upstream bodies on early rejection, validates point metadata before caching, refreshes expired outlook cache entries immediately, and safely rejects empty polygon rings. The response cleanup correction also applies to the national adapter.
+
+Each issue was reproduced with regression coverage before correction. Point-cache recovery tests retry invalid then valid responses on the same service instance; cache-boundary tests prove that a newly published WSSI cycle is fetched immediately. Independent review returned **SHIP**. Both TypeScript projects, scoped lint, dependency analysis and the expanded Winter test suite passed before pushing. The original Lighthouse measurements below remain measurements of `53697aa`; these backend corrections do not change the page layout or client bundles. Fresh GitHub CI and bot review on the follow-up head determine merge readiness.
+
 ## Checks
 
 | Check | Result |

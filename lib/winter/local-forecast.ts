@@ -1,23 +1,15 @@
 import { isInConus } from '@/lib/geo/point-in-polygon'
 import { normalizeAccumulation, normalizeForecastPeriods, record, sourceTime } from './local-normalize'
+import { pointMetadata } from './local-point'
 import { fetchNwsPayload, safeNwsGridUrl, UnsupportedNwsPoint } from './local-source'
-import type { LocalWinterForecast } from './local-types'
+import type { LocalWinterForecast, WinterHourlyPeriod } from './local-types'
 
 const HOURS_72 = 72 * 60 * 60_000
 const STALE_SOURCE_MS = 18 * 60 * 60_000
-const CONUS_STATES = new Set('AL AZ AR CA CO CT DE DC FL GA ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY'.split(' '))
 
 function usableTime(data: unknown, now: number): string | null {
   const time = sourceTime(record(record(data).properties).updateTime)
   return time && Date.parse(time) <= now + 5 * 60_000 ? time : null
-}
-
-function pointMetadata(input: unknown): { name: string; timeZone: string } | null {
-  const properties = record(input)
-  const location = record(record(properties.relativeLocation).properties)
-  if (typeof location.city !== 'string' || !location.city.trim() || typeof location.state !== 'string' || !CONUS_STATES.has(location.state) || typeof properties.timeZone !== 'string') return null
-  try { new Intl.DateTimeFormat('en-US', { timeZone: properties.timeZone }).format() } catch { return null }
-  return { name: `${location.city}, ${location.state}`, timeZone: properties.timeZone }
 }
 
 function coversHorizon(periods: Array<{ startTime: string; endTime: string }>, start: number, end: number): boolean {
@@ -27,6 +19,11 @@ function coversHorizon(periods: Array<{ startTime: string; endTime: string }>, s
     coveredUntil = Math.max(coveredUntil, Date.parse(period.endTime))
   }
   return coveredUntil >= end
+}
+
+function hasForecastContent(period: WinterHourlyPeriod): boolean {
+  return Boolean(period.shortForecast.trim() || period.windSpeed?.trim() || period.windDirection?.trim())
+    || period.temperatureF !== null || period.precipitationProbability !== null
 }
 
 /** Point discovery is authoritative; no forecasts are fabricated outside supported CONUS coverage. */
@@ -64,9 +61,11 @@ export async function fetchLocalWinterForecast(lat: number, lon: number): Promis
   const ice = normalizeAccumulation(grid.iceAccumulation, now, end)
   const hourly = hourlyUpdatedAt ? normalizeForecastPeriods(hourlySource?.data, now, end) : []
   const narrative = narrativeUpdatedAt ? normalizeForecastPeriods(narrativeSource?.data, now, end) : []
-  const anyAvailable = snow.status !== 'unavailable' || ice.status !== 'unavailable' || hourly.length > 0 || narrative.length > 0
-  const partial = snow.status !== 'available' || ice.status !== 'available' || !coversHorizon(hourly, now, end) || !coversHorizon(narrative, now, end)
-  const stale = [gridUpdatedAt, hourly.length ? hourlyUpdatedAt : null, narrative.length ? narrativeUpdatedAt : null]
+  const usableHourly = hourly.filter(hasForecastContent)
+  const usableNarrative = narrative.filter(period => hasForecastContent(period) || period.detailedForecast.trim())
+  const anyAvailable = snow.status !== 'unavailable' || ice.status !== 'unavailable' || usableHourly.length > 0 || usableNarrative.length > 0
+  const partial = snow.status !== 'available' || ice.status !== 'available' || !coversHorizon(usableHourly, now, end) || !coversHorizon(usableNarrative, now, end)
+  const stale = [gridUpdatedAt, usableHourly.length ? hourlyUpdatedAt : null, usableNarrative.length ? narrativeUpdatedAt : null]
     .some(time => time !== null && now - Date.parse(time) > STALE_SOURCE_MS)
   const status = !anyAvailable ? 'unavailable' : stale ? 'stale' : partial ? 'partial' : 'available'
   const acquired = payloads.flatMap(payload => payload ? [payload.fetchedAt] : []).sort()

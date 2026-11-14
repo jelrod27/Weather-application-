@@ -43,7 +43,7 @@ it('rejects upstream HTTP errors rather than treating them as no contours', asyn
 it('expires cached WSSI at its issuance freshness boundary, before source validity ends', async () => {
   const body = collection()
   Object.assign(body.features[0].properties, { issue_time: '2026-11-14 1101Z', impact: 'MINOR', idp_source: 'WSSI_OVERALL_Day_1' })
-  fetchMock.mockResolvedValue(Response.json(body))
+  fetchMock.mockImplementation(async () => Response.json(body))
   const { fetchWinterOutlook } = await import('@/lib/winter/outlooks')
   const selection = { product: 'impacts', day: 1, threshold: 4 } as const
   expect((await fetchWinterOutlook(selection)).status).toBe('available')
@@ -51,5 +51,32 @@ it('expires cached WSSI at its issuance freshness boundary, before source validi
   const result = await fetchWinterOutlook(selection)
   expect(result.status).toBe('stale')
   expect(result.contours.features).toEqual([])
-  expect(fetchMock).toHaveBeenCalledTimes(1)
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+})
+
+it('fetches a newly published WSSI cycle as soon as the cached cycle reaches its freshness boundary', async () => {
+  const body = collection()
+  Object.assign(body.features[0].properties, { issue_time: '2026-11-14 1101Z', impact: 'MINOR', idp_source: 'WSSI_OVERALL_Day_1' })
+  const replacement = { ...body, features: body.features.map(feature => ({ ...feature, properties: { ...feature.properties, issue_time: '2026-11-14 1701Z' } })) }
+  fetchMock.mockResolvedValueOnce(Response.json(body)).mockResolvedValueOnce(Response.json(replacement))
+  const { fetchWinterOutlook } = await import('@/lib/winter/outlooks')
+  const selection = { product: 'impacts', day: 1, threshold: 4 } as const
+  expect((await fetchWinterOutlook(selection)).issuedAt).toBe('2026-11-14T11:01:00.000Z')
+  jest.setSystemTime(NOW + 60_000)
+  const updated = await fetchWinterOutlook(selection)
+  expect(updated.status).toBe('available')
+  expect(updated.issuedAt).toBe('2026-11-14T17:01:00.000Z')
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+})
+
+it.each([
+  ['non-OK', { status: 503 }],
+  ['oversized header', { headers: { 'Content-Length': '2000001' } }],
+])('cancels %s response bodies before rejecting them', async (_, init) => {
+  const response = new Response('{}', init)
+  const cancel = jest.spyOn(response.body!, 'cancel')
+  fetchMock.mockResolvedValue(response)
+  const { fetchWinterOutlook } = await import('@/lib/winter/outlooks')
+  await expect(fetchWinterOutlook({ product: 'snow', day: 1, threshold: 4 })).rejects.toThrow()
+  expect(cancel).toHaveBeenCalledTimes(1)
 })

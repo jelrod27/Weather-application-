@@ -29,7 +29,7 @@ const IMPACT_CATEGORIES = [
 
 const position = z.tuple([z.number().finite().min(-180).max(180), z.number().finite().min(-90).max(90)])
 const ring = z.array(position).min(4).max(100_000).refine(points =>
-  points[0][0] === points[points.length - 1][0] && points[0][1] === points[points.length - 1][1])
+  points.length >= 4 && points[0][0] === points[points.length - 1][0] && points[0][1] === points[points.length - 1][1])
 const polygon = z.array(ring).min(1)
 const geometry = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Polygon'), coordinates: polygon }),
@@ -129,7 +129,10 @@ export function normalizeWinterOutlook(body: unknown, selection: WinterMapSelect
 }
 
 async function readBoundedJson(response: Response): Promise<unknown> {
-  if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) throw new Error('Oversized winter response')
+  if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) {
+    await response.body?.cancel().catch(() => undefined)
+    throw new Error('Oversized winter response')
+  }
   const reader = response.body?.getReader()
   if (!reader) throw new Error('Missing winter response body')
   const chunks: Uint8Array[] = []
@@ -154,12 +157,17 @@ async function readBoundedJson(response: Response): Promise<unknown> {
 
 export async function fetchWinterOutlook(selection: WinterMapSelection): Promise<WinterMapSnapshot> {
   const key = `${selection.product}:${selection.day}:${selection.threshold}`
+  const cached = cache.get(key)
+  if (cached?.status === 'available' && winterOutlookCacheSeconds(cached) === 0) cache.delete(key)
   const snapshot = await cache.load(key, async () => {
     const response = await fetchWithTimeout(winterLayerUrl(selection), {
       timeoutMs: 12_000, maxRetries: 0, cache: 'no-store', redirect: 'error',
       headers: { 'User-Agent': '16BitWeather/1.0 (https://www.16bitweather.co)' },
     })
-    if (!response.ok) throw new Error(`Winter outlook upstream status ${response.status}`)
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined)
+      throw new Error(`Winter outlook upstream status ${response.status}`)
+    }
     return normalizeWinterOutlook(await readBoundedJson(response), selection)
   })
   // Cache freshness cannot extend meteorological validity.

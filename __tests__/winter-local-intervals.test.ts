@@ -1,10 +1,30 @@
 /** @jest-environment node */
-import { normalizeAccumulation, normalizeForecastPeriods } from '@/lib/winter/local-normalize'
+import { normalizeAccumulation, normalizeForecastPeriods, sourceTime } from '@/lib/winter/local-normalize'
 
 const NOW = Date.parse('2026-11-14T03:00:00Z')
 const END = Date.parse('2026-11-14T18:00:00Z')
 const block = (start: string, value: number | null, duration = 'PT6H') => ({ validTime: `2026-11-14T${start}:00:00Z/${duration}`, value })
 const layer = (values: unknown[], uom = 'wmoUnit:mm') => ({ uom, values })
+
+describe('source timestamp validation', () => {
+  it.each(['2026-11-31T00:00:00Z', '2026-04-31T00:00:00-06:00', '2026-02-29T00:00:00Z', '2100-02-29T00:00:00Z', '2026-11-14T24:00:00Z'])('rejects impossible source dates without normalizing them: %s', value => {
+    expect(sourceTime(value)).toBeNull()
+  })
+
+  it.each([
+    ['2028-02-29T23:30:00-07:00', '2028-03-01T06:30:00.000Z'],
+    ['2000-02-29T00:00:00Z', '2000-02-29T00:00:00.000Z'],
+    ['2026-11-14T12:15+05:30', '2026-11-14T06:45:00.000Z'],
+  ])('preserves valid leap dates and source offsets: %s', (value, expected) => {
+    expect(sourceTime(value)).toBe(expected)
+  })
+
+  it('excludes an impossible source interval rather than moving its amount to the next month', () => {
+    const result = normalizeAccumulation(layer([{ validTime: '2026-11-31T00:00:00Z/PT6H', value: 25.4 }]), Date.parse('2026-12-01T00:00Z'), Date.parse('2026-12-01T06:00Z'))
+    expect(result.blocks).toEqual([])
+    expect(result.total.inches).toBeNull()
+  })
+})
 
 describe('source accumulation semantics', () => {
   it('counts six-hour blocks once and bounds the total to fully future blocks', () => {

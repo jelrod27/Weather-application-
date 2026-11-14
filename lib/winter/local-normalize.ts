@@ -5,7 +5,16 @@ export function record(value: unknown): Record<string, unknown> {
 }
 
 export function sourceTime(value: unknown): string | null {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null
+  if (typeof value !== 'string') return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value)
+  if (!match) return null
+  const [, rawYear, rawMonth, rawDay, rawHour, rawMinute, rawSecond] = match
+  const year = Number(rawYear)
+  const month = Number(rawMonth)
+  const day = Number(rawDay)
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const monthDays = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (month < 1 || month > 12 || day < 1 || day > monthDays[month - 1] || Number(rawHour) > 23 || Number(rawMinute) > 59 || Number(rawSecond ?? 0) > 59) return null
   const time = Date.parse(value)
   return Number.isFinite(time) ? new Date(time).toISOString() : null
 }

@@ -50,6 +50,8 @@ describe('winter national outlook fidelity', () => {
     ['inverted validity', collection([feature({ end_time: '2026-11-14 11:00:00' })])],
     ['future issue timestamp', collection([feature({ issue_time: '2026-11-15 08:00:00' })])],
     ['invalid polygon', collection([{ ...feature(), geometry: { type: 'Polygon', coordinates: [] } }])],
+    ['empty polygon ring', collection([{ ...feature(), geometry: { type: 'Polygon', coordinates: [[]] } }])],
+    ['empty multipolygon ring', collection([{ ...feature(), geometry: { type: 'MultiPolygon', coordinates: [[[]]] } }])],
     ['truncated features', { ...collection([feature()]), exceededTransferLimit: true }],
   ])('rejects %s instead of showing misleading partial maps', (_, body) => {
     const result = normalizeWinterOutlook(body, selection, now)

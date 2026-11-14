@@ -37,11 +37,13 @@ it('returns explicit outside coverage as a successful typed response', async () 
   expect(await response.json()).toMatchObject({ status: 'outside_coverage' })
 })
 
-it('returns unavailable as 502 and preserves the typed unknown forecast', async () => {
+it('returns unavailable as a 502 JSON error with revalidation and rate-limit headers', async () => {
   service.mockResolvedValue({ status: 'unavailable', snow: { total: { inches: null } } } as Awaited<ReturnType<typeof fetchLocalWinterForecast>>)
   const response = await GET(new NextRequest('http://localhost/api/winter/forecast?lat=39&lon=-105'))
   expect(response.status).toBe(502)
-  expect(await response.json()).toMatchObject({ status: 'unavailable', snow: { total: { inches: null } } })
+  expect(await response.json()).toEqual({ error: expect.any(String) })
+  expect(response.headers.get('Cache-Control')).toBe('no-store')
+  expect(response.headers.get('X-RateLimit-Remaining')).toBe('19')
 })
 
 it('does not expose upstream errors and uses the shared error boundary', async () => {

@@ -16,6 +16,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Valid latitude and longitude are required.' }, { status: 400, headers })
     }
     const forecast = await fetchLocalWinterForecast(parsed.data.lat, parsed.data.lon)
-    return NextResponse.json(forecast, { status: forecast.status === 'unavailable' ? 502 : 200, headers })
+    if (forecast.status === 'unavailable') {
+      return NextResponse.json({ error: forecast.message ?? 'The official local winter forecast is unavailable.' }, { status: 502, headers })
+    }
+    return NextResponse.json(forecast, { status: 200, headers })
   }, { context: 'winter/forecast', errorMessage: 'The official local winter forecast is unavailable.', errorStatus: 502 })
 }

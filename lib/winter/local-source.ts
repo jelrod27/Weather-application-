@@ -1,5 +1,7 @@
 import { createTtlCache } from '@/lib/cache/ttl-cache'
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
+import { record } from './local-normalize'
+import { pointMetadata } from './local-point'
 
 interface NwsPayload { data: unknown; fetchedAt: string }
 const cache = createTtlCache<NwsPayload>({ ttlMs: 5 * 60_000, maxEntries: 512 })
@@ -20,7 +22,10 @@ export function safeNwsGridUrl(value: unknown, suffix: '' | '/forecast' | '/fore
 }
 
 async function boundedJson(response: Response): Promise<unknown> {
-  if (Number(response.headers.get('content-length')) > MAX_BYTES) throw new Error('NWS response exceeded size limit')
+  if (Number(response.headers.get('content-length')) > MAX_BYTES) {
+    await response.body?.cancel().catch(() => undefined)
+    throw new Error('NWS response exceeded size limit')
+  }
   const reader = response.body?.getReader()
   if (!reader) throw new Error('Empty NWS response')
   const chunks: Uint8Array[] = []
@@ -50,8 +55,13 @@ export async function fetchNwsPayload(url: string, point = false): Promise<NwsPa
       timeoutMs: 8_000, maxRetries: 0, redirect: 'error', cache: 'no-store',
       headers: { Accept: 'application/geo+json', 'User-Agent': '16-Bit-Weather/winter-forecast (https://www.16bitweather.co)' },
     })
-    if (point && [400, 404, 422].includes(response.status)) throw new UnsupportedNwsPoint('NWS does not support this point')
-    if (!response.ok) throw new Error('NWS forecast request failed')
-    return { data: await boundedJson(response), fetchedAt: new Date().toISOString() }
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined)
+      if (point && [400, 404, 422].includes(response.status)) throw new UnsupportedNwsPoint('NWS does not support this point')
+      throw new Error('NWS forecast request failed')
+    }
+    const data = await boundedJson(response)
+    if (point && !pointMetadata(record(data).properties)) throw new Error('Invalid NWS point metadata')
+    return { data, fetchedAt: new Date().toISOString() }
   }, point ? 12 * 60 * 60_000 : undefined)
 }
