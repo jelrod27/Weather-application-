@@ -2,6 +2,8 @@
 
 Status: **Active — approved**, November 14, 2026. The user explicitly approved the fuller Winter experience described in this chat, authorized multiple agents and commits, and requested implementation. No push, PR, or deployment is authorized by that instruction.
 
+Implemented locally in `9639223` and `53697aa`; publication is pending. See [verification and before/after Lighthouse results](../winter-forecast-verification-2026-11-14.md).
+
 ## Intent and scope
 
 Make `/winter` a trustworthy forecasting destination for the contiguous United States. Visitors should understand where significant snow or icing is forecast, when it applies, what local conditions are expected, and how certain the information is. Keep the retro identity, accessible controls, and mobile usability. Strong presentation does not establish forecast superiority over AccuWeather, Weather.com, or human storm coverage.
