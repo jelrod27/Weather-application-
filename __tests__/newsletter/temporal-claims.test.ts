@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { summarizeReportClocks, temporalClaimErrors, temporalReference } from '../../scripts/newsletter/temporal-claims';
+import { normalizeCalendarWeekdays, summarizeReportClocks, temporalClaimErrors, temporalReference } from '../../scripts/newsletter/temporal-claims';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
 import { coverageDisclosure } from '@/lib/newsletter/coverage';
 
@@ -17,6 +17,80 @@ function audit(snapshot = summarizeReportClocks(reports)): CoverageAudit {
       unit: 'report days', snapshot: JSON.stringify(snapshot) }],
   };
 }
+
+describe('generation-time weekday correction', () => {
+  function editionAudit(): CoverageAudit {
+    const context = audit();
+    return {
+      ...context,
+      generatedAt: '2026-11-15T18:31:48.000Z',
+      window: { start: '2026-11-08T12:00:00.000Z', end: '2026-11-15T12:00:00.000Z' },
+    };
+  }
+
+  it.each([
+    ['Tuesday, November 11', 'Wednesday, November 11'],
+    ['Tuesday (November 11, 2026)', 'Wednesday (November 11, 2026)'],
+    ['Wednesday into Thursday (November 12–13)', 'Thursday into Friday (November 12–13)'],
+    ['Tuesday, November 11 and Wednesday, November 12', 'Wednesday, November 11 and Thursday, November 12'],
+    ['Saturday, November 8 through November 15', 'Sunday, November 8 through November 15'],
+  ])('corrects explicit edition weekdays while preserving dates: %s', (draft, expected) => {
+    const context = editionAudit();
+    const corrected = normalizeCalendarWeekdays(draft, context);
+    expect(corrected).toBe(expected);
+    expect(temporalClaimErrors(corrected, context)).toEqual([]);
+    expect(normalizeCalendarWeekdays(corrected, context)).toBe(corrected);
+    // The publication gate still rejects the original model output.
+    expect(temporalClaimErrors(draft, context)).not.toEqual([]);
+  });
+
+  it.each([
+    'wednesday, november 11',
+    'Monday, January 17, 1994',
+    'Tuesday, November 11, 2025',
+    'Tuesday, November 25',
+    'Friday (February 30, 2026)',
+    'Thursday–Friday (November 12–40)',
+    'Thursday (November 12–November 5)',
+    'Tuesday into Wednesday (November 11)',
+  ])('preserves correct labels and does not guess unsupported repairs: %s', draft => {
+    expect(normalizeCalendarWeekdays(draft, editionAudit())).toBe(draft);
+  });
+
+  it('keeps unsupported SPC clock claims blocked after repairing a weekday', () => {
+    const draft = 'Tuesday, November 11 SPC reports were all in the morning local time.';
+    const corrected = normalizeCalendarWeekdays(draft, editionAudit());
+    expect(corrected).toBe(draft.replace('Tuesday', 'Wednesday'));
+    expect(temporalClaimErrors(corrected, editionAudit()).join(' ')).toMatch(/SPC/);
+  });
+
+  it('repairs forecast dates only when they are inside usable covered forecast intervals', () => {
+    const context = editionAudit();
+    const draft = 'Monday, November 17 brings rain.';
+    expect(normalizeCalendarWeekdays(draft, context)).toBe(draft);
+    const forecastWindow = { start: '2026-11-17T00:00:00.000Z', end: '2026-11-18T00:00:00.000Z' };
+    context.sources.push({ ...context.sources[0], id: 'forecast-nyc', requested: forecastWindow, covered: [forecastWindow] });
+    expect(normalizeCalendarWeekdays(draft, context)).toBe('Tuesday, November 17 brings rain.');
+    context.sources[1].usable = false;
+    expect(normalizeCalendarWeekdays(draft, context)).toBe(draft);
+  });
+
+  it('preserves code, quotes, comments, disclosures and CRLF offsets around identical prose', () => {
+    const context = editionAudit();
+    const bad = 'Tuesday, November 11';
+    context.sources[0].label = bad;
+    const prefix = `> ${bad}\r\n\r\n\`\`\`text\r\n${bad}\r\n\`\`\`\r\n<!-- ${bad} -->\r\n\r\n`;
+    const suffix = '\r\n\r\n' + coverageDisclosure(context);
+    expect(normalizeCalendarWeekdays(prefix + bad + suffix, context)).toBe(prefix + 'Wednesday, November 11' + suffix);
+  });
+
+  it('handles an edition spanning New Year without changing explicit years', () => {
+    const context = { ...editionAudit(), generatedAt: '2027-01-03T12:00:00.000Z',
+      window: { start: '2026-12-27T12:00:00.000Z', end: '2027-01-03T12:00:00.000Z' } };
+    expect(normalizeCalendarWeekdays('Wednesday into Thursday (December 31, 2026–January 1, 2027)', context))
+      .toBe('Thursday into Friday (December 31, 2026–January 1, 2027)');
+  });
+});
 
 describe('supported explicit temporal claims', () => {
   it('rejects the published November 12–13 weekday contradiction', () => {

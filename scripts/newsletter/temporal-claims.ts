@@ -3,7 +3,7 @@
  */
 import { z } from 'zod';
 import { splitSentences } from './post-header';
-import { coverageDisclosure } from '@/lib/newsletter/coverage';
+import { coverageDisclosure, DAY_MS } from '@/lib/newsletter/coverage';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -66,14 +66,17 @@ function proseOnly(markdown: string, audit: CoverageAudit): string {
   const article = trimmed.endsWith(disclosure) ? trimmed.slice(0, -disclosure.length) : markdown;
   // Mask comments without joining surrounding tokens or recreating delimiters.
   // Preserve newlines so quote/fence boundaries keep their original meaning.
-  return article.replace(/<!--[\s\S]*?-->/g, comment => comment.replace(/[^\r\n]/g, ' ')).split(/\r?\n/).filter(line => {
+  // Keep character offsets intact so generation-time calendar corrections can
+  // edit prose without touching quoted examples, code or audit disclosure.
+  const mask = (text: string): string => text.replace(/[^\r\n]/g, ' ');
+  return article.replace(/<!--[\s\S]*?-->/g, mask).split('\n').map(line => {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
     if (marker) {
       if (!fence) fence = marker[0];
       else if (fence === marker[0]) fence = null;
-      return false;
+      return mask(line);
     }
-    return !fence && !/^\s*>/.test(line);
+    return fence || /^\s*>/.test(line) ? mask(line) : line;
   }).join('\n');
 }
 
@@ -87,14 +90,18 @@ function inferYear(month: number, day: number, reference: Date): number {
   return [year - 1, year, year + 1].sort((a, b) => Math.abs(Date.UTC(a, month, day) - reference.getTime()) - Math.abs(Date.UTC(b, month, day) - reference.getTime()))[0];
 }
 
-/** Supported forms include Thursday (November 12), and Thursday–Friday
- * (November 12–13). Unqualified years use the nearest edition calendar date.
- */
-export function temporalClaimErrors(markdown: string, audit: CoverageAudit): string[] {
-  const prose = proseOnly(markdown, audit);
-  const reference = new Date(audit.generatedAt);
-  if (!Number.isFinite(reference.getTime())) return ['Temporal validation requires a valid edition timestamp'];
-  const errors: string[] = [];
+interface CalendarClaim {
+  text: string;
+  index: number;
+  startWeekday: string;
+  endWeekday: string | undefined;
+  start: Date | null;
+  end: Date | null;
+  hasRangeEnd: boolean;
+}
+
+/** Shared parsing keeps generation-time repairs and publication checks aligned. */
+function* calendarClaims(prose: string, reference: Date): Generator<CalendarClaim> {
   const pair = new RegExp(`\\b(${WEEKDAY_PATTERN})(?:\\s*(?:through|into|to|and|[–—/-])\\s*(${WEEKDAY_PATTERN}))?\\s*(?:[,\\(]\\s*)?(${MONTH_PATTERN})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?(?:\\s*(through|to|[–—-])\\s*(?:(${MONTH_PATTERN})\\s+)?(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?)?\\b`, 'gi');
   for (const match of prose.matchAll(pair)) {
     const [, startWeekday, endWeekday, startMonth, startDay, startYear, rangeSeparator, endMonth, endDay, endYear] = match;
@@ -109,14 +116,57 @@ export function temporalClaimErrors(markdown: string, audit: CoverageAudit): str
     const proseAside = rangeSeparator === '—' && /\s—\s/.test(match[0]);
     const hasRangeEnd = Boolean(endDay && (!proseAside || endWeekday || endMonth || endYear));
     const end = hasRangeEnd ? validDate(endYear ? Number(endYear) : year + rollsYear, lastMonth, Number(endDay)) : null;
+    yield { text: match[0], index: match.index!, startWeekday, endWeekday, start, end, hasRangeEnd };
+  }
+}
+
+/**
+ * Correct only weekday labels attached to valid dates in this edition's
+ * reporting window or covered forecast days. Dates and event details never
+ * change. Other contradictions still go through retries and the hard gate.
+ * This runs only on generated prose, never on edited/published candidates.
+ */
+export function normalizeCalendarWeekdays(markdown: string, audit: CoverageAudit): string {
+  const reference = new Date(audit.generatedAt);
+  if (!Number.isFinite(reference.getTime())) return markdown;
+  const windows = [audit.window, ...audit.sources
+    .filter(source => source.usable && source.id.startsWith('forecast-'))
+    .flatMap(source => source.covered)];
+  const inEdition = (date: Date): boolean => windows.some(window =>
+    date.getTime() < Date.parse(window.end) && date.getTime() + DAY_MS > Date.parse(window.start));
+  let corrected = markdown;
+  const claims = [...calendarClaims(proseOnly(markdown, audit), reference)];
+  for (const claim of claims.reverse()) {
+    const { start, end, endWeekday, hasRangeEnd } = claim;
+    if (!start || (hasRangeEnd && (!end || end < start)) || (endWeekday && !end)) continue;
+    if (!inEdition(start) || (end && !inEdition(end))) continue;
+    let endpoint = 0;
+    const replacement = claim.text.replace(new RegExp(`\\b(${WEEKDAY_PATTERN})\\b`, 'gi'), weekday => {
+      const expected = WEEKDAYS[(endpoint++ === 0 ? start : end!).getUTCDay()];
+      return weekday.toLowerCase() === expected.toLowerCase() ? weekday : expected;
+    });
+    corrected = corrected.slice(0, claim.index) + replacement + corrected.slice(claim.index + claim.text.length);
+  }
+  return corrected;
+}
+
+/** Supported forms include Thursday (November 12), and Thursday–Friday
+ * (November 12–13). Unqualified years use the nearest edition calendar date.
+ */
+export function temporalClaimErrors(markdown: string, audit: CoverageAudit): string[] {
+  const prose = proseOnly(markdown, audit);
+  const reference = new Date(audit.generatedAt);
+  if (!Number.isFinite(reference.getTime())) return ['Temporal validation requires a valid edition timestamp'];
+  const errors: string[] = [];
+  for (const { text, startWeekday, endWeekday, start, end, hasRangeEnd } of calendarClaims(prose, reference)) {
     if (!start || (hasRangeEnd && (!end || end < start))) {
-      errors.push(`Invalid date in explicit calendar claim: ${match[0]}`);
+      errors.push(`Invalid date in explicit calendar claim: ${text}`);
       continue;
     }
     const expected = [WEEKDAYS[start.getUTCDay()], ...(endWeekday && end ? [WEEKDAYS[end.getUTCDay()]] : [])];
     if (startWeekday.toLowerCase() !== expected[0].toLowerCase() ||
         (endWeekday && (!end || endWeekday.toLowerCase() !== expected[1]?.toLowerCase()))) {
-      errors.push(`Calendar claim "${match[0]}" disagrees with its dates; expected ${expected.join('–')}${endWeekday && !end ? ' with an explicit end date' : ''}`);
+      errors.push(`Calendar claim "${text}" disagrees with its dates; expected ${expected.join('–')}${endWeekday && !end ? ' with an explicit end date' : ''}`);
     }
   }
 
@@ -161,11 +211,20 @@ export function temporalClaimErrors(markdown: string, audit: CoverageAudit): str
 
 export function temporalReference(audit: CoverageAudit, forecastDates: readonly string[]): {
   forecastTimeZone: string;
+  reportingDays: Array<{ date: string; weekday: string }>;
   forecastDays: Array<{ date: string; weekday: string }>;
   spcReportClocks: Array<{ reportDay: string; clocks: ReportClockSummary | null }>;
 } {
+  const reportingDays: Array<{ date: string; weekday: string }> = [];
+  const start = new Date(audit.window.start);
+  start.setUTCHours(0, 0, 0, 0);
+  for (let time = start.getTime(); time < Date.parse(audit.window.end); time += DAY_MS) {
+    const date = new Date(time);
+    reportingDays.push({ date: date.toISOString().slice(0, 10), weekday: WEEKDAYS[date.getUTCDay()] });
+  }
   return {
     forecastTimeZone: 'UTC',
+    reportingDays,
     forecastDays: [...new Set(forecastDates)].sort().map(date => ({ date, weekday: WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()] })),
     spcReportClocks: audit.sources.filter(source => /^spc-\d{4}-\d{2}-\d{2}$/.test(source.id)).map(source => ({ reportDay: source.id.slice(4), clocks: readClocks(source.snapshot) })),
   };

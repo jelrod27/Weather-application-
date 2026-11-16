@@ -33,7 +33,7 @@ import {
 } from './state';
 import { buildVoiceCorrectionInstruction, sweepVoice, VOICE_SYSTEM_PROMPT } from './voice';
 import { collectSundayEvidence, formatSundayEvidence } from './data/sunday-evidence';
-import { temporalClaimErrors } from './temporal-claims';
+import { normalizeCalendarWeekdays, temporalClaimErrors } from './temporal-claims';
 import type { TopicSlug } from './topics';
 import type { SundayEvidence } from './data/sunday-evidence';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
@@ -585,7 +585,7 @@ async function generate(opts: GenerateOpts): Promise<string> {
 - ${closer.instruction}
 
 TIME PRECISION:
-- Use the supplied temporalReference weekday/date pairs for UTC forecast days. Never invent a weekday from memory. Explicit weekday/date contradictions block publication.
+- Use the supplied temporalReference reportingDays and forecastDays weekday/date pairs for past events and UTC forecast days. Never invent a weekday from memory. Explicit weekday/date contradictions block publication.
 - For an entire SPC report-day log, prefer exact UTC report-time bounds. A saved local-clock summary covers only unambiguous statewide time zones; unknown or split-zone states require UTC. Do not call a whole log "all morning" or "all afternoon" unless its complete clock evidence supports that assertion. Report timestamps do not establish bulletin publication times.
 - The data block uses UTC timestamps. When you describe an event in prose, convert to the affected region's local time-of-day before choosing words like "morning", "afternoon", "evening", or "overnight". A 19:57Z warning in Pennsylvania is afternoon EDT, not evening. A 02:00Z warning in Mississippi is late evening CDT, not morning.
 - Do not group temporally-distinct or geographically-distinct convective rounds into a single "later that evening" narrative unless they actually occurred together.`);
@@ -596,13 +596,16 @@ TIME PRECISION:
 
   sections.push(`Return only the markdown body — no frontmatter, no fences, no commentary. Do not include a # H1 title.`);
 
-  return callAnthropic({
+  const draft = await callAnthropic({
     model: DEFAULT_MODEL,
     systemBlocks,
     messages: [{ role: 'user', content: sections.join('\n\n') }],
     maxTokens: 3500,
     temperature: 0.7,
   });
+  const corrected = normalizeCalendarWeekdays(draft, coverage);
+  if (corrected !== draft) console.info('[sunday] normalized weekday labels from explicit edition dates');
+  return corrected;
 }
 
 function wordCount(text: string): number {
