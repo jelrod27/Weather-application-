@@ -273,7 +273,7 @@ describe('archive and forecast coverage', () => {
   it('keeps the other city forecasts when one fails and rejects missing daily values', async () => {
     fetchMock.mockImplementation(async input => {
       const url = new URL(String(input));
-      if (url.searchParams.get('latitude') === '40.71') throw new Error('timeout');
+      if ((url.searchParams.get('latitude') ?? url.searchParams.get('lat')) === '40.71') throw new Error('timeout');
       const days = Array.from({ length: 7 }, (_, i) => new Date(Date.parse('2026-10-11T00:00:00Z') + i * DAY_MS).toISOString().slice(0, 10));
       return json({ utc_offset_seconds: 0, daily_units: { temperature_2m_max: '°F', temperature_2m_min: '°F', precipitation_sum: 'inch', precipitation_probability_max: '%' }, daily: {
         time: days, temperature_2m_max: [null, 60, 60, 60, 60, 60, 60], temperature_2m_min: days.map(() => 40),

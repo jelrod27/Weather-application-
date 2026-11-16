@@ -9,6 +9,7 @@ import { callAnthropic, judgeSimilarity } from '../../scripts/newsletter/repetit
 import { runSunday } from '../../scripts/newsletter/sunday';
 import { publishPost } from '../../scripts/newsletter/publish';
 import { validateGeneratedPost } from '../../scripts/newsletter/validate-post';
+import { readySundayEvidence } from '../fixtures/newsletter/sunday-ready';
 import type { SundayEvidence } from '../../scripts/newsletter/data/sunday-evidence';
 
 jest.mock('../../scripts/newsletter/data/sunday-evidence', () => ({ ...jest.requireActual('../../scripts/newsletter/data/sunday-evidence'), collectSundayEvidence: jest.fn() }));
@@ -20,7 +21,7 @@ jest.mock('../../scripts/newsletter/repetition', () => ({
 }));
 
 const window = { start: '2026-11-01T12:00:00.000Z', end: '2026-11-08T12:00:00.000Z' };
-const evidence: SundayEvidence = {
+const evidenceWithoutForecasts: SundayEvidence = {
   warnings: null, spcSummary: null, spaceSummary: null, quakeSummary: null, forecast: null, national: null,
   coverage: { version: 1, cadence: 'sunday_rearview', generatedAt: '2026-11-08T17:40:00.000Z', window, sources: [
     { id: 'swpc-kp', label: 'Kp', url: 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', requested: window,
@@ -31,13 +32,21 @@ const evidence: SundayEvidence = {
       observationEnd: null, unit: 'forecast days', reasons: ['Unavailable'] },
   ] },
 };
-const invalid = '## Rearview\n\nA compact set of storm reports was recorded.\n\n## Roadmap\n\nRain arrives Wednesday into Thursday (November 12–13).';
+const evidence = readySundayEvidence(evidenceWithoutForecasts.coverage);
+const invalid = '## Rearview\n\nA compact set of storm reports was recorded.\n\n## Roadmap\n\nRain arrives Wednesday into Thursday (November 19–20).';
 const valid = invalid.replace('Wednesday into Thursday', 'Thursday into Friday');
 
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(collectSundayEvidence).mockResolvedValue(evidence);
   jest.mocked(judgeSimilarity).mockResolvedValue({ max: 0, worstMatch: null, triggerPhrases: [] });
+});
+
+it('holds an edition with no city forecasts before asking the model to write prose', async () => {
+  jest.mocked(collectSundayEvidence).mockResolvedValue(evidenceWithoutForecasts);
+  jest.mocked(callAnthropic).mockResolvedValue(valid);
+  await expect(runSunday()).rejects.toThrow(/city forecast/i);
+  expect(callAnthropic).not.toHaveBeenCalled();
 });
 
 it('fails closed before image selection when temporal contradictions exhaust the generation budget', async () => {
@@ -57,11 +66,11 @@ it('feeds a concrete calendar correction into the next generation attempt', asyn
 
 it('recovers the November 15 edition when the writer repeats Tuesday, November 11', async () => {
   const coverage = {
-    ...evidence.coverage,
+    ...evidenceWithoutForecasts.coverage,
     generatedAt: '2026-11-15T18:31:48.000Z',
     window: { start: '2026-11-08T12:00:00.000Z', end: '2026-11-15T12:00:00.000Z' },
   };
-  jest.mocked(collectSundayEvidence).mockResolvedValue({ ...evidence, coverage });
+  jest.mocked(collectSundayEvidence).mockResolvedValue(readySundayEvidence(coverage));
   jest.mocked(callAnthropic).mockResolvedValue('## Rearview\n\nStorm reports arrived Tuesday, November 11.\n\n## Roadmap\n\nThe forecast is unavailable.');
 
   const result = await runSunday();
@@ -71,9 +80,10 @@ it('recovers the November 15 edition when the writer repeats Tuesday, November 1
 });
 
 it('corrects edition weekdays again after a similarity rewrite and validates the publication bundle', async () => {
-  const coverage = { ...evidence.coverage, generatedAt: '2026-11-15T18:31:48.000Z',
+  const coverage = { ...evidenceWithoutForecasts.coverage, generatedAt: '2026-11-15T18:31:48.000Z',
     window: { start: '2026-11-08T12:00:00.000Z', end: '2026-11-15T12:00:00.000Z' } };
-  jest.mocked(collectSundayEvidence).mockResolvedValue({ ...evidence, coverage });
+  jest.mocked(collectSundayEvidence).mockResolvedValue(readySundayEvidence(coverage));
+  const readyCoverage = readySundayEvidence(coverage).coverage;
   const draft = '## Rearview\n\nStorm reports arrived Wednesday, November 11.\n\n## Roadmap\n\nThe forecast is unavailable.';
   jest.mocked(callAnthropic).mockResolvedValueOnce(draft).mockResolvedValue(draft.replace('Wednesday', 'Tuesday'));
   jest.mocked(judgeSimilarity).mockResolvedValueOnce({ max: 0.9, worstMatch: null, triggerPhrases: [] });
@@ -86,7 +96,7 @@ it('corrects edition weekdays again after a similarity rewrite and validates the
       cadence: 'sunday_rearview', body: result.draft, openerHash: result.openerHash, keyPhrases: result.keyPhrases,
       similarityMax: result.similarity.max, similarityJudge: 'test', modelUsed: 'test', images: result.images,
       imageAudit: result.imageAudit, spotlight: null, retries: result.retries, wordCount: result.wordCount, closerUsed: 'test',
-    }, { coverage, root });
+    }, { coverage: readyCoverage, root });
     expect(validateGeneratedPost(published.filePath, { publication: true, root }).errors).toEqual([]);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

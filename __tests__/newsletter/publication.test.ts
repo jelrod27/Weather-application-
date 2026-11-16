@@ -10,6 +10,7 @@ import { publishPost } from '../../scripts/newsletter/publish';
 import { promoteDraft, recordReview } from '../../scripts/newsletter/review';
 import { validateGeneratedPost } from '../../scripts/newsletter/validate-post';
 import { validateNewsletterChanges } from '../../scripts/newsletter/validate-changes';
+import { readySundayEvidence } from '../fixtures/newsletter/sunday-ready';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
 import type { BlogPost } from '@/lib/blog';
 import type { PublishInput, PublishSundayInput } from '../../scripts/newsletter/publish';
@@ -121,7 +122,8 @@ describe('newsletter publication boundary', () => {
     { cadence: 'wednesday_topic', partial: true }, { cadence: 'wednesday_topic', partial: false },
     { cadence: 'sunday_rearview', partial: true }, { cadence: 'sunday_rearview', partial: false },
   ] as const)('prepares a merge-to-publish PR for $cadence (partial=$partial)', async ({ cadence, partial }) => {
-    const candidate = await publishPost(inputFor(cadence), { coverage: { ...audit(partial), cadence }, root });
+    const coverage = cadence === 'sunday_rearview' ? readySundayEvidence(audit(partial)).coverage : { ...audit(partial), cadence };
+    const candidate = await publishPost(inputFor(cadence), { coverage, root });
     const outputDir = path.join(root, 'newsletter-output');
     fs.mkdirSync(outputDir);
     fs.writeFileSync(path.join(outputDir, 'run.json'), JSON.stringify({ ...candidate, stage: 'ready', dryRun: false }));
@@ -134,8 +136,8 @@ describe('newsletter publication boundary', () => {
     expect(values).toMatch(/receipt_file=content\/newsletter-audits\/[^\n]+\.review\.json/);
     const body = fs.readFileSync(path.join(outputDir, 'pr-body.md'), 'utf8');
     expect(body).toMatch(/merg(e|ing).*publish/i);
-    expect(body).toContain('Auto-merge is requested');
-    expect(body).toContain('required checks and resolved review conversations');
+    expect(body).toContain('Editorial merge required');
+    expect(body).toContain('<details>');
     expect(body).not.toMatch(/does not publish|publishes nothing|explicit approval|draft PR/);
     if (partial) expect(body).toContain('Request failed');
   });
@@ -148,6 +150,18 @@ describe('newsletter publication boundary', () => {
     expect(validateGeneratedPost(copied, { publication: true, root }).ok).toBe(false);
     expect(validateGeneratedPost(copied, { publication: true, draft: true, root }).ok).toBe(false);
     await expectPublicExclusion(candidate.slug);
+  });
+
+  it('refuses to prepare a Sunday publishing PR with a valid receipt but no core forecasts', async () => {
+    const candidate = await publishPost(INPUT, { coverage: audit(), root });
+    const outputDir = path.join(root, 'newsletter-output');
+    fs.mkdirSync(outputDir);
+    fs.writeFileSync(path.join(outputDir, 'run.json'), JSON.stringify({ ...candidate, stage: 'ready', dryRun: false }));
+    expect(() => execFileSync(path.join(REPO, 'node_modules/.bin/tsx'), [path.join(REPO, 'scripts/newsletter/workflow-result.ts')], {
+      cwd: root, env: { ...process.env, GITHUB_OUTPUT: path.join(root, 'github-output'), TSX_TSCONFIG_PATH: path.join(REPO, 'tsconfig.json') }, stdio: 'pipe',
+    })).toThrow();
+    expect(fs.existsSync(path.join(root, 'github-output'))).toBe(false);
+    expect(fs.existsSync(path.join(outputDir, 'pr-body.md'))).toBe(false);
   });
 
   it('requires explicit acknowledgment and a disposition for every gap before promotion', async () => {

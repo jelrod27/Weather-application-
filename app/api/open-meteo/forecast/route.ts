@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         temperatureUnit,
         windSpeedUnit,
         precipitationUnit,
+        ...(sp.get('timezone') === 'UTC' ? { timeZone: 'UTC' as const } : {}),
       });
 
       let moonPhase = null;

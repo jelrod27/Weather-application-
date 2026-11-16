@@ -121,17 +121,13 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     );
   });
 
-  it('requests protected squash auto-merge for the new PR with its creation-time head', () => {
+  it('opens a publishing PR for editorial review without requesting auto-merge', () => {
     const { status, calls, body } = runPublicationStep(workflow);
     expect(status).toBe(0);
     const create = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'create');
     const merge = calls.findIndex(call => call.command === 'gh' && call.args[0] === 'pr' && call.args[1] === 'merge');
     expect(create).toBeGreaterThanOrEqual(0);
-    expect(merge).toBeGreaterThan(create);
-    expect(calls[merge].args).toEqual([
-      'pr', 'merge', 'https://github.com/jelrod27/Weather-application-/pull/123',
-      '--auto', '--squash', '--match-head-commit', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    ]);
+    expect(merge).toBe(-1);
     expect(body).toContain('<!-- newsletter-generated-head: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -->');
     const ref = calls.find(call => call.command === 'git' && call.args[0] === 'checkout')!.args[2];
     const pr = { body, base: { ref: 'main' }, head: { ref, sha: 'a'.repeat(40) } };
@@ -148,9 +144,9 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(calls.some(call => call.command === 'gh' && call.args.includes('merge'))).toBe(false);
   });
 
-  it('fails visibly when enabling auto-merge fails', () => {
+  it('does not need merge permission to create an editorial PR', () => {
     const { status } = runPublicationStep(workflow, '0', '1');
-    expect(status).not.toBe(0);
+    expect(status).toBe(0);
   });
 
   it('keeps the Husky secret scan enabled', () => {

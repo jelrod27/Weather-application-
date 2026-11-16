@@ -42,6 +42,12 @@ function respond(base = forecast([98.8, 94]), nbm = forecast([88.5, 79.9])) {
 
 beforeEach(() => mockRequest.mockReset());
 
+it('requests UTC daily boundaries when the newsletter explicitly asks for UTC', async () => {
+  respond();
+  await fetchOpenMeteoForecast(40.71, -74, { timeZone: 'UTC' });
+  expect(new URL(mockRequest.mock.calls[0][0]).searchParams.get('timezone')).toBe('UTC');
+});
+
 it.each(['fahrenheit', 'celsius'] as const)('uses aligned NBM daily and hourly temperatures in %s, preserving other fields', async unit => {
   const metric = unit === 'celsius';
   const { base, nbm } = respond(

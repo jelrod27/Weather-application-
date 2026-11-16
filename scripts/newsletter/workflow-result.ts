@@ -4,6 +4,7 @@ import path from 'node:path';
 import { coverageDisclosure, coverageOutcome } from '@/lib/newsletter/coverage';
 import { readPublicationBundle } from '@/lib/newsletter/publication';
 import { validateGeneratedPost } from './validate-post';
+import { sundaySourceErrors } from './source-quality';
 
 function main(): void {
   const report = JSON.parse(fs.readFileSync('newsletter-output/run.json', 'utf8'));
@@ -13,6 +14,8 @@ function main(): void {
   const validation = validateGeneratedPost(report.filePath, { publication: true });
   if (!validation.ok) throw new Error(validation.errors.join('\n'));
   const bundle = readPublicationBundle(fs.readFileSync(report.filePath, 'utf8'));
+  const sourceErrors = sundaySourceErrors(bundle.audit);
+  if (sourceErrors.length) throw new Error(sourceErrors.join('\n'));
   if (report.outcome !== coverageOutcome(bundle.audit)) {
     throw new Error('Run outcome does not match the publication audit');
   }
@@ -24,25 +27,28 @@ function main(): void {
   };
   if (!process.env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required');
   fs.appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(values).map(([key, value]) => `${key}=${value}`).join('\n') + '\n');
-  const national = bundle.audit.sources.filter(source => source.id.startsWith('wpc-'));
   const gaps = bundle.audit.sources.filter(source => source.status !== 'complete');
-  const sundayChecklist = [
-    `- Candidate: \`${postFile}\``,
-    `- Source audit: \`${values.audit_file}\``,
-    `- Coverage: **${report.outcome}**`,
-    ...national.map(source => `- ${source.label}: **${source.status}** (checked ${source.retrievedAt})`),
-    ...gaps.map(source => `- Disclosed limitation: ${source.label} — ${source.reasons.join('; ')}`),
+  const citySources = bundle.audit.sources.filter(source => source.id.startsWith('forecast-'));
+  const sunday = bundle.audit.cadence === 'sunday_rearview';
+  const overview = [
+    `- Article: [${String(report.title).replace(/[\r\n]/g, ' ')}](${postFile})`,
+    ...(sunday ? [
+      '- National outlook: current NOAA/WPC short-range and extended discussions available.',
+      `- City forecasts: **${citySources.filter(source => source.status === 'complete').length}/${citySources.length}** complete seven-day forecasts.`,
+    ] : []),
+    `- Source coverage: **${report.outcome}**.${gaps.length ? ` ${gaps.length} source gaps are documented below and disclosed in the article.` : ''}`,
   ].join('\n');
-  const body = bundle.audit.cadence === 'sunday_rearview' ? [
-    '## Sunday outlook review',
-    sundayChecklist,
-    '## Next step',
-    'Merging this PR publishes the blog post when the site deploys from `main`. Auto-merge is requested by the generating workflow and waits for required checks and resolved review conversations. The post, source audit and publication receipt are included. Review the Lower 48 outlook against the dated NOAA/WPC discussions, city forecasts and source links. Any source gaps remain disclosed in the published article; no separate promotion is required.',
+  const body = [
+    sunday ? '## Sunday weather edition' : '## Wednesday weather article',
+    overview,
+    '**Editorial merge required.** Review the article for useful weather detail, clear prose and supported claims. Merging publishes it when the site deploys from `main`. The workflow opens this PR without enabling auto-merge; CI passing is not an editorial approval.',
+    '<details>\n<summary>Source coverage and publication records</summary>\n',
+    `Audit: \`${values.audit_file}\`\n\nReceipt: \`${values.receipt_file}\``,
+    coverageDisclosure(bundle.audit),
+    '</details>',
+    '<details>\n<summary>Image selection</summary>\n',
     validation.auditMarkdown,
-  ].join('\n\n') : [
-    `Generated newsletter candidate: \`${postFile}\`. Coverage: **${report.outcome}**.`,
-    'Merging this PR publishes the blog post when the site deploys from `main`. Auto-merge is requested by the generating workflow and waits for required checks and resolved review conversations. The post, source audit and publication receipt are included. Review the prose and citations; any source gaps remain disclosed in the published article. No separate promotion is required.',
-    coverageDisclosure(bundle.audit), validation.auditMarkdown,
+    '</details>',
   ].join('\n\n');
   fs.writeFileSync('newsletter-output/pr-body.md', body + '\n');
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, body + '\n');
