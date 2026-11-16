@@ -1,22 +1,13 @@
 {
   "version": 1,
-  "postSha256": "6b4d31e7041175f08712289d6c9d4776957f6fc7d082b049d19076120c8afaa1",
-  "auditSha256": "aab2c4c1273069487678dcf2dba7bd7fc88c6e230adb90d7448783964c099103",
+  "postSha256": "b41ff935a3211ecb27ce3511c2ab63b6d1804e2ab97b6e29ecc06685d72a0068",
+  "auditSha256": "9841702dfa7f7764802521bcd81e5604d63e1eebea26800e51ff039ca5479db6",
   "decision": "disclosed-partial",
   "reviewer": "newsletter-automation",
   "acknowledged": true,
-  "reviewedAt": "2026-11-16T01:05:12.144Z",
+  "reviewedAt": "2026-11-16T02:53:39.206Z",
   "gapDispositions": {
-    "swpc-kp": "Published with partial coverage disclosed to readers: Missing 4 of 56 expected intervals; peak is only for observed coverage",
-    "swpc-xray": "Published with partial coverage disclosed to readers: Missing 787 of 10080 expected intervals; peak is only for observed coverage",
-    "forecast-40.71--74": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-33.75--84.39": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-41.88--87.63": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-39.74--104.99": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-37.77--122.42": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-32.78--96.8": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-51.5--0.13": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast-35.68-139.69": "Published with unavailable coverage disclosed to readers: Request failed or timed out",
-    "forecast--33.87-151.21": "Published with unavailable coverage disclosed to readers: Request failed or timed out"
+    "swpc-kp": "Retained only available-interval observations, avoided whole-week peak claims, and disclosed the source gaps: Missing 4 of 56 expected intervals; peak is only for observed coverage",
+    "swpc-xray": "Retained only available-interval observations, avoided whole-week peak claims, and disclosed the source gaps: Missing 891 of 10080 expected intervals; peak is only for observed coverage"
   }
 }
