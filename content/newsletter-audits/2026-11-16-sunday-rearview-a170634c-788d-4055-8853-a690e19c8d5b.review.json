@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "postSha256": "b41ff935a3211ecb27ce3511c2ab63b6d1804e2ab97b6e29ecc06685d72a0068",
+  "auditSha256": "9841702dfa7f7764802521bcd81e5604d63e1eebea26800e51ff039ca5479db6",
+  "decision": "disclosed-partial",
+  "reviewer": "newsletter-automation",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-16T02:53:39.206Z",
+  "gapDispositions": {
+    "swpc-kp": "Retained only available-interval observations, avoided whole-week peak claims, and disclosed the source gaps: Missing 4 of 56 expected intervals; peak is only for observed coverage",
+    "swpc-xray": "Retained only available-interval observations, avoided whole-week peak claims, and disclosed the source gaps: Missing 891 of 10080 expected intervals; peak is only for observed coverage"
+  }
+}
