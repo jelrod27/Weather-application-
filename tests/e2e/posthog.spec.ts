@@ -106,10 +106,13 @@ test.describe('PostHog production SDK', () => {
     })
     await interceptPostHog(page, events)
     await page.goto('/about')
+    // PostHog installs this history hook during initialization, even with DNT.
+    // Wait for it so a missing or delayed SDK cannot pass the negative assertions.
+    await expect.poll(() => page.evaluate(() => '__posthog_wrapped__' in history.pushState), {
+      message: 'PostHog must initialize navigation tracking before checking DNT',
+    }).toBe(true)
     await page.locator('a[href="/"]').filter({ visible: true }).first().click()
     await expect(page).toHaveURL(/\/$/)
-    // Observe deferred SDK initialization and storage writes before a negative assertion.
-    await page.waitForTimeout(1000)
     expect(events).toEqual([])
     const identifiers = await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('ph_')))
     expect(identifiers).toEqual([])
