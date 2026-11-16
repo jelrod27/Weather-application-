@@ -95,6 +95,7 @@ Use `rg -l 'cadence: wednesday_topic' content/blog/*.md` to find all Wednesday p
 - **Anthropic 429 / 5xx** → wrapper bubbles up the status. Re-run after a cool-down or upgrade rate limits.
 - **Voice violations** → up to 2 regenerations. After that, post persists with violations recorded — the next run will see them in the deny list.
 - **Similarity > 0.85** → up to 2 regenerations with trigger phrases injected into deny list. Persists either way; the score lands in `similarity_max` for trend monitoring.
+- **Sunday weekday/date mismatch** → generation calculates weekday labels from explicit valid dates inside the edition's reporting window or covered city forecast days, including after a similarity rewrite. The prompt supplies both reporting-day and forecast-day calendars. Dates, event details, quoted examples and source disclosures are preserved. Invalid dates, unsupported aggregate clock claims and out-of-window contradictions still enter the existing two-retry budget and block publication if unresolved. The publication validator checks saved candidates without repairing them.
 
 ## Curating the topic catalog
 

@@ -55,6 +55,42 @@ it('feeds a concrete calendar correction into the next generation attempt', asyn
   expect(callAnthropic).toHaveBeenNthCalledWith(2, expect.objectContaining({ messages: [expect.objectContaining({ content: expect.stringMatching(/expected Thursday–Friday/) })] }));
 });
 
+it('recovers the November 15 edition when the writer repeats Tuesday, November 11', async () => {
+  const coverage = {
+    ...evidence.coverage,
+    generatedAt: '2026-11-15T18:31:48.000Z',
+    window: { start: '2026-11-08T12:00:00.000Z', end: '2026-11-15T12:00:00.000Z' },
+  };
+  jest.mocked(collectSundayEvidence).mockResolvedValue({ ...evidence, coverage });
+  jest.mocked(callAnthropic).mockResolvedValue('## Rearview\n\nStorm reports arrived Tuesday, November 11.\n\n## Roadmap\n\nThe forecast is unavailable.');
+
+  const result = await runSunday();
+  expect(result.draft).toContain('Wednesday, November 11');
+  expect(result.retries).toBe(0);
+  expect(callAnthropic).toHaveBeenCalledTimes(1);
+});
+
+it('corrects edition weekdays again after a similarity rewrite and validates the publication bundle', async () => {
+  const coverage = { ...evidence.coverage, generatedAt: '2026-11-15T18:31:48.000Z',
+    window: { start: '2026-11-08T12:00:00.000Z', end: '2026-11-15T12:00:00.000Z' } };
+  jest.mocked(collectSundayEvidence).mockResolvedValue({ ...evidence, coverage });
+  const draft = '## Rearview\n\nStorm reports arrived Wednesday, November 11.\n\n## Roadmap\n\nThe forecast is unavailable.';
+  jest.mocked(callAnthropic).mockResolvedValueOnce(draft).mockResolvedValue(draft.replace('Wednesday', 'Tuesday'));
+  jest.mocked(judgeSimilarity).mockResolvedValueOnce({ max: 0.9, worstMatch: null, triggerPhrases: [] });
+  const result = await runSunday();
+  expect(result.draft).toContain('Wednesday, November 11');
+  expect(result.retries).toBe(1);
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'newsletter-calendar-recovery-'));
+  try {
+    const published = await publishPost({
+      cadence: 'sunday_rearview', body: result.draft, openerHash: result.openerHash, keyPhrases: result.keyPhrases,
+      similarityMax: result.similarity.max, similarityJudge: 'test', modelUsed: 'test', images: result.images,
+      imageAudit: result.imageAudit, spotlight: null, retries: result.retries, wordCount: result.wordCount, closerUsed: 'test',
+    }, { coverage, root });
+    expect(validateGeneratedPost(published.filePath, { publication: true, root }).errors).toEqual([]);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 it('rechecks a similarity rewrite instead of allowing it to reintroduce a contradiction', async () => {
   jest.mocked(callAnthropic).mockResolvedValueOnce(valid).mockResolvedValue(invalid);
   jest.mocked(judgeSimilarity).mockResolvedValueOnce({ max: 0.9, worstMatch: null, triggerPhrases: [] });
