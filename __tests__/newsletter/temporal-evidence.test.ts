@@ -25,4 +25,8 @@ it('records clock evidence for every validated report, including reports outside
   expect(context.spcSummary.reports).toHaveLength(20);
   expect(context.temporalReference.spcReportClocks[0].clocks.localHours).toEqual([10, 13]);
   expect(context.temporalReference.forecastDays).toEqual([{ date: '2026-11-12', weekday: 'Thursday' }]);
+  expect(context.temporalReference.reportingDays).toEqual([
+    { date: '2026-11-03', weekday: 'Tuesday' },
+    { date: '2026-11-04', weekday: 'Wednesday' },
+  ]);
 });
