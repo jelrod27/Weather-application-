@@ -46,6 +46,13 @@ const mockedFetch = fetchOpenMeteoForecast as jest.MockedFunction<typeof fetchOp
 const mockedRateLimit = rateLimitRequest as jest.MockedFunction<typeof rateLimitRequest>;
 
 describe('GET /api/open-meteo/forecast', () => {
+  it('allows an explicit UTC forecast without accepting arbitrary timezone parameters', async () => {
+    mockedFetch.mockResolvedValue({ latitude: 40.71, longitude: -74 } as never);
+    await GET(new NextRequest('http://localhost/api/open-meteo/forecast?lat=40.71&lon=-74&timezone=UTC'));
+    expect(mockedFetch).toHaveBeenLastCalledWith(40.71, -74, expect.objectContaining({ timeZone: 'UTC' }));
+    await GET(new NextRequest('http://localhost/api/open-meteo/forecast?lat=40.71&lon=-74&timezone=invalid'));
+    expect(mockedFetch.mock.calls.at(-1)?.[2]?.timeZone).toBeUndefined();
+  });
   it.each([['us', 'US'], ['US', 'US'], ['CA', undefined], ['invalid', undefined]])('allows regional selection only for country_code=%s', async (country, expected) => {
     mockedFetch.mockResolvedValueOnce({ latitude: 37.66, longitude: -121.87 } as never);
     const res = await GET(new NextRequest(`http://localhost/api/open-meteo/forecast?lat=37.66&lon=-121.87&country_code=${country}`));

@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import type { ReportingWindow, CoverageAudit } from '@/lib/newsletter/coverage';
 
 export type SourceAudit = CoverageAudit['sources'][number];
@@ -34,14 +35,17 @@ export async function collectSource<T>(
   source: SourceRequest,
   parse: (raw: unknown) => ParsedSource<T>,
   text = false,
+  options: { maxRetries?: number; timeoutMs?: number } = {},
 ): Promise<SourceResult<T>> {
   const base = {
     ...source, retrievedAt: new Date().toISOString(), covered: [], records: 0,
     observationStart: null, observationEnd: null,
   };
   try {
-    const response = await fetch(source.url, {
-      signal: AbortSignal.timeout(20_000),
+    const response = await fetchWithTimeout(source.url, {
+      timeoutMs: 20_000,
+      maxRetries: 0,
+      ...options,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; 16bitweather-newsletter/1.0; +https://16bitweather.co)' },
     });
     base.retrievedAt = new Date().toISOString();
@@ -62,8 +66,18 @@ export async function collectSource<T>(
   } catch (error) {
     // Do not persist arbitrary error messages, request headers, or credentials.
     const malformed = error instanceof SyntaxError;
-    return { data: null, audit: { ...base, usable: false, status: malformed ? 'malformed' : 'unavailable', reasons: [malformed ? 'Response schema or values could not be validated' : 'Request failed or timed out'] } };
+    return { data: null, audit: { ...base, usable: false, status: malformed ? 'malformed' : 'unavailable', reasons: [malformed ? 'Response schema or values could not be validated' : requestFailureReason(error)] } };
   }
+}
+
+function requestFailureReason(error: unknown): string {
+  if (!(error instanceof Error)) return 'Request failed';
+  const cause = error.cause;
+  const code = cause && typeof cause === 'object' && 'code' in cause ? cause.code : undefined;
+  if (error.name === 'TimeoutError' || code === 'UND_ERR_CONNECT_TIMEOUT' || code === 'ETIMEDOUT') return 'Connection timed out';
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'DNS lookup failed';
+  if (error.name === 'AbortError') return 'Request aborted';
+  return 'Request failed or timed out';
 }
 
 function mergeIntervals(intervals: ReportingWindow[]): ReportingWindow[] {

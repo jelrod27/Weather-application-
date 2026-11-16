@@ -23,6 +23,8 @@
     "__tests__/newsletter/temporal-claims.test.ts",
     "__tests__/newsletter/temporal-gate.test.ts",
     "__tests__/newsletter/temporal-evidence.test.ts",
+    "__tests__/newsletter/forecast-recovery.test.ts",
+    "__tests__/newsletter/source-quality.test.ts",
     "__tests__/newsletter/publication-path-security.test.ts",
     "__tests__/radar-tile-route.test.ts",
     "__tests__/useRadarOverlayLoader.test.tsx",

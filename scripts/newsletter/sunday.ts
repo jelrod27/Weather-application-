@@ -34,6 +34,7 @@ import {
 import { buildVoiceCorrectionInstruction, sweepVoice, VOICE_SYSTEM_PROMPT } from './voice';
 import { collectSundayEvidence, formatSundayEvidence } from './data/sunday-evidence';
 import { normalizeCalendarWeekdays, temporalClaimErrors } from './temporal-claims';
+import { sundaySourceErrors } from './source-quality';
 import type { TopicSlug } from './topics';
 import type { SundayEvidence } from './data/sunday-evidence';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
@@ -70,6 +71,8 @@ export async function runSunday(onAudit: (audit: CoverageAudit) => void = () => 
   const outcome = coverageOutcome(coverage);
   console.log(`[sunday] source coverage: ${outcome}`);
   if (outcome === 'fatal') throw new Error('No usable observations; saved failure audit without generating prose');
+  const sourceErrors = sundaySourceErrors(coverage);
+  if (sourceErrors.length) throw new Error(sourceErrors.join('\n'));
 
   // Active topics remain useful for audit/debugging, but Sunday image slots
   // are selected deterministically by story lane below. This prevents a broad
@@ -579,9 +582,9 @@ async function generate(opts: GenerateOpts): Promise<string> {
   // up de-emphasizing.
 
   sections.push(`STRUCTURE:
-- Open with a concrete specific hook from the past week's data — a named storm, a record, a count.
+- Open with a concrete specific hook from the past week's data — a named storm, a record, a count. Write clear weather journalism with useful timing, places and impacts. Avoid generic commentary, dramatic transitions and filler such as "the transition is clean on paper".
 - ## Rearview: discuss only supported events, even if fewer than three. Distinguish warnings, preliminary storm reports, and confirmed observations. Qualify counts and rankings with their actual coverage. Do NOT include any images or image markdown.
-- ## Roadmap: start with a compact Lower 48 pattern summarized in your own words from the available WPC short and medium range discussions, with issue/valid dates and direct source links. Only describe dates covered by those discussions. Then give selected city point forecasts with dates, clearly labeled as city samples rather than regional conditions. Mention missing WPC discussions or city points. If both WPC discussions are missing, omit national pattern claims. Do not invent synoptic mechanisms or extrapolate from city points. Do NOT include any images or image markdown.
+- ## Roadmap: explain the useful Lower 48 pattern from the WPC discussions in plain language, then give concrete temperatures, rain/snow chances and timing for selected city samples from the supplied forecasts. Describe reader-relevant dates; keep technical issue timestamps and source-validity bookkeeping in the appended source coverage section. Use descriptive citation labels such as [NOAA's short-range outlook](source URL), never raw URLs as labels. Stay inside the supported valid dates. Do not invent synoptic mechanisms or extrapolate from city points. Do NOT include any images or image markdown.
 - ${closer.instruction}
 
 TIME PRECISION:
