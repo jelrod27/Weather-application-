@@ -37,7 +37,8 @@ function buildCspHeader(isProd: boolean): string {
     // skeleton never resolves.
     // Aviation LiveAircraftMap: Carto Voyager basemap tiles + OpenFreeMap glyphs.
     // Radar OpenLayers also uses basemaps.cartocdn.com (img-src already allows https:).
-    "connect-src 'self' https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tiles.openfreemap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io",
+    // PostHog uses bundled code only; remote extensions and flags are disabled.
+    "connect-src 'self' https://pollen.googleapis.com https://www.google.com https://*.supabase.co https://*.sentry.io https://vitals.vercel-insights.com https://us.i.posthog.com https://eu.i.posthog.com https://mesonet.agron.iastate.edu https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tiles.openfreemap.org https://vercel.live https://vercel.com https://ipapi.co https://ipinfo.io",
     "worker-src 'self' blob:",
     "frame-src 'self' https://vercel.live https://challenges.cloudflare.com",
     "object-src 'none'",
