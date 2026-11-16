@@ -12,6 +12,7 @@ import { ShareButtons } from '@/components/share-buttons'
 import type { BlogPost } from '@/lib/blog'
 import { allowedBlogUrl } from '@/lib/blog/allowed-hosts'
 import { blogHeroImage } from '@/lib/blog/hero'
+import { formatBlogDate } from '@/lib/blog/date'
 import { blogIndexHref, tagSlug } from '@/lib/blog/query'
 import { KeyTerms } from '@/components/blog/key-terms'
 
@@ -111,7 +112,7 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
 
         {/* Meta */}
         <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground tracking-wider mb-4">
-          <span>{new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
+          <span>{formatBlogDate(post.date, 'long')}</span>
           <span>|</span>
           <span>{post.readTime} MIN READ</span>
           <span>|</span>
@@ -216,7 +217,7 @@ export function BlogArticle({ post, relatedPosts }: BlogArticleProps) {
                   )}
                 >
                   <p className="text-xs font-mono text-muted-foreground tracking-wider mb-2">
-                    {new Date(related.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+                    {formatBlogDate(related.date, 'short')}
                   </p>
                   <h3 className="text-sm font-bold font-mono uppercase tracking-tight line-clamp-2">
                     {related.title}
