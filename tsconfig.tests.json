@@ -9,6 +9,8 @@
     ]
   },
   "include": [
+    "__tests__/blog-date-hydration.test.tsx",
+    "tests/e2e/blog.spec.ts",
     "__tests__/space-weather/accuracy-routes.test.ts",
     "__tests__/space-weather/accuracy-missing.test.tsx",
     "__tests__/space-weather/imagery-routes.test.ts",

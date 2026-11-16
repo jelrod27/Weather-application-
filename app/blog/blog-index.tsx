@@ -9,6 +9,7 @@ import PageWrapper from '@/components/page-wrapper'
 import { ShareButtons } from '@/components/share-buttons'
 import type { BlogCategory, BlogCategoryId } from '@/lib/blog/categories'
 import { blogHeroImage } from '@/lib/blog/hero'
+import { formatBlogDate } from '@/lib/blog/date'
 import { blogIndexHref, blogPostHref, tagSlug } from '@/lib/blog/query'
 
 /**
@@ -62,12 +63,6 @@ function pageWindow(page: number, totalPages: number): number[] {
   return Array.from(wanted)
     .filter(p => p >= 1 && p <= totalPages)
     .sort((a, b) => a - b)
-}
-
-function formatDate(date: string, month: 'long' | 'short'): string {
-  return new Date(date)
-    .toLocaleDateString('en-US', { month, day: 'numeric', year: 'numeric' })
-    .toUpperCase()
 }
 
 export function BlogIndex({
@@ -200,7 +195,7 @@ export function BlogIndex({
                   {featured.title}
                 </h2>
                 <div className="flex items-center gap-2 text-xs font-mono text-gray-300 tracking-wider">
-                  <span>{formatDate(featured.date, 'long')}</span>
+                  <span>{formatBlogDate(featured.date, 'long')}</span>
                   <span>|</span>
                   <span>{featured.readTime} MIN READ</span>
                   <span>|</span>
@@ -249,7 +244,7 @@ export function BlogIndex({
                 )}
               >
                 <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground tracking-wider mb-3">
-                  <span>{formatDate(post.date, 'short')}</span>
+                  <span>{formatBlogDate(post.date, 'short')}</span>
                   <span>|</span>
                   <span>{post.readTime} MIN</span>
                 </div>
