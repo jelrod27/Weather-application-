@@ -28,7 +28,7 @@ const INPUT: PublishSundayInput = {
 };
 
 function audit(partial = true): CoverageAudit {
-  return {
+  return readySundayEvidence({
     version: 1, cadence: 'sunday_rearview', generatedAt: WINDOW.end, window: WINDOW,
     sources: [{
       id: 'swpc-kp', label: 'NOAA SWPC Kp', url: 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
@@ -39,7 +39,7 @@ function audit(partial = true): CoverageAudit {
       requested: WINDOW, covered: [], records: 0, usable: false, status: 'unavailable' as const,
       observationStart: null, observationEnd: null, unit: 'forecast days', reasons: ['Request failed'],
     }] : [])],
-  };
+  }).coverage;
 }
 
 function inputFor(cadence: PublishInput['cadence']): PublishInput {
@@ -60,8 +60,8 @@ afterEach(() => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-async function legacyDraft(): Promise<Awaited<ReturnType<typeof publishPost>>> {
-  const candidate = await publishPost(INPUT, { coverage: audit(), root });
+async function legacyDraft(coverage = audit()): Promise<Awaited<ReturnType<typeof publishPost>>> {
+  const candidate = await publishPost(INPUT, { coverage, root });
   const draftPath = path.join(root, 'content/newsletter-drafts', 'legacy', path.basename(candidate.filePath));
   if (candidate.filePath !== draftPath) {
     fs.mkdirSync(path.dirname(draftPath), { recursive: true });
@@ -91,6 +91,86 @@ async function expectPublicExclusion(slug: string): Promise<void> {
 }
 
 describe('newsletter publication boundary', () => {
+  it.each(['missing city', 'unavailable city', 'missing national'])('rejects receipt-backed Sunday publication with a %s', async fault => {
+    const coverage = audit(false);
+    const index = coverage.sources.findIndex(source => source.id.startsWith(fault === 'missing national' ? 'wpc-' : 'forecast-'));
+    if (fault === 'unavailable city') {
+      coverage.sources[index] = { ...coverage.sources[index], usable: false, status: 'unavailable',
+        covered: [], records: 0, observedUnits: 0, reasons: ['Connection timed out'], observationStart: null, observationEnd: null };
+    } else coverage.sources.splice(index, 1);
+    const candidate = await publishPost(INPUT, { coverage, root });
+    const raw = fs.readFileSync(candidate.filePath, 'utf8');
+    expect(publicationErrors(raw, candidate.filePath, { root }).join(' ')).toMatch(/Core (city forecasts|national outlook)/);
+    expect(validateGeneratedPost(candidate.filePath, { publication: true, root }).ok).toBe(false);
+    await expectPublicExclusion(candidate.slug);
+  });
+
+  it.each(['record', 'promote'])('rejects incomplete Sunday sources in manual draft %s', async action => {
+    const coverage = audit();
+    coverage.sources = coverage.sources.filter(source => !source.id.startsWith('forecast-') && !source.id.startsWith('wpc-'));
+    const candidate = await legacyDraft(coverage);
+    const raw = fs.readFileSync(candidate.filePath, 'utf8');
+    const bundle = readPublicationBundle(raw, root);
+    fs.writeFileSync(bundle.receiptPath, JSON.stringify(buildReceipt(raw, bundle.auditRaw, {
+      decision: 'reviewed-partial', reviewer: 'Editor', gapDispositions: { forecast: 'Disclosed.' },
+    })));
+    const invoke = (): unknown => action === 'record'
+      ? recordReview(candidate.filePath, { reviewer: 'Editor', acknowledged: true, gapDispositions: { forecast: 'Disclosed.' } }, root)
+      : promoteDraft(candidate.filePath, root);
+    expect(invoke).toThrow(/Core city forecasts/);
+    expect(validateGeneratedPost(candidate.filePath, { publication: true, draft: true, root }).errors.join(' ')).toMatch(/Core city forecasts/);
+  });
+
+  it('rejects missing core sources in the actual git-diff PR gate despite a complete receipt', async () => {
+    const git = (...args: string[]): string => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+    git('init', '--quiet');
+    git('config', 'user.name', 'Fixture');
+    git('config', 'user.email', 'fixture@example.test');
+    git('add', '.');
+    git('commit', '-qm', 'Baseline');
+    const base = git('rev-parse', 'HEAD');
+    const coverage = audit(false);
+    coverage.sources = coverage.sources.filter(source => source.id !== 'forecast-40.71--74');
+    await publishPost(INPUT, { coverage, root });
+    git('add', '.');
+    git('commit', '-qm', 'Receipt-backed incomplete Sunday edition');
+    expect(validateNewsletterChanges(base, root).join(' ')).toMatch(/Core city forecasts/);
+  });
+
+  it.each(['2026-10-18', '2026-10-25'])('preserves the exact published %s edition while blocking refreshed approval of edits without core sources', date => {
+    const filename = `${date}-this-week-in-weather-${date}.md`;
+    const raw = fs.readFileSync(path.join(REPO, 'content/blog', filename), 'utf8');
+    const original = readPublicationBundle(raw, REPO);
+    fs.mkdirSync(path.join(root, 'content/newsletter-audits'), { recursive: true });
+    fs.copyFileSync(original.auditPath, path.join(root, 'content/newsletter-audits', path.basename(original.auditPath)));
+    fs.copyFileSync(original.receiptPath, path.join(root, 'content/newsletter-audits', path.basename(original.receiptPath)));
+    expect(publicationErrors(raw, filename, { root })).toEqual([]);
+    expect(publicationErrors(raw, 'copied-history.md', { root }).join(' ')).toMatch(/Core national outlook/);
+    const changed = raw + '\nAn edited claim.\n';
+    const bundle = readPublicationBundle(changed, root);
+    const receipt = JSON.parse(fs.readFileSync(bundle.receiptPath, 'utf8'));
+    fs.writeFileSync(bundle.receiptPath, JSON.stringify(buildReceipt(changed, bundle.auditRaw, {
+      decision: receipt.decision, reviewer: receipt.reviewer, gapDispositions: receipt.gapDispositions,
+    })));
+    expect(publicationErrors(changed, filename, { root }).join(' ')).toMatch(/Core national outlook/);
+    expect(publicationErrors(raw, filename, { root, requireAudit: true, allowDraft: true }).join(' ')).toMatch(/Core national outlook/);
+  });
+
+  it('rejects an amended historical audit even with a freshly bound receipt', () => {
+    const filename = '2026-10-18-this-week-in-weather-2026-10-18.md';
+    const raw = fs.readFileSync(path.join(REPO, 'content/blog', filename), 'utf8');
+    const original = readPublicationBundle(raw, REPO);
+    fs.mkdirSync(path.join(root, 'content/newsletter-audits'), { recursive: true });
+    const changedAudit = original.auditRaw + '\n';
+    const auditPath = path.join(root, 'content/newsletter-audits', path.basename(original.auditPath));
+    fs.writeFileSync(auditPath, changedAudit);
+    const receipt = JSON.parse(fs.readFileSync(original.receiptPath, 'utf8'));
+    fs.writeFileSync(auditPath.replace(/\.json$/, '.review.json'), JSON.stringify(buildReceipt(raw, changedAudit, {
+      decision: receipt.decision, reviewer: receipt.reviewer, gapDispositions: receipt.gapDispositions,
+    })));
+    expect(publicationErrors(raw, filename, { root }).join(' ')).toMatch(/Core national outlook/);
+  });
+
   it.each(['wednesday_topic', 'sunday_rearview'] as const)('publishes %s with honest partial coverage on every public discovery path', async cadence => {
     const coverage = { ...audit(), cadence };
     const candidate = await publishPost(inputFor(cadence), { coverage, root });
@@ -122,7 +202,7 @@ describe('newsletter publication boundary', () => {
     { cadence: 'wednesday_topic', partial: true }, { cadence: 'wednesday_topic', partial: false },
     { cadence: 'sunday_rearview', partial: true }, { cadence: 'sunday_rearview', partial: false },
   ] as const)('prepares a merge-to-publish PR for $cadence (partial=$partial)', async ({ cadence, partial }) => {
-    const coverage = cadence === 'sunday_rearview' ? readySundayEvidence(audit(partial)).coverage : { ...audit(partial), cadence };
+    const coverage = { ...audit(partial), cadence };
     const candidate = await publishPost(inputFor(cadence), { coverage, root });
     const outputDir = path.join(root, 'newsletter-output');
     fs.mkdirSync(outputDir);
@@ -153,7 +233,9 @@ describe('newsletter publication boundary', () => {
   });
 
   it('refuses to prepare a Sunday publishing PR with a valid receipt but no core forecasts', async () => {
-    const candidate = await publishPost(INPUT, { coverage: audit(), root });
+    const coverage = audit();
+    coverage.sources = coverage.sources.filter(source => !source.id.startsWith('forecast-') && !source.id.startsWith('wpc-'));
+    const candidate = await publishPost(INPUT, { coverage, root });
     const outputDir = path.join(root, 'newsletter-output');
     fs.mkdirSync(outputDir);
     fs.writeFileSync(path.join(outputDir, 'run.json'), JSON.stringify({ ...candidate, stage: 'ready', dryRun: false }));

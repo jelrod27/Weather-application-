@@ -1,5 +1,5 @@
 import { DAY_MS } from '@/lib/newsletter/coverage';
-import { CONUS_QUADRANTS } from '../../../scripts/newsletter/data/forecast';
+import { CONUS_QUADRANTS } from '@/lib/newsletter/source-quality';
 import type { CoverageAudit } from '@/lib/newsletter/coverage';
 import type { SundayEvidence } from '../../../scripts/newsletter/data/sunday-evidence';
 

@@ -1,5 +1,6 @@
 /** Seven UTC forecast days for named city points, not regional or synoptic analyses. */
 import { DAY_MS } from '@/lib/newsletter/coverage';
+import { CONUS_QUADRANTS } from '@/lib/newsletter/source-quality';
 import { collectSource, finiteNumber, objectRecord } from './source';
 import type { ReportingWindow } from '@/lib/newsletter/coverage';
 import type { Collected, ParsedSource } from './source';
@@ -22,15 +23,6 @@ export interface ForecastOutlook {
   international: RegionForecast[];
   fetchedAt: string;
 }
-
-export const CONUS_QUADRANTS: ReadonlyArray<Pick<RegionForecast, 'region' | 'lat' | 'lon'>> = [
-  { region: 'Northeast (NYC area)', lat: 40.71, lon: -74.0 },
-  { region: 'Southeast (Atlanta area)', lat: 33.75, lon: -84.39 },
-  { region: 'Midwest (Chicago area)', lat: 41.88, lon: -87.63 },
-  { region: 'Mountain West (Denver area)', lat: 39.74, lon: -104.99 },
-  { region: 'Pacific (San Francisco area)', lat: 37.77, lon: -122.42 },
-  { region: 'South Plains (Dallas area)', lat: 32.78, lon: -96.8 },
-];
 
 const INTERNATIONAL: Array<Pick<RegionForecast, 'region' | 'lat' | 'lon'>> = [
   { region: 'London', lat: 51.5, lon: -0.13 },
