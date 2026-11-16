@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "postSha256": "395347431109d73a2ca205e02e71bc48a97770f719be323e74a8ccdc4636aa9a",
+  "auditSha256": "67ed308f2b5d8096188a39646325ff17a241a07cbb53e71c6ee93868be9fdebc",
+  "decision": "disclosed-partial",
+  "reviewer": "newsletter-automation",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-16T02:43:17.366Z",
+  "gapDispositions": {
+    "swpc-kp": "Published with partial coverage disclosed to readers: Missing 4 of 56 expected intervals; peak is only for observed coverage",
+    "swpc-xray": "Published with partial coverage disclosed to readers: Missing 885 of 10080 expected intervals; peak is only for observed coverage"
+  }
+}
