@@ -1,8 +1,9 @@
 /** Seven UTC forecast days for named city points, not regional or synoptic analyses. */
 import { DAY_MS } from '@/lib/newsletter/coverage';
+import { CONUS_QUADRANTS } from '@/lib/newsletter/source-quality';
 import { collectSource, finiteNumber, objectRecord } from './source';
 import type { ReportingWindow } from '@/lib/newsletter/coverage';
-import type { Collected } from './source';
+import type { Collected, ParsedSource } from './source';
 export interface RegionForecast {
   region: string;
   lat: number;
@@ -22,15 +23,6 @@ export interface ForecastOutlook {
   international: RegionForecast[];
   fetchedAt: string;
 }
-
-const CONUS_QUADRANTS: Array<Pick<RegionForecast, 'region' | 'lat' | 'lon'>> = [
-  { region: 'Northeast (NYC area)', lat: 40.71, lon: -74.0 },
-  { region: 'Southeast (Atlanta area)', lat: 33.75, lon: -84.39 },
-  { region: 'Midwest (Chicago area)', lat: 41.88, lon: -87.63 },
-  { region: 'Mountain West (Denver area)', lat: 39.74, lon: -104.99 },
-  { region: 'Pacific (San Francisco area)', lat: 37.77, lon: -122.42 },
-  { region: 'South Plains (Dallas area)', lat: 32.78, lon: -96.8 },
-];
 
 const INTERNATIONAL: Array<Pick<RegionForecast, 'region' | 'lat' | 'lon'>> = [
   { region: 'London', lat: 51.5, lon: -0.13 },
@@ -61,10 +53,11 @@ async function fetchRegion(region: Pick<RegionForecast, 'region' | 'lat' | 'lon'
     temperature_unit: 'fahrenheit', precipitation_unit: 'inch', timezone: 'UTC',
     start_date: window.start.slice(0, 10), end_date: new Date(Date.parse(window.end) - DAY_MS).toISOString().slice(0, 10),
   });
-  return collectSource({
+  const source = {
     id: `forecast-${region.lat}-${region.lon}`, label: `Open-Meteo point forecast: ${region.region}`,
     url: `https://api.open-meteo.com/v1/forecast?${params}`, requested: window, unit: 'UTC forecast days',
-  }, raw => {
+  };
+  const parse = (raw: unknown): ParsedSource<RegionForecast> => {
     const payload = objectRecord(raw);
     const d = objectRecord(payload.daily);
     const units = objectRecord(payload.daily_units);
@@ -94,5 +87,23 @@ async function fetchRegion(region: Pick<RegionForecast, 'region' | 'lat' | 'lon'
       status: daily.length === 7 ? 'complete' : daily.length ? 'partial' : 'malformed',
       reasons: daily.length < 7 ? [`${7 - daily.length} forecast days missing or invalid; only supplied dates support an outlook`] : [],
     };
+  };
+  const primary = await collectSource(source, parse, false, { timeoutMs: 8_000, maxRetries: 1 });
+  if (primary.audit.status === 'complete') return primary;
+
+  // The site's server can reach the provider when an Actions runner cannot.
+  // UTC boundaries and the same schema gate apply on both paths. The fixed
+  // first-party origin prevents workflow configuration from redirecting fetches.
+  const fallbackParams = new URLSearchParams({
+    lat: String(region.lat), lon: String(region.lon), days: '7', timezone: 'UTC',
+    temperature_unit: 'fahrenheit', precipitation_unit: 'inch',
   });
+  const fallback = await collectSource({ ...source,
+    url: `https://www.16bitweather.co/api/open-meteo/forecast?${fallbackParams}`,
+  }, parse, false, { timeoutMs: 25_000, maxRetries: 1 });
+  const best = fallback.audit.records > primary.audit.records ? fallback : primary;
+  return { ...best, audit: { ...best.audit, snapshot: JSON.stringify({
+    kind: 'forecast-recovery-v1',
+    attempts: [primary.audit, fallback.audit].map(audit => ({ url: audit.url, retrievedAt: audit.retrievedAt, status: audit.status, reasons: audit.reasons })),
+  }) } };
 }

@@ -53,6 +53,8 @@ export async function fetchOpenMeteoForecast(
     temperatureUnit?: 'fahrenheit' | 'celsius';
     windSpeedUnit?: 'mph' | 'kmh' | 'ms' | 'kn';
     precipitationUnit?: 'inch' | 'mm';
+    /** UTC is used by the weekly newsletter; interactive forecasts use local dates. */
+    timeZone?: 'auto' | 'UTC';
     extraCurrentVars?: string[];
     extraHourlyVars?: string[];
   }
@@ -64,6 +66,7 @@ export async function fetchOpenMeteoForecast(
     temperatureUnit = 'fahrenheit',
     windSpeedUnit = 'mph',
     precipitationUnit = 'inch',
+    timeZone = 'auto',
     extraCurrentVars = [],
     extraHourlyVars = [],
   } = options ?? {};
@@ -124,7 +127,7 @@ export async function fetchOpenMeteoForecast(
   url.searchParams.set('temperature_unit', temperatureUnit);
   url.searchParams.set('wind_speed_unit', windSpeedUnit);
   url.searchParams.set('precipitation_unit', precipitationUnit);
-  url.searchParams.set('timezone', 'auto');
+  url.searchParams.set('timezone', timeZone);
   url.searchParams.set('forecast_days', forecastDays.toString());
   if (pastDays != null && pastDays > 0) {
     url.searchParams.set('past_days', pastDays.toString());

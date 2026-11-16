@@ -6,7 +6,9 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 import { coverageAuditSchema, coverageDisclosure, coverageOutcome } from './coverage';
+import { sundaySourceErrors } from './source-quality';
 import legacyPosts from './legacy-posts.json';
+import legacySourcePolicy from './legacy-source-policy.json';
 import type { CoverageAudit } from './coverage';
 
 const receiptSchema = z.object({
@@ -56,6 +58,7 @@ export function readPublicationBundle(raw: string, root = process.cwd()): Public
 export interface PublicationCheckOptions {
   root?: string;
   requireAudit?: boolean;
+  /** Skip receipt verification only; current core-source readiness still applies. */
   allowDraft?: boolean;
 }
 
@@ -71,6 +74,17 @@ export function publicationErrors(raw: string, filename: string, opts: Publicati
     const outcome = coverageOutcome(bundle.audit);
     if (outcome === 'fatal') return ['No usable evidence; failure reports cannot be published'];
     if (!content.includes(coverageDisclosure(bundle.audit))) return ['Required source coverage disclosure is missing or changed'];
+    const sourceErrors = sundaySourceErrors(bundle.audit);
+    if (sourceErrors.length) {
+      // Preserve only the exact already-published editions that predate this
+      // policy. New publication checks, draft reviews and edited bytes must
+      // satisfy current core sources even when a fresh receipt exists.
+      const historical = (legacySourcePolicy as Record<string, { postSha256: string; auditSha256: string }>)[path.basename(filename)];
+      const unchangedHistoricalRead = !opts.requireAudit && !opts.allowDraft && historical &&
+        historical.postSha256 === contentDigest(raw) && historical.auditSha256 === contentDigest(bundle.auditRaw);
+      if (!unchangedHistoricalRead) return sourceErrors;
+    }
+    // Draft review skips only the receipt requirement, never source readiness.
     if (opts.allowDraft) return [];
     const receipt = receiptSchema.parse(JSON.parse(fs.readFileSync(bundle.receiptPath, 'utf8')));
     if (receipt.postSha256 !== contentDigest(raw) || receipt.auditSha256 !== contentDigest(bundle.auditRaw)) {
