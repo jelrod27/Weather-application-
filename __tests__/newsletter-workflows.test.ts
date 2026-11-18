@@ -50,18 +50,27 @@ function normalizeInstallerBlock(installerBlock: string): string {
     .trim();
 }
 
-function runPublicationStep(workflow: string, createStatus = '0', mergeStatus = '0'): {
+function extractShellStep(workflow: string, name: string): string {
+  const stepStart = workflow.indexOf(`      - name: ${name}`);
+  const runStart = workflow.indexOf('        run: |\n', stepStart);
+  if (stepStart < 0 || runStart < 0) throw new Error(`Shell step not found: ${name}`);
+  const scriptStart = runStart + '        run: |\n'.length;
+  const nextStep = workflow.indexOf('\n      - ', scriptStart);
+  return workflow.slice(scriptStart, nextStep < 0 ? undefined : nextStep)
+    .split('\n').map(line => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+}
+
+function runPublicationStep(workflow: string, {
+  createStatus = '0',
+  mergeStatus = '0',
+  publicationDate = '2026-11-18',
+  event = 'schedule',
+} = {}): {
   status: number | null;
   calls: Array<{ command: string; args: string[] }>;
   body: string;
 } {
-  const stepStart = workflow.indexOf('      - name: Open PR');
-  const runStart = workflow.indexOf('        run: |\n', stepStart);
-  if (stepStart < 0 || runStart < 0) throw new Error('Publishing step not found');
-  const scriptStart = runStart + '        run: |\n'.length;
-  const nextStep = workflow.indexOf('\n      - ', scriptStart);
-  const script = workflow.slice(scriptStart, nextStep < 0 ? undefined : nextStep)
-    .split('\n').map(line => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+  const script = extractShellStep(workflow, 'Open PR');
   const root = mkdtempSync(join(tmpdir(), 'newsletter-workflow-'));
   try {
     const bin = join(root, 'bin');
@@ -69,6 +78,7 @@ function runPublicationStep(workflow: string, createStatus = '0', mergeStatus = 
     mkdirSync(join(root, 'newsletter-output'));
     writeFileSync(join(root, 'newsletter-output/pr-body.md'), 'Generated edition\n');
     const log = join(root, 'calls.jsonl');
+    writeFileSync(log, '');
     const stub = `#!${process.execPath}
 const fs = require('node:fs');
 const path = require('node:path');
@@ -87,14 +97,15 @@ if (command === 'git' && args[0] === 'rev-parse' && args[1] === 'HEAD') process.
       cwd: root, encoding: 'utf8', env: {
         PATH: [bin, '/usr/bin', '/bin'].join(delimiter),
         GH_TOKEN: 'fixture', CALL_LOG: log, CREATE_STATUS: createStatus, MERGE_STATUS: mergeStatus,
-        GITHUB_RUN_ID: '42', POST_FILE: 'content/blog/edition.md', AUDIT_FILE: 'content/newsletter-audits/edition.json',
+        GITHUB_RUN_ID: '42', GITHUB_EVENT_NAME: event, EDITION_DATE: '2026-11-18',
+        POST_FILE: `content/blog/${publicationDate}-edition.md`, AUDIT_FILE: 'content/newsletter-audits/edition.json',
         RECEIPT_FILE: 'content/newsletter-audits/edition.review.json', TITLE: 'Weekly weather edition',
       },
     });
     if (result.error) throw result.error;
     return {
       status: result.status,
-      calls: readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line)),
+      calls: readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)),
       body: readFileSync(join(root, 'newsletter-output/pr-body.md'), 'utf8'),
     };
   } finally {
@@ -102,8 +113,127 @@ if (command === 'git' && args[0] === 'rev-parse' && args[1] === 'HEAD') process.
   }
 }
 
+interface PullRequestFixture {
+  created_at: string;
+  head: { ref: string; repo: { full_name: string } };
+}
+
+function runEditionCheck({
+  date = '2026-11-18 3',
+  cadence = 'wednesday',
+  event = 'schedule',
+  pages = [[]],
+  apiFailure = false,
+  runAttempt = '1',
+  originalDate = '2026-11-18',
+}: {
+  date?: string;
+  cadence?: string;
+  event?: string;
+  pages?: PullRequestFixture[][];
+  apiFailure?: boolean;
+  runAttempt?: string;
+  originalDate?: string;
+} = {}): { status: number | null; outputs: string } {
+  const script = join(process.cwd(), 'scripts/newsletter/check-edition.sh');
+  const root = mkdtempSync(join(tmpdir(), 'newsletter-edition-'));
+  try {
+    const output = join(root, 'output');
+    writeFileSync(output, '');
+    writeFileSync(join(root, 'date'), '#!/bin/bash\nprintf "%s\\n" "$FIXTURE_DATE"\n', { mode: 0o755 });
+    writeFileSync(join(root, 'gh'), `#!${process.execPath}
+const args = process.argv.slice(2);
+if (process.env.API_FAILURE === 'true') process.exit(1);
+if (args[1] === 'repos/owner/weather/actions/runs/42') {
+  console.log(process.env.ORIGINAL_DATE);
+  process.exit(0);
+}
+if (!args.includes('state=all') || !args.includes('base=main')) process.exit(1);
+const page = Number(args.find(arg => arg.startsWith('page='))?.slice(5));
+const fixture = JSON.parse(process.env.FIXTURE_PAGES)[page - 1];
+if (!fixture) process.exit(1);
+console.log(JSON.stringify(fixture));
+`, { mode: 0o755 });
+    const result = spawnSync('bash', [script], {
+      encoding: 'utf8',
+      env: {
+        PATH: [root, process.env.PATH].join(delimiter),
+        GITHUB_REPOSITORY: 'owner/weather',
+        GITHUB_EVENT_NAME: event,
+        GITHUB_OUTPUT: output,
+        GITHUB_RUN_ID: '42',
+        GITHUB_RUN_ATTEMPT: runAttempt,
+        CADENCE: cadence,
+        FIXTURE_DATE: date,
+        FIXTURE_PAGES: JSON.stringify(pages),
+        API_FAILURE: String(apiFailure),
+        ORIGINAL_DATE: originalDate,
+      },
+    });
+    if (result.error) throw result.error;
+    return { status: result.status, outputs: readFileSync(output, 'utf8') };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+describe('scheduled newsletter recovery', () => {
+  const earlierWednesdayPR = {
+    created_at: '2026-11-18T17:01:00Z',
+    head: { ref: 'blog/wed-2026-11-18-42', repo: { full_name: 'owner/weather' } },
+  };
+
+  it.each([
+    ['wednesday', '2026-11-18 3', '2026-11-18'],
+    ['sunday', '2026-11-22 7', '2026-11-22'],
+  ])('attempts the %s edition when no PR was opened', (cadence, date, editionDate) => {
+    expect(runEditionCheck({ cadence, date })).toEqual({ status: 0, outputs: `date=${editionDate}\n` });
+  });
+
+  it('skips generation when a same-edition PR already exists, including older results on another page', () => {
+    const unrelated = { ...earlierWednesdayPR, head: { ...earlierWednesdayPR.head, ref: 'other-branch' } };
+    expect(runEditionCheck({ pages: [Array(100).fill(unrelated), [earlierWednesdayPR]] }))
+      .toEqual({ status: 0, outputs: '' });
+  });
+
+  it('ignores a matching branch from a fork', () => {
+    const forkPR = { ...earlierWednesdayPR, head: { ...earlierWednesdayPR.head, repo: { full_name: 'fork/weather' } } };
+    expect(runEditionCheck({ pages: [[forkPR]] })).toEqual({ status: 0, outputs: 'date=2026-11-18\n' });
+  });
+
+  it('skips a scheduled run delayed past the edition day and allows manual dispatch off cadence', () => {
+    expect(runEditionCheck({ date: '2026-11-19 4', apiFailure: true })).toEqual({ status: 0, outputs: '' });
+    expect(runEditionCheck({ date: '2026-11-19 4', event: 'workflow_dispatch', apiFailure: true }))
+      .toEqual({ status: 0, outputs: 'date=2026-11-19\n' });
+  });
+
+  it('skips a rerun from an earlier edition and checks current PRs again on a same-day rerun', () => {
+    expect(runEditionCheck({ runAttempt: '2', originalDate: '2026-11-11', pages: [] }))
+      .toEqual({ status: 0, outputs: '' });
+    expect(runEditionCheck({ runAttempt: '2', pages: [[earlierWednesdayPR]] }))
+      .toEqual({ status: 0, outputs: '' });
+  });
+
+  it('fails closed when GitHub cannot confirm whether a PR exists', () => {
+    expect(runEditionCheck({ apiFailure: true })).toEqual({ status: 1, outputs: '' });
+  });
+});
 describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
   const workflow = readWorkflow(workflowPath);
+
+  it('schedules two off-minute opportunities on its publishing day and runs one edition at a time', () => {
+    const day = workflowPath.endsWith('-sunday.yml') ? '0' : '3';
+    const slots = [...workflow.matchAll(/cron: '(\d+) (\d+) \* \* (\d)'/g)];
+    expect(slots.map(([, minute, hour, weekday]) => [Number(minute) > 0, Number(hour), weekday]))
+      .toEqual([[true, 12, day], [true, 16, day]]);
+    expect(workflow).toContain('cancel-in-progress: false');
+    expect(workflow).toContain('run: bash scripts/newsletter/check-edition.sh');
+    expect(workflow.indexOf('run: bash scripts/newsletter/check-edition.sh')).toBeLessThan(
+      workflow.indexOf('run: npm ci'),
+    );
+    const prStep = workflow.slice(workflow.indexOf('      - name: Open PR'));
+    expect(prStep).toContain("steps.edition.outputs.date != ''");
+  });
 
   it('installs the pinned gitleaks release before generating content', () => {
     const installerBlock = extractInstallerBlock(workflow);
@@ -130,23 +260,37 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(merge).toBe(-1);
     expect(body).toContain('<!-- newsletter-generated-head: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -->');
     const ref = calls.find(call => call.command === 'git' && call.args[0] === 'checkout')!.args[2];
+    expect(ref).toBe(`blog/${workflowPath.endsWith('-sunday.yml') ? 'sun' : 'wed'}-2026-11-18-42`);
     const pr = { body, base: { ref: 'main' }, head: { ref, sha: 'a'.repeat(40) } };
     expect(validateNewsletterAutoMergeHead({ pull_request: pr })).toEqual([]);
     expect(validateNewsletterAutoMergeHead({ pull_request: { ...pr, head: { ...pr.head, sha: 'b'.repeat(40) } } }).length).toBeGreaterThan(0);
     expect(workflow).not.toContain('--admin');
     const step = workflow.slice(workflow.indexOf('      - name: Open PR'));
-    expect(step).toContain('if: ${{ inputs.dry_run != true }}');
+    expect(step).toContain("if: ${{ steps.edition.outputs.date != '' && inputs.dry_run != true }}");
   });
 
   it('does not request a merge when PR creation fails', () => {
-    const { status, calls } = runPublicationStep(workflow, '1');
+    const { status, calls } = runPublicationStep(workflow, { createStatus: '1' });
     expect(status).not.toBe(0);
     expect(calls.some(call => call.command === 'gh' && call.args.includes('merge'))).toBe(false);
   });
 
   it('does not need merge permission to create an editorial PR', () => {
-    const { status } = runPublicationStep(workflow, '0', '1');
+    const { status } = runPublicationStep(workflow, { mergeStatus: '1' });
     expect(status).toBe(0);
+  });
+
+  it('leaves a candidate as an artifact if the scheduled edition day ended during generation', () => {
+    const { status, calls } = runPublicationStep(workflow, { publicationDate: '2026-11-19' });
+    expect(status).toBe(0);
+    expect(calls).toEqual([]);
+  });
+
+  it('uses the candidate date in the branch for a manual run that crosses midnight', () => {
+    const { status, calls } = runPublicationStep(workflow, { event: 'workflow_dispatch', publicationDate: '2026-11-19' });
+    expect(status).toBe(0);
+    const ref = calls.find(call => call.command === 'git' && call.args[0] === 'checkout')!.args[2];
+    expect(ref).toMatch(/^blog\/(sun|wed)-2026-11-19-42$/);
   });
 
   it('keeps the Husky secret scan enabled', () => {
@@ -155,7 +299,8 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
   });
 
   it('preserves failure artifacts and opens publishing PRs for both coverage outcomes', () => {
-    expect(workflow).toMatch(/name: Preserve candidate and audit artifacts\s+if: always\(\)/);
+    expect(workflow).toContain("if: ${{ always() && steps.edition.outputs.date != '' }}");
+    expect(workflow).toMatch(/name: newsletter-(sunday|wednesday)-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
     expect(workflow).toContain('newsletter-output/');
     expect(workflow).toContain('content/blog/');
     expect(workflow).not.toContain('--draft');

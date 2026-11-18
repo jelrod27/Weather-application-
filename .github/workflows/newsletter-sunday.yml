@@ -5,7 +5,8 @@ name: Newsletter (Sunday National + City Outlook)
 
 on:
   schedule:
-    - cron: '0 12 * * 0'  # Sundays at 12:00 UTC
+    - cron: '17 12 * * 0' # Sundays at 12:17 UTC
+    - cron: '43 16 * * 0' # Same-day fallback at 16:43 UTC
   workflow_dispatch:
     inputs:
       dry_run:
@@ -23,7 +24,9 @@ jobs:
     timeout-minutes: 30
     environment: production
     permissions:
+      actions: read
       contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,9 +41,18 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
+      - name: Check whether the edition needs a PR
+        id: edition
+        env:
+          CADENCE: sunday
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/newsletter/check-edition.sh
+
       - run: npm ci
+        if: steps.edition.outputs.date != ''
 
       - name: Install gitleaks
+        if: steps.edition.outputs.date != ''
         env:
           GITLEAKS_VERSION: '8.30.1'
         run: |
@@ -56,6 +68,7 @@ jobs:
           gitleaks version
 
       - name: Generate sourced national and city outlook
+        if: steps.edition.outputs.date != ''
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEWSLETTER_MODEL: ${{ vars.NEWSLETTER_MODEL || 'claude-sonnet-4-6' }}
@@ -67,10 +80,10 @@ jobs:
           fi
 
       - name: Preserve candidate and audit artifacts
-        if: always()
+        if: ${{ always() && steps.edition.outputs.date != '' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: newsletter-sunday-${{ github.run_id }}
+          name: newsletter-sunday-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             newsletter-output/
             content/blog/
@@ -80,24 +93,35 @@ jobs:
 
       - name: Summarize source coverage and prepare review PR
         id: candidate
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ steps.edition.outputs.date != '' && inputs.dry_run != true }}
         run: npx tsx scripts/newsletter/workflow-result.ts
 
       - name: Open PR for editorial review
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ steps.edition.outputs.date != '' && inputs.dry_run != true }}
         env:
           GH_TOKEN: ${{ secrets.CONTENT_BOT_TOKEN }}
+          EDITION_DATE: ${{ steps.edition.outputs.date }}
           POST_FILE: ${{ steps.candidate.outputs.post_file }}
           AUDIT_FILE: ${{ steps.candidate.outputs.audit_file }}
           RECEIPT_FILE: ${{ steps.candidate.outputs.receipt_file }}
           TITLE: ${{ steps.candidate.outputs.title }}
         run: |
           set -euo pipefail
+          post_name="${POST_FILE##*/}"
+          candidate_date="${post_name:0:10}"
+          if [[ ! "$candidate_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::The generated post filename must start with its UTC date."
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == schedule && "$candidate_date" != "$EDITION_DATE" ]]; then
+            echo "::warning::The candidate date differs from the UTC edition date. Review it in the run artifacts."
+            exit 0
+          fi
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "::error::CONTENT_BOT_TOKEN is not set in the production environment; see .github/GITHUB_SECRETS_REQUIRED.md"
             exit 1
           fi
-          BRANCH_NAME="blog/sun-$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}"
+          BRANCH_NAME="blog/sun-${candidate_date}-${GITHUB_RUN_ID}"
           gh auth setup-git
           git config user.name "16bitbot"
           git config user.email "16bitbot@16bitweather.co"
