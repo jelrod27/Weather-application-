@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,8 +9,8 @@ import { validateNewsletterAutoMergeHead } from '../../scripts/newsletter/check-
 const GENERATED = 'a'.repeat(40);
 const EDITED = 'b'.repeat(40);
 
-function event(cadence = 'sun', head = GENERATED, body: string | null = `Edition\n\n<!-- newsletter-generated-head: ${GENERATED} -->\n`) {
-  return { pull_request: { number: 42, head: { ref: `blog/${cadence}-2026-11-01-42`, sha: head }, base: { ref: 'main' }, body } };
+function event(cadence = 'sun', head = GENERATED, body: string | null = `Edition\n\n<!-- newsletter-generated-head: ${GENERATED} -->\n`, baseSha?: string) {
+  return { pull_request: { number: 42, head: { ref: `blog/${cadence}-2026-11-01-42`, sha: head }, base: { ref: 'main', sha: baseSha }, body } };
 }
 
 describe('newsletter auto-merge head guard', () => {
@@ -62,7 +62,8 @@ describe('newsletter auto-merge head guard', () => {
       const liveFile = path.join(root, 'live.json');
       const gh = path.join(root, 'gh');
       fs.writeFileSync(gh, `#!${process.execPath}\nprocess.stdout.write(require('node:fs').readFileSync(process.env.LIVE_PR_FILE, 'utf8'));\n`, { mode: 0o755 });
-      const command = (eventName = 'pull_request') => spawnSync(path.join(process.cwd(), 'node_modules/.bin/tsx'), [
+      const command = (eventName = 'pull_request') => spawnSync(process.execPath, [
+        '--experimental-strip-types',
         path.join(process.cwd(), 'scripts/newsletter/check-auto-merge-head.ts'),
       ], { env: {
         ...process.env, PATH: root + path.delimiter + process.env.PATH,
@@ -88,5 +89,114 @@ describe('newsletter auto-merge head guard', () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe('newsletter approval after a merge from main', () => {
+  let root: string;
+  let reviewed: string;
+
+  function git(...args: string[]): string {
+    return execFileSync('git', ['-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgSign=false', ...args], {
+      cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  }
+
+  function commit(file: string, body: string): string {
+    fs.writeFileSync(path.join(root, file), body);
+    git('add', '--', file);
+    git('commit', '-qm', `Edit ${file}`);
+    return git('rev-parse', 'HEAD');
+  }
+
+  function advanceMain(): void {
+    git('switch', '-q', 'main');
+    commit('app.ts', `Main update after ${git('rev-parse', 'HEAD')}\n`);
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    git('switch', '-q', 'newsletter');
+  }
+
+  function approvalFor(head: string): ReturnType<typeof event> {
+    return event('wed', head, `<!-- newsletter-generated-head: ${reviewed} -->`, git('rev-parse', 'main'));
+  }
+
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'newsletter-base-update-'));
+    git('init', '-q', '-b', 'main');
+    git('config', 'user.name', 'Newsletter test');
+    git('config', 'user.email', 'newsletter@example.test');
+    commit('app.ts', 'Original main\n');
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    git('switch', '-qc', 'newsletter');
+    reviewed = commit('edition.md', 'Reviewed newsletter\n');
+  });
+
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('keeps the recorded approval through successive main updates, even when main advances again', () => {
+    advanceMain();
+    git('merge', '-q', '--no-ff', '--no-edit', 'main');
+    expect(validateNewsletterAutoMergeHead(approvalFor(git('rev-parse', 'HEAD')), root)).toEqual([]);
+    advanceMain();
+    git('merge', '-q', '--no-ff', '--no-edit', 'main');
+    const head = git('rev-parse', 'HEAD');
+    advanceMain();
+    expect(validateNewsletterAutoMergeHead(approvalFor(head), root)).toEqual([]);
+  });
+
+  it('uses the verified history in the actual CI command', () => {
+    advanceMain();
+    git('merge', '-q', '--no-ff', '--no-edit', 'main');
+    const metadata = approvalFor(git('rev-parse', 'HEAD'));
+    const payload = path.join(root, 'event.json');
+    const live = path.join(root, 'live.json');
+    fs.writeFileSync(payload, JSON.stringify(metadata));
+    fs.writeFileSync(live, JSON.stringify(metadata.pull_request));
+    fs.writeFileSync(path.join(root, 'gh'), `#!${process.execPath}\nprocess.stdout.write(require('node:fs').readFileSync(process.env.LIVE_PR_FILE, 'utf8'));\n`, { mode: 0o755 });
+    const result = spawnSync(process.execPath, [
+      '--experimental-strip-types',
+      path.join(process.cwd(), 'scripts/newsletter/check-auto-merge-head.ts'),
+    ], { cwd: root, encoding: 'utf8', env: {
+      ...process.env, PATH: root + path.delimiter + process.env.PATH,
+      GITHUB_EVENT_PATH: payload, GITHUB_EVENT_NAME: 'pull_request',
+      GITHUB_REPOSITORY: 'jelrod27/Weather-application-', LIVE_PR_FILE: live,
+    } });
+    expect(result.status).toBe(0);
+  });
+
+  it.each([
+    ['edition.md', 'Unreviewed text\n'],
+    ['extra.txt', 'Unreviewed extra file\n'],
+  ])('rejects an update merge that also changes %s', (file, body) => {
+    advanceMain();
+    git('merge', '--no-ff', '--no-commit', 'main');
+    const head = commit(file, body);
+    expect(validateNewsletterAutoMergeHead(approvalFor(head), root)).toHaveLength(1);
+  });
+
+  it('uses the event base even if the local origin/main ref points to an untrusted branch', () => {
+    git('switch', '-qc', 'untrusted', 'main');
+    commit('app.ts', 'Untrusted update\n');
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    git('switch', '-q', 'newsletter');
+    git('merge', '-q', '--no-ff', '--no-edit', 'untrusted');
+    expect(validateNewsletterAutoMergeHead(approvalFor(git('rev-parse', 'HEAD')), root)).toHaveLength(1);
+  });
+
+  it('requires the event base commit to verify a merge update', () => {
+    advanceMain();
+    git('merge', '-q', '--no-ff', '--no-edit', 'main');
+    const metadata = approvalFor(git('rev-parse', 'HEAD'));
+    metadata.pull_request.base.sha = undefined;
+    expect(validateNewsletterAutoMergeHead(metadata, root)).toHaveLength(1);
+  });
+
+  it('rejects an additional topic commit even when it leaves the reviewed diff intact', () => {
+    advanceMain();
+    git('merge', '-q', '--no-ff', '--no-edit', 'main');
+    git('commit', '-qm', 'Unreviewed topic commit', '--allow-empty');
+    expect(validateNewsletterAutoMergeHead(approvalFor(git('rev-parse', 'HEAD')), root)).toHaveLength(1);
   });
 });
