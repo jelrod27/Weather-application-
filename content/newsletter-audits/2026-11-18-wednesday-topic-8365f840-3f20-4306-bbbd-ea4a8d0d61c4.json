@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "cadence": "wednesday_topic",
+  "generatedAt": "2026-11-18T18:34:54.142Z",
+  "window": {
+    "start": "2026-11-15T18:34:54.142Z",
+    "end": "2026-11-18T18:34:54.142Z"
+  },
+  "sources": [
+    {
+      "id": "editorial-topic",
+      "label": "Curated educational topic outline: Forecasting Tech (not current observations)",
+      "url": "https://github.com/jelrod27/Weather-application-/blob/main/scripts/newsletter/topics.ts",
+      "retrievedAt": "2026-11-18T18:34:54.142Z",
+      "requested": {
+        "start": "2026-11-15T18:34:54.142Z",
+        "end": "2026-11-18T18:34:54.142Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T18:34:54.142Z",
+          "end": "2026-11-18T18:34:54.142Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 1,
+      "observationStart": null,
+      "observationEnd": null,
+      "unit": "curated topic outlines",
+      "reasons": []
+    },
+    {
+      "id": "news-headlines",
+      "label": "Recent headline sample (up to 40; original stories require review)",
+      "url": "https://www.16bitweather.co/api/news/rss?maxItems=40&maxAge=72",
+      "retrievedAt": "2026-11-18T18:35:04.168Z",
+      "requested": {
+        "start": "2026-11-15T18:34:54.142Z",
+        "end": "2026-11-18T18:34:54.142Z"
+      },
+      "covered": [],
+      "status": "partial",
+      "usable": true,
+      "records": 38,
+      "observationStart": "2026-11-16T11:59:00.000Z",
+      "observationEnd": "2026-11-18T18:12:32.000Z",
+      "unit": "sampled headlines",
+      "reasons": [
+        "Headline aggregation does not establish original-source coverage; review any current-event claims against linked originals"
+      ]
+    }
+  ]
+}
