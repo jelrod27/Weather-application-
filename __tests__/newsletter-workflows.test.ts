@@ -316,7 +316,9 @@ it('runs coverage enforcement in the required Unit Tests job with base history a
   const job = workflow.split('  unit-tests:')[1].split('  dead-code:')[0];
   expect(job).toContain('fetch-depth: 0');
   expect(job).toContain('npx tsx scripts/newsletter/validate-changes.ts --base "$NEWSLETTER_BASE_SHA"');
-  expect(job).toContain('npx tsx scripts/newsletter/check-auto-merge-head.ts');
+  const approvalCommand = 'node --experimental-strip-types scripts/newsletter/check-auto-merge-head.ts';
+  expect(job).toContain(approvalCommand);
+  expect(job.indexOf(approvalCommand)).toBeLessThan(job.indexOf('npm ci'));
   expect(job).not.toContain('continue-on-error: true');
 });
 
