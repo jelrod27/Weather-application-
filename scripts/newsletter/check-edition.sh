@@ -3,13 +3,13 @@ set -euo pipefail
 
 now="$(date -u '+%F %u')"
 read -r edition_date weekday <<< "$now"
+case "$CADENCE" in
+  sunday) prefix=sun; scheduled_day=7 ;;
+  wednesday) prefix=wed; scheduled_day=3 ;;
+  *) echo "::error::Unknown newsletter cadence"; exit 1 ;;
+esac
 
 if [[ "$GITHUB_EVENT_NAME" == schedule ]]; then
-  case "$CADENCE" in
-    sunday) prefix=sun; scheduled_day=7 ;;
-    wednesday) prefix=wed; scheduled_day=3 ;;
-    *) echo "::error::Unknown newsletter cadence"; exit 1 ;;
-  esac
   if [[ "$weekday" != "$scheduled_day" ]]; then
     echo "Scheduled newsletter reached a runner outside its UTC edition day."
     exit 0
@@ -22,7 +22,10 @@ if [[ "$GITHUB_EVENT_NAME" == schedule ]]; then
       exit 0
     fi
   fi
+fi
 
+edition_date="${1:-$edition_date}"
+if [[ "${NEWSLETTER_DRY_RUN:-}" != true ]]; then
   # List recent PRs directly so a newly created PR is visible even before search indexes it.
   page=1
   while true; do
@@ -37,7 +40,7 @@ if [[ "$GITHUB_EVENT_NAME" == schedule ]]; then
       else console.log("next-page");
     ' "blog/$prefix-$edition_date-" "$GITHUB_REPOSITORY" "$edition_date" <<< "$pulls")"
     case "$decision" in
-      exists) echo "A PR already exists for the $edition_date $CADENCE edition."; exit 0 ;;
+      exists) echo "A PR already exists for the $edition_date $CADENCE edition." >&2; exit 0 ;;
       create) break ;;
       next-page) page=$((page + 1)) ;;
     esac
