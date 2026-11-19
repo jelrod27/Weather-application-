@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "3a9deaa2a28d207ed048579b567cdb31ba79dce79533b3b581229e7ff6d08ed9",
+  "auditSha256": "46ea6a5d60f105611420a18fc802f148ce164def917f1d123cd5d049aa9551fe",
+  "decision": "disclosed-partial",
+  "reviewer": "codex-editorial-review",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-18T19:49:21.490Z",
+  "gapDispositions": {
+    "news-headlines": "The headline sample remains partial and its limits are disclosed. Verified the revised forecasting explanations against NWS and ECMWF documentation and the GraphCast publication."
+  }
+}
