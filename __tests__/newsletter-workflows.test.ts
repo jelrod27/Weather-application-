@@ -1,8 +1,8 @@
 /** @jest-environment node */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 
 import { validateNewsletterAutoMergeHead } from '../scripts/newsletter/check-auto-merge-head';
 
@@ -65,6 +65,7 @@ function runPublicationStep(workflow: string, {
   mergeStatus = '0',
   publicationDate = '2026-11-18',
   event = 'schedule',
+  existingPRs = [] as PullRequestFixture[],
 } = {}): {
   status: number | null;
   calls: Array<{ command: string; args: string[] }>;
@@ -76,6 +77,8 @@ function runPublicationStep(workflow: string, {
     const bin = join(root, 'bin');
     mkdirSync(bin);
     mkdirSync(join(root, 'newsletter-output'));
+    mkdirSync(join(root, 'scripts/newsletter'), { recursive: true });
+    copyFileSync('scripts/newsletter/check-edition.sh', join(root, 'scripts/newsletter/check-edition.sh'));
     writeFileSync(join(root, 'newsletter-output/pr-body.md'), 'Generated edition\n');
     const log = join(root, 'calls.jsonl');
     writeFileSync(log, '');
@@ -85,6 +88,10 @@ const path = require('node:path');
 const command = path.basename(process.argv[1]);
 const args = process.argv.slice(2);
 fs.appendFileSync(process.env.CALL_LOG, JSON.stringify({ command, args }) + '\\n');
+if (command === 'gh' && args[0] === 'api') {
+  if (!args.includes('state=all') || !args.includes('base=main')) process.exit(1);
+  console.log(process.env.EDITION_PULLS);
+}
 if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
   if (process.env.CREATE_STATUS !== '0') process.exit(Number(process.env.CREATE_STATUS));
   process.stdout.write('https://github.com/jelrod27/Weather-application-/pull/123\\n');
@@ -95,8 +102,10 @@ if (command === 'git' && args[0] === 'rev-parse' && args[1] === 'HEAD') process.
     for (const command of ['gh', 'git']) writeFileSync(join(bin, command), stub, { mode: 0o755 });
     const result = spawnSync('bash', ['-c', script], {
       cwd: root, encoding: 'utf8', env: {
-        PATH: [bin, '/usr/bin', '/bin'].join(delimiter),
+        PATH: [bin, dirname(process.execPath), '/usr/bin', '/bin'].join(delimiter),
         GH_TOKEN: 'fixture', CALL_LOG: log, CREATE_STATUS: createStatus, MERGE_STATUS: mergeStatus,
+        CADENCE: workflow.match(/^\s+CADENCE: (sunday|wednesday)$/m)?.[1],
+        GITHUB_REPOSITORY: 'owner/weather', EDITION_PULLS: JSON.stringify(existingPRs),
         GITHUB_RUN_ID: '42', GITHUB_EVENT_NAME: event, EDITION_DATE: '2026-11-18',
         POST_FILE: `content/blog/${publicationDate}-edition.md`, AUDIT_FILE: 'content/newsletter-audits/edition.json',
         RECEIPT_FILE: 'content/newsletter-audits/edition.review.json', TITLE: 'Weekly weather edition',
@@ -126,6 +135,7 @@ function runEditionCheck({
   apiFailure = false,
   runAttempt = '1',
   originalDate = '2026-11-18',
+  dryRun = false,
 }: {
   date?: string;
   cadence?: string;
@@ -134,6 +144,7 @@ function runEditionCheck({
   apiFailure?: boolean;
   runAttempt?: string;
   originalDate?: string;
+  dryRun?: boolean;
 } = {}): { status: number | null; outputs: string } {
   const script = join(process.cwd(), 'scripts/newsletter/check-edition.sh');
   const root = mkdtempSync(join(tmpdir(), 'newsletter-edition-'));
@@ -164,6 +175,7 @@ console.log(JSON.stringify(fixture));
         GITHUB_RUN_ID: '42',
         GITHUB_RUN_ATTEMPT: runAttempt,
         CADENCE: cadence,
+        NEWSLETTER_DRY_RUN: String(dryRun),
         FIXTURE_DATE: date,
         FIXTURE_PAGES: JSON.stringify(pages),
         API_FAILURE: String(apiFailure),
@@ -177,7 +189,7 @@ console.log(JSON.stringify(fixture));
   }
 }
 
-describe('scheduled newsletter recovery', () => {
+describe('newsletter edition preflight', () => {
   const earlierWednesdayPR = {
     created_at: '2026-11-18T17:01:00Z',
     head: { ref: 'blog/wed-2026-11-18-42', repo: { full_name: 'owner/weather' } },
@@ -203,8 +215,22 @@ describe('scheduled newsletter recovery', () => {
 
   it('skips a scheduled run delayed past the edition day and allows manual dispatch off cadence', () => {
     expect(runEditionCheck({ date: '2026-11-19 4', apiFailure: true })).toEqual({ status: 0, outputs: '' });
-    expect(runEditionCheck({ date: '2026-11-19 4', event: 'workflow_dispatch', apiFailure: true }))
+    expect(runEditionCheck({ date: '2026-11-19 4', event: 'workflow_dispatch' }))
       .toEqual({ status: 0, outputs: 'date=2026-11-19\n' });
+  });
+
+  it.each([
+    ['wednesday', '2026-11-18 3', 'blog/wed-2026-11-18-42'],
+    ['sunday', '2026-11-22 7', 'blog/sun-2026-11-22-42'],
+  ])('skips a manual %s publishing run when an edition PR already exists', (cadence, date, branch) => {
+    const existing = { ...earlierWednesdayPR, head: { ...earlierWednesdayPR.head, ref: branch } };
+    expect(runEditionCheck({ cadence, date, event: 'workflow_dispatch', pages: [[existing]] }))
+      .toEqual({ status: 0, outputs: '' });
+  });
+
+  it('allows a dry run when a same-edition PR already exists', () => {
+    expect(runEditionCheck({ event: 'workflow_dispatch', dryRun: true, pages: [[earlierWednesdayPR]] }))
+      .toEqual({ status: 0, outputs: 'date=2026-11-18\n' });
   });
 
   it('skips a rerun from an earlier edition and checks current PRs again on a same-day rerun', () => {
@@ -214,8 +240,8 @@ describe('scheduled newsletter recovery', () => {
       .toEqual({ status: 0, outputs: '' });
   });
 
-  it('fails closed when GitHub cannot confirm whether a PR exists', () => {
-    expect(runEditionCheck({ apiFailure: true })).toEqual({ status: 1, outputs: '' });
+  it.each(['schedule', 'workflow_dispatch'])('fails closed on %s when GitHub cannot confirm whether a PR exists', (event) => {
+    expect(runEditionCheck({ event, apiFailure: true })).toEqual({ status: 1, outputs: '' });
   });
 });
 describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
@@ -291,6 +317,19 @@ describe.each(WORKFLOW_FILES)('%s', (workflowPath) => {
     expect(status).toBe(0);
     const ref = calls.find(call => call.command === 'git' && call.args[0] === 'checkout')!.args[2];
     expect(ref).toMatch(/^blog\/(sun|wed)-2026-11-19-42$/);
+  });
+
+  it('keeps a manual candidate as an artifact if its post-midnight date already has an edition PR', () => {
+    const prefix = workflowPath.endsWith('-sunday.yml') ? 'sun' : 'wed';
+    const { status, calls } = runPublicationStep(workflow, {
+      event: 'workflow_dispatch',
+      publicationDate: '2026-11-19',
+      existingPRs: [{ created_at: '2026-11-19T00:01:00Z', head: {
+        ref: `blog/${prefix}-2026-11-19-21`, repo: { full_name: 'owner/weather' },
+      } }],
+    });
+    expect(status).toBe(0);
+    expect(calls.some(call => call.args[0] === 'push' || call.args[0] === 'pr')).toBe(false);
   });
 
   it('keeps the Husky secret scan enabled', () => {
