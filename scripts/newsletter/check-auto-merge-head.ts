@@ -2,26 +2,64 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
 const NEWSLETTER_BRANCH = /^blog\/(?:sun|wed)-\d{4}-\d{2}-\d{2}-\d+$/;
+const COMMIT_SHA = /^[a-f0-9]{40}$/;
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown> : null;
 }
 
-/** A required CI gate: later newsletter commits need an explicit new authorization. */
-export function validateNewsletterAutoMergeHead(event: unknown): string[] {
+function isUnchangedMainUpdate(root: string, main: string, reviewed: string, head: string): boolean {
+  const git = (...args: string[]): Buffer => execFileSync('git', ['--no-replace-objects', ...args], {
+    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000,
+  });
+  // Compare full paths, blob IDs and modes across the entire PR.
+  const delta = (base: string, commit: string): Buffer => git(
+    'diff-tree', '-r', '--raw', '-z', '--no-commit-id', '--no-abbrev', '--no-renames',
+    '--no-ext-diff', '--no-textconv', '--ignore-submodules=none', base, commit,
+  );
+
+  try {
+    let previousBase = git('merge-base', '--all', reviewed, main).toString().trim();
+    if (!COMMIT_SHA.test(previousBase)) return false;
+    const approved = delta(previousBase, reviewed);
+    const history = git('rev-list', '--reverse', '--first-parent', '--parents', `${reviewed}..${head}`)
+      .toString().trim();
+
+    let previous = reviewed;
+    for (const line of history.split('\n')) {
+      const [commit, firstParent, base, ...otherParents] = line.split(' ');
+      if (firstParent !== previous || !base || base === previousBase || otherParents.length) return false;
+      git('merge-base', '--is-ancestor', previousBase, base);
+      git('merge-base', '--is-ancestor', base, main);
+      if (!delta(base, commit).equals(approved)) return false;
+      previous = commit;
+      previousBase = base;
+    }
+    return previous === head;
+  } catch {
+    return false;
+  }
+}
+
+/** Keep editorial approval only for the recorded commit or a verified merge from main. */
+export function validateNewsletterAutoMergeHead(event: unknown, root = process.cwd()): string[] {
   const pr = record(record(event)?.pull_request);
   const head = record(pr?.head);
   if (!pr || !head || typeof head.ref !== 'string') return ['Invalid pull request metadata'];
   if (!NEWSLETTER_BRANCH.test(head.ref)) return [];
-  if (record(pr.base)?.ref !== 'main') return ['Newsletter auto-merge must target main'];
-  if (typeof head.sha !== 'string' || !/^[a-f0-9]{40}$/.test(head.sha)) return ['Invalid newsletter head SHA'];
+  const base = record(pr.base);
+  if (base?.ref !== 'main') return ['Newsletter auto-merge must target main'];
+  if (typeof head.sha !== 'string' || !COMMIT_SHA.test(head.sha)) return ['Invalid newsletter head SHA'];
   const body = typeof pr.body === 'string' ? pr.body.replace(/\r\n/g, '\n') : '';
   const markers = [...body.matchAll(/^<!-- newsletter-generated-head: ([a-f0-9]{40}) -->$/gm)];
   if (markers.length !== 1 || body.split('<!-- newsletter-generated-head:').length !== 2) {
     return ['Newsletter auto-merge needs exactly one generated-head marker'];
   }
-  if (markers[0][1] !== head.sha) {
+  const reviewed = markers[0][1];
+  const main = base.sha;
+  if (reviewed !== head.sha &&
+      (typeof main !== 'string' || !COMMIT_SHA.test(main) || !isUnchangedMainUpdate(root, main, reviewed, head.sha))) {
     return ['Newsletter head changed after generation; review the changes and explicitly update the generated-head marker before retrying CI'];
   }
   return [];
@@ -53,7 +91,10 @@ function main(): void {
     })));
     const liveHead = record(live?.head);
     if (!liveHead || liveHead.sha !== head.sha || liveHead.ref !== head.ref) throw new Error('Pull request head changed during this CI run');
-    current = { pull_request: live };
+    if (record(live?.base)?.ref !== record(pr.base)?.ref) throw new Error('Pull request target changed during this CI run');
+    // Use the base SHA captured by GitHub for this run. Only the editor's
+    // approval record needs its latest value.
+    current = { pull_request: { ...pr, body: live?.body } };
   }
   const errors = validateNewsletterAutoMergeHead(current);
   if (errors.length) throw new Error(errors.join('\n'));
