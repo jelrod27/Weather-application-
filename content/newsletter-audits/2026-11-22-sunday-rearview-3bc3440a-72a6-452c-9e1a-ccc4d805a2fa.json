@@ -1,0 +1,611 @@
+{
+  "version": 1,
+  "cadence": "sunday_rearview",
+  "generatedAt": "2026-11-22T19:32:38.529Z",
+  "window": {
+    "start": "2026-11-15T12:00:00.000Z",
+    "end": "2026-11-22T12:00:00.000Z"
+  },
+  "sources": [
+    {
+      "id": "iem-warnings",
+      "label": "IEM polygon warnings issued (TO/SV/FF/MA/EW.W only)",
+      "url": "https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-11-15T12%3A00%3A00.000Z&endts=2026-11-22T12%3A00%3A00.000Z",
+      "retrievedAt": "2026-11-22T19:32:39.470Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T12:00:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 255,
+      "observationStart": "2026-11-15T13:37:00.000Z",
+      "observationEnd": "2026-11-22T09:08:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "archive queries (unique warning events)",
+      "reasons": []
+    },
+    {
+      "id": "spc-2026-11-15",
+      "label": "SPC preliminary reports 2026-11-15",
+      "url": "https://www.spc.noaa.gov/climo/reports/261115_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:38.867Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-16T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T12:00:00.000Z",
+          "end": "2026-11-16T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 0,
+      "observationStart": null,
+      "observationEnd": null,
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[],\"utcHours\":[],\"localDates\":[],\"unknownTimeZones\":0}"
+    },
+    {
+      "id": "spc-2026-11-16",
+      "label": "SPC preliminary reports 2026-11-16",
+      "url": "https://www.spc.noaa.gov/climo/reports/261116_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:39.320Z",
+      "requested": {
+        "start": "2026-11-16T12:00:00.000Z",
+        "end": "2026-11-17T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-16T12:00:00.000Z",
+          "end": "2026-11-17T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 0,
+      "observationStart": null,
+      "observationEnd": null,
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[],\"utcHours\":[],\"localDates\":[],\"unknownTimeZones\":0}"
+    },
+    {
+      "id": "spc-2026-11-17",
+      "label": "SPC preliminary reports 2026-11-17",
+      "url": "https://www.spc.noaa.gov/climo/reports/261117_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:39.442Z",
+      "requested": {
+        "start": "2026-11-17T12:00:00.000Z",
+        "end": "2026-11-18T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-17T12:00:00.000Z",
+          "end": "2026-11-18T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 2,
+      "observationStart": "2026-11-17T23:42:00.000Z",
+      "observationEnd": "2026-11-18T04:10:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[],\"utcHours\":[4,23],\"localDates\":[],\"unknownTimeZones\":2}"
+    },
+    {
+      "id": "spc-2026-11-18",
+      "label": "SPC preliminary reports 2026-11-18",
+      "url": "https://www.spc.noaa.gov/climo/reports/261118_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:39.576Z",
+      "requested": {
+        "start": "2026-11-18T12:00:00.000Z",
+        "end": "2026-11-19T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-18T12:00:00.000Z",
+          "end": "2026-11-19T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-18T12:00:00.000Z",
+      "observationEnd": "2026-11-19T11:02:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[0,2,3],\"utcHours\":[8,10,11,12],\"localDates\":[\"2026-11-19\"],\"unknownTimeZones\":2}"
+    },
+    {
+      "id": "spc-2026-11-19",
+      "label": "SPC preliminary reports 2026-11-19",
+      "url": "https://www.spc.noaa.gov/climo/reports/261119_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:39.724Z",
+      "requested": {
+        "start": "2026-11-19T12:00:00.000Z",
+        "end": "2026-11-20T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-19T12:00:00.000Z",
+          "end": "2026-11-20T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 15,
+      "observationStart": "2026-11-19T12:05:00.000Z",
+      "observationEnd": "2026-11-19T21:03:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[4,7,8,9,13],\"utcHours\":[12,15,16,17,21],\"localDates\":[\"2026-11-19\"],\"unknownTimeZones\":0}"
+    },
+    {
+      "id": "spc-2026-11-20",
+      "label": "SPC preliminary reports 2026-11-20",
+      "url": "https://www.spc.noaa.gov/climo/reports/261120_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:39.855Z",
+      "requested": {
+        "start": "2026-11-20T12:00:00.000Z",
+        "end": "2026-11-21T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-20T12:00:00.000Z",
+          "end": "2026-11-21T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 0,
+      "observationStart": null,
+      "observationEnd": null,
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[],\"utcHours\":[],\"localDates\":[],\"unknownTimeZones\":0}"
+    },
+    {
+      "id": "spc-2026-11-21",
+      "label": "SPC preliminary reports 2026-11-21",
+      "url": "https://www.spc.noaa.gov/climo/reports/261121_rpts.csv",
+      "retrievedAt": "2026-11-22T19:32:40.118Z",
+      "requested": {
+        "start": "2026-11-21T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-21T12:00:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 5,
+      "observationStart": "2026-11-21T23:19:00.000Z",
+      "observationEnd": "2026-11-22T08:15:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "complete report days",
+      "reasons": [],
+      "snapshot": "{\"kind\":\"spc-local-clocks-v1\",\"localHours\":[],\"utcHours\":[8,23],\"localDates\":[],\"unknownTimeZones\":5}"
+    },
+    {
+      "id": "swpc-kp",
+      "label": "NOAA SWPC planetary Kp",
+      "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+      "retrievedAt": "2026-11-22T19:32:38.714Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T12:00:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 56,
+      "observationStart": "2026-11-15T12:00:00.000Z",
+      "observationEnd": "2026-11-22T09:00:00.000Z",
+      "expectedUnits": 56,
+      "observedUnits": 56,
+      "unit": "three-hour blocks",
+      "reasons": []
+    },
+    {
+      "id": "swpc-xray",
+      "label": "NOAA GOES primary 0.1–0.8 nm X-ray flux",
+      "url": "https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json",
+      "retrievedAt": "2026-11-22T19:32:38.822Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T19:33:00.000Z",
+          "end": "2026-11-16T16:34:00.000Z"
+        },
+        {
+          "start": "2026-11-16T16:37:00.000Z",
+          "end": "2026-11-18T14:50:00.000Z"
+        },
+        {
+          "start": "2026-11-18T14:51:00.000Z",
+          "end": "2026-11-18T14:55:00.000Z"
+        },
+        {
+          "start": "2026-11-18T14:57:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "partial",
+      "usable": true,
+      "records": 9621,
+      "observationStart": "2026-11-15T19:33:00.000Z",
+      "observationEnd": "2026-11-22T11:59:00.000Z",
+      "expectedUnits": 10080,
+      "observedUnits": 9621,
+      "unit": "one-minute samples",
+      "reasons": [
+        "Missing 459 of 10080 expected intervals; peak is only for observed coverage"
+      ]
+    },
+    {
+      "id": "usgs-significant",
+      "label": "USGS significant (significance > 600) earthquakes",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-11-15T12%3A00%3A00.000Z&endtime=2026-11-22T11%3A59%3A59.999Z&orderby=time&limit=20000&minsig=601",
+      "retrievedAt": "2026-11-22T19:32:39.092Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T12:00:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-16T21:11:20.488Z",
+      "observationEnd": "2026-11-21T10:45:33.230Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "catalog queries",
+      "reasons": []
+    },
+    {
+      "id": "usgs-m45",
+      "label": "USGS M4.5+ earthquakes",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-11-15T12%3A00%3A00.000Z&endtime=2026-11-22T11%3A59%3A59.999Z&orderby=time&limit=20000&minmagnitude=4.5",
+      "retrievedAt": "2026-11-22T19:32:38.834Z",
+      "requested": {
+        "start": "2026-11-15T12:00:00.000Z",
+        "end": "2026-11-22T12:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-15T12:00:00.000Z",
+          "end": "2026-11-22T12:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 99,
+      "observationStart": "2026-11-15T13:41:35.701Z",
+      "observationEnd": "2026-11-22T10:46:07.004Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "catalog queries",
+      "reasons": []
+    },
+    {
+      "id": "forecast-40.71--74",
+      "label": "Open-Meteo point forecast: Northeast (NYC area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.855Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-33.75--84.39",
+      "label": "Open-Meteo point forecast: Southeast (Atlanta area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=33.75&longitude=-84.39&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.869Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-41.88--87.63",
+      "label": "Open-Meteo point forecast: Midwest (Chicago area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=41.88&longitude=-87.63&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.861Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-39.74--104.99",
+      "label": "Open-Meteo point forecast: Mountain West (Denver area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=39.74&longitude=-104.99&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.933Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-37.77--122.42",
+      "label": "Open-Meteo point forecast: Pacific (San Francisco area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.940Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-32.78--96.8",
+      "label": "Open-Meteo point forecast: South Plains (Dallas area)",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=32.78&longitude=-96.8&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.944Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-51.5--0.13",
+      "label": "Open-Meteo point forecast: London",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=51.5&longitude=-0.13&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.948Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast-35.68-139.69",
+      "label": "Open-Meteo point forecast: Tokyo",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=35.68&longitude=139.69&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.958Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "forecast--33.87-151.21",
+      "label": "Open-Meteo point forecast: Sydney",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=-33.87&longitude=151.21&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28",
+      "retrievedAt": "2026-11-22T19:32:38.953Z",
+      "requested": {
+        "start": "2026-11-22T00:00:00.000Z",
+        "end": "2026-11-29T00:00:00.000Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-22T00:00:00.000Z",
+          "end": "2026-11-29T00:00:00.000Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 7,
+      "observationStart": "2026-11-22T00:00:00.000Z",
+      "observationEnd": "2026-11-28T00:00:00.000Z",
+      "expectedUnits": 7,
+      "observedUnits": 7,
+      "unit": "UTC forecast days",
+      "reasons": []
+    },
+    {
+      "id": "wpc-short-range",
+      "label": "NOAA/WPC Short Range Forecast Discussion",
+      "url": "https://www.wpc.ncep.noaa.gov/discussions/pmdspdbody.txt",
+      "retrievedAt": "2026-11-22T19:32:39.080Z",
+      "requested": {
+        "start": "2026-11-22T19:32:38.529Z",
+        "end": "2026-11-24T07:32:38.529Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-23T00:00:00.000Z",
+          "end": "2026-11-24T07:32:38.529Z"
+        }
+      ],
+      "status": "partial",
+      "usable": true,
+      "records": 1,
+      "observationStart": "2026-11-22T19:26:00.000Z",
+      "observationEnd": "2026-11-22T19:26:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "forecast discussion",
+      "reasons": [
+        "Discussion covers only part of the expected national forecast segment"
+      ],
+      "snapshot": "Short Range Forecast Discussion\nNWS Weather Prediction Center College Park MD\n226 PM EST Sun Nov 22 2026\n\nValid 00Z Mon Nov 23 2026 - 00Z Wed Nov 25 2026\n\n...Coastal low to bring heavy rain and gusty winds to New England\ntonight into Monday, with minor coastal flooding possible along\nparts of the East coast...\n\n...Much colder air settles over the central and eastern U.S. to\nstart Thanksgiving week, with lake-effect snow and the season's\nfirst freeze for parts of Texas...\n\n...Unsettled weather continues in the Pacific Northwest and\nnorthern California, with rain, mountain snow, gusty winds, and a\ngrowing coastal flooding threat..\n\n\nAn area of low pressure tracking up the East Coast will pass east\nof the New Jersey shore tonight and move across the Gulf of Maine\non Monday. Moderate to locally heavy rain will spread across New\nEngland tonight and continue into Monday morning, with the\nheaviest totals expected along the coastal plain. Some nuisance\nstreet flooding is possible during the Monday morning commute. The\nrain will be welcome in northern New England and Maine, where\nongoing drought has left water supplies low. Large waves and high\nastronomical tides ahead of Tuesday's full moon may cause minor\ncoastal flooding at times along the Mid-Atlatnic and Southeast\ncoasts. Beach erosion and ocean overwash are possible on the Outer\nBanks. Rain will taper off across the East by Monday afternoon as\ndrier air moves in.\n\nMeanwhile, a strong cold front will sweep through the Ohio and\nTennessee Valleys and the Southeast tonight and Monday. Scattered\nshowers and thunderstorms are expected along the front. Behind it,\na much colder air mass will settle over the central and eastern\nU.S. into midweek, with highs mainly in the 30s and 40s across the\nMidwest. Cold northwest winds crossing the Great Lakes will produce\nlake-effect snow showers on Monday, with light accumulations in the\nfavored snowbelts of the Upper Peninsula of Michigan and northern\nWisconsin. Farther south, the cold air will bring the first freeze\nof the season to parts of west and north Texas, and hard freezes\nare possible across Oklahoma by Tuesday night. A fast-moving\ndisturbance may also bring light snow and a wintry mix to New\nMexico and the southern High Plains Monday night into Tuesday\nmorning, with slick spots possible.\n\nIn the west, a series of Pacific systems will keep the pattern\nactive across the Pacific northwest and northern California. A\nstronger system will arrive Tuesday with widespread rain, mountain\nsnow, gusty coastal winds, and high surf. Very high astronomical\ntides combined with these storms will increase the risk of coastal\nflooding along the Washington coast and around San Francisco Bay\nthis week, with major to extreme coastal flooding possible later in\nthe week. Snow will make travel difficult over Cascade passes at\ntimes.\n\nLooking ahead, rain will spread into the Gulf Coast and Southeast\nTuesday night ahead of a developing storm system. That system is\nexpected to bring heavy rain, strong winds, coastal flooding, and\nsome wintry weather to parts of the East around Thanksgiving.\nTravelers should closely monitor the forecast.\n\nEovino\n\n\nGraphics available at\n<a href=\"https://www.wpc.ncep.noaa.gov/basicwx/basicwx_ndfd.php\"><u>https://www.wpc.ncep.noaa.gov/basicwx/basicwx_ndfd.php</u></a>"
+    },
+    {
+      "id": "wpc-medium-range",
+      "label": "NOAA/WPC Extended Forecast Discussion",
+      "url": "https://www.wpc.ncep.noaa.gov/discussions/pmdepdbody.txt",
+      "retrievedAt": "2026-11-22T19:32:39.083Z",
+      "requested": {
+        "start": "2026-11-25T19:32:38.529Z",
+        "end": "2026-11-28T19:32:38.529Z"
+      },
+      "covered": [
+        {
+          "start": "2026-11-25T19:32:38.529Z",
+          "end": "2026-11-28T19:32:38.529Z"
+        }
+      ],
+      "status": "complete",
+      "usable": true,
+      "records": 1,
+      "observationStart": "2026-11-22T08:00:00.000Z",
+      "observationEnd": "2026-11-22T08:00:00.000Z",
+      "expectedUnits": 1,
+      "observedUnits": 1,
+      "unit": "forecast discussion",
+      "reasons": [],
+      "snapshot": "Extended Forecast Discussion\nNWS Weather Prediction Center College Park MD\n300 AM EST Sun Nov 22 2026\n\nValid 12Z Wed Nov 25 2026 - 12Z Sun Nov 29 2026\n\n\n...Holiday storm to bring heavy rain, strong winds and high surf\nto the East Coast, with some wintry weather potential from the\nCentral Appalachians up through the interior Northeast...\n\n...Wet pattern continues through holiday weekend for West Coast...\n\n\n...Overview...\n\nA pair of mid-level disturbances phase and amplify over the\nEastern half of the country while moving into the Canadian\nMaritime later this week. These systems will be responsible for\nhazardous weather that occurs across the East Coast and interior\nareas through the Thanksgiving holiday. Diffluent to zonal flow\nover the Western U.S. should support multiple days of precipitation\nfor the Northwest Coast and some inland areas.\n\n\n...Guidance/Predictability Assessment...\n\nModels are fairly agreeable on day 3, with only minor timing\ndifferences between the deterministic GFS and Euro with respect to\nthe northern stream disturbance. The southern stream system is a\nnewer development on the latest model runs, but is still captured\nwell by the ensemble means and the EC/GFS. Pattern predictability\ndrops considerably by day 4, probably due to uncertainty on when\nexactly the two streams will phase. Models appear more agreeable\nwith a closed low over the Great Lakes by day 5, however, some\npositional discrepancies allow for more ensemble mean weighting in\nthe blend. The ensemble mean weights are gradually increased\nthrough day 7 due to increased pattern variability in the\ndeterministic guidance.\n\n\n...Weather/Hazards Highlights.\n\nA coastal low, supported by a potent southern stream disturbance\nwill begin spreading heavy rain and strong winds along the\nSoutheast and Mid-Atlantic Coasts on Wednesday. Heavy to excessive\nrainfall is expected to occur along the immediate coast from South\nCarolina up to the Virginia Tidewater. A slight risk (at least 15%\nchance) of excessive rainfall is in effect for portions of the\nCarolina Coast east of I-95. Strong winds, gusting to over 40 kts\nat times, could contribute to beach erosion, high surf and coastal\nflooding on Wednesday.\n\nThe system intensifies and lifts north on Thanksgiving day. Heavy\nrain and damaging winds spread into the Mid- Atlantic and\nNortheast (I-95 corridor included), where a marginal risk (at least\n5% chance) of excessive rainfall is in effect. The lack of\ninstability is a mitigating factor for a more elevated/widespread\nflash flood risk at this time. However, coastal/areal flooding and\nbeach erosion remain a concern. Some minor to moderately impactful\nsnowfall may develop over portions of the Central Appalachians,\nLower Great Lakes and interior Northeast/New England on\nThanksgiving and continue into Friday. Windy conditions with\nrain and snow showers are expected to linger across portions of\nNew England on Friday before things begin to improve next weekend.\n\nAn active pattern continues across the Northwest as a series of\nlow pressure systems lash the coastline this week. Marginal risks\n(at least 5% chance) of excessive rainfall are in effect from\nnorthern California to the Olympic Peninsula of Washington on\nWednesday and Thursday. Snow is expected for the highest elevations\nof the Cascades down to the northern California Sierra.\n\n\nKebede\n\n\nAdditional 3-7 Day Hazard information can be found on the WPC\nmedium range hazards outlook chart at:\n<a href=\"https://www.wpc.ncep.noaa.gov/threats/threats.php\"><u>https://www.wpc.ncep.noaa.gov/threats/threats.php</u></a>\n\nWPC medium range 500mb heights, surface systems, weather grids,\nquantitative precipitation forecast, excessive rainfall outlook,\nwinter weather outlook probabilities, heat indices and Key Messages\nare at:\n\n<a href=\"https://www.wpc.ncep.noaa.gov/medr/5dayfcst500_wbg.gif\"><u>https://www.wpc.ncep.noaa.gov/medr/5dayfcst500_wbg.gif</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/medr/5dayfcst_wbg_conus.gif\"><u>https://www.wpc.ncep.noaa.gov/medr/5dayfcst_wbg_conus.gif</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/5km_grids/5km_gridsbody.html\"><u>https://www.wpc.ncep.noaa.gov/5km_grids/5km_gridsbody.html</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/qpf/day4-7.shtml\"><u>https://www.wpc.ncep.noaa.gov/qpf/day4-7.shtml</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/#page=ero\"><u>https://www.wpc.ncep.noaa.gov/#page=ero</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/wwd/pwpf_d47/pwpf_medr.php?day=4\"><u>https://www.wpc.ncep.noaa.gov/wwd/pwpf_d47/pwpf_medr.php?day=4</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/heat_index.shtml\"><u>https://www.wpc.ncep.noaa.gov/heat_index.shtml</u></a>\n<a href=\"https://www.wpc.ncep.noaa.gov/#page=ovw\"><u>https://www.wpc.ncep.noaa.gov/#page=ovw</u></a>"
+    }
+  ]
+}

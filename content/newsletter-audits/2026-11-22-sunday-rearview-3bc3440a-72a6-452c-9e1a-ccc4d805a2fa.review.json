@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "postSha256": "e2225cae73bd631a906ee70ec3167f0a64b37e58ca9a8b82af9a12223419f419",
+  "auditSha256": "6667f954109015eb82c13b8177f3bc6a033cccd5b98c22d6db0dd336eb72e1c2",
+  "decision": "disclosed-partial",
+  "reviewer": "newsletter-automation",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-22T19:34:13.395Z",
+  "gapDispositions": {
+    "swpc-xray": "Published with partial coverage disclosed to readers: Missing 459 of 10080 expected intervals; peak is only for observed coverage",
+    "wpc-short-range": "Published with partial coverage disclosed to readers: Discussion covers only part of the expected national forecast segment"
+  }
+}
