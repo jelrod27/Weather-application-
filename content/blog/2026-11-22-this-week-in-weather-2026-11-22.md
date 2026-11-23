@@ -16,13 +16,13 @@ tags:
 heroImage: "/api/og/blog?title=This%20Week%20in%20Weather&type=severe"
 readTime: 7
 cadence: sunday_rearview
-opener_hash: 28402169
+opener_hash: 25bd5f05
 key_phrases:
-  - convective line swept through Los Angeles County between roughly 8 a.m. and 10:30 a.m.
-  - diffuse circulation embedded in the line produced sporadic tree damage across Inglewood and Brentwood
+  - convective line that crossed Los Angeles County on Thursday, November 19
+  - diffuse circulation embedded in the line near Inglewood
   - "Magic Mountain Truck Trail (69 mph)"
   - two mid-level disturbances phasing over the eastern half of the country
-  - shallow-origin hazard was moderated by depth
+  - no tsunami warning, advisory, watch, or threat was in effect
   - GOES primary flux data had 459 one-minute gaps in coverage
   - wintry mix is possible across New Mexico and the southern High Plains Monday night into Tuesday
   - slight risk of excessive rainfall along the Carolina coast east of I-95
@@ -41,22 +41,22 @@ image_audit:
   - "id=jet-stream-pattern; lane=forecast; anchor=followed by a more significant coastal storm system that arrives around Thanksgiving.; tags=atmosphere_layers,aviation; caption=Polar and subtropical jet stream configuration."
 spotlight_active: null
 generation_retries: 0
-word_count: 1270
+word_count: 1351
 closer_used: on-the-radar
 ---
 
 ## Rearview
 
-The most concentrated severe weather of the past week hit Southern California on Thursday, November 19, when a convective line swept through Los Angeles County between roughly 8 a.m. and 10:30 a.m. local time. Among available SPC preliminary reports, 20 of 29 total events were logged in California across the full interval. The November 19 cluster alone generated wind reports from Magic Mountain Truck Trail (69 mph), Camp Nine near San Fernando (68 mph), and multiple sites in Santa Barbara and San Luis Obispo counties, plus a storm survey finding that a diffuse circulation embedded in the line produced sporadic tree damage across Inglewood and Brentwood. Two tornado warnings were issued for San Benito and Merced counties on November 20, and a separate warning had been issued for Santa Cruz County on the evening of November 16 — all three from the WFO MTR office.
+Southern California had the largest concentration of SPC preliminary reports in the available weekly data, including a convective line that crossed Los Angeles County on Thursday, November 19. Among available SPC preliminary reports, 20 of 29 total reports were logged in California across the full interval. The November 19 reports included gusts at Magic Mountain Truck Trail (69 mph at 7:20 a.m. PST) and Camp Nine near San Fernando (68 mph at 7:55 a.m. PST), along with tree damage reports across Los Angeles County through 9:35 a.m. PST. Storm surveys described a diffuse circulation embedded in the line near Inglewood and tree damage near Brentwood. [Iowa Environmental Mesonet's NWS warning archive](https://mesonet.agron.iastate.edu/api/1/vtec/sbw_interval.json?begints=2026-11-15T12%3A00%3A00.000Z&endts=2026-11-22T12%3A00%3A00.000Z) records two Santa Cruz County tornado warnings from WFO MTR on Monday, November 16, at 12:16 p.m. PST and 12:47 p.m. PST. On Friday, November 20, WFO MTR issued a San Benito County warning and WFO HNX issued a Merced County warning, both at 2:23 p.m. PST.
 
-South Florida had its own convective sequence late Saturday night into early Sunday morning. WFO MLB issued six tornado warnings between 11:57 p.m. local time Saturday and 11:18 p.m. local time Saturday through approximately 10:08 p.m. local time Saturday across Palm Beach, Okeechobee, Indian River, and St. Lucie counties, with WFO MFL covering Palm Beach. A quarter-inch hail report from Hollywood, Broward County, was logged early Thursday morning local time (04:10 UTC November 18), associated with a separate overnight severe thunderstorm. The full warning dataset across the interval recorded 255 polygon warnings: 186 marine warnings, 43 flash flood warnings, 16 severe thunderstorm warnings, and 10 tornado warnings.
+Florida had six tornado warnings on Saturday, November 21. WFO MFL issued three for Broward, Miami-Dade, and Palm Beach counties between 11:57 a.m. EST and 6:26 p.m. EST. WFO MLB issued three for Okeechobee, Indian River, and St. Lucie counties between 6:26 p.m. EST and 10:18 p.m. EST, all on Saturday. A one-inch (quarter-size) hail report from Hollywood, Broward County, was logged at 11:10 p.m. EST on Tuesday, November 17 (04:10 UTC November 18), associated with a separate overnight severe thunderstorm in the [SPC preliminary report log](https://www.spc.noaa.gov/climo/reports/261117_rpts.csv). The full warning dataset across the interval recorded 255 unique polygon warning events: 186 marine warnings, 43 flash flood warnings, 16 severe thunderstorm warnings, and 10 tornado warnings.
 
-Seismically, the week's largest event was a M6.8 at 132 km depth, 105 km northeast of Lospalos, Timor Leste, at 9:42 a.m. local time Saturday, November 21 — no tsunami was generated. A M6.7 near Carhuamayo, Peru (107 km depth) earlier that same day did trigger a tsunami alert, though the shallow-origin hazard was moderated by depth. A M6.6 struck 149 km west-southwest of Tual, Indonesia on Monday, November 16 at 68 km depth. Among available USGS significant-event records, seven events met the significance threshold across the interval; 99 earthquakes of M4.5 or greater were catalogued.
+Seismically, the week's largest event was a [USGS-recorded M6.8](https://earthquake.usgs.gov/earthquakes/eventpage/us6000ucij) at 132 km depth, 105 km northeast of Lospalos, Timor Leste, at 9:42 a.m. UTC Saturday, November 21 (6:42 p.m. in Timor-Leste, UTC+9). [USGS recorded a M6.7 near Carhuamayo, Peru](https://earthquake.usgs.gov/earthquakes/eventpage/us6000ucfm), at approximately 108 km depth, earlier that same UTC day. The [Pacific Tsunami Warning Center's information statement](https://www.tsunami.gov/?p=PHEB%2F2026%2F11%2F21%2F26325050%2F1%2FWEPA42) stated that no tsunami warning, advisory, watch, or threat was in effect; an information statement is not a tsunami alert. A M6.6 struck 149 km west-southwest of Tual, Indonesia on Monday, November 16 at 68 km depth. Among available USGS significant-event records, seven events met the significance threshold across the interval; 99 earthquakes of M4.5 or greater were catalogued.
 
 ![Pacific Ring of Fire — major volcanic and earthquake belt around the Pacific basin.](https://commons.wikimedia.org/wiki/Special:FilePath/Pacific_Ring_of_Fire.svg?width=1280)
 *Wikimedia Commons*
 
-Space weather was quiet relative to the G-scale threshold. The peak Kp among observed three-hour blocks was 5, recorded during the interval, but no geomagnetic storm alerts were noted in the data. The largest solar flare in the available GOES X-ray record was an M2.4, peaking at 1:24 p.m. UTC on November 19. GOES primary flux data had 459 one-minute gaps in coverage; the M2.4 classification reflects only observed intervals.
+The peak Kp among observed three-hour blocks was 5, corresponding to G1 (minor) geomagnetic storm conditions on [NOAA's space-weather scale](https://www.swpc.noaa.gov/noaa-scales-explanation). The collected Kp and X-ray observation feeds do not establish whether geomagnetic storm alerts were issued. The largest solar flare in the available GOES X-ray record was an M2.4, peaking at 1:24 p.m. UTC on November 19. GOES primary flux data had 459 one-minute gaps in coverage; the M2.4 classification reflects only observed intervals.
 
 ![Current Sun in 304 Å — chromosphere and transition region.](https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0304.jpg)
 *NASA SDO*
@@ -76,7 +76,7 @@ The dominant story for the coming week is a cold airmass settling over the centr
 
 **City point forecasts (Open-Meteo, UTC-based dates):**
 
-**New York City area** — Monday, November 23: high 66°F, low 51°F, mainly cloudy, 10% precipitation chance. The cold front arrives Tuesday: high drops to 51°F, low 38°F, near-zero precipitation chance. Wednesday and Thursday bring the pre-Thanksgiving setup: temperatures hold in the upper 40s to mid-50s, with precipitation probability reaching 79% on both November 26 and 27, and a forecast total of around 1.0 inch on November 26 alone.
+**New York City area** — Monday, November 23: high 66°F, low 51°F, mainly cloudy, 10% precipitation chance. The cold front arrives Tuesday: high drops to 51°F, low 38°F, near-zero precipitation chance. Later in the week, temperatures hold in the upper 40s to mid-50s, with precipitation probability reaching 79% on both Thursday, November 26 (Thanksgiving), and Friday, November 27, and a forecast total of around 1.0 inch on November 26 alone.
 
 **Atlanta area** — Monday, November 23: high 67°F, low 54°F with a trace of drizzle possible. Tuesday clears and cools to 60°F. Wednesday (November 25) shows a 68% precipitation chance; Thursday (November 26) carries a 72% chance with a forecast 0.79 inches — the heaviest day in the Atlanta point forecast through the holiday.
 
@@ -84,7 +84,7 @@ The dominant story for the coming week is a cold airmass settling over the centr
 
 **Denver area** — Dry through the entire forecast period. Highs range from 43°F Monday to 59°F Friday, with near-zero precipitation probability on every day through November 28.
 
-**San Francisco area** — Light rain possible Sunday into early Monday (0.32 inches, 49% chance). A break Tuesday through Wednesday, then a wetter pattern returns: November 25 shows a 93% precipitation probability with 0.39 inches forecast, consistent with the WPC's description of an active Pacific system arriving Tuesday. The extended discussion flags a marginal excessive-rainfall risk from northern California to the Olympic Peninsula of Washington on Wednesday and Thursday.
+**San Francisco area** — In an [Open-Meteo update checked at 6 p.m. PST on November 22](https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum%2Cprecipitation_probability_max%2Cweather_code&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=UTC&start_date=2026-11-22&end_date=2026-11-28), Sunday, November 22 has 0.32 inches of rain forecast and a 49% precipitation chance. Monday, November 23 and Tuesday, November 24 have no measurable precipitation forecast, with chances of 1% and 19%, respectively. Rain returns Wednesday, November 25, with a 94% precipitation chance and 0.60 inches forecast. These are UTC-based daily totals. Separately, the WPC extended discussion flags a marginal excessive-rainfall risk from northern California to the Olympic Peninsula of Washington on Wednesday and Thursday.
 
 **Dallas area** — Monday, November 23: high 58°F after a sharp drop from Sunday's 70°F. Dry and cool through the week, with highs recovering to near 70°F by Saturday, November 28.
 
@@ -98,8 +98,8 @@ The dominant story for the coming week is a cold airmass settling over the centr
 ## On the Radar
 
 - If you're traveling through New England or the Mid-Atlantic for Thanksgiving, the WPC is flagging Wednesday–Thursday as the window to watch for heavy rain, damaging winds, and coastal flooding — check the [WPC hazards outlook](https://www.wpc.ncep.noaa.gov/threats/threats.php) for updates as the storm track firms up.
-- Hard freeze conditions are possible in Oklahoma by Tuesday night and across parts of west and north Texas starting Monday — cover or bring in cold-sensitive plants and outdoor pipes before then.
-- The M6.7 near Carhuamayo, Peru on November 21 triggered a tsunami alert despite its 108 km depth; the USGS event page at https://earthquake.usgs.gov/earthquakes/eventpage/us6000ucfm has the latest assessment.
+- The first freeze of the season is expected across parts of west and north Texas; hard freezes are possible in Oklahoma by Tuesday night. Protect cold-sensitive plants and exposed outdoor pipes before freezing temperatures arrive.
+- For the November 21 earthquake near Carhuamayo, Peru, the [Pacific Tsunami Warning Center information statement](https://www.tsunami.gov/?p=PHEB%2F2026%2F11%2F21%2F26325050%2F1%2FWEPA42) stated that no tsunami warning, advisory, watch, or threat was in effect. [USGS lists the event as M6.7 at approximately 108 km depth](https://earthquake.usgs.gov/earthquakes/eventpage/us6000ucfm).
 
 ## Source coverage
 
