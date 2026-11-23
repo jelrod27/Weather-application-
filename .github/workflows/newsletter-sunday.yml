@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
+    env:
+      CADENCE: sunday
     permissions:
       actions: read
       contents: read
@@ -44,8 +46,8 @@ jobs:
       - name: Check whether the edition needs a PR
         id: edition
         env:
-          CADENCE: sunday
           GH_TOKEN: ${{ github.token }}
+          NEWSLETTER_DRY_RUN: ${{ inputs.dry_run }}
         run: bash scripts/newsletter/check-edition.sh
 
       - run: npm ci
@@ -120,6 +122,11 @@ jobs:
           if [ -z "${GH_TOKEN:-}" ]; then
             echo "::error::CONTENT_BOT_TOKEN is not set in the production environment; see .github/GITHUB_SECRETS_REQUIRED.md"
             exit 1
+          fi
+          if [[ "$candidate_date" != "$EDITION_DATE" ]]; then
+            # A manual run that crossed midnight must check the candidate's actual UTC date.
+            eligible_edition="$(GITHUB_OUTPUT=/dev/stdout bash scripts/newsletter/check-edition.sh "$candidate_date")"
+            [[ -n "$eligible_edition" ]] || exit 0
           fi
           BRANCH_NAME="blog/sun-${candidate_date}-${GITHUB_RUN_ID}"
           gh auth setup-git
