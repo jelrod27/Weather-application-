@@ -31,7 +31,7 @@ async function loadHarmAlerts(
   supabase: SupabaseClient<Database>,
 ): Promise<NWSAlertDetail[]> {
   try {
-    const canonical = await loadCanonicalActiveAlerts(supabase)
+    const canonical = await loadCanonicalActiveAlerts(supabase, undefined, { harmOnly: true })
     if (canonical?.freshness === 'fresh') {
       return filterSevereMonitorAlerts(canonical.alerts)
     }

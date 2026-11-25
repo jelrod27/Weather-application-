@@ -56,6 +56,8 @@ jest.mock('@/lib/services/nws-alerts-service', () => ({
 import * as Sentry from '@sentry/nextjs'
 import { NextRequest } from 'next/server'
 import { GET } from '@/app/api/weather/alerts/route'
+import { loadCanonicalActiveAlerts } from '@/lib/bitwatch/ingest'
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/service-role-client'
 import {
   fetchActiveAlertsDetail,
   NwsPointOutOfBoundsError,
@@ -160,5 +162,20 @@ describe('GET /api/weather/alerts with a pin outside NWS coverage', () => {
     expect(mockFetchActiveAlertsDetail).toHaveBeenCalledWith({
       point: { lat: 37.662544, lon: -121.874919 },
     })
+  })
+})
+
+describe('GET /api/weather/alerts national reads', () => {
+  it.each([true, false])('uses the database harm filter only when requested (%s)', async harmOnly => {
+    const client = {} as NonNullable<ReturnType<typeof createServiceRoleSupabaseClient>>
+    jest.mocked(createServiceRoleSupabaseClient).mockReturnValueOnce(client)
+    jest.mocked(loadCanonicalActiveAlerts).mockResolvedValueOnce({
+      alerts: [], freshness: 'fresh', observedAt: '2026-10-01T00:00:00Z',
+    })
+
+    const res = await GET(new NextRequest(`http://localhost/api/weather/alerts?harm=${harmOnly ? '1' : '0'}`))
+
+    expect(res.status).toBe(200)
+    expect(jest.mocked(loadCanonicalActiveAlerts)).toHaveBeenLastCalledWith(client, undefined, { harmOnly })
   })
 })
