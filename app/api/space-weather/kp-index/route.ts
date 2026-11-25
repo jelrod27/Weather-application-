@@ -10,8 +10,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
-import { parseKpForecast, parseCurrentKpIndex } from '@/lib/services/swpc-kp';
-import { CURRENT_MAX_AGE_MS, isCurrentObservation } from '@/lib/space-weather/freshness'
+import { parseKpForecast } from '@/lib/services/swpc-kp';
+import { fetchKpObservations, KP_FORECAST_URL } from '@/lib/space-weather/kp'
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -20,6 +20,7 @@ export interface KpIndexData {
   current: {
     value: number;
     timeTag: string;
+    isEstimate?: true;
   } | null;
   recent: Array<{
     timeTag: string;
@@ -37,30 +38,14 @@ export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     const [kpResponse, forecastResponse] = await Promise.allSettled([
-      fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
-        headers: { Accept: 'application/json' },
-        next: { revalidate: 300 },
-      }, payload => parseCurrentKpIndex(payload).current !== null),
-      fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
+      fetchKpObservations(),
+      fetchSwpcJson(KP_FORECAST_URL, {
         headers: { Accept: 'application/json' },
         next: { revalidate: 900 },
       }),
     ]);
 
-    let currentKp = 0;
-    let currentTimeTag = '';
-    let recentKp: Array<{ timeTag: string; kp: number }> = [];
-    let upstreamOk = false;
-
-    if (kpResponse.status === 'fulfilled') {
-      const parsed = parseCurrentKpIndex(kpResponse.value);
-      if (parsed.current && isCurrentObservation(parsed.current.timeTag, CURRENT_MAX_AGE_MS.kp)) {
-        upstreamOk = true;
-        currentKp = parsed.current.kp;
-        currentTimeTag = parsed.current.timeTag;
-        recentKp = parsed.recent.filter(sample => isCurrentObservation(sample.timeTag, 24 * 60 * 60_000));
-      }
-    }
+    const observations = kpResponse.status === 'fulfilled' ? kpResponse.value : null;
 
     let forecast: KpIndexData['forecast'] = null;
     if (forecastResponse.status === 'fulfilled') {
@@ -73,12 +58,16 @@ export async function GET(request: NextRequest) {
 
     const result: KpIndexData = {
       timestamp: new Date().toISOString(),
-      current: upstreamOk ? { value: currentKp, timeTag: currentTimeTag } : null,
-      recent: recentKp,
+      current: observations ? {
+        value: observations.current.kp,
+        timeTag: observations.current.timeTag,
+        ...(observations.current.isEstimate ? { isEstimate: true } : {}),
+      } : null,
+      recent: observations?.recent ?? [],
       forecast,
     };
 
-    if (!upstreamOk) {
+    if (!observations) {
       return NextResponse.json(
         {
           data: result,

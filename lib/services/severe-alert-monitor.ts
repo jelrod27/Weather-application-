@@ -148,7 +148,7 @@ export async function runSevereAlertMonitor(
     try {
       const previousIds = accountStates.get(subscription.id)
       if (previousIds instanceof Error) throw previousIds
-      if (!previousIds) throw new Error('Missing monitor state snapshot')
+      if (previousIds === undefined) throw new Error('Missing monitor state snapshot')
       const pointKeys = await pointActiveKeysForPin(
         subscription.latitude,
         subscription.longitude,
@@ -176,7 +176,7 @@ export async function runSevereAlertMonitor(
     try {
       const previousIds = guestStates.get(subscriber.id)
       if (previousIds instanceof Error) throw previousIds
-      if (!previousIds) throw new Error('Missing monitor state snapshot')
+      if (previousIds === undefined) throw new Error('Missing monitor state snapshot')
       const pointKeys = await pointActiveKeysForPin(
         subscriber.latitude,
         subscriber.longitude,

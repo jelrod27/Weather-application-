@@ -69,7 +69,7 @@ export default async function AuroraForecastPage() {
           current && level && viewline ? (
             <>
               <p className="text-weather-text">
-                Live planetary Kp:{' '}
+                {current.isEstimate ? 'Running planetary Kp estimate:' : 'Live planetary Kp:'}{' '}
                 <strong className="text-2xl text-weather-primary">
                   {current.kp.toFixed(2)}
                 </strong>{' '}

@@ -63,7 +63,7 @@ const denverSub = {
 function makeSupabaseMock(
   state: Record<string, string[]>,
   inserts: unknown[],
-  options?: { insertError?: { code: string }; stateReads?: string[]; readFailureIds?: string[]; writeFailureIds?: string[] },
+  options?: { insertError?: { code: string }; stateReads?: string[]; stateWrites?: string[]; readFailureIds?: string[]; writeFailureIds?: string[] },
 ) {
   return {
     from: (table: string) => {
@@ -79,6 +79,7 @@ function makeSupabaseMock(
             }
           },
           upsert: async (row: { subscription_id: string; active_alert_ids: string[] }) => {
+            options?.stateWrites?.push(row.subscription_id)
             if (options?.writeFailureIds?.includes(row.subscription_id)) return { error: { message: 'write unavailable' } }
             state[row.subscription_id] = row.active_alert_ids
             return { error: null }
@@ -114,6 +115,7 @@ function makeSupabaseMock(
             }
           },
           upsert: async (row: { subscriber_id: string; active_alert_ids: string[] }) => {
+            options?.stateWrites?.push(row.subscriber_id)
             state[row.subscriber_id] = row.active_alert_ids
             return { error: null }
           },
@@ -797,6 +799,51 @@ describe('runSevereAlertMonitor', () => {
     expect(result.errors).toEqual(['sub-1: Monitor state write failed: write unavailable'])
     expect(state['sub-1']).toBeUndefined()
     expect(state['healthy-sub']).toEqual([])
+  })
+
+  it('writes account and guest snapshots on first observation and changes only', async () => {
+    fetchEnabledGuestSubscribers.mockResolvedValue([{ ...denverSub, id: 'guest-1', email: 'guest@example.com' }])
+    const state: Record<string, string[]> = {}
+    const stateWrites: string[] = []
+    const supabase = makeSupabaseMock(state, [], { stateWrites })
+    mockFetchAlerts.mockResolvedValue([])
+
+    await runSevereAlertMonitor(supabase as never)
+    expect(stateWrites.splice(0)).toEqual(['sub-1', 'guest-1'])
+    await runSevereAlertMonitor(supabase as never)
+    expect(stateWrites).toEqual([])
+
+    mockFetchAlerts.mockResolvedValue([{
+      id: 'tracked-warning', event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    }])
+    const active = await runSevereAlertMonitor(supabase as never)
+    expect(active).toMatchObject({ newAlerts: 1, guestNewAlerts: 1, errors: [] })
+    expect(stateWrites.splice(0)).toEqual(['sub-1', 'guest-1'])
+    await runSevereAlertMonitor(supabase as never)
+    expect(stateWrites).toEqual([])
+
+    mockFetchAlerts.mockResolvedValue([])
+    const ended = await runSevereAlertMonitor(supabase as never)
+    expect(ended).toMatchObject({ endedAlerts: 1, guestEndedAlerts: 1, errors: [] })
+    expect(stateWrites).toEqual(['sub-1', 'guest-1'])
+    expect(state).toEqual({ 'sub-1': [], 'guest-1': [] })
+  })
+
+  it('skips account and guest snapshot writes when covering warnings arrive in reverse order', async () => {
+    fetchEnabledGuestSubscribers.mockResolvedValue([{ ...denverSub, id: 'guest-1', email: 'guest@example.com' }])
+    const state = { 'sub-1': ['warning-a', 'warning-b'], 'guest-1': ['warning-a', 'warning-b'] }
+    const stateWrites: string[] = []
+    const supabase = makeSupabaseMock(state, [], { stateWrites })
+    mockFetchAlerts.mockResolvedValue(['warning-b', 'warning-a'].map(id => ({
+      id, event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    })))
+
+    const result = await runSevereAlertMonitor(supabase as never)
+
+    expect(result).toMatchObject({ subscriptionsChecked: 1, guestSubscribersChecked: 1, errors: [] })
+    expect(stateWrites).toEqual([])
   })
 
   it.each(['account', 'guest', 'both'])('reports %s recipient lookup failures while still processing readable recipients', async (failed) => {

@@ -37,6 +37,23 @@ test('shows unavailable when every condition feed fails', async ({ page }) => {
   await expect(page.getByRole('alert').filter({ hasText: 'Unable to load space weather data' })).toBeVisible();
 });
 
+test('labels a fallback Kp estimate in the geomagnetic panel', async ({ page }) => {
+  await page.route('**/api/space-weather/kp-index', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ data: {
+      current: { value: 0, timeTag: new Date().toISOString(), isEstimate: true },
+      recent: [],
+      forecast: null,
+    } }),
+  }));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('tab', { name: /Geomagnetic/i }).click();
+  const panel = page.getByRole('tabpanel');
+  await expect(panel.getByText('NOAA running Kp estimate')).toBeVisible();
+  await expect(panel.getByTestId('kp-current-value')).toHaveText('0');
+});
+
 test('shows the newest solar wind chart reading', async ({ page }) => {
   await page.route('**/api/space-weather/plasma?*', route => route.fulfill({
     status: 200, contentType: 'application/json',
