@@ -20,6 +20,7 @@ export interface KpIndexData {
   current: {
     value: number;
     timeTag: string;
+    isEstimate?: true;
   };
   forecast: {
     expected: number;
@@ -125,7 +126,7 @@ export default function KpIndexGauge({ data, isLoading = false }: KpIndexGaugePr
               {activity.text}
             </div>
             <div className={cn('text-xs font-mono', themeClasses.text, 'opacity-80')}>
-              Geomagnetic Activity
+              {data.current.isEstimate ? 'NOAA running Kp estimate' : 'Geomagnetic Activity'}
             </div>
           </div>
         </div>

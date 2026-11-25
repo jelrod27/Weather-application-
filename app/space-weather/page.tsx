@@ -29,6 +29,7 @@ export default async function SpaceWeatherPage() {
         <SpaceWeatherSeoContent
           kp={kpSnapshot?.kp ?? null}
           kpTimeTag={kpSnapshot?.timeTag ?? null}
+          kpIsEstimate={kpSnapshot?.isEstimate}
         />
       </SpaceWeatherClient>
     </>

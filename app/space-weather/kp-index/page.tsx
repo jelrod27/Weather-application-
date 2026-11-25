@@ -37,7 +37,7 @@ const FAQS: readonly IntentFaq[] = [
   {
     question: 'What is the Kp index right now?',
     answer:
-      'The reading at the top of this page is the most recent planetary K index published by NOAA SWPC, on a 0 to 9 scale. It covers the three-hour window that just closed. SWPC issues it as a near-real-time estimate from a subset of ground observatories, so the definitive Kp published later by GFZ Potsdam can differ by a fraction of a step.',
+      'The reading at the top uses the latest available three-hour planetary K index from NOAA SWPC. If that reading is delayed, the page shows NOAA’s running estimate, which updates every minute and can change as more observations arrive. Both use a 0 to 9 scale. The definitive Kp published later by GFZ Potsdam can differ from NOAA’s near-real-time values.',
   },
   {
     question: 'Is the Kp index a forecast?',
@@ -76,7 +76,7 @@ export default async function KpIndexPage() {
           current && level ? (
             <>
               <p className="text-weather-text">
-                Current planetary Kp:{' '}
+                {current.isEstimate ? 'Running planetary Kp estimate:' : 'Current planetary Kp:'}{' '}
                 <strong className="text-2xl text-weather-primary">
                   {current.kp.toFixed(2)}
                 </strong>{' '}
@@ -110,9 +110,9 @@ export default async function KpIndexPage() {
           1 to 2.
         </p>
         <p>
-          Kp is a measurement, not a forecast. The three-hour window has to close before the value
-          exists, so what you are reading describes what the magnetosphere already did rather than
-          what it is about to do. For warning you have to look upstream, at the{' '}
+          NOAA bases both the completed three-hour reading and the running estimate on
+          magnetometer observations. The running estimate updates as those observations arrive.
+          For advance warning you have to look upstream, at the{' '}
           <Link
             href={intentHref('solar-wind')}
             className="text-weather-primary underline underline-offset-2"

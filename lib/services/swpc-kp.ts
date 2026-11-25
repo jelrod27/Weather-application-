@@ -127,6 +127,15 @@ export function parseCurrentKpIndex(payload: unknown, now = Date.now()): { curre
   return { current: latest && isCurrentObservation(latest.timeTag, CURRENT_MAX_AGE_MS.kp, now) ? latest : null, recent };
 }
 
+/** The minute-updated SWPC product publishes its fractional value as estimated_kp. */
+export function parseLatestKpEstimate(payload: unknown, now = Date.now()): KpSample | null {
+  if (!Array.isArray(payload)) return null;
+  const rows = payload.map(row => ({ time_tag: row?.time_tag, Kp: row?.estimated_kp }));
+  return parsePlanetaryKpSeries(rows).samples
+    .filter(sample => isCurrentObservation(sample.timeTag, CURRENT_MAX_AGE_MS.kpEstimate, now))
+    .at(-1) ?? null;
+}
+
 /**
  * Expected and peak Kp over the next 24 hours.
  *

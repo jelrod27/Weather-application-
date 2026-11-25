@@ -12,6 +12,7 @@ import { GET as kp } from '@/app/api/space-weather/kp-index/route'
 import { GET as scales } from '@/app/api/space-weather/scales/route'
 import { loadCurrentFlare } from '@/lib/space-weather/xray'
 import { loadCurrentKp } from '@/lib/space-weather/kp'
+import { logRouteError } from '@/lib/error-utils'
 
 const realFetch = global.fetch
 const now = new Date('2026-10-10T12:05:00Z')
@@ -47,6 +48,81 @@ const consumers = [
 beforeEach(() => jest.useFakeTimers().setSystemTime(now))
 afterEach(() => { global.fetch = realFetch; jest.useRealTimers(); jest.clearAllMocks() })
 
+describe('NOAA minute-updated Kp estimate', () => {
+  const estimateRows = [
+    { time_tag: '2026-10-10T12:04:00', estimated_kp: 0, kp_index: 0, kp: '0Z' },
+    { time_tag: '2026-10-10T12:03:00', estimated_kp: 1.67, kp_index: 2, kp: '2M' },
+    { time_tag: '2026-10-10T12:06:00', estimated_kp: 9, kp_index: 9, kp: '9Z' },
+  ]
+
+  function mockUpstream(estimate: unknown): void {
+    global.fetch = jest.fn(async url => {
+      if (String(url).endsWith('planetary_k_index_1m.json')) return Response.json(estimate)
+      if (String(url).includes('forecast')) return Response.json([])
+      // At 12:05 the most recent three-hour reading is dated 06:00, and the
+      // uncached refresh still cannot supply the delayed 09:00 reading.
+      return Response.json(kpRows('2026-10-10T06:00:00'))
+    })
+  }
+
+  it('supplies fresh Kp to the hub, Kp API, and aurora API when both primary reads are stale', async () => {
+    mockUpstream(estimateRows)
+
+    await expect(loadCurrentKp('space-weather')).resolves.toEqual({
+      kp: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true,
+    })
+    expect(jest.mocked(global.fetch).mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
+      '/products/noaa-planetary-k-index.json',
+      '/products/noaa-planetary-k-index.json',
+      '/json/planetary_k_index_1m.json',
+    ])
+    const kpResponse = await kp(new NextRequest('http://localhost/api/space-weather/kp-index'))
+    expect(kpResponse.status).toBe(200)
+    expect((await kpResponse.json()).data).toMatchObject({
+      current: { value: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true },
+      recent: [{ timeTag: '2026-10-10T06:00:00.000Z', kp: 0 }],
+    })
+    const auroraResponse = await aurora(new NextRequest('http://localhost/api/space-weather/aurora'))
+    expect(auroraResponse.status).toBe(200)
+    expect(await auroraResponse.json()).toMatchObject({ kpIndex: 0, data: { activity: 'quiet' } })
+    expect(logRouteError).not.toHaveBeenCalled()
+  })
+
+  it('retains only valid published history when the uncached refresh is empty', async () => {
+    global.fetch = jest.fn(async (url, options) => {
+      if (String(url).endsWith('planetary_k_index_1m.json')) return Response.json(estimateRows)
+      if (String(url).includes('forecast') || options?.cache === 'no-store') return Response.json([])
+      return Response.json([
+        { time_tag: '2026-10-09T12:00:00Z', Kp: 7 },
+        { time_tag: '2026-10-10T03:00:00Z', Kp: 1.33 },
+        { time_tag: '2026-10-10T06:00:00Z', Kp: 2.33 },
+      ])
+    })
+
+    const response = await kp(new NextRequest('http://localhost/api/space-weather/kp-index'))
+
+    expect(response.status).toBe(200)
+    expect((await response.json()).data).toMatchObject({
+      current: { value: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true },
+      recent: [
+        { timeTag: '2026-10-10T03:00:00.000Z', kp: 1.33 },
+        { timeTag: '2026-10-10T06:00:00.000Z', kp: 2.33 },
+      ],
+    })
+  })
+
+  it.each([
+    { time_tag: '2026-10-10T11:49:00', estimated_kp: 8 },
+    { time_tag: '2026-10-10T12:06:00', estimated_kp: 8 },
+    { time_tag: '2026-10-10T12:04:00', estimated_kp: null, kp_index: 0 },
+  ])('keeps the current reading unavailable with an unusable estimate %j', async row => {
+    mockUpstream([row])
+
+    await expect(loadCurrentKp('space-weather')).resolves.toBeNull()
+    expect(logRouteError).toHaveBeenCalledWith('space-weather', expect.any(Error))
+  })
+})
+
 describe.each(consumers)('$name observation recovery', ({ rows, read, expected }) => {
   it('refreshes stale cached JSON before reporting live data unavailable', async () => {
     const requests: RequestInit[] = []
@@ -75,7 +151,7 @@ describe.each(consumers)('$name observation recovery', ({ rows, read, expected }
     'stays unavailable when the refreshed observations are dated %s', async timeTag => {
       let attempts = 0
       global.fetch = jest.fn(async url => {
-        if (String(url).includes('forecast')) return Response.json([])
+        if (String(url).includes('forecast') || String(url).endsWith('planetary_k_index_1m.json')) return Response.json([])
         attempts++
         return Response.json(rows(timeTag))
       })
