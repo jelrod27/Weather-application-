@@ -830,6 +830,22 @@ describe('runSevereAlertMonitor', () => {
     expect(state).toEqual({ 'sub-1': [], 'guest-1': [] })
   })
 
+  it('skips account and guest snapshot writes when covering warnings arrive in reverse order', async () => {
+    fetchEnabledGuestSubscribers.mockResolvedValue([{ ...denverSub, id: 'guest-1', email: 'guest@example.com' }])
+    const state = { 'sub-1': ['warning-a', 'warning-b'], 'guest-1': ['warning-a', 'warning-b'] }
+    const stateWrites: string[] = []
+    const supabase = makeSupabaseMock(state, [], { stateWrites })
+    mockFetchAlerts.mockResolvedValue(['warning-b', 'warning-a'].map(id => ({
+      id, event: 'Tornado Warning', headline: 'Take shelter',
+      severity: 'Extreme', urgency: 'Immediate', geometry: DENVER_POLYGON,
+    })))
+
+    const result = await runSevereAlertMonitor(supabase as never)
+
+    expect(result).toMatchObject({ subscriptionsChecked: 1, guestSubscribersChecked: 1, errors: [] })
+    expect(stateWrites).toEqual([])
+  })
+
   it.each(['account', 'guest', 'both'])('reports %s recipient lookup failures while still processing readable recipients', async (failed) => {
     const guest = { ...denverSub, id: 'healthy-guest', email: 'guest@example.com' }
     fetchEnabledGuestSubscribers.mockResolvedValue([guest])

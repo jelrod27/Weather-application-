@@ -28,9 +28,14 @@ interface KpObservations {
 
 /** Prefer the published three-hour series, with a fresh running estimate during publication gaps. */
 export async function fetchKpObservations(): Promise<KpObservations> {
+  let publishedHistoryPayload: unknown
   try {
-    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } },
-      data => parseCurrentKpIndex(data).current !== null)
+    const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } }, data => {
+      const { current, recent } = parseCurrentKpIndex(data)
+      // A payload can supply valid history even when it fails the current-reading check.
+      if (recent.length > 0) publishedHistoryPayload = data
+      return current !== null
+    })
     const { current, recent } = parseCurrentKpIndex(payload)
     if (!current) throw new Error('Live Kp unavailable')
     return { current, recent }
@@ -40,7 +45,10 @@ export async function fetchKpObservations(): Promise<KpObservations> {
     }).catch(() => null)
     const current = parseLatestKpEstimate(payload)
     if (!current) throw primaryError
-    return { current: { ...current, isEstimate: true }, recent: [] }
+    return {
+      current: { ...current, isEstimate: true },
+      recent: parseCurrentKpIndex(publishedHistoryPayload).recent,
+    }
   }
 }
 

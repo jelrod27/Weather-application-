@@ -55,6 +55,9 @@ export async function loadMonitorStates(
 
 /** Initialize new history and write real transitions, including clearing the last ID. */
 export function shouldSaveMonitorState(previousIds: string[] | null, currentIds: string[]): boolean {
-  return previousIds === null || previousIds.length !== currentIds.length ||
-    currentIds.some((id, index) => id !== previousIds[index])
+  if (previousIds === null) return true
+
+  const previous = new Set(previousIds)
+  const current = new Set(currentIds)
+  return previous.size !== current.size || currentIds.some(id => !previous.has(id))
 }

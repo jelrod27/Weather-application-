@@ -79,12 +79,36 @@ describe('NOAA minute-updated Kp estimate', () => {
     const kpResponse = await kp(new NextRequest('http://localhost/api/space-weather/kp-index'))
     expect(kpResponse.status).toBe(200)
     expect((await kpResponse.json()).data).toMatchObject({
-      current: { value: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true }, recent: [],
+      current: { value: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true },
+      recent: [{ timeTag: '2026-10-10T06:00:00.000Z', kp: 0 }],
     })
     const auroraResponse = await aurora(new NextRequest('http://localhost/api/space-weather/aurora'))
     expect(auroraResponse.status).toBe(200)
     expect(await auroraResponse.json()).toMatchObject({ kpIndex: 0, data: { activity: 'quiet' } })
     expect(logRouteError).not.toHaveBeenCalled()
+  })
+
+  it('retains only valid published history when the uncached refresh is empty', async () => {
+    global.fetch = jest.fn(async (url, options) => {
+      if (String(url).endsWith('planetary_k_index_1m.json')) return Response.json(estimateRows)
+      if (String(url).includes('forecast') || options?.cache === 'no-store') return Response.json([])
+      return Response.json([
+        { time_tag: '2026-10-09T12:00:00Z', Kp: 7 },
+        { time_tag: '2026-10-10T03:00:00Z', Kp: 1.33 },
+        { time_tag: '2026-10-10T06:00:00Z', Kp: 2.33 },
+      ])
+    })
+
+    const response = await kp(new NextRequest('http://localhost/api/space-weather/kp-index'))
+
+    expect(response.status).toBe(200)
+    expect((await response.json()).data).toMatchObject({
+      current: { value: 0, timeTag: '2026-10-10T12:04:00.000Z', isEstimate: true },
+      recent: [
+        { timeTag: '2026-10-10T03:00:00.000Z', kp: 1.33 },
+        { timeTag: '2026-10-10T06:00:00.000Z', kp: 2.33 },
+      ],
+    })
   })
 
   it.each([
