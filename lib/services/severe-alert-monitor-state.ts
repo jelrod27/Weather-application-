@@ -5,9 +5,9 @@ import type { Database } from '@/lib/supabase/types'
 const STATE_READ_BATCH_SIZE = 100
 
 type MonitorKind = 'account' | 'guest'
-type MonitorState = string[] | Error
+type MonitorState = string[] | null | Error
 
-/** Failed reads stay distinct from a successfully read, empty alert history. */
+/** A missing row and a failed read both stay distinct from a saved empty history. */
 export async function loadMonitorStates(
   supabase: SupabaseClient<Database>,
   kind: MonitorKind,
@@ -28,7 +28,7 @@ export async function loadMonitorStates(
       if (error) throw new Error(error.message)
       if (!Array.isArray(data)) throw new Error('invalid state response')
 
-      const batchStates = new Map<string, MonitorState>(batch.map((id) => [id, []]))
+      const batchStates = new Map<string, MonitorState>(batch.map((id) => [id, null]))
       for (const row of data as unknown[]) {
         if (!row || typeof row !== 'object' || !(idColumn in row)) {
           throw new Error('invalid state row')
@@ -51,4 +51,10 @@ export async function loadMonitorStates(
   }
 
   return states
+}
+
+/** Initialize new history and write real transitions, including clearing the last ID. */
+export function shouldSaveMonitorState(previousIds: string[] | null, currentIds: string[]): boolean {
+  return previousIds === null || previousIds.length !== currentIds.length ||
+    currentIds.some((id, index) => id !== previousIds[index])
 }

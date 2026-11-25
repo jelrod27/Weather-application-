@@ -23,15 +23,19 @@ function json(data: unknown): Response {
 }
 
 describe('batched monitor state with the Supabase HTTP client', () => {
-  it('uses one filtered request with only required columns and retains missing rows as empty state', async () => {
-    const { client, urls } = makeClient(() => json([{ subscription_id: 'a', active_alert_ids: ['warning-1'] }]))
-    const states = await loadMonitorStates(client, 'account', ['a', 'b', 'a'])
+  it('uses one filtered request and distinguishes a missing row from saved empty history', async () => {
+    const { client, urls } = makeClient(() => json([
+      { subscription_id: 'a', active_alert_ids: ['warning-1'] },
+      { subscription_id: 'c', active_alert_ids: [] },
+    ]))
+    const states = await loadMonitorStates(client, 'account', ['a', 'b', 'c', 'a'])
     expect(urls).toHaveLength(1)
     expect(urls[0].pathname).toBe('/rest/v1/alert_monitor_state')
     expect(urls[0].searchParams.get('select')).toBe('subscription_id,active_alert_ids')
-    expect(urls[0].searchParams.get('subscription_id')).toBe('in.(a,b)')
+    expect(urls[0].searchParams.get('subscription_id')).toBe('in.(a,b,c)')
     expect(states.get('a')).toEqual(['warning-1'])
-    expect(states.get('b')).toEqual([])
+    expect(states.get('b')).toBeNull()
+    expect(states.get('c')).toEqual([])
   })
 
   it('chunks large guest lists and preserves state across chunk boundaries', async () => {
@@ -62,7 +66,7 @@ describe('batched monitor state with the Supabase HTTP client', () => {
     expect(urls).toHaveLength(2)
     expect(states.get('sub-0')).toBeInstanceOf(Error)
     expect(states.get('sub-99')).toBeInstanceOf(Error)
-    expect(states.get('sub-100')).toEqual([])
+    expect(states.get('sub-100')).toBeNull()
   })
 
   it('does not treat malformed state as empty history', async () => {

@@ -24,6 +24,7 @@ import {
   stillCoveredByCurrent,
   trackingIds,
 } from './severe-alert-monitor-shared'
+import { shouldSaveMonitorState } from './severe-alert-monitor-state'
 
 async function saveGuestMonitorState(
   supabase: SupabaseClient<Database>,
@@ -77,7 +78,7 @@ export async function processGuestPlace(
   result: SevereMonitorRunResult,
   hooks: SevereMonitorHooks,
   nowcastWet: (lat: number, lon: number) => Promise<boolean>,
-  previousIds: string[],
+  previousIds: string[] | null,
 ): Promise<void> {
   const prefs: HazardDeliveryPrefs = hazardPrefsFrom(subscriber)
   const currentAlerts = coveringAlerts(
@@ -109,7 +110,7 @@ export async function processGuestPlace(
     }
   }
 
-  for (const prevId of previousIds) {
+  for (const prevId of previousIds ?? []) {
     if (liveKeys.has(prevId)) continue
     const resolved = await resolveEndedAlert(supabase, prevId, nationalAlerts)
     if (liveKeys.has(eventKey(resolved)) || liveKeys.has(resolved.id)) continue
@@ -156,7 +157,9 @@ export async function processGuestPlace(
     }
   }
 
-  await saveGuestMonitorState(supabase, subscriber.id, currentIds)
+  if (shouldSaveMonitorState(previousIds, currentIds)) {
+    await saveGuestMonitorState(supabase, subscriber.id, currentIds)
+  }
 }
 
 async function deliverGuestPhase(input: {
