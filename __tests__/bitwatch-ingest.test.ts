@@ -2,9 +2,11 @@
  * @jest-environment node
  */
 
+import { createClient } from '@supabase/supabase-js'
 import {
   chunkIdsForPostgrestInFilter,
   listActiveWarningEventIds,
+  loadCanonicalActiveAlerts,
   POSTGREST_IN_FILTER_MAX_CHARS,
   runBitwatchIngest,
 } from '@/lib/bitwatch/ingest'
@@ -13,6 +15,7 @@ import {
   fetchActiveAlertsDetail,
   fetchNwsAlertPages,
 } from '@/lib/services/nws-alerts-service'
+import type { Database } from '@/lib/supabase/types'
 
 jest.mock('@/lib/services/nws-alerts-service', () => ({
   fetchNwsAlertPages: jest.fn(),
@@ -435,6 +438,62 @@ describe('chunkIdsForPostgrestInFilter', () => {
       const encoded = `(${chunk.map((id) => `"${id}"`).join(',')})`
       expect(encoded.length).toBeLessThanOrEqual(POSTGREST_IN_FILTER_MAX_CHARS)
     }
+  })
+})
+
+describe('canonical active alert reads', () => {
+  const now = Date.parse('2026-04-18T21:15:00Z')
+  const observedAt = '2026-04-18T21:14:00Z'
+  const tornado = alert({ id: 'tornado', event: 'Tornado Warning', sent: observedAt })
+  const winter = alert({ id: 'winter', event: 'Winter Storm Warning', sent: observedAt })
+
+  function makeClient(respond: (query: URLSearchParams) => Response) {
+    const fetch = jest.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input))
+      return url.pathname.endsWith('/bitwatch_ingest_state')
+        ? Response.json([{ last_success_at: observedAt }])
+        : respond(url.searchParams)
+    })
+    const client = createClient<Database>('https://alerts-test.supabase.co', 'test-key', {
+      auth: { persistSession: false, autoRefreshToken: false },
+      db: { retry: false },
+      global: { fetch },
+    })
+    const warningQuery = () => new URL(String(fetch.mock.calls[1][0])).searchParams
+    return { client, warningQuery }
+  }
+
+  it('requests only harm warnings before downloading display payloads', async () => {
+    const { client, warningQuery } = makeClient(params => Response.json(
+      (params.has('event') ? [tornado] : [tornado, winter]).map(display => ({ display })),
+    ))
+
+    const result = await loadCanonicalActiveAlerts(client, now, { harmOnly: true })
+
+    expect(warningQuery().get('status')).toBe('eq.active')
+    expect(warningQuery().get('select')).toBe('display')
+    expect(warningQuery().get('event')).toMatch(/^imatch\..*Tornado Warning\|Severe Thunderstorm Warning\|Flash Flood Warning/)
+    expect(result).toEqual({ alerts: [tornado], freshness: 'fresh', observedAt })
+  })
+
+  it('returns a fresh empty result when the filter matches no warnings', async () => {
+    const { client } = makeClient(() => Response.json([]))
+    await expect(loadCanonicalActiveAlerts(client, now, { harmOnly: true })).resolves.toEqual({
+      alerts: [], freshness: 'fresh', observedAt,
+    })
+  })
+
+  it('keeps the public national query unfiltered by default', async () => {
+    const { client, warningQuery } = makeClient(() => Response.json([tornado, winter].map(display => ({ display }))))
+    const result = await loadCanonicalActiveAlerts(client, now)
+
+    expect(warningQuery().has('event')).toBe(false)
+    expect(result?.alerts).toEqual([tornado, winter])
+  })
+
+  it('reports an unavailable snapshot when the filtered query fails', async () => {
+    const { client } = makeClient(() => Response.json({ message: 'unavailable' }, { status: 503 }))
+    await expect(loadCanonicalActiveAlerts(client, now, { harmOnly: true })).resolves.toBeNull()
   })
 })
 

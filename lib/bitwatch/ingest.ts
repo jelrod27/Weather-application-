@@ -10,6 +10,7 @@ import {
   harmWarningCollectionUrl,
   type NWSAlertDetail,
 } from '@/lib/services/nws-alerts-service'
+import { HARM_WARNING_EVENTS } from '@/lib/services/severe-alert-filter'
 
 const INGEST_ID = 'nws-alerts'
 const OVERLAP_MS = 15 * 60 * 1000
@@ -18,6 +19,11 @@ const FRESH_MS = 3 * 60 * 1000
 const LEASE_MS = 50_000
 const SOURCE_MESSAGE_CHUNK = 50
 export const INGEST_SUPABASE_TIMEOUT_MS = 20_000
+
+// Keep the database filter compatible with trim() on stored provider labels,
+// including nonbreaking spaces and the byte-order mark.
+const EVENT_LABEL_PADDING = '[[:space:]\u00a0\u2007\u202f\ufeff]*'
+const HARM_WARNING_EVENT_PATTERN = `^${EVENT_LABEL_PADDING}(${HARM_WARNING_EVENTS.join('|')})${EVENT_LABEL_PADDING}$`
 
 const DAY_MS = 24 * 60 * 60 * 1000
 /** Source messages are an audit trail; the desk reads warning events, not these. */
@@ -443,6 +449,7 @@ export async function runBitwatchIngest(
 export async function loadCanonicalActiveAlerts(
   supabase: SupabaseClient<Database>,
   nowMs = Date.now(),
+  { harmOnly = false }: { harmOnly?: boolean } = {},
 ): Promise<{ alerts: NWSAlertDetail[]; freshness: BitwatchFreshness; observedAt: string | null } | null> {
   const { data: state, error: stateError } = await supabase
     .from('bitwatch_ingest_state')
@@ -457,11 +464,14 @@ export async function loadCanonicalActiveAlerts(
   const age = nowMs - new Date(successAt).getTime()
   if (!Number.isFinite(age)) return null
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('bitwatch_warning_events')
     .select('display')
     .eq('status', 'active')
+  // Ingestion stores display.event in the event column on every revision.
+  if (harmOnly) query.filter('event', 'imatch', HARM_WARNING_EVENT_PATTERN)
 
+  const { data, error } = await query
   if (error) return null
 
   const alerts = ((data ?? []) as Array<{ display: NWSAlertDetail }>)

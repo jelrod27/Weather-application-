@@ -558,6 +558,17 @@ describe('runSevereAlertMonitor', () => {
     expect(result.newAlerts).toBe(1)
   })
 
+  it('requests harm-only canonical alerts and trusts a fresh empty snapshot', async () => {
+    mockCanonical.mockResolvedValue({ freshness: 'fresh', alerts: [], observedAt: '2026-07-04T00:00:00Z' })
+    const supabase = makeSupabaseMock({}, [])
+
+    const result = await runSevereAlertMonitor(supabase as never)
+
+    expect(mockCanonical).toHaveBeenCalledWith(supabase, undefined, { harmOnly: true })
+    expect(mockFetchAlerts).not.toHaveBeenCalled()
+    expect(result.errors).toEqual([])
+  })
+
   it('pages an ended warning once when monitor state stored both VTEC and NWS ids', async () => {
     mockFetchAlerts.mockResolvedValue([])
     mockCanonicalBySlug.mockResolvedValue({
