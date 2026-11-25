@@ -10,8 +10,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { viewlineFor } from '@/lib/space-weather/kp-scale';
-import { parseCurrentKpIndex } from '@/lib/services/swpc-kp';
-import { fetchSwpcJson } from '@/lib/services/swpc-proxy';
+import { fetchKpObservations } from '@/lib/space-weather/kp';
 import { logRouteError } from '@/lib/error-utils'
 import { withApiRoute } from '@/lib/api/with-api-route'
 
@@ -41,14 +40,9 @@ export async function GET(request: NextRequest) {
   return withApiRoute(request, async ({ rateLimitHeaders }) => {
   try {
     // Fetch current Kp index for viewline estimation
-    const kpData = await fetchSwpcJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
-      headers: { Accept: 'application/json' },
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    }, payload => parseCurrentKpIndex(payload).current !== null);
-
-    const current = parseCurrentKpIndex(kpData).current;
-    const viewline = viewlineFor(current?.kp);
-    if (!current || !viewline) throw new Error('Live Kp unavailable');
+    const { current } = await fetchKpObservations();
+    const viewline = viewlineFor(current.kp);
+    if (!viewline) throw new Error('Live Kp unavailable');
     const currentKp = current.kp;
     const activity = getActivityLevel(currentKp);
 
@@ -69,7 +63,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       data: result,
       kpIndex: currentKp,
-      source: 'NOAA SWPC imagery and Kp; approximate site viewing guidance',
+      source: current.isEstimate
+        ? 'NOAA SWPC imagery and minute-updated Kp estimate; approximate site viewing guidance'
+        : 'NOAA SWPC imagery and Kp; approximate site viewing guidance',
     }, { headers: rateLimitHeaders });
 
   } catch (error) {

@@ -71,6 +71,7 @@ export function buildSpaceWeatherAppJsonLd(dateModified?: string): {
 interface SpaceWeatherSeoContentProps {
   kp?: number | null
   kpTimeTag?: string | null
+  kpIsEstimate?: boolean
 }
 
 /**
@@ -80,6 +81,7 @@ interface SpaceWeatherSeoContentProps {
 export default function SpaceWeatherSeoContent({
   kp = null,
   kpTimeTag = null,
+  kpIsEstimate = false,
 }: SpaceWeatherSeoContentProps) {
   const updated = kpTimeTag ? formatSwpcTimeTag(kpTimeTag) : null
 
@@ -91,7 +93,7 @@ export default function SpaceWeatherSeoContent({
     >
       {kp != null && updated ? (
         <p className="mb-4 text-weather-text">
-          Last NOAA SWPC Kp reading:{' '}
+          {kpIsEstimate ? 'Latest NOAA SWPC running Kp estimate:' : 'Last NOAA SWPC Kp reading:'}{' '}
           <strong className="text-weather-primary">{kp.toFixed(1)}</strong>
           {' '}at{' '}
           <time dateTime={updated.iso}>{updated.label}</time>

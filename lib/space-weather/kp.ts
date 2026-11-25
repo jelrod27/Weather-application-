@@ -1,18 +1,14 @@
 /**
- * Server-side loaders for the NOAA planetary K-index, shared by the hub and
- * the Kp and aurora intent pages.
- *
- * These lived as three near-identical copies inside the page files — same URL,
- * same TTL, same catch — which is how one of them ends up with a different
- * revalidate or a fixed bug the others never get. `loadCurrentFlare` in
- * ./xray.ts already sat beside its parser; these now match.
+ * NOAA planetary K-index loaders for the dashboard APIs and server-rendered pages.
  */
 
 import { fetchSwpcJson } from '@/lib/services/swpc-proxy'
 import { logRouteError } from '@/lib/error-utils'
-import { parseKpForecast, parseCurrentKpIndex, type KpSample } from '@/lib/services/swpc-kp'
+import { parseCurrentKpIndex, parseKpForecast, parseLatestKpEstimate } from '@/lib/services/swpc-kp'
+import type { KpSample } from '@/lib/services/swpc-kp'
 
 export const KP_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
+const KP_ESTIMATE_URL = 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json'
 export const KP_FORECAST_URL =
   'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
 
@@ -21,12 +17,37 @@ const KP_TTL_SECONDS = 300
 /** SWPC reissues the three-day outlook far less often than it does Kp. */
 const FORECAST_TTL_SECONDS = 900
 
-/** Current planetary Kp, or null when SWPC is unreachable. */
-export async function loadCurrentKp(context: string): Promise<KpSample | null> {
+interface CurrentKpReading extends KpSample {
+  isEstimate?: true
+}
+
+interface KpObservations {
+  current: CurrentKpReading
+  recent: KpSample[]
+}
+
+/** Prefer the published three-hour series, with a fresh running estimate during publication gaps. */
+export async function fetchKpObservations(): Promise<KpObservations> {
   try {
     const payload = await fetchSwpcJson(KP_URL, { next: { revalidate: KP_TTL_SECONDS } },
       data => parseCurrentKpIndex(data).current !== null)
-    return parseCurrentKpIndex(payload).current
+    const { current, recent } = parseCurrentKpIndex(payload)
+    if (!current) throw new Error('Live Kp unavailable')
+    return { current, recent }
+  } catch (primaryError) {
+    const payload = await fetchSwpcJson(KP_ESTIMATE_URL, {
+      next: { revalidate: 60 }, timeoutMs: 2_000, maxRetries: 0,
+    }).catch(() => null)
+    const current = parseLatestKpEstimate(payload)
+    if (!current) throw primaryError
+    return { current: { ...current, isEstimate: true }, recent: [] }
+  }
+}
+
+/** Current planetary Kp, or null when neither NOAA product has a usable reading. */
+export async function loadCurrentKp(context: string): Promise<CurrentKpReading | null> {
+  try {
+    return (await fetchKpObservations()).current
   } catch (error) {
     // logRouteError, not console.error: a bare console line never reaches
     // Sentry, so SWPC going down would quietly degrade four indexed pages to
