@@ -7,10 +7,9 @@ const html = readFileSync(new URL('../../.next/server/app/stargazer/objects/M31.
 const scripts = [...html.matchAll(/<script[^>]+src="(\/_next\/[^\"]+)"/g)].map(match => match[1])
 
 test('object guides include their reference content before JavaScript runs', () => {
-  const markup = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
-  assert.match(markup, /M31<!-- --> - <!-- -->ANDROMEDA GALAXY|M31 - ANDROMEDA GALAXY/)
-  assert.match(markup, /Quick Facts/)
-  assert.match(markup, /The Andromeda Galaxy \(M31\) is the nearest major galaxy/)
+  assert.match(html, /<h1\b[^>]*>M31(?:<!-- -->)? - (?:<!-- -->)?ANDROMEDA GALAXY<\/h1>/)
+  assert.match(html, /<h2\b[^>]*>Quick Facts<\/h2>/)
+  assert.match(html, /<p\b[^>]*>The Andromeda Galaxy \(M31\) is the nearest major galaxy/)
 })
 
 test('a direct object-guide visit does not eagerly download the astronomy engine', () => {
