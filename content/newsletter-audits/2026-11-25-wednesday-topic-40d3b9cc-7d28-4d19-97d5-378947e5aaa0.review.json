@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "postSha256": "71cd7b6d625f7907aab2d89ce1dfba04a1f9bc5ca5727c78f4fe9ee9c80ddba6",
+  "auditSha256": "a9ff5d42079c436f311f9fc3fcd796aa902794f94a51ddbf908ec868149afb29",
+  "decision": "disclosed-partial",
+  "reviewer": "Codex",
+  "acknowledged": true,
+  "reviewedAt": "2026-11-26T18:29:51.556Z",
+  "gapDispositions": {
+    "news-headlines": "The article discloses the partial headline sample. The dated Kīlauea account was checked separately against USGS Hawaiian Volcano Observatory reports."
+  }
+}
