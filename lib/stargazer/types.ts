@@ -278,9 +278,8 @@ export interface LimitingFactor {
 // Consolidated API Response
 // ============================================================================
 
-export interface StargazerData {
+export interface StargazerForecast {
   beginnerNight?: BeginnerNight;
-  optionalData?: { iss: boolean; launches: boolean };
   score: StargazerScore | UnavailableStargazerScore;
   bestWindow: BestWindow | null;
   nightAverage: number | null;
@@ -291,8 +290,6 @@ export interface StargazerData {
   planets: PlanetVisibility[];
   deepSkyHighlights: DeepSkyHighlight[];
   skyEvents: SkyEvent[];
-  issPasses: ISSPass[];
-  launches: Launch[];
   meteorShowers: MeteorShowerEvent[];
   location: {
     timezone?: string;
@@ -306,4 +303,10 @@ export interface StargazerData {
   /** Provider HTTP response time, when known; not a model initialization time. */
   weatherRetrievedAt?: string | null;
   generatedAt: string;
+}
+
+export interface StargazerData extends StargazerForecast {
+  optionalData?: { iss: boolean; launches: boolean };
+  issPasses: ISSPass[];
+  launches: Launch[];
 }

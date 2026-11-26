@@ -23,6 +23,41 @@ test('moves between beginner and detailed panels without dropping observing cont
   await page.getByRole('tab', { name: /Targets/i }).click();
   await expect(page.getByRole('tab', { name: /Targets/i })).toHaveAttribute('aria-selected', 'true');
 });
+
+test('loads the observing hour first and fetches ISS passes and launches in their own tabs', async ({ page }) => {
+  const requested: string[] = [];
+  let finishIss!: () => void;
+  const waitingForIss = new Promise<void>(resolve => { finishIss = resolve; });
+  await page.route('**/api/stargazer/iss?**', async route => {
+    requested.push('iss');
+    await waitingForIss;
+    await route.fulfill({ json: [] });
+  });
+  await page.route('**/api/stargazer/launches', route => {
+    requested.push('launches');
+    return route.fulfill({ json: [] });
+  });
+
+  try {
+    const forecastRequest = page.waitForRequest(request => new URL(request.url()).pathname === '/api/stargazer');
+    await page.reload();
+    expect(new URL((await forecastRequest).url()).searchParams.get('view')).toBe('forecast');
+    await expect(page.getByRole('heading', { name: 'Try this hour' })).toBeVisible();
+    expect(requested).toEqual([]);
+
+    await page.getByRole('tab', { name: /Events/ }).click();
+    await expect(page.getByText('Loading ISS passes…')).toBeVisible();
+    await expect.poll(() => requested).toContain('iss');
+    expect(requested).not.toContain('launches');
+    await page.getByRole('tab', { name: /Start here/ }).click();
+    await expect(page.getByRole('heading', { name: 'Try this hour' })).toBeVisible();
+    await page.getByRole('tab', { name: /Launches/ }).click();
+    await expect(page.getByText('No upcoming launches returned by the provider.')).toBeVisible();
+    expect(requested).toContain('launches');
+  } finally {
+    finishIss();
+  }
+});
 for (const [theme, width] of [['daybreak', 390], ['daybreak', 1280], ['nord', 390]] as const) {
   test(`keeps the beginner controls readable at ${width}px in ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -115,11 +150,32 @@ test('explains polar daylight without inventing dark-sky targets', async ({ page
   await expect(page.getByText(/No astronomical darkness this night/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'No complete future hour available' })).toBeVisible();
 });
-test('asks direct object-guide visitors to choose a city', async ({ page }) => {
+test('lets direct object-guide visitors find the object from a city they choose', async ({ page }) => {
+  await page.route('**/api/weather/geocoding?**', async route => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    await route.fulfill(query === 'Springfield' ? { json: [
+      { name: 'Springfield', state: 'IL', country: 'US', lat: 39.8, lon: -89.64, timezone: 'America/Chicago' },
+      { name: 'Springfield', state: 'MA', country: 'US', lat: 42.1, lon: -72.59, timezone: 'America/New_York' },
+    ] } : { status: 404, json: { error: 'Location not found' } });
+  });
   await page.goto('/stargazer/objects/M31');
-  await expect(page.getByRole('link', { name: 'Choose an observing location' })).toBeVisible();
-  await expect(page.locator('section').filter({ has: page.getByRole('heading', { name: /How to find/ }) }).getByText(/New York/)).toHaveCount(0);
+  const guide = page.getByRole('region', { name: 'How to find Andromeda Galaxy' });
+  await expect(guide.getByText('Choose a city to calculate where to look.')).toBeVisible();
+  await guide.getByRole('searchbox', { name: 'Observing city' }).fill('Unknown City');
+  await guide.getByRole('button', { name: 'Search' }).click();
+  await expect(guide.getByRole('status')).toHaveText(/No cities found/);
+  await guide.getByRole('searchbox', { name: 'Observing city' }).fill('Springfield');
+  await guide.getByRole('searchbox', { name: 'Observing city' }).press('Enter');
+  await guide.getByRole('button', { name: 'Springfield, MA, US' }).click();
+  await expect(page).toHaveURL(/\/stargazer\/objects\/M31\?.*tz=America%2FNew_York/);
+  await expect(guide.getByText(/Springfield, MA, US.*GMT-4/)).toBeVisible();
+  await expect(guide.locator('figcaption')).toBeVisible();
+  await page.reload();
+  await expect(guide.getByText(/Springfield, MA, US.*GMT-4/)).toBeVisible();
+  await page.goBack();
+  await expect(guide.getByText('Choose a city to calculate where to look.')).toBeVisible();
 });
+
 
 
 test('shares an approximate observing area without changing the local plan', async ({ page }) => {

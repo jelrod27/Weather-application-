@@ -41,7 +41,11 @@ jest.mock('@/lib/stargazer/launches', () => ({
 }));
 
 import { fetchSevenTimerData } from '@/lib/stargazer/seven-timer';
+import { fetchUpcomingLaunches } from '@/lib/stargazer/launches';
+import { fetchISSTLE } from '@/lib/stargazer/satellites';
 import { GET } from '@/app/api/stargazer/route';
+import { GET as getISS } from '@/app/api/stargazer/iss/route';
+import { GET as getLaunches } from '@/app/api/stargazer/launches/route';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { rateLimitRequest } from '@/lib/services/weather-rate-limiter';
 
@@ -227,6 +231,46 @@ describe('GET /api/stargazer — contract with degraded externals', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('returns a usable forecast even when neither optional provider responds', async () => {
+    const launchSpy = jest.mocked(fetchUpcomingLaunches);
+    const issSpy = jest.mocked(fetchISSTLE);
+    const loadLaunches = launchSpy.getMockImplementation()!;
+    const loadIss = issSpy.getMockImplementation()!;
+    launchSpy.mockImplementation(() => new Promise(() => {}));
+    issSpy.mockImplementation(() => new Promise(() => {}));
+    const pending = GET(makeRequest({ lat: '40.71', lon: '-74.01', view: 'forecast' }));
+    try {
+      const deadline = jest.advanceTimersByTimeAsync(50).then(() => undefined);
+      const response = await Promise.race([pending, deadline]);
+      expect(response?.status).toBe(200);
+      expect((await response!.json()).beginnerNight.hours.length).toBeGreaterThan(0);
+      expect(launchSpy).not.toHaveBeenCalled();
+      expect(issSpy).not.toHaveBeenCalled();
+    } finally {
+      launchSpy.mockImplementation(loadLaunches);
+      issSpy.mockImplementation(loadIss);
+    }
+  });
+
+  it('validates ISS coordinates and treats an empty pass list as a successful result', async () => {
+    expect((await getISS(makeRequest({ lat: '999', lon: '0' }))).status).toBe(400);
+    expect(fetchISSTLE).not.toHaveBeenCalled();
+    const request = makeRequest({ lat: '40.71', lon: '-74.01' });
+    expect((await getISS(request)).status).toBe(502);
+    jest.mocked(fetchISSTLE).mockResolvedValueOnce({ line1: 'fixture line 1', line2: 'fixture line 2' });
+    const response = await getISS(request);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
+  });
+
+  it('returns an error when launches are unavailable and an empty list when the provider reports none', async () => {
+    jest.mocked(fetchUpcomingLaunches).mockResolvedValueOnce(null);
+    expect((await getLaunches(makeRequest({}))).status).toBe(502);
+    const response = await getLaunches(makeRequest({}));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
   });
 
   it('keeps weather available when optional 7Timer initialization has the wrong JSON type', async () => {

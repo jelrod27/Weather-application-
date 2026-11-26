@@ -10,7 +10,7 @@ import { ShareButtons } from '@/components/share-buttons';
 import { formatObservingTime, getStargazerHref, getStargazerShareHref, readStargazerContext } from '@/lib/stargazer/context';
 import type { StargazerContext } from '@/lib/stargazer/context';
 import { cn } from '@/lib/utils';
-import type { StargazerData } from '@/lib/stargazer/types';
+import type { StargazerForecast } from '@/lib/stargazer/types';
 import { getSubScoreLabel } from '@/lib/stargazer/score';
 import ForecastFreshness from '@/components/stargazer/ForecastFreshness';
 import StargazerNav from '@/components/stargazer/StargazerNav';
@@ -60,7 +60,7 @@ function SkeletonCard({ rows = 3 }: { rows?: number }) {
 // Persistent Header Card
 // ============================================================================
 
-function PhotographySummary({ data }: { data: StargazerData }) {
+function PhotographySummary({ data }: { data: StargazerForecast }) {
   const { score, bestWindow, nightAverage, limitingFactor, darkWindow, moon, location } = data;
 
   return (
@@ -185,7 +185,7 @@ function PhotographySummary({ data }: { data: StargazerData }) {
 // Tab Content Panels
 // ============================================================================
 
-function ConditionsPanel({ data }: { data: StargazerData }) {
+function ConditionsPanel({ data }: { data: StargazerForecast }) {
   const units = useStargazerUnits();
   const { hourlyConditions, bestWindow, darkWindow, moon } = data;
 
@@ -282,7 +282,7 @@ function ConditionsPanel({ data }: { data: StargazerData }) {
   );
 }
 
-function TargetsPanel({ data, context }: { data: StargazerData; context: StargazerContext }) {
+function TargetsPanel({ data, context }: { data: StargazerForecast; context: StargazerContext }) {
   return (
     <div className="space-y-6">
       <PlanetTable timeZone={data.location.timezone} planets={data.planets} />
@@ -291,7 +291,7 @@ function TargetsPanel({ data, context }: { data: StargazerData; context: Stargaz
   );
 }
 
-function EventsPanel({ data }: { data: StargazerData }) {
+function EventsPanel({ data }: { data: StargazerForecast }) {
   // Merge meteor shower events with sky events so they appear in the timeline
   const meteorShowerEvents = (data.meteorShowers ?? []).map(s => {
     const calendarDate = nextCalendarDate(s.peakMonth, s.peakDay, data.location.timezone, new Date(data.generatedAt));
@@ -310,14 +310,8 @@ function EventsPanel({ data }: { data: StargazerData }) {
   return (
     <div className="space-y-6">
       <SkyEvents timeZone={data.location.timezone} events={combinedEvents} />
-      <ISSPasses available={data.optionalData?.iss} timeZone={data.location.timezone} passes={data.issPasses} />
+      <ISSPasses key={`${data.location.lat},${data.location.lon}`} coordinates={data.location} timeZone={data.location.timezone} />
     </div>
-  );
-}
-
-function LaunchesPanel({ data }: { data: StargazerData }) {
-  return (
-    <LaunchSchedule available={data.optionalData?.launches} timeZone={data.location.timezone} launches={data.launches} />
   );
 }
 
@@ -443,7 +437,7 @@ export default function StargazerCommandCenter() {
               {activeTab === 'conditions' && <div className="space-y-5"><PhotographySummary data={data} /><ConditionsPanel data={data} /></div>}
               {activeTab === 'targets' && <TargetsPanel data={data} context={context} />}
               {activeTab === 'events' && <EventsPanel data={data} />}
-              {activeTab === 'launches' && <LaunchesPanel data={data} />}
+              {activeTab === 'launches' && <LaunchSchedule timeZone={data.location.timezone} />}
             </div>
 
             {(['start', 'conditions', 'targets', 'events', 'launches'] as const).filter(tab => tab !== activeTab).map(tab => <div key={tab} id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} hidden />)}

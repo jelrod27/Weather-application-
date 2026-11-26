@@ -28,7 +28,14 @@ function setData(value: StargazerData): void {
   });
 }
 
-afterEach(() => jest.useRealTimers());
+const originalFetch = globalThis.fetch;
+beforeEach(() => {
+  globalThis.fetch = jest.fn(() => new Promise<Response>(() => {}));
+});
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+  jest.useRealTimers();
+});
 
 it('keeps meteor dates stable when the browser crosses local midnight', () => {
   jest.useFakeTimers({ now: date });
@@ -104,16 +111,24 @@ it('keeps the resolved place above every tab when a search is only a draft', () 
   expect(screen.getByRole('textbox')).toHaveValue('Sydney');
 });
 
-it('distinguishes unavailable optional providers from an empty result', () => {
-  setData({ ...data, optionalData: { iss: false, launches: false } });
+it('retries unavailable ISS passes without fetching the forecast again', async () => {
+  const fetchMock = jest.mocked(globalThis.fetch);
+  fetchMock.mockResolvedValueOnce({ ok: false, status: 502 } as Response);
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] } as Response);
+  setData(data);
   const { rerender } = render(<StargazerCommandCenter />);
-  expect(screen.getByText('ISS pass data unavailable. Try refreshing later.')).toBeInTheDocument();
-  setData({ ...data, optionalData: { iss: true, launches: true } });
+  expect(await screen.findByText('ISS pass data unavailable.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Retry ISS passes' }));
+  expect(await screen.findByText('No visible ISS passes calculated in the next few days.')).toBeInTheDocument();
+  fetchMock.mockResolvedValueOnce({ ok: false, status: 502 } as Response);
+  mockController.mockReturnValue({ ...mockController(), activeTab: 'launches' });
   rerender(<StargazerCommandCenter />);
-  expect(screen.getByText('No visible ISS passes calculated in the next few days.')).toBeInTheDocument();
-  mockController.mockReturnValue({ ...mockController(), activeTab: 'launches', data: { ...data, optionalData: { iss: false, launches: false } } });
-  rerender(<StargazerCommandCenter />);
-  expect(screen.getByText('Launch schedule unavailable. Try refreshing later.')).toBeInTheDocument();
+  expect(await screen.findByText('Launch schedule unavailable.')).toBeInTheDocument();
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+    '/api/stargazer/iss?lat=37&lon=-122',
+    '/api/stargazer/iss?lat=37&lon=-122',
+    '/api/stargazer/launches',
+  ]);
 });
 
 it('distinguishes photography periods that cross the repeated DST hour', () => {

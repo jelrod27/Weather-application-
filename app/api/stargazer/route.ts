@@ -4,9 +4,10 @@ import { logRouteError } from '@/lib/error-utils';
 import { withApiRoute } from '@/lib/api/with-api-route';
 import { parseStargazerCoordinates } from '@/lib/stargazer/context';
 import {
-  buildStargazerPayload,
+  buildStargazerForecast,
   StargazerWeatherUnavailableError,
 } from '@/lib/stargazer/build-payload';
+import type { StargazerData } from '@/lib/stargazer/types';
 
 export const revalidate = 900;
 
@@ -32,7 +33,23 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      const data = await buildStargazerPayload(coordinates.lat, coordinates.lon);
+      const { lat, lon } = coordinates;
+      if (searchParams.get('view') === 'forecast') {
+        return NextResponse.json(await buildStargazerForecast(lat, lon));
+      }
+
+      // Keep the full response for existing callers. The planner uses the forecast-only view.
+      const [forecast, passes, launches] = await Promise.all([
+        buildStargazerForecast(lat, lon),
+        import('@/lib/stargazer/iss-passes').then(module => module.fetchUpcomingISSPasses(lat, lon)),
+        import('@/lib/stargazer/launches').then(module => module.fetchUpcomingLaunches()),
+      ]);
+      const data: StargazerData = {
+        ...forecast,
+        issPasses: passes ?? [],
+        launches: launches ?? [],
+        optionalData: { iss: passes !== null, launches: launches !== null },
+      };
       return NextResponse.json(data);
     } catch (error) {
       if (error instanceof StargazerWeatherUnavailableError) {

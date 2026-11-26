@@ -89,6 +89,7 @@ describe('GET /api/weather/geocoding', () => {
               longitude: -121.98,
               country_code: 'US',
               admin1: 'California',
+              timezone: 'America/Los_Angeles',
             },
           ],
         })
@@ -106,6 +107,7 @@ describe('GET /api/weather/geocoding', () => {
         name: 'San Ramon',
         country: 'US',
         state: 'CA',
+        timezone: 'America/Los_Angeles',
       });
       expect(body[0].lat).toBeCloseTo(37.78);
       expect(body[0].lon).toBeCloseTo(-121.98);

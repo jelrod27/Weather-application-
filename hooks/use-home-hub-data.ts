@@ -5,7 +5,7 @@ import type { AlertCoverage } from '@/lib/warnings/coverage-status';
 import { useCallback, useEffect, useState } from 'react';
 import type { NWSAlertDetail } from '@/lib/services/nws-alerts-service';
 import type { RSSItem } from '@/lib/services/rss/rssAggregator';
-import type { StargazerData } from '@/lib/stargazer/types';
+import type { StargazerForecast } from '@/lib/stargazer/types';
 import {
   formatUpdatedAgo,
   pickHappeningNowHeadline,
@@ -95,7 +95,7 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
   });
 
   const [stargazerLoading, setStargazerLoading] = useState(false);
-  const [stargazerScore, setStargazerScore] = useState<StargazerData['score'] | null>(null);
+  const [stargazerScore, setStargazerScore] = useState<StargazerForecast['score'] | null>(null);
 
   const [headlineLoading, setHeadlineLoading] = useState(false);
   const [headlineItem, setHeadlineItem] = useState<RSSItem | null>(null);
@@ -160,12 +160,12 @@ export function useHomeHubData(userLocation?: HubUserLocation | null): HomeHubDa
         runHubRequest({
           signal,
           task: async () => {
-            const stargazerRes = await fetch(`/api/stargazer?lat=${user.lat}&lon=${user.lon}`, {
+            const stargazerRes = await fetch(`/api/stargazer?lat=${user.lat}&lon=${user.lon}&view=forecast`, {
               signal,
             });
             if (signal?.aborted) return;
             if (!stargazerRes.ok) throw new Error('stargazer');
-            const data = (await stargazerRes.json()) as { score?: StargazerData['score'] };
+            const data = (await stargazerRes.json()) as Partial<Pick<StargazerForecast, 'score'>>;
             setStargazerScore(data.score ?? null);
           },
           onFailure: () => setStargazerScore(null),

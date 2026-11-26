@@ -31,6 +31,7 @@ export interface GeocodingResponse {
   lon: number;
   country: string;
   state?: string;
+  timezone?: string;
   /**
    * Postal code, when known (Nominatim reverse + Zippopotam US ZIP both
    * supply this). Used to render "City, ST ZIP" format in headers.
