@@ -19,15 +19,13 @@ import {
   fetchSevenTimerData,
   getSevenTimerAtTime,
 } from '@/lib/stargazer/seven-timer';
-import { fetchISSTLE, calculateISSPasses } from '@/lib/stargazer/satellites';
-import { fetchUpcomingLaunches } from '@/lib/stargazer/launches';
 import { estimateBortleClass } from '@/lib/stargazer/bortle';
 
 import deepSkyCatalog from '@/data/deep-sky-catalog.json';
 import meteorShowerData from '@/data/meteor-showers.json';
 
 import type {
-  StargazerData,
+  StargazerForecast,
   DeepSkyHighlight,
   DeepSkyObject,
   MeteorShowerEvent,
@@ -41,14 +39,12 @@ export class StargazerWeatherUnavailableError extends Error {
   }
 }
 
-export async function buildStargazerPayload(lat: number, lon: number): Promise<StargazerData> {
+export async function buildStargazerForecast(lat: number, lon: number): Promise<StargazerForecast> {
   const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,dewpoint_2m,temperature_2m,wind_speed_10m,precipitation_probability,weather_code&temperature_unit=celsius&wind_speed_unit=kmh&forecast_days=2&timezone=auto&timeformat=unixtime`;
 
-  const [openMeteoRes, sevenTimerData, issTle, launches, place] = await Promise.all([
+  const [openMeteoRes, sevenTimerData, place] = await Promise.all([
     fetchWithTimeout(openMeteoUrl, { next: { revalidate: 900 } }),
     fetchSevenTimerData(lat, lon),
-    fetchISSTLE(),
-    fetchUpcomingLaunches(10),
     reverseGeocodingForStargazer(lat, lon),
   ]);
 
@@ -103,10 +99,6 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
 
   highlights.sort((a, b) => b.maxAltitude - a.maxAltitude);
   const deepSkyHighlights = highlights.slice(0, 8);
-
-  const issPasses = issTle
-    ? calculateISSPasses(issTle, lat, lon, now, 7)
-    : [];
 
   const sunsetMs = (darkWindow.sunset ?? darkWindow.astronomicalDusk).getTime();
   const sunriseMs = darkWindow.sunrise?.getTime() ?? (darkWindow.status === 'none' ? now.getTime() + 86400000 : darkWindow.astronomicalDawn.getTime());
@@ -166,9 +158,6 @@ export async function buildStargazerPayload(lat: number, lon: number): Promise<S
     planets,
     deepSkyHighlights,
     skyEvents,
-    issPasses,
-    launches: launches ?? [],
-    optionalData: { iss: issTle !== null, launches: launches !== null },
     meteorShowers,
     location: {
       timezone: timeZone,

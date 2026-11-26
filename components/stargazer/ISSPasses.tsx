@@ -2,17 +2,21 @@
 
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
-import type { ISSPass } from '@/lib/stargazer/types';
 import { formatTime, formatDate } from '@/lib/stargazer/format';
+import { useStargazerSupplement } from '@/hooks/useStargazerSupplement';
+import type { ISSPass } from '@/lib/stargazer/types';
+import type { StargazerCoordinates } from '@/lib/stargazer/context';
 
 interface ISSPassesProps {
   timeZone?: string;
-  available?: boolean;
-  passes: ISSPass[];
+  coordinates: StargazerCoordinates;
 }
 
-export default function ISSPasses({ timeZone = 'UTC', available, passes }: ISSPassesProps) {
+export default function ISSPasses({ timeZone = 'UTC', coordinates }: ISSPassesProps) {
   const styles = themeTokens.card;
+  const params = new URLSearchParams({ lat: String(coordinates.lat), lon: String(coordinates.lon) });
+  const { result, retry } = useStargazerSupplement<ISSPass>(`/api/stargazer/iss?${params}`);
+  const passes = result.status === 'ready' ? result.items : [];
 
   return (
     <div
@@ -25,11 +29,13 @@ export default function ISSPasses({ timeZone = 'UTC', available, passes }: ISSPa
         ISS Passes
       </h2>
 
-      {!passes || passes.length === 0 ? (
-        <p className="text-xs font-mono">
-          {available === true ? 'No visible ISS passes calculated in the next few days.' : 'ISS pass data unavailable. Try refreshing later.'}
-        </p>
-      ) : (
+      {result.status === 'loading' && <p role="status" className="text-xs">Loading ISS passes…</p>}
+      {result.status === 'unavailable' && <div className="space-y-2 text-xs">
+        <p role="status">ISS pass data unavailable.</p>
+        <button type="button" className="text-primary underline" onClick={retry}>Retry ISS passes</button>
+      </div>}
+      {result.status === 'ready' && passes.length === 0 && <p className="text-xs">No visible ISS passes calculated in the next few days.</p>}
+      {passes.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

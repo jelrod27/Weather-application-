@@ -23,6 +23,7 @@ interface OpenMeteoGeoResult {
   country?: string
   admin1?: string
   admin2?: string
+  timezone?: string
 }
 
 interface OpenMeteoGeoResponse {
@@ -71,6 +72,7 @@ const mapOpenMeteoResult = (r: OpenMeteoGeoResult): GeocodingResponse => {
     lon: r.longitude,
     country,
     ...(stateAbbr ? { state: stateAbbr } : {}),
+    ...(r.timezone ? { timezone: r.timezone } : {}),
   }
 }
 

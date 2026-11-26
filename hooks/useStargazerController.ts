@@ -6,7 +6,7 @@ import { useLocationContext } from '@/components/location-context';
 import { getStargazerHref, parseStargazerCoordinates, readStargazerContext } from '@/lib/stargazer/context';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import type { StargazerContext, StargazerCoordinates } from '@/lib/stargazer/context';
-import type { StargazerData } from '@/lib/stargazer/types';
+import type { StargazerForecast } from '@/lib/stargazer/types';
 import type { StargazerTabId } from '@/components/stargazer/StargazerNav';
 
 const VALID_TABS: StargazerTabId[] = ['start', 'conditions', 'targets', 'events', 'launches'];
@@ -24,7 +24,7 @@ async function geocodeLabel(label: string, signal: AbortSignal): Promise<Stargaz
 }
 
 export interface UseStargazerControllerResult {
-  data: StargazerData | null;
+  data: StargazerForecast | null;
   receivedAt: number | null;
   invalidSharedTime: boolean;
   acknowledgeSharedTime: () => void;
@@ -47,7 +47,7 @@ export function useStargazerController(): UseStargazerControllerResult {
   const query = params.get('q') ?? '';
   const { currentLocation, locationInput } = useLocationContext();
   const storedLabel = locationInput || currentLocation;
-  const [data, setData] = useState<StargazerData | null>(null);
+  const [data, setData] = useState<StargazerForecast | null>(null);
   const [receivedAt, setReceivedAt] = useState<number | null>(null);
   const [invalidSharedTime, setInvalidSharedTime] = useState(false);
   const acknowledgeSharedTime = useCallback(() => setInvalidSharedTime(false), []);
@@ -96,9 +96,9 @@ export function useStargazerController(): UseStargazerControllerResult {
       }
       if (!current() || !coordinates) return;
       attempted.current = { context: { ...context, coordinates }, device: false, history };
-      const res = await fetch(`/api/stargazer?lat=${coordinates.lat}&lon=${coordinates.lon}`, { signal: controller.signal });
+      const res = await fetch(`/api/stargazer?lat=${coordinates.lat}&lon=${coordinates.lon}&view=forecast`, { signal: controller.signal });
       if (!res.ok) throw new Error('Forecast unavailable. Retry or choose a different location.');
-      const payload: StargazerData = await res.json();
+      const payload: StargazerForecast = await res.json();
       if (!current()) return;
       setData(payload);
       setReceivedAt(Date.now());

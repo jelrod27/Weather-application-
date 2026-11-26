@@ -12,11 +12,11 @@ import { getStargazerFreshness } from '@/lib/stargazer/freshness';
 import { getWeatherJourneyLinks } from '@/lib/weather/journey';
 import type { StargazerContext, StargazerEquipment } from '@/lib/stargazer/context';
 import type { StargazerTabId } from '@/components/stargazer/StargazerNav';
-import type { StargazerData } from '@/lib/stargazer/types';
+import type { StargazerForecast } from '@/lib/stargazer/types';
 import type { ObservingWeatherIssue } from '@/lib/stargazer/beginner-types';
 
 interface BeginnerPanelProps {
-  data: StargazerData;
+  data: StargazerForecast;
   context: StargazerContext;
   now: number;
   receivedAt: number | null;

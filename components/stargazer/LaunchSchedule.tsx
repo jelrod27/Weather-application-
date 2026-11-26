@@ -3,14 +3,13 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { themeTokens } from '@/lib/theme-tokens';
-import type { Launch } from '@/lib/stargazer/types';
 import { safeExternalUrl } from '@/lib/safe-url';
 import { formatDate } from '@/lib/stargazer/format';
+import { useStargazerSupplement } from '@/hooks/useStargazerSupplement';
+import type { Launch } from '@/lib/stargazer/types';
 
 interface LaunchScheduleProps {
   timeZone?: string;
-  available?: boolean;
-  launches: Launch[];
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -34,9 +33,11 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   );
 }
 
-export default function LaunchSchedule({ timeZone = 'UTC', available, launches }: LaunchScheduleProps) {
+export default function LaunchSchedule({ timeZone = 'UTC' }: LaunchScheduleProps) {
   const styles = themeTokens.card;
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { result, retry } = useStargazerSupplement<Launch>('/api/stargazer/launches');
+  const launches = result.status === 'ready' ? result.items : [];
 
   return (
     <div
@@ -49,11 +50,13 @@ export default function LaunchSchedule({ timeZone = 'UTC', available, launches }
         Upcoming Launches
       </h2>
 
-      {!launches || launches.length === 0 ? (
-        <p className="text-xs font-mono">
-          {available === true ? 'No upcoming launches returned by the provider.' : 'Launch schedule unavailable. Try refreshing later.'}
-        </p>
-      ) : (
+      {result.status === 'loading' && <p role="status" className="text-xs">Loading launches…</p>}
+      {result.status === 'unavailable' && <div className="space-y-2 text-xs">
+        <p role="status">Launch schedule unavailable.</p>
+        <button type="button" className="text-primary underline" onClick={retry}>Retry launches</button>
+      </div>}
+      {result.status === 'ready' && launches.length === 0 && <p className="text-xs">No upcoming launches returned by the provider.</p>}
+      {launches.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

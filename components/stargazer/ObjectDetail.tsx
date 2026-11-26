@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense } from 'react';
 import StargazerContextLink from '@/components/stargazer/StargazerContextLink';
 import { formatType, formatBestMonths } from '@/lib/stargazer/catalog';
@@ -124,7 +122,7 @@ export default function ObjectDetail({ object: obj }: ObjectDetailProps) {
 
       {/* Tonight's Visibility */}
       <Suspense fallback={<p>Loading observing location…</p>}>
-        <TonightVisibility ra={obj.ra} dec={obj.dec} objectName={obj.name} />
+        <TonightVisibility ra={obj.ra} dec={obj.dec} objectId={obj.id} objectName={obj.name} />
       </Suspense>
 
       {/* Imaging Tips */}

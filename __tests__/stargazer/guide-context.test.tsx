@@ -6,8 +6,8 @@ jest.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams
 
 it('asks a direct guide visitor to choose a place instead of using New York', () => {
   window.history.replaceState(null, '', '/stargazer/objects/M31');
-  render(<TonightVisibility ra={0.712} dec={41.27} objectName="Andromeda" />);
-  expect(screen.getByRole('link', { name: /choose.*location/i })).toHaveAttribute('href', expect.stringContaining('/stargazer'));
+  render(<TonightVisibility ra={0.712} dec={41.27} objectId="M31" objectName="Andromeda" />);
+  expect(screen.getByRole('searchbox', { name: 'Observing city' })).toHaveValue('');
   expect(screen.queryByText(/above horizon/i)).not.toBeInTheDocument();
 });
 
